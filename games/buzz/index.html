@@ -952,12 +952,29 @@ window.BZ_LEVELS = [{"n":1,"v":2,"mech":"tut","name":"flat","terrain":[[[0,0],[1
    line, all drawn with canvas paths. Everything takes a "k" (pixels per meter); callers translate to the spot.
    2.0.0: caves and grates, hollow stumps, drains and rising floods, crumbling ledges, trapdoors with a hinge and a
    latch, Biscuit's balloon, and the blue pencil's line. */
+var BZScenery = {
+  advance:function(saved,finished,random){
+    random=random||Math.random;
+    var valid=saved&&Number.isInteger(saved.index)&&saved.index>=0&&saved.index<3&&Number.isInteger(saved.remaining)&&saved.remaining>=1&&saved.remaining<=4&&Number.isInteger(saved.counted)&&saved.counted>=0;
+    var state=valid?{index:saved.index,remaining:saved.remaining,counted:saved.counted}:{index:0,remaining:2+Math.floor(random()*3),counted:finished};
+    if(finished<state.counted)state.counted=finished;
+    var delta=finished-state.counted;
+    if(delta>0){state.remaining-=delta;state.counted=finished;
+      if(state.remaining<=0){state.index=(state.index+1+Math.floor(random()*2))%3;state.remaining=2+Math.floor(random()*3);}
+    }
+    return state;
+  }
+};
 var BZArt = (function () {
   'use strict';
   function rr(x, X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
   function rnd(seed) { var s = seed >>> 0 || 1; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
-  var garden=new Image();garden.src='assets/woodland-garden-v1.webp';
+  function asset(name){var im=new Image();im.src='assets/'+name;return im;}
+  var gardens=['woodland-garden-v1.webp','meadow-v1.webp','brook-v1.webp'].map(asset),garden=gardens[0];
+  var portraits={pup:asset('biscuit-v1.webp'),hive:asset('hive-v1.webp'),bee:asset('bee-v1.webp')};
+  function ready(im){return im.complete&&im.naturalWidth>0;}
+
   function paper(x,W,H,dark){
     x.fillStyle=dark?'#172b2c':'#e8eedc';x.fillRect(0,0,W,H);
     if(garden.complete&&garden.naturalWidth){var scale=Math.max(W/garden.width,H/garden.height);x.drawImage(garden,(W-garden.width*scale)/2,(H-garden.height*scale)/2,garden.width*scale,garden.height*scale);}
@@ -1018,6 +1035,7 @@ var BZArt = (function () {
     else { x.beginPath(); for (var i = 1; i < 4; i++) { x.moveTo(-w / 2 + w * i / 4, -h / 2); x.lineTo(-w / 2 + w * i / 4, h / 2); } x.stroke(); }
   }
   function hive(x, r, k, t, shake) {
+    if(ready(portraits.hive)){x.save();x.rotate(Math.sin(t*30)*.05*shake);x.drawImage(portraits.hive,-r*1.05,-r*1.05,r*2.1,r*2.1);x.restore();return;}
     x.save(); x.rotate(Math.sin(t * 30) * 0.05 * shake);
     var g = x.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r * 1.1); g.addColorStop(0, '#ffd66b'); g.addColorStop(1, '#d88a12');
     x.beginPath(); x.ellipse(0, 0, r * 1.05, r, 0, 0, 7); x.fillStyle = g; x.fill(); x.lineWidth = Math.max(1.5, k * 0.05); x.strokeStyle = '#8a5210'; x.stroke();
@@ -1029,6 +1047,13 @@ var BZArt = (function () {
     x.restore();
   }
   function bee(x, k, t, ph, vx) {
+    if(ready(portraits.bee)){
+      var bs=k*.22,flap=(Math.sin(t*60+ph)+1)/2;
+      x.save();if(vx<0)x.scale(-1,1);
+      x.fillStyle='rgba(216,242,249,.65)';x.strokeStyle='rgba(99,135,149,.45)';x.lineWidth=.5;
+      x.beginPath();x.ellipse(-bs*.05,-bs*.48,bs*.55,bs*(.15+flap*.6),-.5,0,7);x.fill();x.stroke();
+      x.drawImage(portraits.bee,-bs*1.4,-bs*1.1,bs*2.8,bs*1.87);x.restore();return;
+    }
     var s = k * 0.22, flap = Math.sin(t * 60 + ph) * 0.5 + 0.5;
     x.save(); if (vx < 0) x.scale(-1, 1);
     x.fillStyle = 'rgba(255,255,255,.85)'; x.strokeStyle = 'rgba(80,100,130,.6)'; x.lineWidth = 1;
@@ -1043,6 +1068,15 @@ var BZArt = (function () {
   }
   // Biscuit the pup: a beagle-ish round head. mood: calm, scared, happy, hurt
   function pup(x, r, k, t, mood, look) {
+    if(ready(portraits.pup)){
+      var hop=mood==='happy'?Math.abs(Math.sin(t*8))*r*.12:mood==='scared'?Math.sin(t*40)*r*.03:0;
+      x.save();x.translate(0,-hop);x.rotate((look||0)*.035);
+      x.drawImage(portraits.pup,-r*1.08,-r*1.08,r*2.16,r*2.16);
+      // State feedback remains legible without cartoon facial overlays.
+      if(mood==='hurt'){x.strokeStyle='#ef5360';x.lineWidth=Math.max(1.5,k*.04);x.beginPath();x.arc(0,0,r*1.04,0,7);x.stroke();}
+      if(mood==='happy'){x.fillStyle='#519154';x.beginPath();x.arc(r*.76,-r*.76,r*.23,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=Math.max(1,k*.025);x.beginPath();x.moveTo(r*.64,-r*.76);x.lineTo(r*.73,-r*.67);x.lineTo(r*.88,-r*.87);x.stroke();}
+      x.restore();return;
+    }
     var bob = mood === 'happy' ? Math.abs(Math.sin(t * 8)) * r * 0.12 : mood === 'scared' ? Math.sin(t * 40) * r * 0.03 : 0;
     x.save(); x.translate(0, -bob);
     // ears
@@ -1180,7 +1214,7 @@ var BZArt = (function () {
     }
     x.restore();
   }
-  return { garden: garden, rr: rr, paper: paper, ground: ground, spikes: spikes, mace: mace, pool: pool, crate: crate, hive: hive, bee: bee, pup: pup,
+  return { get garden(){return garden;}, images:gardens.concat(Object.values(portraits)), selectGarden:function(i){garden=gardens[i]||gardens[0];}, rr: rr, paper: paper, ground: ground, spikes: spikes, mace: mace, pool: pool, crate: crate, hive: hive, bee: bee, pup: pup,
     cave: cave, grate: grate, hollow: hollow, stump: stump, shaft: shaft, drain: drain, bubbles: bubbles, crumble: crumble, plank: plank, bolt: bolt, latch: latch, balloon: balloon, inkLine: inkLine };
 })();
 </script>
@@ -1361,6 +1395,7 @@ var BZSound = (function () {
       return;
     }
     making = 0; lvNo = n; meta.level = lvNo; saveMeta();
+    var scenery=BZScenery.advance(store.get('scenery',null),meta.finished);store.set('scenery',scenery);BZArt.selectGarden(scenery.index);
     L = levelAt(lvNo); S = BZ.create(L, (Date.now() & 0xffff) + 1); state = 'draw'; hint = null; fx = []; parts = []; drawing = false; floodWas = false;
     // make the next level now, while this one is played
     if (lvNo + 1 > LEVELS.length) need(lvNo + 1);
@@ -1664,7 +1699,7 @@ var BZSound = (function () {
       return 'Level <b>' + lvNo + '</b> &middot; furthest ' + meta.open + ' &middot; ' + (st ? st + ' of 3 stars here' : 'not saved yet') + ' &middot; ' + total + ' stars in all';
     } });
     Goobs.themePicker($('themes'));
-    cv = $('cv'); cx = cv.getContext('2d');BZArt.garden.addEventListener('load',function(){cache=null;});
+    cv = $('cv'); cx = cv.getContext('2d');BZArt.images.forEach(function(im){im.addEventListener('load',function(){cache=null;});});
     cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove); cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', onUp);
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S_.unlock(); }, { passive: true }); });
     $('btnHome').addEventListener('click', function () { S_.buzzOff(); Goobs.home(); });
