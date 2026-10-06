@@ -1612,8 +1612,11 @@ var SGAudio = (function () {
       cx.save(); cx.translate(t.x, t.y);
       // base
       cx.beginPath(); if (g.mode === 'swarm') hexPath(cx, 0, 0, SG.HS * 0.82); else { var b = 0.4; cx.rect(-b, -b, 2 * b, 2 * b); }
-      cx.globalCompositeOperation = 'source-over'; cx.fillStyle = 'rgba(6,10,26,.9)'; cx.fill(); cx.globalCompositeOperation = 'lighter';
+      cx.globalCompositeOperation = 'source-over'; var armor=cx.createLinearGradient(-.4,-.4,.35,.4);armor.addColorStop(0,'#36455b');armor.addColorStop(.4,'#172335');armor.addColorStop(1,'#080d19');cx.fillStyle=armor;cx.fill();cx.strokeStyle='#43536b';cx.lineWidth=.07;cx.stroke(); cx.globalCompositeOperation = 'lighter';
       glow(cx, col, 0.035, 0.75);
+      // Recessed bearing and mounting bolts retain the existing footprint.
+      cx.globalCompositeOperation='source-over';cx.beginPath();cx.arc(0,0,.29,0,Math.PI*2);cx.fillStyle='#080e1a';cx.fill();cx.strokeStyle='#4a5b70';cx.lineWidth=.025;cx.stroke();
+      cx.fillStyle='#8b9bb1';[-.28,.28].forEach(function(x){[-.28,.28].forEach(function(y){cx.fillRect(x-.025,y-.025,.05,.05);});});
       // turret
       cx.rotate(t.ang + Math.PI / 2);
       var kick = t.fire > 0 ? 0.06 : 0;
@@ -1623,7 +1626,15 @@ var SGAudio = (function () {
       else if (t.type === 'missile') { cx.rect(-0.17, -0.2, 0.34, 0.4); cx.moveTo(-0.08, -0.05); cx.lineTo(0, -0.18); cx.lineTo(0.08, -0.05); }
       else if (t.type === 'shock') { cx.arc(0, 0, 0.12 + (t.fire > 0 ? 0.05 : 0), 0, Math.PI * 2); cx.moveTo(0.26, 0); cx.arc(0, 0, 0.26, 0, Math.PI * 2); }
       else { cx.rotate(tNow * 1.5); for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4, rr = i % 2 ? 0.1 : 0.28 + (t.fire > 0 ? 0.06 : 0); if (i) cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else cx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } cx.closePath(); }
-      glow(cx, col, 0.035);
+      cx.globalCompositeOperation='source-over';cx.fillStyle='#1c3147';cx.fill();
+      cx.strokeStyle=col;cx.lineWidth=.075;cx.stroke();
+      cx.globalCompositeOperation='lighter';glow(cx,col,.022);
+      // Weapon-specific hardware and luminous power cores.
+      cx.globalCompositeOperation='source-over';
+      if(t.type==='blaster'){cx.fillStyle='#8292a5';cx.fillRect(-.055,-.35+kick,.11,.23);cx.fillStyle='#090e18';cx.fillRect(-.035,-.36+kick,.07,.05);}
+      if(t.type==='missile'){for(var m=0;m<3;m++){cx.fillStyle='#070d19';cx.fillRect(-.12+m*.085,-.15,.065,.25);cx.fillStyle=col;cx.fillRect(-.105+m*.085,-.14,.035,.09);}}
+      if(t.type==='laser'){cx.fillStyle='#bacfe0';cx.fillRect(-.025,-.34,.05,.15);}
+      cx.beginPath();cx.arc(0,0,t.type==='shock'?.10:.065,0,Math.PI*2);cx.fillStyle=col;cx.fill();cx.beginPath();cx.arc(-.025,-.025,.022,0,Math.PI*2);cx.fillStyle='#e6faff';cx.fill();
       cx.restore();
       // level pips
       cx.fillStyle = col; var n = t.lv, pw = Math.min(0.08, 0.7 / Math.max(5, n));
@@ -1644,8 +1655,14 @@ var SGAudio = (function () {
       var E = e.E, x = e.x + e.jx, y = e.y + e.jy;
       cx.save(); cx.translate(x, y); cx.rotate(e.type === 'fast' ? (e.dir || 0) + Math.PI / 2 : e.spin);
       shape(cx, E.shape, e.size);
+      cx.globalCompositeOperation='source-over';
+      var shell=cx.createLinearGradient(-e.size,-e.size,e.size,e.size);shell.addColorStop(0,E.color);shell.addColorStop(.38,'#26344a');shell.addColorStop(1,'#09101e');cx.fillStyle=shell;cx.fill();
+      cx.globalCompositeOperation='lighter';
       if (e.hit > 0) { cx.fillStyle = 'rgba(255,255,255,.55)'; cx.fill(); }
       glow(cx, e.slow > 0 ? '#9ef0ff' : E.color, e.type === 'swarm' ? 0.025 : 0.04);
+      // Armored shell, inset sensor and edge facets preserve each type's silhouette.
+      cx.save();cx.scale(.58,.58);shape(cx,E.shape,e.size);cx.strokeStyle=E.color;cx.lineWidth=.018;cx.stroke();cx.restore();
+      cx.fillStyle='#e9fbff';cx.fillRect(-e.size*.27,-e.size*.13,e.size*.54,Math.max(.025,e.size*.15));
       if (e.type === 'boss') { cx.rotate(-e.spin * 2); shape(cx, 'hexagon', e.size * 0.45); glow(cx, '#ffd23f', 0.03); }
       if (e.type === 'healer' && e.hp < e.max) { cx.beginPath(); cx.arc(0, 0, e.size * 0.45, 0, Math.PI * 2); cx.fillStyle = 'rgba(61,255,230,' + (0.25 + 0.2 * Math.sin(tNow * 8)).toFixed(3) + ')'; cx.fill(); }
       cx.restore();
