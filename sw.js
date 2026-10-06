@@ -42,7 +42,7 @@ const VERSIONS = {
   golf: '0.4.0',
   shelf: '1.2.0',
   castle: '1.7.0',
-  outpost: '0.6.0',
+  outpost: '0.6.1',
   getout: '0.16.0',
   sudoku: '0.1.0',
   wordwheel: '0.3.0',
