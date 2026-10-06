@@ -37,11 +37,11 @@
 </script>
 <title>Quiz Cove</title>
 <style>
-/* Quiz Cove: a sunny cove fills the phone edge to edge; one question card in the middle, big answer buttons. */
+/* Quiz Cove: quiet coastal artwork behind a readable question card. */
 html, body { height: 100%; }
-body { background: #2a9fc4; overflow: hidden; }
-.scene { position: fixed; inset: 0; z-index: 0; }
-.scene svg { width: 100%; height: 100%; display: block; }
+body { background: #627c83; overflow: hidden; }
+.scene { position: fixed; inset: 0; z-index: 0; pointer-events:none; background-size:cover; background-position:center; background-repeat:no-repeat; }
+.scene::after { content:""; position:absolute; inset:0; background:rgba(25,43,51,.08); }
 html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
   padding: calc(env(safe-area-inset-top, 0px) + 58px) calc(env(safe-area-inset-right, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 12px) calc(env(safe-area-inset-left, 0px) + 12px); }
 .qchud { position: fixed; z-index: 7; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 60px; right: 60px; height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; pointer-events: none; }
@@ -176,7 +176,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5s-8-4.8-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6.2-8 11-8 11z" fill="currentColor"/></symbol>
 </defs></svg>
 
-<div class="scene" id="scene"></div>
+<div class="scene" id="scene" aria-hidden="true"></div>
 
 <div class="app" id="app">
   <div class="top">
@@ -436,6 +436,7 @@ var QCSound = (function () {
   //      score, right, misses, answered (current question answered?), left (ms left on the timer) }
   var r = null, tStart = 0, tLeft = 0, tTimer = 0;
   function newRound(mode, cat) {
+    scene(true);
     stopTimer();
     r = { mode: mode, cat: cat || '', ids: [], order: {}, i: 0, picks: [], score: 0, right: 0, misses: 0, answered: false, left: TIME };
     if (mode === 'daily') { var dp = dailyPick(dayKey()); r.day = dayKey(); r.ids = dp.ids; r.order = dp.order; }
@@ -688,16 +689,23 @@ var QCSound = (function () {
     $(close).addEventListener('click', shut);
     $(ov).addEventListener('click', function (e) { if (e.target === this) shut(); });
   }
-  // the cove scene behind everything
-  function scene() {
-    var h = '<svg viewBox="0 0 100 200" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="qcS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc8f0"/><stop offset=".55" stop-color="#bde9f7"/></linearGradient>' +
-      '<linearGradient id="qcW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb7c9"/><stop offset="1" stop-color="#1a6fb5"/></linearGradient></defs>' +
-      '<rect width="100" height="200" fill="url(#qcS)"/><circle cx="78" cy="30" r="14" fill="#fff4b8" opacity=".45"/><circle cx="78" cy="30" r="9" fill="#ffe680"/>' +
-      '<g fill="#fff" opacity=".7"><ellipse cx="22" cy="26" rx="12" ry="3.4"/><ellipse cx="27" cy="23.5" rx="6.5" ry="3"/><ellipse cx="60" cy="52" rx="10" ry="2.8"/></g>' +
-      '<path d="M0 120q18-14 34-6t30-2 36 4V200H0z" fill="#3d9c5a"/><path d="M-4 128q30-8 60 2t50-4V200H-4z" fill="url(#qcW)"/>' +
-      '<path d="M0 176q25-8 50-2t50-4V200H0z" fill="#ffe3a3"/><path d="M0 170q25-8 50-2t50-4v6q-25 4-50 0T0 176z" fill="#fff" opacity=".55"/>' +
-      '<g stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".6"><path d="M10 140h10M40 150h14M70 138h12M24 160h9M78 158h10"/></g></svg>';
-    $('scene').innerHTML = h;
+  // Decorative state lives in existing metadata, so backups carry the rotation too.
+  // Only completed rounds count; resumes, questions and abandoned rounds do not.
+  function scene(advance) {
+    var files = ['quiet-cove-v1.webp', 'coastal-dunes-v1.webp', 'misty-headland-v1.webp', 'harbor-dusk-v1.webp'];
+    var state = meta.scenery;
+    if (!state || !Number.isInteger(state.id) || state.id < 0 || state.id >= files.length ||
+        !Number.isInteger(state.nextAt) || state.nextAt < 0) {
+      state = meta.scenery = { id: Math.floor(Math.random() * files.length), nextAt: meta.finished + 2 + Math.floor(Math.random() * 2) };
+      saveMeta();
+    } else if (advance && meta.finished >= state.nextAt) {
+      // Select one of the other three scenes; never repeat immediately.
+      state.id = (state.id + 1 + Math.floor(Math.random() * (files.length - 1))) % files.length;
+      state.nextAt = meta.finished + 2 + Math.floor(Math.random() * 2);
+      saveMeta();
+    }
+    $('scene').style.backgroundImage = 'url("assets/' + files[state.id] + '")';
+    $('scene').dataset.scene = String(state.id);
   }
 
   // ================= start =================
