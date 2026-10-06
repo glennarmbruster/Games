@@ -141,6 +141,16 @@ html.gg-fs .top .brand { flex: none; }
 html.gg-fs .table { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); border-radius: 0; }
 /* spider's "5 deals" under the stock at the right edge of the felt: right-aligned so it isn't cut off by the screen edge */
 .slot.sstock .count { left: -40px; right: 0; text-align: right; }
+/* Visual refinement: woven felt and printed card stock; card geometry is unchanged. */
+:root { --felt:#287b58; --felt-2:#154c37; --card:#fffdf7; --card-edge:#c9c7bb; --card-red:#b72f43; --card-black:#202938; --back-1:#23446a; --back-2:#152e4d; }
+.table { background-image:radial-gradient(ellipse at 40% 10%,var(--felt),var(--felt-2)),url('assets/cloth-v1.webp'); background-size:auto,240px; background-blend-mode:multiply; box-shadow:inset 0 0 0 1px #ffffff24,inset 0 3px 14px #0003,var(--shadow); }
+.cd:not(.sel):not(.lift):not(.hint) { box-shadow:0 0 0 .5px var(--card-edge),0 1px 1px #0004,0 3px 5px #0003; }
+.cd { background-image:linear-gradient(135deg,#ffffff55,transparent 55%,#9b87600c); }
+.cd .rk { font-family:Georgia,'Times New Roman',serif; font-weight:700; letter-spacing:-.04em; top:3%; }
+.cd .face { font-family:Georgia,'Times New Roman',serif; font-weight:700; border:1px solid currentColor; }
+.cd.down .bk { background:repeating-linear-gradient(45deg,#ffffff10 0 1px,transparent 1px 5px),repeating-linear-gradient(-45deg,#ffffff10 0 1px,transparent 1px 5px),linear-gradient(135deg,var(--back-1),var(--back-2)); box-shadow:inset 0 0 0 calc(var(--cw) * .055) var(--card),inset 0 0 0 calc(var(--cw) * .075) #ffffff44; }
+.slot { border-color:#ffffff38; box-shadow:inset 0 1px 5px #0002; }
+
 </style>
 </head>
 <body>

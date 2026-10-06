@@ -102,6 +102,16 @@ html.gg-fs .kb button.wide { font-size: 14px; }
 :root[data-theme="dark"] .kb button.p, :root[data-theme="blue"] .kb button.p { background: var(--lm-p); }
 :root[data-theme="dark"] .kb button.hint, :root[data-theme="blue"] .kb button.hint { background: #3d6fd8; color: #fff; }
 :root[data-theme="dark"] .kb button.hint.open, :root[data-theme="blue"] .kb button.hint.open { background: transparent; color: var(--ink); }
+/* Visual refinement: quiet ceramic tiles and tactile keyboard keys. */
+.cell { border-width:1.5px; border-radius:7px; font-weight:800; font-variant-numeric:tabular-nums; box-shadow:inset 0 1px #ffffff40,0 2px 0 color-mix(in srgb,var(--lm-edge) 60%,transparent); }
+.cell.full { border-color:var(--muted); background-image:linear-gradient(150deg,#ffffff18,transparent); }
+.cell.c, .cell.p, .cell.a { box-shadow:inset 0 1px #ffffff4d,inset 0 -2px #0000001a,0 2px 3px #00000012; }
+.kb button { border-radius:7px; box-shadow:inset 0 1px #ffffff40,0 2px 0 color-mix(in srgb,var(--ink) 22%,transparent); font-weight:700; }
+.kb button:active { transform:translateY(1px); box-shadow:inset 0 1px 3px #0002; }
+.kb button.hint.open { box-shadow:inset 0 0 0 2px #3d6fd8; }
+.kb button.off { box-shadow:none; }
+@media (prefers-reduced-motion:reduce) { .cell.full, .cell.flip, .cell.win, .lrow.shake { animation:none; } }
+
 </style>
 </head>
 <body>

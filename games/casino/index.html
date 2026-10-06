@@ -345,6 +345,24 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
   .chipbtn { width: 58px; height: 58px; }
   :root { --tray: 62px; }
 }
+/* Visual refinement: local cloth, restrained brass and card-stock depth. */
+:root { --felt1:#237653; --felt2:#103d2d; --brass:#d6bd80; --brass2:#96713c; --gold-grad:linear-gradient(180deg,#f5e8bf,#d8bc77 52%,#b58d47); }
+.scene { background:radial-gradient(ellipse at 50% 0%,var(--night2),transparent 65%),linear-gradient(160deg,var(--night1),#090e19); }
+.scene .lamp { opacity:.09; }
+.marquee h2 { font-style:normal; letter-spacing:-.5px; }
+.marquee svg { box-shadow:0 0 0 1px var(--brass),0 6px 18px #0005; }
+.gcard { border-radius:14px; border-color:#d6bd803b; background:linear-gradient(150deg,#ffffff0d,#ffffff03); box-shadow:0 4px 12px #0004,inset 0 1px #ffffff0b; }
+.gcard .gpic { border-radius:10px; box-shadow:inset 0 1px 6px #0005; }
+.felt .bjtable, .felt .layoutwrap, .felt .crtable { background-image:radial-gradient(ellipse at 40% 15%,var(--felt1),var(--felt2)),url('assets/cloth-v1.webp'); background-size:auto,240px; background-blend-mode:multiply; box-shadow:inset 0 0 0 1px #e9d29c55,inset 0 0 35px #0005,0 0 0 4px #302019,0 0 0 6px var(--brass2),0 10px 24px #0006; }
+.pc { box-shadow:0 1px 1px #0006,0 4px 7px #0005; }
+.pc > div { border-radius:inherit; }
+.pc > div::after { content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:linear-gradient(135deg,#ffffff20,transparent 50%,#6b58440c); box-shadow:inset 0 0 0 .5px #ffffff66; }
+.chipbtn svg { filter:drop-shadow(0 2px 1px #0007); }
+.chipbtn.on { filter:drop-shadow(0 0 3px #ffe08a); }
+.abtn { box-shadow:inset 0 1px #ffffff16,0 2px 4px #0003; }
+.abtn.go { box-shadow:inset 0 1px #fff8,0 3px 7px #0005; }
+.vp .cab { background:linear-gradient(145deg,#2b3545,#101721); box-shadow:inset 0 0 0 2px #080d17,0 0 0 4px var(--brass2),0 12px 24px #0006; }
+
 </style>
 </head>
 <body>

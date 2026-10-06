@@ -115,6 +115,16 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .place.here { box-shadow: inset 0 0 0 2px var(--accent); }
 .place.locked { opacity: .45; }
 .place .go { margin-left: auto; font-weight: 800; font-size: 14px; border: 0; border-radius: 12px; padding: 8px 12px; background: var(--surface); color: var(--ink); }
+/* Visual refinement: porcelain letter tokens and a recessed wheel. */
+.sq { border-radius:16%; font-family:-apple-system,system-ui,sans-serif; font-weight:750; background:rgba(255,255,255,.24); box-shadow:inset 0 1px 3px #221b4230,inset 0 0 0 1px #ffffff70; }
+.sq.on, .sq.hinted { background:linear-gradient(145deg,#fffefa,#eeeae2); box-shadow:inset 0 1px #fff,0 2px 0 #d1cabb,0 4px 6px #1e123533; }
+.sq.pickable { background:#ffffff99; box-shadow:inset 0 0 0 2px #ffcf3a; }
+.wheel { background:radial-gradient(circle at 40% 30%,#fffdf5,#e4e0d8); box-shadow:inset 0 0 0 2px #fff9,inset 0 0 0 7px #b9afa329,0 4px 0 #b5ab9b,0 10px 22px #140a5040; }
+.ltr { font-family:-apple-system,system-ui,sans-serif; font-weight:750; background:linear-gradient(145deg,#ffffff,#eeeae2); box-shadow:inset 0 1px #fff,0 2px 0 #c8c1b5,0 3px 5px #33244526; text-shadow:0 1px #fff; }
+.ltr.sel { background:#5a54f0; box-shadow:inset 0 1px #ffffff40,0 2px 0 #3933ac; text-shadow:none; }
+.sbtn { box-shadow:inset 0 1px #fff,0 2px 0 #d8d1c5,0 5px 10px #140a5033; }
+.cur { letter-spacing:2px; font-family:-apple-system,system-ui,sans-serif; }
+
 </style>
 </head>
 <body>

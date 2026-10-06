@@ -82,6 +82,16 @@ html.gg-fs .found .fw { font-size: 15px; padding: 4px 9px; }
 .wlist span.x { text-decoration: line-through; background: #f1e3e3; color: #9a5a5a; }
 .reslbl { font-weight: 800; font-size: 13px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-top: 6px; }
 .cardicon svg { border-radius: 16px; }
+/* Visual refinement: maple tray, ivory dice and deeply printed letters. */
+.boardwrap { background-image:linear-gradient(#ffffff12,#00000018),url('assets/wood-v1.webp'); background-size:auto,cover; background-color:var(--wr-tray); background-blend-mode:normal,multiply; box-shadow:inset 0 1px #ffffff80,inset 0 0 0 3px #73492555,inset 0 4px 10px #0005,0 3px 7px #0002; }
+.die { background:radial-gradient(ellipse at 35% 15%,#fffef7,var(--wr-die) 50%,var(--wr-die-2)); box-shadow:inset 0 1px 1px #fff,inset -1px -2px 3px #b49a6333,0 3px 0 var(--wr-edge),0 5px 6px #0004; font-weight:800; text-shadow:0 1px #fff; }
+.die::before { content:''; position:absolute; inset:4%; border:1px solid #fff8; border-radius:14%; pointer-events:none; }
+.die.sel { background:linear-gradient(145deg,#fff4c9,var(--wr-sel)); box-shadow:inset 0 1px #fff9,0 2px 0 #c99a2e,0 3px 5px #0003; }
+.die.ok { background:#c8f2dc; } .die.dup { background:#ffe9a8; } .die.bad { background:#ffd0d3; }
+.found .fw { border-radius:7px; font-weight:650; letter-spacing:.3px; }
+.trail path { stroke:rgba(178,76,36,.65); }
+@media (prefers-reduced-motion:reduce) { .board.shaking .die { animation:none; } }
+
 </style>
 </head>
 <body>
