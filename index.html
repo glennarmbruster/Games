@@ -1088,14 +1088,14 @@
 
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
-    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 sudoku huddle wickway perch knotty spotdiff hidden cases nonogram links' },
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
-    { id: 'words', label: 'Words', title: 'Words & trivia', games: 'worddice daily wordwheel trivia spin wordboard' },
-    { id: 'tabletop', label: 'Tabletop', title: 'Cards, dice & boards', games: 'solitaire mahjong dice board casino' },
+    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
   var TAB_KEY = 'goobs.menuTab';
   var activeTab = readLS(TAB_KEY) || 'puzzles';
+  if (activeTab === 'words') { activeTab = 'tabletop'; try { localStorage.setItem(TAB_KEY, JSON.stringify(activeTab)); } catch (e) {} }
   function validTab(id) { return GAME_TABS.some(function (t) { return t.id === id; }); }
   if (!validTab(activeTab)) activeTab = 'puzzles';
   function selectTab(id, focus) {
@@ -1160,6 +1160,7 @@
     }
     // Restore the last category across page reloads and game-to-menu returns.
     var stored = event ? readLS(TAB_KEY) : null;
+    if (stored === 'words') stored = 'tabletop';
     if (validTab(stored)) activeTab = stored;
     var category = GAME_TABS.filter(function (t) { return t.id === activeTab; })[0];
     var ids = activeTab === 'favorites' ? Goobs.favs() : category.games.split(' ');
