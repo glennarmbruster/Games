@@ -972,7 +972,7 @@ var DKSound = (function () {
    a deck shuffleboard court (cream paint, navy lines, both scoring triangles), a cornhole lane beside it (two painted
    boards with real holes), glass railings with a teak handrail, life rings with the ship's name, the pool with its
    ladder, loungers and striped umbrellas at the stern, the sea with the ship's wake, a summer sky with clouds.
-   Everything is drawn here from shapes and canvas textures (no image files).
+   Local teak and sky photographs complement the procedural geometry and canvas textures.
    Coordinates: the game's (x across, +x to the player's right; z away from the player; y up) map to the world as
    (x + lane offset, y, -z), so the camera looks down -z and nothing is mirrored.
    DKScene.build(THREE, canvas, DK) returns what the app needs; the app moves the camera. */
@@ -989,12 +989,15 @@ var DKScene = (function () {
     // ---------------- renderer, camera, lights ----------------
     var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
+    canvas.addEventListener('webglcontextrestored',function(){renderer.shadowMap.needsUpdate=true;sun.shadow.needsUpdate=true;});
     renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
     var scene = new T.Scene(), HAZE = new T.Color('#b9dcf3');
     scene.fog = new T.Fog(HAZE, 140, 1100);
     var camera = new T.PerspectiveCamera(40, 1, 0.05, 2500);
     scene.add(new T.HemisphereLight(0xf0f6ff, 0xc79a6a, 1.05));
     var sun = new T.DirectionalLight(0xfff1dc, 1.7); sun.position.set(7, 12, 9); sun.target.position.set(-1, 0, -8); scene.add(sun); scene.add(sun.target);
+    sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-23;sun.shadow.camera.right=23;sun.shadow.camera.top=25;sun.shadow.camera.bottom=-25;sun.shadow.camera.near=.5;sun.shadow.camera.far=75;sun.shadow.bias=-.00025;sun.shadow.normalBias=.035;
     var fill = new T.DirectionalLight(0xbfe0ff, 0.35); fill.position.set(-6, 5, -12); scene.add(fill);
     // soft reflections from a simple bright sky (the discs, the boards' paint and the railings' glass pick it up)
     try {
@@ -1029,6 +1032,7 @@ var DKScene = (function () {
       m.position.set(Math.cos(a) * d, Math.tan(c[1]) * d + 20, Math.sin(a) * d); m.scale.set(520 * c[2], 260 * c[2], 1); m.renderOrder = -9;
       scene.add(m); clouds.push(m);
     });
+    new T.TextureLoader().load('assets/maritime-sky-v1.webp',function(t){t.colorSpace=T.SRGBColorSpace;t.repeat.y=3;t.offset.y=-1;sky.material.map=t;sky.material.toneMapped=false;sky.material.needsUpdate=true;clouds.forEach(function(c){c.visible=false;});});
     var SEA_Y = -18;
     var seaTex = tex(256, 256, function (x, w, h) {
       x.fillStyle = '#1f6fa8'; x.fillRect(0, 0, w, h);
@@ -1039,7 +1043,17 @@ var DKScene = (function () {
       }
     });
     seaTex.wrapS = seaTex.wrapT = T.RepeatWrapping; seaTex.repeat.set(260, 260);
-    var sea = new T.Mesh(new T.PlaneGeometry(5000, 5000), new T.MeshBasicMaterial({ map: seaTex, color: 0xb8d8ee }));
+    function waveNormals() {
+      var n=256,data=new Uint8Array(n*n*4);
+      for(var y=0;y<n;y++)for(var x=0;x<n;x++){var u=x/n*Math.PI*2,v=y/n*Math.PI*2;
+        var dx=.35*Math.cos(7*u+3*v)+.16*Math.cos(13*u-5*v)+.08*Math.cos(23*u+11*v);
+        var dy=.24*Math.cos(7*u+3*v)-.13*Math.cos(13*u-5*v)+.12*Math.cos(23*u+11*v), len=Math.hypot(dx,dy,1),o=(y*n+x)*4;
+        data[o]=128+127*dx/len;data[o+1]=128+127*dy/len;data[o+2]=128+127/len;data[o+3]=255;
+      }
+      var t=new T.DataTexture(data,n,n);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;
+    }
+    var seaNormal=waveNormals();seaNormal.repeat.set(220,220);
+    var sea = new T.Mesh(new T.PlaneGeometry(5000, 5000), new T.MeshStandardMaterial({ color:0x1d779d,normalMap:seaNormal,normalScale:new T.Vector2(.55,.4),roughness:.26,metalness:.35,envMapIntensity:1.1 }));
     sea.rotation.x = -Math.PI / 2; sea.position.y = SEA_Y; scene.add(sea);
     // the wake: a widening band of foam behind the stern
     var wakeTex = tex(128, 512, function (x, w, h) {
@@ -1073,6 +1087,7 @@ var DKScene = (function () {
     });
     teakTex.wrapS = teakTex.wrapT = T.RepeatWrapping; teakTex.repeat.set(0.5, 0.5);   // (UVs are in meters: 2 m a texture)
     var teakMat = new T.MeshStandardMaterial({ map: teakTex, roughness: 0.78, metalness: 0 });
+    new T.TextureLoader().load('assets/teak-v1.webp',function(t){t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(2/3,2/3);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());teakMat.map=t;teakMat.bumpMap=t;teakMat.bumpScale=.006;teakMat.roughness=.72;teakMat.needsUpdate=true;});
     // the deck: one sheet with the pool cut out of it (shape x = world x, shape y = -world z)
     var PX0 = -11.6, PX1 = -5.2, PZ0 = -17.5, PZ1 = -3.5, PD = 1.4;
     var deckShape = new T.Shape(); deckShape.moveTo(DX0, -DZ1); deckShape.lineTo(DX1, -DZ1); deckShape.lineTo(DX1, -DZ0); deckShape.lineTo(DX0, -DZ0); deckShape.closePath();
@@ -1175,12 +1190,16 @@ var DKScene = (function () {
       }
     });
     waterTex.wrapS = waterTex.wrapT = T.RepeatWrapping; waterTex.repeat.set(3, 6);
-    var water = new T.Mesh(new T.PlaneGeometry(PX1 - PX0, PZ1 - PZ0), new T.MeshStandardMaterial({ map: waterTex, color: 0xd8f6ff, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.88 }));
+    var poolNormal=waveNormals();poolNormal.repeat.set(2,4);
+    var water = new T.Mesh(new T.PlaneGeometry(PX1 - PX0, PZ1 - PZ0), new T.MeshPhysicalMaterial({ color:0x72cedb,normalMap:poolNormal,normalScale:new T.Vector2(.17,.17),roughness:.14,metalness:.05,transparent:true,opacity:.64,clearcoat:1,clearcoatRoughness:.15 }));
     water.rotation.x = -Math.PI / 2; water.position.set((PX0 + PX1) / 2, -0.18, (PZ0 + PZ1) / 2); scene.add(water);
 
     // ---------------- loungers and umbrellas at the stern ----------------
     var frameMat = new T.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.4 });
     var padMats = [new T.MeshStandardMaterial({ color: 0x1aa0b8, roughness: 0.8 }), new T.MeshStandardMaterial({ color: 0xffb33c, roughness: 0.8 })];
+    var upholstery=tex(128,128,function(c,w,h){c.fillStyle='#e5e5df';c.fillRect(0,0,w,h);for(var i=0;i<128;i+=2){c.strokeStyle=i%4?'#d5d5cd':'#f3f3eb';c.lineWidth=.7;c.beginPath();c.moveTo(i,0);c.lineTo(i,h);c.moveTo(0,i);c.lineTo(w,i);c.stroke();}});
+    upholstery.wrapS=upholstery.wrapT=T.RepeatWrapping;upholstery.repeat.set(2,3);
+    padMats.forEach(function(m){m.map=upholstery;m.bumpMap=upholstery;m.bumpScale=.003;m.color.multiplyScalar(.82);});
     function lounger(x, z, ry, k) {
       var g = new T.Group();
       var base = new T.Mesh(new T.BoxGeometry(0.66, 0.07, 1.25), frameMat); base.position.set(0, 0.3, 0.25); g.add(base);
@@ -1213,15 +1232,19 @@ var DKScene = (function () {
     flag.position.set(FPX - 0.8, 6.4, DZ0 + 0.4); flag.rotation.y = Math.PI; scene.add(flag);
     // potted palms in the stern corners and by the lanes
     var potMat = new T.MeshStandardMaterial({ color: 0xf4efe6, roughness: 0.6 }), leafMat = new T.MeshStandardMaterial({ color: 0x2f9a4f, roughness: 0.7, side: T.DoubleSide });
+    var frondTex=tex(128,512,function(c,w,h){c.strokeStyle='#bdcf87';c.lineWidth=3;c.beginPath();c.moveTo(64,505);c.lineTo(64,10);c.stroke();
+      for(var j=0;j<25;j++){var yy=30+j*18,len=12+38*Math.sin(j/25*Math.PI);[-1,1].forEach(function(side){c.fillStyle=j%2?'#678e4e':'#829e5c';c.beginPath();c.moveTo(64,yy+22);c.quadraticCurveTo(64+side*len*.7,yy,64+side*len,yy-22);c.quadraticCurveTo(64+side*len*.4,yy+22,64,yy+26);c.fill();});}
+    });
+    leafMat.map=frondTex;leafMat.alphaTest=.4;leafMat.color.set('#ffffff');leafMat.roughness=.82;
     var trunkMat = new T.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.9 });
     function palm(x, z, s) {
       var g = new T.Group();
       var pot = new T.Mesh(new T.CylinderGeometry(0.34, 0.26, 0.55, 14), potMat); pot.position.y = 0.275; g.add(pot);
       var tr = new T.Mesh(new T.CylinderGeometry(0.06, 0.09, 1.9, 8), trunkMat); tr.position.y = 1.5; tr.rotation.z = 0.06; g.add(tr);
       for (var i = 0; i < 9; i++) {
-        var lf = new T.Mesh(new T.PlaneGeometry(0.34, 1.25, 1, 4), leafMat), pa = lf.geometry.attributes.position;
-        for (var k = 0; k < pa.count; k++) { var yy = pa.getY(k) + 0.625; pa.setZ(k, -yy * yy * 0.28); pa.setX(k, pa.getX(k) * (1 - yy / 1.4)); }
-        lf.geometry.computeVertexNormals(); lf.geometry.translate(0, 0.625, 0);
+        var lf = new T.Mesh(new T.PlaneGeometry(0.75, 1.8, 2, 6), leafMat), pa = lf.geometry.attributes.position;
+        for (var k = 0; k < pa.count; k++) { var yy = pa.getY(k) + 0.9; pa.setZ(k, -yy * yy * 0.28); pa.setX(k, pa.getX(k) * (1 - yy / 2.2)); }
+        lf.geometry.computeVertexNormals(); lf.geometry.translate(0, 0.9, 0);
         var hold = new T.Group(); hold.position.y = 2.42; hold.rotation.y = i * 2 * Math.PI / 9 + rnd(-0.2, 0.2); lf.rotation.x = -1.0 - rnd(0, 0.35); hold.add(lf); g.add(hold);
       }
       g.position.set(x, 0, z); g.scale.setScalar(s || 1); scene.add(g);
@@ -1473,16 +1496,18 @@ var DKScene = (function () {
         mg.setAttribute('position', new T.BufferAttribute(pos, 3)); mg.setAttribute('normal', new T.BufferAttribute(nor, 3)); mg.setAttribute('uv', new T.BufferAttribute(uv, 2));
         if (col) mg.setAttribute('color', new T.BufferAttribute(col, 3));
         mg.computeBoundingSphere();
-        var m = new T.Mesh(mg, groups[k].mat); m.renderOrder = groups[k].order; scene.add(m);
+        var m = new T.Mesh(mg, groups[k].mat);m.castShadow=!m.material.transparent;m.receiveShadow=true; m.renderOrder = groups[k].order; scene.add(m);
       });
     })();
 
+    deck.receiveShadow=true;court.receiveShadow=true;
+    renderer.shadowMap.needsUpdate=true;sun.shadow.needsUpdate=true;
     // ---------------- updates from the app ----------------
     var clock = 0;
     function resize(w, h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
     function render(dt) {
       clock += dt || 0;
-      seaTex.offset.set(clock * 0.004, clock * 0.012);
+      seaTex.offset.set(clock * 0.004, clock * 0.012);seaNormal.offset.set(clock*.002,clock*.005);poolNormal.offset.set(clock*.012,clock*.007);
       waterTex.offset.set(Math.sin(clock * 0.3) * 0.05, clock * 0.02);
       var p = flagGeo.attributes.position;
       for (var i = 0; i < p.count; i++) { var bx = flagBase[i * 3], u = (bx + 0.8) / 1.6; p.setZ(i, Math.sin(clock * 5 - u * 5) * 0.12 * u); }
