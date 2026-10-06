@@ -2,7 +2,7 @@
    Each part has its own version and its own cache. To publish an update, bump ONLY the
    version of the part that changed; unchanged parts are not downloaded again. */
 const VERSIONS = {
-  shell: '2.91.0',     // menu, manifest, icons, /shared (ads, themes, storage)
+  shell: '2.92.0',     // menu, manifest, icons, /shared (ads, themes, storage)
   zoodoku: '1.9.0',
   woodpile: '1.2.0',
   patchwork: '2.2.0',
@@ -36,7 +36,7 @@ const VERSIONS = {
   triple: '1.1.0',
   pinball: '2.0.1',
   parking: '1.1.0',
-  minigolf: '2.0.0',
+  minigolf: '2.1.0',
   board: '1.1.1',
   buzz: '2.0.0',
   golf: '0.4.0',
@@ -107,7 +107,7 @@ const GROUPS = {
   triple: ['games/triple/', 'games/triple/index.html'],
   pinball: ['games/pinball/', 'games/pinball/index.html', 'games/pinball/cabinet.js', 'games/pinball/assets/goober-playfield-v1.webp', 'games/pinball/assets/harbor-playfield-v1.webp'],
   parking: ['games/parking/', 'games/parking/index.html'],
-  minigolf: ['games/minigolf/', 'games/minigolf/index.html', 'games/minigolf/course-art.js', 'games/minigolf/assets/coastal-garden-v1.webp'],
+  minigolf: ['games/minigolf/', 'games/minigolf/index.html', 'games/minigolf/course-art.js', 'games/minigolf/adventure.js', 'games/minigolf/assets/coastal-garden-v1.webp'],
   board: ['games/board/', 'games/board/index.html', 'games/board/assets/wood-v1.webp'],
   buzz: ['games/buzz/', 'games/buzz/index.html'],
   golf: ['games/golf/', 'games/golf/index.html'],

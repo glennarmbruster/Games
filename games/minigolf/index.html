@@ -89,6 +89,13 @@ html.gg-fs-over .top .info .lbl { color:#516455; }
 html.gg-fs-over .top .info .mid { font-size:13px; }
 html.gg-fs-over .top .info .big,html.gg-fs-over .top .info .mid { color:#173f32; }
 html.gg-fs-over .top .iconbtn { background:rgba(250,248,238,.96); color:#173f32; border-color:#aab39b; border-radius:10px; }
+.course-intro { color:var(--muted);font-size:14px; }
+.course-choice { display:block;width:100%;text-align:left;padding:16px;margin:10px 0;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer; }
+.course-choice strong,.course-choice span,.course-choice small {display:block;}
+.course-choice strong {font-size:19px;margin-bottom:7px;}
+.course-choice span {font-size:14px;line-height:1.4;}
+.course-choice small {margin-top:10px;color:var(--muted);}
+.course-choice[aria-pressed="true"] {border-color:#418565;box-shadow:inset 0 0 0 1px #418565;}
 </style>
 </head>
 <body>
@@ -137,6 +144,7 @@ html.gg-fs-over .top .iconbtn { background:rgba(250,248,238,.96); color:#173f32;
   </div>
 
   <div class="toolbar">
+    <button class="tool" id="btnCourse"><svg viewBox="0 0 24 24"><use href="#i-flag"/></svg><span>Choose course</span></button>
     <button class="tool" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New round</span></button>
     <button class="tool" id="btnHoles"><svg viewBox="0 0 24 24"><use href="#i-flag"/></svg><span>Practice</span></button>
     <button class="tool red" id="btnCard"><svg viewBox="0 0 24 24"><use href="#i-card"/></svg><span>Scorecard</span></button>
@@ -144,6 +152,12 @@ html.gg-fs-over .top .iconbtn { background:rgba(250,248,238,.96); color:#173f32;
   </div>
 </div>
 
+<div class="overlay" id="ovCourse"><div class="sheet" role="dialog" aria-label="Choose course">
+<h2>Choose your course</h2><div class="sheetbody">
+<p class="course-intro">Two 18-hole courses. Each keeps its own round and records.</p>
+<button class="course-choice" data-course="adventure"><strong>Coastal Adventure</strong><span>Island crossings, bank shots, a shipwreck, timed gates and alternate routes.</span><small>New course · 18 holes</small></button>
+<button class="course-choice" data-course="classic"><strong>Classic Seaside</strong><span>The original course, with your existing scores and saved round.</span><small>Original course · 18 holes</small></button>
+</div><div class="actions"><button class="btn red" id="btnCloseCourse">Keep playing</button></div></div></div>
 <!-- Settings -->
 <div class="overlay" id="ovSettings">
   <div class="sheet" role="dialog" aria-label="Settings">
@@ -338,10 +352,11 @@ var MG = (function () {
     for (var i = 0; i < 120 * 30 && b.moving; i++) { t += DT; var ev = step(h, b, t); if (ev.some(function (e) { return e.t === 'water'; })) water = true; }
     return { b: b, water: water, sunk: b.sunk, t: t };
   }
-  return { HOLES: HOLES, R: R, CUP: CUP, DT: DT, MAXV: MAXV, newRound: newRound, ball: ball, shoot: shoot, step: step, simulate: simulate, millBlades: millBlades, millDoor: millDoor, moverPos: moverPos, slopeAt: slopeAt, inPoly: inPoly, inWater: inWater, inSand: inSand };
+  return { buildHole: H, HOLES: HOLES, R: R, CUP: CUP, DT: DT, MAXV: MAXV, newRound: newRound, ball: ball, shoot: shoot, step: step, simulate: simulate, millBlades: millBlades, millDoor: millDoor, moverPos: moverPos, slopeAt: slopeAt, inPoly: inPoly, inWater: inWater, inSand: inSand };
 })();
 if (typeof module !== 'undefined') module.exports = MG;
 </script>
+<script src="adventure.js"></script>
 <script>
 /* Seaside Putt art: everything drawn with canvas paths in hole units (100 × 170). The app sets the transform.
    Static parts (sea, green, sand, water, walls, houses, cup) are drawn once per hole into a cache; moving parts
@@ -527,16 +542,19 @@ var SPSound = (function () {
    practice holes, saves, stats and house ads between holes. */
 (function () {
   'use strict';
-  var S = SPSound, HOLES = MG.HOLES, MAXS = 8;
+  var rootStore=Goobs.store('minigolf');
+  var course=rootStore.get('course','adventure');
+  if(course!=='classic')course='adventure';
+  var S = SPSound, HOLES = MG.COURSES[course], MAXS = 8;MG.HOLES=HOLES;
   var PCOL = ['#ffffff', '#ff7ac8', '#ffd21e', '#5ad1ff'], PNAME = ['White', 'Pink', 'Gold', 'Blue'];
 
   // ================= storage =================
-  var store = Goobs.store('minigolf');
+  var store=course==='classic'?rootStore:Goobs.store('minigolf.adventure');
   var settings = { sound: false, adEvery: 6, players: 1, guide: true };
-  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(18, Math.max(1, settings.adEvery | 0)); settings.players = Math.min(4, Math.max(1, settings.players | 0)); })();
-  function saveSettings() { store.set('settings', settings); }
+  (function () { var s = rootStore.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(18, Math.max(1, settings.adEvery | 0)); settings.players = Math.min(4, Math.max(1, settings.players | 0)); })();
+  function saveSettings() { rootStore.set('settings', settings); }
   var meta = store.get('meta', null) || {};
-  var MD = { seen: false, finished: 0, lastAdAt: 0, reached: 0, best: 0, hole: 0 };
+  var MD = { seen: !!rootStore.get('meta',{}).seen, finished: 0, lastAdAt: 0, reached: 0, best: 0, hole: 0 };
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
   function saveMeta() { store.set('meta', meta); }
   var stats = store.get('stats', null) || {};
@@ -546,7 +564,7 @@ var SPSound = (function () {
 
   function $(id) { return document.getElementById(id); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function sheetOpen() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovCard') || isOpen('ovHoles') || GoobsAds.isOpen(); }
+  function sheetOpen() { return isOpen('ovCourse') || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovCard') || isOpen('ovHoles') || GoobsAds.isOpen(); }
   function fmt(n) { return (n || 0).toLocaleString(); }
   function sum(a) { return a.reduce(function (s, v) { return s + (v || 0); }, 0); }
   function parThrough(n) { var p = 0; for (var i = 0; i < n; i++) p += HOLES[i].par; return p; }
@@ -836,7 +854,7 @@ var SPSound = (function () {
     });
     var foot = '<tr class="tot"><td></td><td>Total</td><td>' + parThrough(HOLES.length) + '</td>' + tots.map(function (v) { return '<td>' + (v || '') + '</td>'; }).join('') + '</tr>';
     if (r && totPar) foot += '<tr class="tot"><td></td><td>vs par</td><td></td>' + tots.map(function (v) { return '<td>' + vs(v - totPar) + '</td>'; }).join('') + '</tr>';
-    $('cardTitle').textContent = r && r.over ? 'Final scorecard' : 'Scorecard';
+    $('cardTitle').textContent = (course==='classic'?'Classic':'Adventure')+' · '+(r && r.over ? 'Final scorecard' : 'Scorecard');
     $('cardBody').innerHTML = '<table class="sc">' + head + rows + foot + '</table>';
     $('ovCard').classList.add('show');
   }
@@ -896,9 +914,11 @@ var SPSound = (function () {
     $('btnHelp').addEventListener('click', openHelp);
     // Full screen (1.1.0): the sea and course fill the screen, the hole and stroke counters ride in the floating top row,
     // Scorecard, Practice, New round, How to, Stats and Settings are in the Menu (the ball keeps rolling, aiming waits)
-    Goobs.fullscreen({ overlay: true, menu: ['btnCard', 'btnHoles', 'btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
-      info: function () { return cur ? (mode === 'prac' ? 'Practice · ' : 'Round · ') + 'hole <b>' + (hIdx() + 1) + '</b> of ' + HOLES.length + ' · ' + hole().name : ''; } });
+    Goobs.fullscreen({ overlay: true, menu: ['btnCourse', 'btnCard', 'btnHoles', 'btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { return cur ? (course==='classic'?'Classic Seaside':'Coastal Adventure')+' · '+(mode === 'prac' ? 'Practice · ' : '') + 'hole <b>' + (hIdx() + 1) + '</b> of ' + HOLES.length + ' · ' + hole().name : ''; } });
     document.querySelector('.top').insertBefore($('info'), document.querySelector('.top .topbtns'));
+    sheet('btnCourse','ovCourse','btnCloseCourse',function(){document.querySelectorAll('[data-course]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.course===course));});});
+    document.querySelectorAll('[data-course]').forEach(function(b){b.addEventListener('click',function(){if(b.dataset.course===course){$('ovCourse').classList.remove('show');return;}save();rootStore.set('course',b.dataset.course);location.reload();});});
     $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
     $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
     $('setGuide').addEventListener('change', function () { settings.guide = this.checked; saveSettings(); });
@@ -920,7 +940,7 @@ var SPSound = (function () {
     Goobs.markPlayed('minigolf');
     Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Seaside Putt ' + (v.minigolf || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
-  window.__sp = { get round() { return round; }, get cur() { return cur; }, get mode() { return mode; }, get t() { return t; }, shoot: shoot, newRound: newRound, startPractice: startPractice, backToRound: backToRound, MG: MG,
+  window.__sp = { get course(){return course;}, get round() { return round; }, get cur() { return cur; }, get mode() { return mode; }, get t() { return t; }, shoot: shoot, newRound: newRound, startPractice: startPractice, backToRound: backToRound, MG: MG,
     jump: function (i) { round.hole = i; round.p = 0; startTurn(); save(); } };
   init();
 })();

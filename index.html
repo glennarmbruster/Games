@@ -692,14 +692,14 @@
       }
     },
     {
-      id: 'minigolf', name: 'Seaside Putt', blurb: '18 holes of mini golf by the sea', path: 'games/minigolf/',
+      id: 'minigolf', name: 'Seaside Putt', blurb: 'Two courses. 36 seaside holes.', path: 'games/minigolf/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#2fb4e0"/><path d="M0 84c12-6 22-6 34 0s22 6 34 0 22-6 32-1V100H0z" fill="#1d8fd0" opacity=".6"/>' +
         '<rect x="12" y="10" width="76" height="72" rx="16" fill="#e8b36a"/><rect x="17" y="15" width="66" height="62" rx="12" fill="#4cc25a"/><path d="M17 33h66M17 55h66" stroke="#5fd06b" stroke-width="9" opacity=".7"/>' +
         '<rect x="40" y="44" width="30" height="8" rx="2" fill="#e8505b"/><g transform="rotate(30 55 48)" fill="#fffaf0" stroke="#8a5a2b" stroke-width="1"><rect x="55" y="45.5" width="16" height="5"/><rect x="39" y="45.5" width="16" height="5"/></g><circle cx="55" cy="48" r="3" fill="#5b3a1e"/>' +
         '<ellipse cx="62" cy="27" rx="5" ry="4" fill="#16211a"/><path d="M62 27V8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M63 8l13 5-13 5z" fill="#ff4d5e"/>' +
         '<circle cx="34" cy="66" r="5.5" fill="#fff" stroke="#1f2a44" stroke-width="1.6"/><circle cx="32.5" cy="64.5" r="1.6" fill="#e8eef8"/></svg>',
       status: function () {
-        var m = readLS('minigolf.meta'); if (!m || !(m.reached > 0 || m.best)) return '18 holes of mini golf by the sea';
+        var course=readLS('minigolf.course')||'adventure';var m = readLS(course==='classic'?'minigolf.meta':'minigolf.adventure.meta'); if (!m || !(m.reached > 0 || m.best)) return 'Coastal Adventure + Classic · 36 holes';
         return m.best ? 'Best round ' + m.best : 'On hole ' + ((m.hole || 0) + 1);
       }
     },
