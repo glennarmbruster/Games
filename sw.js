@@ -2,7 +2,7 @@
    Each part has its own version and its own cache. To publish an update, bump ONLY the
    version of the part that changed; unchanged parts are not downloaded again. */
 const VERSIONS = {
-  shell: '2.93.0',     // menu, manifest, icons, /shared (ads, themes, storage)
+  shell: '2.94.0',     // menu, manifest, icons, /shared (ads, themes, storage)
   zoodoku: '1.9.0',
   woodpile: '1.2.0',
   patchwork: '2.2.0',
@@ -17,12 +17,12 @@ const VERSIONS = {
   solitaire: '1.1.1',
   meanbirds: '1.2.0',
   aliens: '1.2.0',
-  worddice: '1.1.1',
+  worddice: '1.2.0',
   digger: '1.2.0',
   blocks: '1.3.0',
   maze: '1.1.0',
   mahjong: '1.3.1',
-  dice: '1.1.1',
+  dice: '1.2.0',
   daily: '1.3.3',
   mines: '1.1.0',
   bubbles: '1.4.0',
