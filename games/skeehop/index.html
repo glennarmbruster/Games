@@ -570,7 +570,7 @@ var SHRender = (function () {
     // iOS can drop the 3D context after a long time in the background: rebuild the machine when it comes back
     if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
     canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); });
-    canvas.addEventListener('webglcontextrestored', function () { if (theme) build(theme); resize(); });
+    canvas.addEventListener('webglcontextrestored', function () { refreshStudio(); if (theme) build(theme); resize(); });
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(46, 1, 0.1, 60);
     var W = 1, H = 1;
@@ -608,8 +608,24 @@ var SHRender = (function () {
 
     // ---------- lights ----------
     var hemi = new THREE.HemisphereLight(0xffffff, 0x404050, 1.1); scene.add(hemi);
-    var sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-2, 6, -3); scene.add(sun);
+    var fill = new THREE.DirectionalLight(0xb9d8f5, .65); fill.position.set(4, 3, 4); scene.add(fill);
+    var sun = new THREE.DirectionalLight(0xfff1d9, 1.6); sun.position.set(-2, 6, -3); scene.add(sun);
     var glowLight = new THREE.PointLight(0xffd23f, 3, 5, 1.6); glowLight.position.set(0, 2.2, 8.2); scene.add(glowLight);
+
+    // Local studio reflections give lacquer, resin and metal coherent highlights.
+    var studioTarget=null;
+    function refreshStudio() {
+    if(studioTarget) studioTarget.dispose();
+    var studio = canvasTex(512,256,function(c,w,h){
+      c.fillStyle='#363d49';c.fillRect(0,0,w,h);c.fillStyle='#171b24';c.fillRect(0,h*.55,w,h*.45);
+      var wash=c.createLinearGradient(0,0,0,h*.5);wash.addColorStop(0,'#bec7cf');wash.addColorStop(1,'#536071');c.fillStyle=wash;c.fillRect(0,0,w,h*.5);
+      c.fillStyle='#fff4da';c.fillRect(w*.12,h*.16,w*.08,h*.2);c.fillStyle='#e2eeff';c.fillRect(w*.63,h*.12,w*.16,h*.12);
+    });
+    studio.mapping=THREE.EquirectangularReflectionMapping;
+    var pmrem=new THREE.PMREMGenerator(renderer);studioTarget=pmrem.fromEquirectangular(studio);
+    scene.environment=studioTarget.texture;scene.environmentIntensity=.45;studio.dispose();pmrem.dispose();
+    }
+    refreshStudio();
 
     var H2 = SH.HALF, LZ = SH.LZ, RL = SH.RL, B0 = SH.B0, SB = SH.SB, TH = SH.TH;
     // physics x is mirrored for display so that +x (the ball's right) shows on the right of the screen
@@ -642,19 +658,24 @@ var SHRender = (function () {
       });
     }
     function laneTexture(t) {
-      return canvasTex(256, 1024, function (x, w, h) {
+      return canvasTex(512, 2048, function (x, w, h) {
         var planks = 8;
         for (var i = 0; i < planks; i++) {
           var gr = x.createLinearGradient(0, 0, 0, h);
           var base = i % 2 ? t.lane : shade(t.lane, -0.06);
           gr.addColorStop(0, base); gr.addColorStop(1, shade(base, 0.08));
           x.fillStyle = gr; x.fillRect(i * w / planks, 0, w / planks, h);
-          x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 2; x.beginPath(); x.moveTo(i * w / planks, 0); x.lineTo(i * w / planks, h); x.stroke();
+          x.strokeStyle = 'rgba(75,39,15,.22)'; x.lineWidth = 1; x.beginPath(); x.moveTo(i * w / planks, 0); x.lineTo(i * w / planks, h); x.stroke();
         }
         // wood grain
         x.globalAlpha = 0.12; x.strokeStyle = t.laneB;
         for (var k = 0; k < 90; k++) { var gx = (k * 37) % w, gy = (k * 113) % h; x.lineWidth = 1 + (k % 3); x.beginPath(); x.moveTo(gx, gy); x.bezierCurveTo(gx + 4, gy + 40, gx - 4, gy + 80, gx + 2, gy + 140); x.stroke(); }
-        x.globalAlpha = 1;
+        // Fine deterministic grain and staggered plank joints; generated once per theme.
+        x.globalAlpha=.13; x.lineWidth=.65;
+        for(var grain=0;grain<240;grain++) {var gxx=(grain*47.17)%w, gy0=(grain*131.71)%h; x.beginPath();x.moveTo(gxx,gy0);x.bezierCurveTo(gxx+Math.sin(grain)*3,gy0+80,gxx-2,gy0+190,gxx+1,gy0+310);x.stroke();}
+        x.globalAlpha=.22;x.lineWidth=1;
+        for(var joint=0;joint<planks;joint++){var jy=h*(.22+(joint%3)*.24);x.beginPath();x.moveTo(joint*w/planks,jy);x.lineTo((joint+1)*w/planks,jy);x.stroke();}
+        var sheen=x.createLinearGradient(0,0,w,0);sheen.addColorStop(0,'rgba(0,0,0,.13)');sheen.addColorStop(.4,'rgba(255,247,221,.1)');sheen.addColorStop(1,'rgba(0,0,0,.13)');x.globalAlpha=1;x.fillStyle=sheen;x.fillRect(0,0,w,h);
         // arrows and dots (aiming marks); canvas top = far end of the lane
         x.fillStyle = shade(t.laneB, -0.25);
         for (var a = 0; a < 5; a++) {
@@ -678,7 +699,7 @@ var SHRender = (function () {
         var c = P(0, SH.CS), radii = [SH.RINGS[3], SH.RINGS[2], SH.RINGS[1], SH.RINGS[0]];
         radii.forEach(function (r, i) {
           x.beginPath(); x.arc(c[0], c[1], r * PX, 0, Math.PI * 2);
-          x.fillStyle = shade(t.board, -0.08 - i * 0.07); x.fill();
+          x.fillStyle = shade(t.board, -0.08 - i * 0.07); x.fill(); x.strokeStyle='rgba(0,0,0,.38)';x.lineWidth=7;x.stroke();x.strokeStyle='rgba(255,255,255,.10)';x.lineWidth=1.5;x.stroke();
         });
         // holes at the bottom of each ring band
         ['20', '30', '40'].forEach(function (z) {
@@ -717,7 +738,7 @@ var SHRender = (function () {
           [18, h - 18].forEach(function (by) { x.beginPath(); x.arc(bx, by, 7, 0, 7); x.fillStyle = i % 2 ? t.glow : '#fff6d8'; x.fill(); });
         }
         x.textAlign = 'center'; x.textBaseline = 'middle';
-        x.font = 'italic 900 128px system-ui, -apple-system, sans-serif';
+        x.font = '800 116px system-ui, -apple-system, sans-serif';
         x.lineWidth = 14; x.strokeStyle = 'rgba(0,0,0,.55)'; x.strokeText('SKEE-HOP', w / 2, h / 2 + 6);
         x.fillStyle = t.trim; x.fillText('SKEE-HOP', w / 2, h / 2 + 4);
         x.fillStyle = 'rgba(255,255,255,.45)'; x.fillText('SKEE-HOP', w / 2, h / 2);
@@ -733,20 +754,29 @@ var SHRender = (function () {
       return canvasTex(256, 128, function (x, w, h) {
         x.fillStyle = t.ball; x.fillRect(0, 0, w, h);
         x.fillStyle = shade(t.glow, -0.1); x.fillRect(0, h * 0.44, w, h * 0.12);
-        x.fillStyle = 'rgba(0,0,0,.08)'; for (var i = 0; i < w; i += 32) x.fillRect(i, 0, 3, h);
+        // Resin-like fine stipple, without seams around the sphere.
+        for(var i=0;i<1800;i++){x.fillStyle=i%2?'rgba(255,255,255,.12)':'rgba(0,0,0,.10)';x.fillRect((i*73.37)%w,(i*31.71)%h,.8,.8);}
+        x.fillStyle='rgba(255,255,255,.38)';x.fillRect(0,h*.44,w,1);x.fillRect(0,h*.56,w,1);
       });
     }
 
+    function floorTexture(t) {
+      var tex=canvasTex(256,256,function(c,w,h){c.fillStyle=shade(t.sky[0],-.35);c.fillRect(0,0,w,h);
+        for(var i=0;i<3500;i++){c.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(0,0,0,.06)';c.fillRect((i*59.37)%w,(i*107.13)%h,1,1);}
+        c.strokeStyle='rgba(255,255,255,.05)';c.lineWidth=1;c.strokeRect(.5,.5,w-1,h-1);});
+      tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(8,10);return tex;
+    }
     var ringMats = [], ringMeshes = {}, zoneGlow = {}, ball = null, shadow = null, sparks = [];
     function build(t) {
       clear(); theme = t; ringMats = []; ringMeshes = {}; zoneGlow = {};
+      if(scene.background && scene.background.dispose) scene.background.dispose();
       scene.background = skyTexture(t);
       glowLight.color.set(t.glow);
       // lane
       var lane = quad([-H2, 0, 0], [H2, 0, 0], [-H2, 0, LZ], [H2, 0, LZ], [0, 1, 0], mat(0xffffff, { map: laneTexture(t), rough: 0.35 }));
       group.add(lane);
       // floor around the machine (below everything)
-      var floor = quad([-8, -0.4, -4], [8, -0.4, -4], [-8, -0.4, 16], [8, -0.4, 16], [0, 1, 0], mat(shade(t.sky[0], -0.4), { rough: 1 }));
+      var floor = quad([-8, -0.4, -4], [8, -0.4, -4], [-8, -0.4, 16], [8, -0.4, 16], [0, 1, 0], mat(0xffffff, { map:floorTexture(t), rough: .95 }));
       group.add(floor);
       // ramp: a curved sheet
       (function () {
@@ -775,13 +805,13 @@ var SHRender = (function () {
       var tube = 0.022;
       SH.RINGS.forEach(function (R, i) {
         var col = t.rings[4 - i];
-        var m = mat(col, { emissive: col, ei: 0.9, rough: 0.3 });
+        var m = mat(col, { emissive: col, ei: 0.32, rough: 0.26, metal: .3 });
         var tor = new THREE.Mesh(new THREE.TorusGeometry(R, tube, 8, 72), m);
         tor.position.set(0, SH.CS, bz(SH.LIPH * 0.6)); boardG.add(tor);
         ringMats.push(m); ringMeshes[['50', '40', '30', '20'][i]] = tor;
       });
       [-1, 1].forEach(function (sd) {
-        var m = mat(t.pocket, { emissive: t.pocket, ei: 1, rough: 0.3 });
+        var m = mat(t.pocket, { emissive: t.pocket, ei: .4, rough: .26, metal:.3 });
         var tor = new THREE.Mesh(new THREE.TorusGeometry(SH.POCKET.r, tube, 8, 40), m);
         tor.position.set(sd * SH.POCKET.x, SH.POCKET.s, bz(SH.LIPH * 0.6)); boardG.add(tor);
         ringMats.push(m); ringMeshes[sd < 0 ? '100L' : '100R'] = tor;
@@ -802,12 +832,16 @@ var SHRender = (function () {
       var bar = new THREE.Mesh(new THREE.BoxGeometry(2 * H2, 0.03, SH.LIPH + 0.02), mat(t.trim, { emissive: t.trim, ei: 0.4, rough: 0.3 }));
       bar.position.set(0, SH.SLIP, bz((SH.LIPH + 0.02) / 2)); boardG.add(bar);
       // cabinet: side rails along the lane, tall side panels by the board, back wall with the marquee
-      var cabM = mat(t.cab, { rough: 0.45 }), trimM = mat(t.trim, { emissive: t.trim, ei: 0.45, rough: 0.3 });
+      var cabM = mat(t.cab, { rough: 0.32, metal:.12 }), trimM = mat(t.trim, { emissive: t.trim, ei: 0.12, rough: 0.24, metal:.35 });
       [-1, 1].forEach(function (sd) {
         var rail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.34, LZ + RL + 0.1), cabM);
         rail.position.set(sd * (H2 + 0.07), 0.12, (LZ + RL) / 2 - 0.05); group.add(rail);
         var strip = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, LZ + RL + 0.1), trimM);
         strip.position.set(sd * (H2 + 0.07), 0.3, (LZ + RL) / 2 - 0.05); group.add(strip);
+        for(var fix=0;fix<4;fix++) {
+          var screw=new THREE.Mesh(new THREE.CylinderGeometry(.023,.023,.008,8),mat(0xc0c5c6,{metal:.4,rough:.3}));
+          screw.position.set(sd*(H2+.07),.319,.35+fix*(LZ+RL-.6)/3);group.add(screw);
+        }
         // side panel shaped to the cabinet
         var shape = new THREE.Shape();
         shape.moveTo(LZ - 0.2, -0.4); shape.lineTo(SH.BACKZ + 0.15, -0.4); shape.lineTo(SH.BACKZ + 0.15, SH.CEIL + 0.9);
@@ -952,7 +986,7 @@ var SHRender = (function () {
         if (f) { var k = (now - f) / 700; if (k < 1) { o = Math.max(o, 0.7 * (1 - k)); busy = true; } else delete flashes[z]; }
         zoneGlow[z].material.opacity = o;
         var tor = ringMeshes[z];
-        if (tor) tor.material.emissiveIntensity = 0.9 + o * 3;
+        if (tor) tor.material.emissiveIntensity = 0.32 + o * 3;
       });
       glowLight.intensity = 2.6 + (bonus ? 0.8 * Math.sin(now / 140) : 0);
       return busy;
