@@ -151,6 +151,19 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
   .opps h3 { margin-top: 2px; }
   .startnote { margin-bottom: 6px; font-size: 13px; }
 }
+
+/* Deliberate shuffleboard controls: native sliders support touch, mouse and keyboard. */
+.shuffle-controls { position:fixed; z-index:6; left: max(10px,env(safe-area-inset-left)); right:max(10px,env(safe-area-inset-right)); bottom:calc(8px + env(safe-area-inset-bottom)); max-width:460px; margin:auto; padding:8px 12px; border-radius:16px; background:rgba(250,249,244,.97); color:#142847; box-shadow:0 3px 18px #10233a40; }
+.shuffle-controls[hidden] { display:none; }
+.shuffle-controls label { display:grid; grid-template-columns:48px 1fr 48px; align-items:center; gap:8px; font-size:13px; font-weight:700; }
+.shuffle-controls input { width:100%; height:44px; margin:0; accent-color:#146b80; touch-action:pan-x; }
+.shuffle-controls output { text-align:right; font-variant-numeric:tabular-nums; font-size:12px; }
+.shuffle-controls footer { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.shuffle-controls small { font-size:11px; line-height:1.3; color:#526477; }
+.shuffle-controls button { min-height:44px; min-width:104px; border:0; border-radius:11px; background:#146b80; color:white; font:800 16px system-ui; cursor:pointer; }
+.shuffle-controls button:active { background:#104e60; transform:translateY(1px); }
+body.shuffle-aim .turn { top:103px; bottom:auto; left:10px; transform:none; max-width:calc(100vw - 125px); font-size:12px; padding:7px 9px; }
+@media (orientation:landscape) and (max-height:500px) { .shuffle-controls { display:none; } }
 </style>
 </head>
 <body>
@@ -172,6 +185,11 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 
 <canvas id="cv3"></canvas>
 <canvas id="swipe"></canvas>
+<section id="shuffleControls" class="shuffle-controls" aria-label="Shuffleboard shot" hidden>
+  <label for="shotAim">Aim <input id="shotAim" type="range" min="-100" max="100" value="0" step="1"><output id="aimValue" for="shotAim">Center</output></label>
+  <label for="shotPower">Power <input id="shotPower" type="range" min="10" max="100" value="50" step="1"><output id="powerValue" for="shotPower">50</output></label>
+  <footer><small>50 ≈ the 10 zone<br>Slide on deck to position disc</small><button id="btnPush" type="button">Push</button></footer>
+</section>
 
 <div class="app" id="app">
   <div class="top">
@@ -1531,8 +1549,8 @@ var DKScene = (function () {
 <script src="../../shared/ads.js"></script>
 <script>
 /* Lido Deck app: two deck games on a cruise ship's pool deck, Shuffleboard and Cornhole, each against the phone
-   (Sunny, Skipper, the Commodore), two players passing the phone, or practice. Slide sideways to line up, swipe up
-   to push the disc or throw the bag (a faster swipe goes farther; the swipe's tilt aims). The rules, physics and
+   (Sunny, Skipper, the Commodore), two players passing the phone, or practice. Shuffleboard uses explicit aim/power and Push; sideways dragging places the disc.
+   Cornhole retains its speed-and-tilt swipe to throw. The rules, physics and
    bots are in logic.js (DK), the 3D deck in scene.js (three.js from /shared), sounds in sound.js. Each game keeps
    its own match going and saves after every shot; stats; house ads only between games. */
 (function () {
@@ -1598,6 +1616,7 @@ var DKScene = (function () {
   function startGame(opp) {
     var g = DK.newGame(mode, opp, { target: settings.target });
     g.names = null;
+    if(mode==='shuffle') { $('shotAim').value=0; $('shotPower').value=50; updateShotControls(); }
     games[mode] = G = g; saveGame();
     $('ovStart').classList.remove('show'); $('ovEnd').classList.remove('show');
     S.hissStop(); fade = []; framePieces = null; endShown = false; lastRes = null;
@@ -1613,12 +1632,13 @@ var DKScene = (function () {
     renderHud();
     if (isHuman(side)) {
       phase = 'aim';
+      if(mode==='shuffle') updateShotControls();
       var n = names();
       // pass-and-play: the name on the turn banner, and a nudge to pass the phone (the shot's result keeps the middle)
       if (G.opp === 'two') { $('turn').innerHTML = dot(side) + esc(n[side]) + '’s turn <small>· ' + DK.left(G, side) + ' ' + piece() + (DK.left(G, side) === 1 ? '' : 's') + ' left</small>'; if (G.shot > 0 || G.frame > 1) tip('Pass to <b>' + esc(n[side]) + '</b>', 1600); }
       else $('turn').innerHTML = dot(side) + 'Your turn <small>· ' + DK.left(G, side) + ' ' + piece() + (DK.left(G, side) === 1 ? '' : 's') + ' left</small>';
       var learn = (mode === 'shuffle' ? meta.hs : meta.hc) < 3;
-      if (learn) tip(mode === 'shuffle' ? 'Slide sideways to set your disc · <b>swipe up</b> to push<br>A faster swipe pushes harder; tilt it to angle' : 'Slide sideways to pick your spot · <b>swipe up</b> to throw<br>A faster swipe throws farther; tilt it to aim', 6000);
+      if (learn) tip(mode === 'shuffle' ? 'Set <b>Aim</b> and <b>Power</b>, then tap <b>Push</b>' : 'Slide sideways to pick your spot · <b>swipe up</b> to throw<br>A faster swipe throws farther; tilt it to aim', 6000);
       else if (first) tip('');
     } else {
       phase = 'think'; thinkT = 0;
@@ -1854,7 +1874,7 @@ var DKScene = (function () {
         SC.setCue(sh.x0 + Math.sin(sh.ang) * tr, SB.ZSTART + Math.cos(sh.ang) * tr, sh.ang, true);
       } else SC.setCue(0, 0, 0, false);
       // the aim line: from the waiting disc, the way it would go
-      if (phase === 'aim' && G && (settings.aim || liveAim != null)) {
+      if (phase === 'aim' && G && (settings.aim || (mode !== 'shuffle' && liveAim != null))) {
         var a2 = liveAim != null ? liveAim : 0, x0 = curX(), pts = [];
         for (var i = 0; i < 18; i++) { var d0 = 0.2 + i * 0.42, d1 = d0 + 0.24; pts.push([x0 + Math.sin(a2) * d0, 0.006, SB.ZSTART + Math.cos(a2) * d0], [x0 + Math.sin(a2) * d1, 0.006, SB.ZSTART + Math.cos(a2) * d1]); }
         SC.setAim('shuffle', pts, liveAim != null ? '#ff5a1f' : '#1aa0b8', 0.028);
@@ -1878,7 +1898,7 @@ var DKScene = (function () {
         }
       }
       SC.setBags(bl); SC.setDiscs([]); SC.setCue(0, 0, 0, false);
-      if (phase === 'aim' && G && (settings.aim || liveAim != null)) {
+      if (phase === 'aim' && G && (settings.aim || (mode !== 'shuffle' && liveAim != null))) {
         var x1 = curX(), psi = CH.aimBase(x1) + (liveAim != null ? liveAim : 0), pts2 = [];
         for (var j = 0; j < 14; j++) { var e0 = 0.6 + j * 0.56, e1 = e0 + 0.28; pts2.push([x1 + Math.sin(psi) * e0, 0.01, CH.Z0 + Math.cos(psi) * e0], [x1 + Math.sin(psi) * e1, 0.01, CH.Z0 + Math.cos(psi) * e1]); }
         SC.setAim('corn', pts2, liveAim != null ? '#ff5a1f' : '#1aa0b8', 0.045);
@@ -1996,6 +2016,9 @@ var DKScene = (function () {
     if (!SC) return;
     var dt = Math.min(0.05, (t - lastT) / 1000 || 0.016); lastT = t; clock += dt;
     var paused = sheetOpen() || document.hidden;
+    var controlsOn=mode==='shuffle' && phase==='aim' && !!G && !paused;
+    $('shuffleControls').hidden=!controlsOn;
+    document.body.classList.toggle('shuffle-aim',controlsOn);
     if (!paused && G) {
       if (phase === 'think') {
         thinkT += dt;
@@ -2065,6 +2088,10 @@ var DKScene = (function () {
   function onMove(e) {
     if (!touch || e.pointerId !== touch.id || phase !== 'aim') return;
     var dx = e.clientX - touch.x0, dy = e.clientY - touch.y0, side = DK.shooter(G);
+    if(mode==='shuffle') {
+      if(Math.abs(dx)>6 || touch.mode==='move') { touch.mode='move'; G.xs[side]=clamp(touch.gx+dx/(W/1.7),-SB.XMAX,SB.XMAX); }
+      return;
+    }
     if (!touch.mode && Math.hypot(dx, dy) > 10) touch.mode = Math.abs(dx) > Math.abs(dy) * 1.1 ? 'move' : dy < 0 ? 'throw' : 'none';
     if (touch.mode === 'move') {
       var pxm = W / (mode === 'shuffle' ? 1.7 : 2.2), raw = touch.gx + dx / pxm;
@@ -2078,6 +2105,7 @@ var DKScene = (function () {
     if (!touch || (e && e.pointerId !== touch.id)) return;
     var t = touch; touch = null;
     if (phase !== 'aim') return;
+    if(mode==='shuffle') { saveGame(); return; }
     if (t.mode === 'move') { saveGame(); return; }
     if (t.mode !== 'throw') { liveAim = null; if (!t.mode) tip('Swipe <b>up</b> to ' + (mode === 'shuffle' ? 'push' : 'throw') + ' · slide sideways to move'); return; }
     var p = t.pts, a = p[0], z = p[p.length - 1];
@@ -2086,6 +2114,20 @@ var DKScene = (function () {
     var i = p.length - 1; while (i > 0 && z[2] - p[i][2] < 120) i--;
     var dtm = Math.max(16, z[2] - p[i][2]), f = (p[i][1] - z[1]) / dtm * 1000 / H;
     humanShot(f, tiltOf(p));
+  }
+  function updateShotControls() {
+    var aim=+$('shotAim').value, power=+$('shotPower').value;
+    $('aimValue').textContent=aim===0?'Center':Math.abs(aim)+(aim<0?' L':' R');
+    $('shotAim').setAttribute('aria-valuetext',aim===0?'Straight ahead':Math.abs(aim)+' percent '+(aim<0?'left':'right'));
+    $('powerValue').textContent=power;
+    if(mode==='shuffle') liveAim=aim*.0012;
+  }
+  function pushSelectedShot() {
+    if(mode!=='shuffle'||phase!=='aim'||!G||sheetOpen()) return;
+    S.unlock();
+    var power=+$('shotPower').value, shot=SB.fromSwipe(power/25,0);
+    shoot({x0:G.xs[DK.shooter(G)],v:shot.v,ang:+$('shotAim').value*.0012,power:power});
+    $('shuffleControls').hidden=true;
   }
   function humanShot(f, tilt) {
     var side = DK.shooter(G), x0 = G.xs[side];
@@ -2146,7 +2188,7 @@ var DKScene = (function () {
     ];
     var L = mode === 'shuffle' ? [
       '<b>Line up</b>: slide your finger sideways to set your disc anywhere behind the baseline.',
-      '<b>Push</b>: swipe up. A faster swipe pushes harder (the number bottom right: about 50 reaches the 10); tilt the swipe to angle the push. The dashed line shows your aim.',
+      '<b>Push</b>: adjust Aim and Power, then tap Push. The dashed line previews your direction. Power 50 reaches roughly the 10 zone on an empty court; increase it to push farther or knock discs. Power depends on the setting, not how fast you move your finger. Settings stay selected for your next shot; a new game resets them.',
       '<b>Scoring</b>: the triangle at the far end. <b>10</b> at the tip, <b>8</b> and <b>7</b> below it, and <b>10 OFF</b> (the kitchen) at the base. A disc counts only if it is completely inside an area, not touching a line. The map at the top right shows the triangle from above (a gold ring: scoring; red: the kitchen).',
       '<b>Frames</b>: 4 discs each, taking turns. When all 8 are down, both sides score their discs; the other side starts the next frame.',
       '<b>Tactics</b>: knock the other side’s discs off or into the kitchen; park a disc in front of yours as a guard. A disc that stops short of the far dead line, goes past the far baseline or off the court is taken away.',
@@ -2189,9 +2231,12 @@ var DKScene = (function () {
       $('ggMenu').classList.remove('show');
       switchMode(b.dataset.mode);
     });
+    $('shotAim').addEventListener('input',updateShotControls);
+    $('shotPower').addEventListener('input',updateShotControls);
+    $('btnPush').addEventListener('click',pushSelectedShot);
     var cv = $('cv3');
     cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove);
-    cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', function () { touch = null; liveAim = null; });
+    cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', function () { touch = null; if(mode==='shuffle') updateShotControls(); else liveAim = null; });
     cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.addEventListener('touchmove', function (e) { if (e.target === cv && e.cancelable) e.preventDefault(); }, { passive: false });
     $('btnHome').addEventListener('click', function () { saveGame(); saveMeta(); Goobs.home(); });

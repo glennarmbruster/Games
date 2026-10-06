@@ -49,7 +49,7 @@ const VERSIONS = {
   trivia: '0.3.0',
   links: '0.2.0',
   bowling: '0.3.0',
-  deck: '0.2.0',
+  deck: '0.3.0',
   wordboard: '0.1.2',
   nonogram: '0.1.0',
   getout2: '1.1.0',
