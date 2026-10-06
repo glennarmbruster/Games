@@ -77,6 +77,15 @@ html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 24p
 .ggmenu .modes { margin: 2px 0 4px; }
 @media (max-width: 385px) { html.gg-fs-over .top .info > div { padding: 3px 7px; } html.gg-fs-over .top .info { gap: 4px; } }
 @media (max-width: 385px) { .brand h1 { font-size: 15px; } .modes button { font-size: 13px; } }
+.ballpicker {padding:8px 0 14px;} .ballchoices {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0;}
+.ballchoices button {min-height:76px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;font:700 13px system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;touch-action:manipulation;}
+.ballchoices button[aria-pressed="true"] {border:2px solid var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.ballchoices button:focus-visible {outline:3px solid var(--accent);outline-offset:3px;}
+.ballpicker small {color:var(--muted);font-size:12px;}
+.ballthumb {display:block;width:30px;height:30px;border-radius:50%;box-shadow:inset -5px -5px 7px #0005,inset 3px 3px 5px #fff5,0 2px 3px #0002;}
+.ballthumb.beach {background:conic-gradient(#f34a38 0 60deg,#fff 60deg 120deg,#ffca32 120deg 180deg,#168fe0 180deg 240deg,#fff 240deg 300deg,#27a65b 300deg);}
+.ballthumb.basketball {background:linear-gradient(transparent 46%,#301c16 47% 52%,transparent 53%),linear-gradient(90deg,transparent 46%,#301c16 47% 52%,transparent 53%),#d36321;}
+.ballthumb.football {width:38px;height:24px;margin:3px 0;border-radius:50%;background:repeating-linear-gradient(90deg,transparent 0 4px,#eee 4px 6px) center / 18px 6px no-repeat,linear-gradient(90deg,#fff0 15%,#f4e7d3 16% 23%,#fff0 24% 76%,#f4e7d3 77% 84%,#fff0 85%),#81411f;}
 </style>
 </head>
 <body>
@@ -120,6 +129,11 @@ html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 24p
     <button data-mode="around">Around the Pool</button>
   </div>
 
+  <div id="ballPicker" class="ballpicker" role="group" aria-label="Ball choice">
+    <div class="themelabel">Choose your ball</div>
+    <div class="ballchoices"><button data-ball="beach" aria-pressed="true"><span class="ballthumb beach"></span>Beach ball</button><button data-ball="basketball" aria-pressed="false"><span class="ballthumb basketball"></span>Basketball</button><button data-ball="football" aria-pressed="false"><span class="ballthumb football"></span>Football</button></div>
+    <small>Same easy flick controls for every ball.</small>
+  </div>
   <div class="info" id="info"></div>
 
   <div class="stagewrap" id="stagewrap">
@@ -464,95 +478,85 @@ var HPScene = (function () {
       vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
       fragmentShader: 'uniform vec3 top; uniform vec3 bot; varying vec3 vP; void main(){ vec3 c = mix(bot, top, smoothstep(0.0, 0.5, vP.y)); vec3 s = normalize(vec3(0.5, 0.55, 0.65)); float d = max(0.0, dot(vP, s)); c += vec3(1.0, 0.95, 0.8) * (pow(d, 400.0) * 2.0 + pow(d, 12.0) * 0.25); gl_FragColor = vec4(c, 1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}' }));
     scene.add(sky);
-    scene.add(new T.HemisphereLight(0xdff2ff, 0x7aa860, 1.35));
+    scene.add(new T.HemisphereLight(0xdff2ff, 0xbab7a9, 1.65));
     var sun = new T.DirectionalLight(0xfff3dd, 2.2); sun.position.set(6, 12, 8); scene.add(sun);
 
     // lawn, fence, trees
-    var lawnTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#6cc04a'; x.fillRect(0, 0, w, h); for (var i = 0; i < 3000; i++) { var l = rnd(0.8, 1.2); x.fillStyle = 'rgb(' + Math.round(95 * l) + ',' + Math.round(180 * l) + ',' + Math.round(70 * l) + ')'; x.fillRect(rnd(0, w), rnd(0, h), 2, rnd(2, 5)); } });
+    var lawnTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#48962a'; x.fillRect(0, 0, w, h); for (var i = 0; i < 3000; i++) { var l = rnd(0.8, 1.2); x.fillStyle = 'rgb(' + Math.round(58 * l) + ',' + Math.round(133 * l) + ',' + Math.round(37 * l) + ')'; x.fillRect(rnd(0, w), rnd(0, h), 2, rnd(2, 5)); } });
     lawnTex.wrapS = lawnTex.wrapT = T.RepeatWrapping;
     // the lawn is four pieces around the deck (so it never covers the pool)
     [[-80, 80, -80, -8], [-80, 80, 8, 80], [-80, -6.5, -8, 8], [6.5, 80, -8, 8]].forEach(function (r) { var t = lawnTex.clone(); t.needsUpdate = true; t.repeat.set((r[1] - r[0]) / 5.3, (r[3] - r[2]) / 5.3); var m = new T.Mesh(new T.PlaneGeometry(r[1] - r[0], r[3] - r[2]), lam({ map: t })); m.rotation.x = -Math.PI / 2; add(m, (r[0] + r[1]) / 2, -0.02, (r[2] + r[3]) / 2); });
     // a solid wooden privacy fence, about 1.75 m tall (1.2.0, Glenn: "a more solid wood fence a bit taller, and more trees
     // behind it"): stained boards side by side (one instanced mesh, each board a slightly different shade), two rails
     // and posts on the inside, a cap along the top
+    var fenceDetails = [];
     var FH = 1.75, boardGeo = new T.BoxGeometry(0.15, FH, 0.03), boards = [], fenceRuns = [[-9, -10, 9, -10], [9, -10, 9, 11], [9, 11, -9, 11], [-9, 11, -9, -10]];
     fenceRuns.forEach(function (r) { var len = Math.hypot(r[2] - r[0], r[3] - r[1]), n = Math.ceil(len / 0.152); for (var i = 0; i < n; i++) boards.push([r[0] + (r[2] - r[0]) * (i + 0.5) / n, r[1] + (r[3] - r[1]) * (i + 0.5) / n, Math.atan2(r[2] - r[0], r[3] - r[1])]); });
-    var fence = new T.InstancedMesh(boardGeo, lam({ color: 0xffffff, emissive: 0x3a2412 }), boards.length), mtx = new T.Matrix4(), q = new T.Quaternion(), fcol = new T.Color();
+    var fence = new T.InstancedMesh(boardGeo, lam({ color: 0xffffff, emissive: 0x090d10 }), boards.length), mtx = new T.Matrix4(), q = new T.Quaternion(), fcol = new T.Color();
     boards.forEach(function (c, i) {
       q.setFromAxisAngle(new T.Vector3(0, 1, 0), c[2] + Math.PI / 2); mtx.compose(new T.Vector3(c[0], FH / 2, c[1]), q, new T.Vector3(1, 1 + rnd(-0.01, 0.01), 1)); fence.setMatrixAt(i, mtx);
-      var l = rnd(0.86, 1.08); fence.setColorAt(i, fcol.setRGB(0.74 * l, 0.47 * l, 0.28 * l));
+      var l = rnd(0.86, 1.08); fence.setColorAt(i, fcol.setRGB(0.20 * l, 0.235 * l, 0.26 * l));
     });
     fence.instanceMatrix.needsUpdate = true; if (fence.instanceColor) fence.instanceColor.needsUpdate = true;
     scene.add(fence);
-    var railM = lam({ color: 0x8a5634, emissive: 0x2a180a }), capM = lam({ color: 0x6e4126, emissive: 0x24140a });
+    var railM = lam({ color: 0x40494e, emissive: 0x050709 }), capM = lam({ color: 0x343c40, emissive: 0x050709 });
     fenceRuns.forEach(function (r) {
       var len = Math.hypot(r[2] - r[0], r[3] - r[1]), ang = Math.atan2(r[2] - r[0], r[3] - r[1]), cx = (r[0] + r[2]) / 2, cz = (r[1] + r[3]) / 2;
       // which side is inside (toward the pool, the middle of the yard)
       var nx = Math.cos(ang), nz = -Math.sin(ang); if (nx * (0 - cx) + nz * (0.5 - cz) < 0) { nx = -nx; nz = -nz; }
-      [0.45, FH - 0.35].forEach(function (y) { var rl = new T.Mesh(new T.BoxGeometry(0.05, 0.1, len), railM); rl.rotation.y = ang; add(rl, cx + nx * 0.04, y, cz + nz * 0.04); });
-      var cap = new T.Mesh(new T.BoxGeometry(0.1, 0.05, len + 0.1), capM); cap.rotation.y = ang; add(cap, cx, FH + 0.025, cz);
+      [0.45, FH - 0.35].forEach(function (y) { var rl = new T.Mesh(new T.BoxGeometry(0.05, 0.1, len), railM); fenceDetails.push(rl); rl.rotation.y = ang; add(rl, cx + nx * 0.04, y, cz + nz * 0.04); });
+      var cap = new T.Mesh(new T.BoxGeometry(0.1, 0.05, len + 0.1), capM); fenceDetails.push(cap); cap.rotation.y = ang; add(cap, cx, FH + 0.025, cz);
       var np = Math.round(len / 2.4);
-      for (var k = 0; k <= np; k++) { var px = r[0] + (r[2] - r[0]) * k / np, pz = r[1] + (r[3] - r[1]) * k / np, po = new T.Mesh(new T.BoxGeometry(0.1, FH + 0.12, 0.1), capM); po.rotation.y = ang; add(po, px + nx * 0.06, (FH + 0.12) / 2, pz + nz * 0.06); }
+      for (var k = 0; k <= np; k++) { var px = r[0] + (r[2] - r[0]) * k / np, pz = r[1] + (r[3] - r[1]) * k / np, po = new T.Mesh(new T.BoxGeometry(0.1, FH + 0.12, 0.1), capM); fenceDetails.push(po); po.rotation.y = ang; add(po, px + nx * 0.06, (FH + 0.12) / 2, pz + nz * 0.06); }
     });
-    // trees: two rings beyond the fence (instanced: trunks, round leafy crowns in three greens, cone-stacked pines) and
-    // a few palms; tall enough to rise over the fence
-    var leafCols = [0x3f9a3a, 0x55b447, 0x2f7f35], leaf = leafCols.map(function (c) { return flat({ color: c, roughness: 1 }); }), bark = flat({ color: 0x8a5a33, roughness: 1 });
-    var trunks = [], crowns = [[], [], []], pineCones = [], palms = [];
-    function inYard(x, z) { return x > -9.6 && x < 9.6 && z > -10.6 && z < 11.6; }
-    [[2.0, 1.0, 0.95, 1.4], [4.0, 3.0, 1.2, 1.8], [6.6, 5.4, 1.5, 2.3]].forEach(function (ring, ri) {
-      var gap = ring[0], spread = ring[1];
-      for (var x0 = -9 - gap - spread; x0 <= 9 + gap + spread; x0 += 2.3 + ri * 0.4) [-1, 1].forEach(function (sd) { plant(x0 + rnd(-0.5, 0.5), (sd < 0 ? -10 - gap : 11 + gap) + sd * rnd(0, spread), rnd(ring[2], ring[3]), ri); });
-      for (var z0 = -10 - gap; z0 <= 11 + gap; z0 += 2.3 + ri * 0.4) [-1, 1].forEach(function (sd) { plant(sd * (9 + gap + rnd(0, spread)), z0 + rnd(-0.5, 0.5), rnd(ring[2], ring[3]), ri); });
-    });
-    function plant(x, z, s, ri) {
-      if (inYard(x, z)) return;
-      var kind = R(); if (kind < 0.09 && ri === 0) { palms.push([x, z, s * 0.85]); return; }
-      if (kind < 0.33) { // a pine: trunk and three stacked cones
-        trunks.push([x, z, s * 0.18, s * 1.4]);
-        for (var k = 0; k < 3; k++) pineCones.push([x, s * (1.3 + k * 0.85), z, s * (1.25 - k * 0.3), s * 1.5]);
-        return;
-      }
-      trunks.push([x, z, s * 0.2, s * 2.0]);
-      var nb = 4 + Math.floor(R() * 3);
-      for (var b = 0; b < nb; b++) crowns[Math.floor(R() * 3)].push([x + rnd(-0.75, 0.75) * s, (2.3 + rnd(0, 1.1)) * s, z + rnd(-0.75, 0.75) * s, rnd(0.8, 1.2) * s]);
-    }
-    function instanced(geo, mat, list, setM) { if (!list.length) return; var im = new T.InstancedMesh(geo, mat, list.length), m4 = new T.Matrix4(); list.forEach(function (it, i) { setM(m4, it); im.setMatrixAt(i, m4); }); im.instanceMatrix.needsUpdate = true; scene.add(im); }
-    var V = function (x, y, z) { return new T.Vector3(x, y, z); }, Q0 = new T.Quaternion();
-    instanced(new T.CylinderGeometry(0.6, 1, 1, 7), bark, trunks, function (m, t) { m.compose(V(t[0], t[3] / 2, t[1]), Q0, V(t[2], t[3], t[2])); });
-    var crownGeo = new T.IcosahedronGeometry(1, 1);
-    crowns.forEach(function (list, i) { instanced(crownGeo, leaf[i], list, function (m, c) { m.compose(V(c[0], c[1], c[2]), new T.Quaternion().setFromEuler(new T.Euler(rnd(0, 3), rnd(0, 3), 0)), V(c[3], c[3] * 0.9, c[3])); }); });
-    instanced(new T.ConeGeometry(1, 1, 8), flat({ color: 0x2c6e3a, roughness: 1 }), pineCones, function (m, c) { m.compose(V(c[0], c[1], c[2]), Q0, V(c[3], c[4], c[3])); });
-    function palm(x, z, s) {
-      var g = new T.Group();
-      var tr = new T.Mesh(new T.CylinderGeometry(0.1 * s, 0.18 * s, 4 * s, 7), bark); tr.position.y = 2 * s; tr.rotation.z = 0.12; g.add(tr);
-      for (var i = 0; i < 7; i++) { var fr = new T.Mesh(new T.ConeGeometry(0.35 * s, 2.2 * s, 4), leaf[i % 2]); fr.position.set(0.25 * s, 4 * s, 0); fr.rotation.set(0, i * 0.9, 1.9); var p = new T.Group(); p.add(fr); p.rotation.y = i * Math.PI * 2 / 7; g.add(p); }
-      g.position.set(x, 0, z); g.rotation.y = rnd(0, 6); scene.add(g);
-    }
-    palms.forEach(function (p) { palm(p[0], p[1], p[2]); });
-    var bushM = flat({ color: 0x4fa53f, roughness: 1 });
-    for (var bi = 0; bi < 16; bi++) { var bx = -8.3 + bi * 1.1; var bu = new T.Mesh(new T.IcosahedronGeometry(rnd(0.5, 0.75), 1), bushM); bu.position.set(bx, 0.35, 10.4); bu.scale.y = 0.75; scene.add(bu); }
+    // Photograph-derived surroundings wrap continuously around all seven shooting spots.
+    // Local asset only; the existing yard remains a usable fallback if decoding fails.
+    var sceneryReady = false;
+    new T.TextureLoader().load('assets/sunny-yard-v1.webp', function (map) {
+      map.colorSpace = T.SRGBColorSpace; map.anisotropy = 4;
+      var yard = new T.Mesh(new T.CylinderGeometry(13.5, 13.5, 11, 64, 1, true, 0, Math.PI),
+        new T.MeshBasicMaterial({ map: map, side: T.BackSide, toneMapped: false, fog: false }));
+      yard.rotation.y = -Math.PI/2; yard.position.y = 3.35; scene.add(yard);
+      var gardenMap=map.clone();gardenMap.needsUpdate=true;gardenMap.repeat.set(.32,1);
+      var garden=new T.Mesh(new T.CylinderGeometry(13.5,13.5,11,64,1,true,0,Math.PI),new T.MeshBasicMaterial({map:gardenMap,side:T.BackSide,toneMapped:false,fog:false}));
+      garden.rotation.y=Math.PI/2;garden.position.y=3.35;scene.add(garden);
+      sceneryReady = true;
+      // The photographic fence replaces the fallback fence once the image is ready.
+      fence.visible = false; fenceDetails.forEach(function (m) { m.visible = false; });
+    }, undefined, function () { /* Keep the clean procedural yard; shooting never depends on the asset. */ });
 
     // ---------------- the deck, coping and pool ----------------
-    var P = PH.POOL, deckTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#efe3cc'; x.fillRect(0, 0, w, h); for (var i = 0; i < 900; i++) { x.fillStyle = R() < 0.5 ? 'rgba(160,130,90,.12)' : 'rgba(255,255,255,.25)'; x.fillRect(rnd(0, w), rnd(0, h), 2, 2); } x.strokeStyle = 'rgba(150,120,80,.35)'; x.lineWidth = 2; for (var j = 0; j <= 4; j++) { x.beginPath(); x.moveTo(j * 64, 0); x.lineTo(j * 64, h); x.stroke(); x.beginPath(); x.moveTo(0, j * 64); x.lineTo(w, j * 64); x.stroke(); } });
+    var P = PH.POOL, deckTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#dfd6c3'; x.fillRect(0, 0, w, h); for (var i = 0; i < 900; i++) { x.fillStyle = R() < 0.5 ? 'rgba(160,130,90,.12)' : 'rgba(255,255,255,.25)'; x.fillRect(rnd(0, w), rnd(0, h), 2, 2); } x.strokeStyle = 'rgba(119,115,99,.18)'; x.lineWidth = 1; for (var j = 0; j <= 4; j++) { x.beginPath(); x.moveTo(j * 64, 0); x.lineTo(j * 64, h); x.stroke(); x.beginPath(); x.moveTo(0, j * 64); x.lineTo(w, j * 64); x.stroke(); } });
     deckTex.wrapS = deckTex.wrapT = T.RepeatWrapping;
     function deckSlab(x0, x1, z0, z1) { var t = deckTex.clone(); t.needsUpdate = true; t.repeat.set((x1 - x0) / 2, (z1 - z0) / 2); var m = new T.Mesh(new T.BoxGeometry(x1 - x0, 0.2, z1 - z0), lam({ map: t })); add(m, (x0 + x1) / 2, -0.1, (z0 + z1) / 2); }
     deckSlab(-6.5, 6.5, -8, P.z0); deckSlab(-6.5, 6.5, P.z1, 8); deckSlab(-6.5, P.x0, P.z0, P.z1); deckSlab(P.x1, 6.5, P.z0, P.z1);
     var copM = lam({ color: 0xfbf7ee });
     [[0, P.z0, P.x1 - P.x0 + 0.6, 0.3], [0, P.z1, P.x1 - P.x0 + 0.6, 0.3], [P.x0, 0, 0.3, P.z1 - P.z0], [P.x1, 0, 0.3, P.z1 - P.z0]].forEach(function (c) { add(new T.Mesh(new T.BoxGeometry(c[2], 0.07, c[3]), copM), c[0], 0.02, c[1]); });
-    var tileTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#7fd6f2'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 2; for (var i = 0; i <= 8; i++) { x.beginPath(); x.moveTo(i * 32, 0); x.lineTo(i * 32, h); x.stroke(); x.beginPath(); x.moveTo(0, i * 32); x.lineTo(w, i * 32); x.stroke(); } x.fillStyle = '#1f6fb8'; x.fillRect(0, 0, w, 36); });
+    var tileTex = tex(256, 256, function (x, w, h) { x.fillStyle = '#64b8d2'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 2; for (var i = 0; i <= 8; i++) { x.beginPath(); x.moveTo(i * 32, 0); x.lineTo(i * 32, h); x.stroke(); x.beginPath(); x.moveTo(0, i * 32); x.lineTo(w, i * 32); x.stroke(); } for (var ty = 0; ty < 40; ty += 8) for (var tx = 0; tx < w; tx += 8) { x.fillStyle = ['#063b67','#165789','#287faf','#81b5c5'][Math.floor(R()*4)]; x.fillRect(tx,ty,7,7); } });
     tileTex.wrapS = tileTex.wrapT = T.RepeatWrapping;
     function wall(w, cx, cz, ry) { var t = tileTex.clone(); t.needsUpdate = true; t.repeat.set(w / 1.2, 1); var m = new T.Mesh(new T.PlaneGeometry(w, 1.6), lam({ map: t, side: T.DoubleSide })); m.position.set(cx + Math.sin(ry) * 0.012, -0.8, cz + Math.cos(ry) * 0.012); m.rotation.y = ry; scene.add(m); }   // 1.2.0: set in from the deck slabs' faces (they z-fought: the flickering tile line)
     wall(P.x1 - P.x0, 0, P.z0, 0); wall(P.x1 - P.x0, 0, P.z1, Math.PI); wall(P.z1 - P.z0, P.x0, 0, Math.PI / 2); wall(P.z1 - P.z0, P.x1, 0, -Math.PI / 2);
     var floor = new T.Mesh(new T.PlaneGeometry(P.x1 - P.x0, P.z1 - P.z0), lam({ color: 0x59bfe6 })); floor.rotation.x = -Math.PI / 2; add(floor, 0, -1.6, 0);
-    // lane line on the floor
-    var lane = new T.Mesh(new T.PlaneGeometry(0.25, P.z1 - P.z0 - 1.5), lam({ color: 0x1f6fb8 })); lane.rotation.x = -Math.PI / 2; add(lane, 0, -1.58, 0);
-
-    // water: faceted waves (vertices follow PH.waterY)
-    var wGeo = new T.PlaneGeometry(P.x1 - P.x0, P.z1 - P.z0, 20, 36); wGeo.rotateX(-Math.PI / 2);
-    var water = new T.Mesh(wGeo, flat({ color: 0x33c2ea, transparent: true, opacity: 0.8, roughness: 0.15, metalness: 0.05 }));
-    scene.add(water);
-    var wPos = wGeo.attributes.position;
-    function updateWater(t) { for (var i = 0; i < wPos.count; i++) wPos.setY(i, PH.waterY(wPos.getX(i), wPos.getZ(i), t)); wPos.needsUpdate = true; wGeo.computeVertexNormals(); }
+    // Sunlit caustics: a locally generated seamless texture, no runtime network request.
+    var caustics = tex(256, 256, function (ctx, w, h) {
+      var points = []; for (var j=0;j<7;j++) for(var i=0;i<7;i++) points.push([(i+R())/7,(j+R())/7]);
+      var data = ctx.createImageData(w,h);
+      for(var y=0;y<h;y++) for(var x=0;x<w;x++) {
+        var u=x/w+.025*Math.sin(y/h*Math.PI*8), v=y/h+.025*Math.sin(x/w*Math.PI*6), d1=9,d2=9;
+        for(var k=0;k<points.length;k++) { var dx=Math.abs(u-points[k][0]),dy=Math.abs(v-points[k][1]);dx=Math.min(dx,Math.abs(1-dx));dy=Math.min(dy,Math.abs(1-dy));var d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d; }
+        var light=Math.pow(Math.max(0,1-(Math.sqrt(d2)-Math.sqrt(d1))/.016),3), n=(y*w+x)*4;
+        data.data[n]=30+light*135;data.data[n+1]=157+light*80;data.data[n+2]=222+light*32;data.data[n+3]=255;
+      } ctx.putImageData(data,0,0);
+    });
+    caustics.wrapS = caustics.wrapT = T.RepeatWrapping; caustics.repeat.set(2,3.6);
+    var normal = tex(128,128,function(ctx,w,h){var d=ctx.createImageData(w,h);for(var y=0;y<h;y++)for(var x=0;x<w;x++){var i=(y*w+x)*4;d.data[i]=128+26*Math.sin(x/w*Math.PI*8+y/h*Math.PI*4);d.data[i+1]=128+22*Math.cos(y/h*Math.PI*10-x/w*Math.PI*4);d.data[i+2]=250;d.data[i+3]=255;}ctx.putImageData(d,0,0);});
+    normal.colorSpace = T.NoColorSpace; normal.wrapS = normal.wrapT = T.RepeatWrapping; normal.repeat.set(4,7);
+    var wGeo = new T.PlaneGeometry(P.x1-P.x0,P.z1-P.z0,32,56); wGeo.rotateX(-Math.PI/2);
+    var waterM = new T.MeshStandardMaterial({ map:caustics, normalMap:normal, normalScale:new T.Vector2(.35,.35), roughness:.23, metalness:.08, color:0xffffff });
+    var waterReady=false;
+    new T.TextureLoader().load('assets/blue-water-v1.webp',function(t){t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(1,1.8);caustics.dispose();caustics=t;waterM.map=t;waterM.needsUpdate=true;waterReady=true;},undefined,function(){});
+    var water = new T.Mesh(wGeo,waterM);scene.add(water);var wPos=wGeo.attributes.position;
+    function updateWater(t) {for(var i=0;i<wPos.count;i++)wPos.setY(i,PH.waterY(wPos.getX(i),wPos.getZ(i),t));wPos.needsUpdate=true;wGeo.computeVertexNormals();caustics.offset.set(.006*Math.sin(t*.19),t*.003);normal.offset.set(t*.008,-t*.012);}
 
     // ---------------- the floating hoop ----------------
     var hoop = new T.Group(); scene.add(hoop);
@@ -573,48 +577,41 @@ var HPScene = (function () {
     var netSway = 0;
     function updateNet(t) { var p = netGeo.attributes.position, s = netSway; netBase.forEach(function (L, i) { p.setXYZ(i * 2, L[0], L[1], L[2]); var k = s * Math.sin(t * 18 + i); p.setXYZ(i * 2 + 1, L[3] + k * 0.03, L[4] + s * 0.06, L[5] + k * 0.03); }); p.needsUpdate = true; }
 
-    // ---------------- floaties (bob on the water; scenery in Phase 1) ----------------
-    var floaties = [];
-    function floaty(g, x, z, yaw) { g.userData = { x: x, z: z, yaw: yaw, ph: rnd(0, 6) }; scene.add(g); floaties.push(g); }
-    (function () {
-      var tube = new T.Group(); var tb = new T.Mesh(new T.TorusGeometry(0.38, 0.14, 8, 20), lam({ map: stripes(['#ffd23f', '#ff4d6d', '#ffffff', '#3a86ff'], 8) })); tb.rotation.x = Math.PI / 2; tube.add(tb); floaty(tube, 1.5, 3.2, 0);
-      var fla = new T.Group(), pink = lam({ color: 0xff7eb6 });
-      var body = new T.Mesh(new T.TorusGeometry(0.34, 0.15, 8, 18), pink); body.rotation.x = Math.PI / 2; fla.add(body);
-      var neck = new T.Mesh(new T.CylinderGeometry(0.06, 0.08, 0.7, 8), pink); neck.position.set(0, 0.35, -0.34); neck.rotation.x = 0.25; fla.add(neck);
-      var head = new T.Mesh(new T.SphereGeometry(0.11, 10, 8), pink); head.position.set(0, 0.72, -0.28); fla.add(head);
-      var beak = new T.Mesh(new T.ConeGeometry(0.04, 0.14, 6), lam({ color: 0x1b1f33 })); beak.position.set(0, 0.7, -0.17); beak.rotation.x = Math.PI / 2 + 0.6; fla.add(beak);
-      floaty(fla, -1.4, 2.6, 0.6);
-      var noodle = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 1.6, 8), lam({ color: 0x39d98a })); noodle.rotation.z = Math.PI / 2; var ng = new T.Group(); ng.add(noodle); floaty(ng, 1.75, -2.6, 0.9);
-      var raft = new T.Group(); var rb = new T.Mesh(new T.BoxGeometry(0.75, 0.1, 1.7), lam({ map: stripes(['#ffd23f', '#ffe98a'], 8, 64, 256, true) })); raft.add(rb); var pil = new T.Mesh(new T.BoxGeometry(0.7, 0.12, 0.3), lam({ color: 0xffe98a })); pil.position.set(0, 0.09, -0.65); raft.add(pil); floaty(raft, -1.5, 0.4, -0.3);
-    })();
-    function updateFloaties(t) { floaties.forEach(function (g) { var u = g.userData, x = u.x + 0.15 * Math.sin(0.2 * t + u.ph), z = u.z + 0.12 * Math.cos(0.17 * t + u.ph); g.position.set(x, PH.waterY(x, z, t) + 0.04, z); g.rotation.set(0.06 * Math.sin(1.3 * t + u.ph), u.yaw + 0.2 * Math.sin(0.1 * t + u.ph), 0.06 * Math.cos(1.1 * t + u.ph)); }); }
-
-    // ---------------- deck props ----------------
-    (function () {
-      var um = new T.Group(); var pole = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 2.4, 6), lam({ color: 0xffffff })); pole.position.y = 1.2; um.add(pole);
-      var can = new T.Mesh(new T.ConeGeometry(1.2, 0.5, 12, 1, true), lam({ map: stripes(['#ff4d4d', '#ffffff'], 12), side: T.DoubleSide })); can.position.y = 2.3; um.add(can);
-      var tbl = new T.Mesh(new T.CylinderGeometry(0.5, 0.5, 0.05, 16), lam({ color: 0xffffff })); tbl.position.y = 0.72; um.add(tbl);
-      var leg = new T.Mesh(new T.CylinderGeometry(0.05, 0.12, 0.72, 8), lam({ color: 0xdddddd })); leg.position.y = 0.36; um.add(leg);
-      um.position.set(5.0, 0, 0.6); scene.add(um);
-      function chair(x, z, ry, col) {
-        var c = new T.Group(), m = lam({ color: col }), fr = lam({ color: 0xffffff });
-        var seat = new T.Mesh(new T.BoxGeometry(0.62, 0.08, 1.2), m); seat.position.set(0, 0.35, 0.2); c.add(seat);
-        var back = new T.Mesh(new T.BoxGeometry(0.62, 0.08, 0.75), m); back.position.set(0, 0.62, -0.62); back.rotation.x = -0.9; c.add(back);
-        [[-0.28, 0.7], [0.28, 0.7], [-0.28, -0.3], [0.28, -0.3]].forEach(function (l) { var lg = new T.Mesh(new T.BoxGeometry(0.04, 0.33, 0.04), fr); lg.position.set(l[0], 0.16, l[1]); c.add(lg); });
-        c.position.set(x, 0, z); c.rotation.y = ry; scene.add(c);
-      }
-      chair(-5.3, 0.9, Math.PI / 2 + 0.1, 0x3a86ff); chair(-5.3, -2.7, Math.PI / 2 - 0.1, 0x2ec27e);
-      var dv = new T.Group(); var dbase = new T.Mesh(new T.BoxGeometry(0.5, 0.35, 0.6), lam({ color: 0xdddddd })); dbase.position.set(0, 0.17, 0.4); dv.add(dbase);
-      var plank = new T.Mesh(new T.BoxGeometry(0.5, 0.06, 2.2), lam({ color: 0x3a86ff })); plank.position.set(0, 0.38, -0.55); plank.rotation.x = 0.03; dv.add(plank);
-      dv.position.set(-1.4, 0, 4.85); scene.add(dv);
-      var cooler = new T.Group(); var cb = new T.Mesh(new T.BoxGeometry(0.7, 0.4, 0.42), lam({ color: 0x2f7de6 })); cb.position.y = 0.2; cooler.add(cb); var lid = new T.Mesh(new T.BoxGeometry(0.72, 0.08, 0.44), lam({ color: 0xffffff })); lid.position.y = 0.44; cooler.add(lid);
-      cooler.position.set(2.2, 0, -6.4); cooler.rotation.y = 0.3; scene.add(cooler);
-    })();
+    // Clear water and uncluttered deck; decorative objects stay outside the playable pool.
+    function updateFloaties() {}
+    // The round raised spa and pale stone coping echo the reference pool.
+    var spa = new T.Group(), stoneM = new T.MeshStandardMaterial({color:0xded4bb,roughness:.85,map:deckTex});
+    var spaWall = new T.Mesh(new T.CylinderGeometry(1.05,1.07,.5,64,1,true),stoneM); spaWall.position.y=.25;spa.add(spaWall);
+    var spaRim = new T.Mesh(new T.TorusGeometry(.97,.11,12,64),copM);spaRim.rotation.x=Math.PI/2;spaRim.position.y=.51;spa.add(spaRim);
+    var spaWater = new T.Mesh(new T.CircleGeometry(.91,48),waterM);spaWater.rotation.x=-Math.PI/2;spaWater.position.y=.43;spa.add(spaWater);
+    add(spa,4.6,0,6.4);
+    // Low stone beds and a few stepping stones: no floating toys or cleaning equipment.
+    var pebbleM = new T.MeshStandardMaterial({color:0xe2ded2,roughness:1});
+    var pebbleGeo = new T.SphereGeometry(.055,6,4), pebbles=new T.InstancedMesh(pebbleGeo,pebbleM,650), pm=new T.Matrix4();
+    for(var pi=0;pi<650;pi++){var px=7.05+rnd(-.45,.45),pz=rnd(-7.7,7.7);pm.compose(new T.Vector3(px,.03,pz),new T.Quaternion(),new T.Vector3(rnd(.6,1.5),rnd(.35,.7),rnd(.7,1.5)));pebbles.setMatrixAt(pi,pm);}scene.add(pebbles);
+    for(var si=0;si<9;si++){var step=new T.Mesh(new T.CylinderGeometry(.25,.27,.045,20),stoneM);add(step,7.1,.04,-6.5+si*1.6);}
 
     // ---------------- the ball ----------------
     var ballTex = tex(256, 128, function (x, w, h) { var c = ['#ff4d4d', '#ffffff', '#ffd23f', '#3a86ff', '#ffffff', '#2ec27e']; for (var i = 0; i < 6; i++) { x.fillStyle = c[i]; x.fillRect(i * w / 6, 0, w / 6 + 1, h); } x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h * 0.1); x.fillRect(0, h * 0.9, w, h * 0.1); });
     var ballM = new T.MeshStandardMaterial({ map: ballTex, roughness: 0.35, metalness: 0, emissive: new T.Color(0xff8a00), emissiveIntensity: 0 });
-    var ball = new T.Mesh(new T.SphereGeometry(PH.BR, 24, 16), ballM); scene.add(ball);
+    var ball = new T.Mesh(new T.SphereGeometry(PH.BR, 40, 28), ballM); scene.add(ball);
+    var basketballTex=tex(512,256,function(x,w,h){
+      x.fillStyle='#b9470d';x.fillRect(0,0,w,h);
+      for(var i=0;i<14000;i++){x.fillStyle=R()<.5?'rgba(55,18,4,.3)':'rgba(255,170,74,.3)';x.beginPath();x.arc(rnd(0,w),rnd(0,h),.7,0,Math.PI*2);x.fill();}
+      x.strokeStyle='#26170f';x.lineWidth=5;
+      [0,w/2,w].forEach(function(a){x.beginPath();x.moveTo(a,0);x.lineTo(a,h);x.stroke();});
+      x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();
+      for(var j=0;j<2;j++){x.beginPath();for(var i=0;i<=w;i++){var y=h/2+Math.sin(i/w*Math.PI*2)*(j?-.38:.38)*h;i?x.lineTo(i,y):x.moveTo(i,y);}x.stroke();}
+    });
+    var footballTex=tex(512,256,function(x,w,h){
+      x.fillStyle='#763618';x.fillRect(0,0,w,h);
+      for(var i=0;i<16000;i++){x.fillStyle=R()<.5?'rgba(25,9,0,.25)':'rgba(230,138,76,.28)';x.fillRect(rnd(0,w),rnd(0,h),1,1);}
+      x.fillStyle='#f6e6ce';x.fillRect(0,h*.19,w,h*.055);x.fillRect(0,h*.755,w,h*.055);
+      x.strokeStyle='#381d12';x.lineWidth=3;for(var i=0;i<4;i++){x.beginPath();x.moveTo(i*w/4,0);x.lineTo(i*w/4,h);x.stroke();}
+      [w*.25,w*.75].forEach(function(a){x.strokeStyle='#eee2c9';x.lineWidth=5;x.beginPath();x.moveTo(a,h*.36);x.lineTo(a,h*.64);x.stroke();for(var i=0;i<8;i++){var yy=h*(.37+i*.037);x.beginPath();x.moveTo(a-12,yy);x.lineTo(a+12,yy);x.stroke();}});
+    });
+    var ballStyle='beach',ballMaps={beach:ballTex,basketball:basketballTex,football:footballTex};
+    function setBallStyle(style){ballStyle=ballMaps[style]?style:'beach';ballM.map=ballMaps[ballStyle];ballM.roughness=ballStyle==='beach'?.28:.7;ballM.needsUpdate=true;ball.scale.set(ballStyle==='football'?.78:1,ballStyle==='football'?1.4:1,ballStyle==='football'?.78:1);ball.rotation.set(0,0,0);}
     var glow = new T.Sprite(new T.SpriteMaterial({ map: tex(64, 64, function (x) { var g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,200,80,.75)'); g.addColorStop(0.45, 'rgba(255,170,40,.35)'); g.addColorStop(1, 'rgba(255,120,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); }), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
     glow.scale.set(0.7, 0.7, 1); glow.visible = false; scene.add(glow);
     var blob = new T.Mesh(new T.CircleGeometry(PH.BR * 1.1, 16), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false })); blob.rotation.x = -Math.PI / 2; scene.add(blob);
@@ -666,8 +663,8 @@ var HPScene = (function () {
       // the group's +z must point at the shooter: rotation.y = PI - yaw turns local +z toward (sin yaw, -cos yaw)
       updateNet(t); stepFx(dt, t);
       var bx, by, bz;
-      if (b) { bx = b.x; by = b.y; bz = b.z; ball.rotation.set(b.rx, b.ry, 0); }
-      else { bx = heldPos[0]; by = heldPos[1] + 0.02 * Math.sin(t * 3); bz = heldPos[2]; ball.rotation.y += dt * 0.6; }
+      if (b) { bx = b.x; by = b.y; bz = b.z; ball.rotation.set(b.rx, b.ry, ballStyle === 'football' ? Math.PI/2 : 0); }
+      else { bx = heldPos[0]; by = heldPos[1] + 0.02 * Math.sin(t * 3); bz = heldPos[2]; ball.rotation.y += dt * 0.6; ball.rotation.z = ballStyle === 'football' ? Math.PI/2 : 0; }
       ball.position.set(bx, by, bz);
       ballM.emissiveIntensity = hotLevel > 1 ? 0.35 + 0.15 * Math.sin(t * 8) + (hotLevel > 2 ? 0.2 : 0) : 0;
       glow.visible = hotLevel > 1; glow.position.set(bx, by, bz); glow.scale.setScalar((hotLevel > 2 ? 0.62 : 0.48) * (b ? 1 : 0.8));
@@ -683,7 +680,7 @@ var HPScene = (function () {
       camera.updateProjectionMatrix();
     }
     function project(x, y, z) { var v = new T.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2, (1 - v.y) / 2]; }
-    return { update: update, resize: resize, splash: splash, moveCamera: moveCamera, project: project, swish: function () { netSway = 1; }, camera: camera, scene: scene, CAM: CAM };
+    return { setBallStyle:setBallStyle, get ballStyle(){return ballStyle;}, get sceneryReady(){return sceneryReady;}, get waterReady(){return waterReady;}, update: update, resize: resize, splash: splash, moveCamera: moveCamera, project: project, swish: function () { netSway = 1; }, camera: camera, scene: scene, CAM: CAM };
   }
   return { build: build };
 })();
@@ -698,8 +695,9 @@ var HPScene = (function () {
 
   // ================= storage =================
   var store = Goobs.store('hoops');
-  var settings = { sound: false, adEvery: 3 };
+  var settings = { sound: false, adEvery: 3, ball: 'beach' };
   (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); })();
+  if (['beach','basketball','football'].indexOf(settings.ball)<0) settings.ball='beach';
   function saveSettings() { store.set('settings', settings); }
   var meta = store.get('meta', null) || {};
   var MD = { mode: 'free', spot: 0, player: 'glenn', wind: 0, seen: false, finished: 0, lastAdAt: 0, players: { glenn: 'Glenn', cindy: 'Cindy', guest: 'Guest' } };
@@ -744,6 +742,7 @@ var HPScene = (function () {
   function shoot(f) {
     if (state !== 'ready' || !SC) return false;
     var s = spot(), sh = PH.fromFlick(f, s.dist);
+    SC.setBallStyle(settings.ball);
     ball = PH.launch(W, s, sh.power, sh.yaw, sh.elev, sh.spin);
     state = 'flying'; flyT = performance.now(); S.throw(f.speed); $('flickHint').classList.remove('show');
     if (around && !around.started) { around.started = true; around.t0 = performance.now(); }
@@ -867,6 +866,7 @@ var HPScene = (function () {
       if (state === 'result' && performance.now() - resultT > 900) afterResult();
       if (around && around.started && !around.done && state !== 'over') { var el = $('atpClock'); if (el) el.textContent = clock(performance.now() - around.t0); }
     }
+    if(state==='ready' && SC.ballStyle!==settings.ball)SC.setBallStyle(settings.ball);
     SC.update(paused ? 0 : dt, W, ball, spot(), heldPos(), PH.hot(streak));
   }
 
@@ -971,6 +971,10 @@ var HPScene = (function () {
     var fs = Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnSpot', 'btnWind', 'btnNew', 'btnStats', 'btnSettings'], info: menuInfo });
     document.querySelector('.top').insertBefore($('info'), document.querySelector('.top .topbtns'));
     fs.el.querySelector('.sheet').insertBefore($('modes'), fs.list);
+    fs.el.querySelector('.sheet').insertBefore($('ballPicker'), fs.list);
+    function syncBallChoice(){document.querySelectorAll('[data-ball]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.ball===settings.ball));});}
+    syncBallChoice();
+    $('ballPicker').addEventListener('click',function(e){var b=e.target.closest('button[data-ball]');if(!b)return;settings.ball=b.dataset.ball;saveSettings();syncBallChoice();if(SC&&state==='ready')SC.setBallStyle(settings.ball);fs.close();toast(state==='ready'?b.textContent.trim():b.textContent.trim()+' next shot');});
     $('modes').addEventListener('click', function (e) { if (e.target.closest('button')) fs.close(); });
     host = $('stage'); canvas = $('cv');
     canvas.addEventListener('pointerdown', onDown); canvas.addEventListener('pointermove', onMove); canvas.addEventListener('pointerup', onUp);
@@ -1012,7 +1016,7 @@ var HPScene = (function () {
     Goobs.initUpdates({ onVersions: function (v) { $('version').textContent = 'Pool Party Hoops ' + (v.hoops || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
     renderAll();
     import('../../shared/three.module.min.js').then(function (m) {
-      T = m; SC = HPScene.build(T, canvas, PH); $('loading').classList.add('hide');
+      T = m; SC = HPScene.build(T, canvas, PH); SC.setBallStyle(settings.ball); $('loading').classList.add('hide');
       resize();
       if (meta.mode === 'around') startAround(); else startFree();
       requestAnimationFrame(frame);
