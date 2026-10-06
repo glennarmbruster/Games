@@ -8,7 +8,7 @@ const VERSIONS = {
   patchwork: '2.2.0',
   cubecorral: '3.3.0',
   screwball: '2.4.0',
-  skeehop: '1.3.0',
+  skeehop: '1.4.0',
   merge: '1.2.0',
   tapaway: '1.2.0',
   homerun: '1.4.0',

@@ -630,7 +630,25 @@ var SHRender = (function () {
     var H2 = SH.HALF, LZ = SH.LZ, RL = SH.RL, B0 = SH.B0, SB = SH.SB, TH = SH.TH;
     // physics x is mirrored for display so that +x (the ball's right) shows on the right of the screen
     var group = new THREE.Group(); group.scale.x = -1; scene.add(group);
-    var theme = null, parts = {};
+    var theme = null, parts = {}, neighbors = [];
+    var room = new THREE.Group();scene.add(room);
+    function roomBox(w,h,d,x,y,z,color) { var mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,{rough:.85}));mesh.position.set(x,y,z);room.add(mesh);return mesh; }
+    roomBox(24,11,.2,0,4.8,17,'#26353e');
+    roomBox(.2,11,30,-11,4.8,3,'#28333d');roomBox(.2,11,30,11,4.8,3,'#28333d');
+    roomBox(24,1.8,.24,0,.5,16.8,'#192831');
+    for(var pan=-10;pan<=10;pan+=2)roomBox(.035,8,.26,pan,4.3,16.7,'#44555b');
+    var wallStrip=roomBox(23,.055,.3,0,2.2,16.5,'#e0b979');wallStrip.material.emissive.set('#d4a461');wallStrip.material.emissiveIntensity=.35;
+    function poster(x,title,subtitle,col) {
+      var tx=canvasTex(512,640,function(c,w,h){c.fillStyle='#eadbbd';c.fillRect(0,0,w,h);c.fillStyle=col;c.fillRect(16,16,w-32,h-32);
+        c.strokeStyle='#e8cd91';c.lineWidth=4;c.strokeRect(30,30,w-60,h-60);c.fillStyle='#fff3d7';c.textAlign='center';c.font='800 50px system-ui';c.fillText(title,w/2,110);
+        c.strokeStyle='#f0cc7e';c.lineWidth=12;for(var rr=0;rr<3;rr++){c.beginPath();c.arc(w/2,310,42+rr*42,0,Math.PI*2);c.stroke();}
+        c.fillStyle='#fff3d7';c.font='700 27px system-ui';c.fillText(subtitle,w/2,535);});
+      roomBox(2.3,2.9,.12,x,4.6,16.5,'#0f1921');
+      var sign=quad([x-1.1,3.2,16.4],[x+1.1,3.2,16.4],[x-1.1,6,16.4],[x+1.1,6,16.4],[0,0,-1],mat(0xffffff,{map:tx,rough:.8}));room.add(sign);
+    }
+    poster(-4.8,'ROLL WITH IT','GOOBS ARCADE','#315e65');poster(4.8,'ON A ROLL','TAKE YOUR BEST SHOT','#813c3c');
+    for(var lamp=-1;lamp<=1;lamp+=2){var lampHousing=roomBox(2.3,.07,.55,lamp*4.6,6.8,13,'#f7e6c7');lampHousing.material.emissive.set('#ffe5b9');lampHousing.material.emissiveIntensity=.7;}
+
 
     // board frame: local x = world x, local y = up the slope, local z = out of the board (toward the player)
     var boardG = new THREE.Group();
@@ -647,6 +665,7 @@ var SHRender = (function () {
 
     // ---------- build the machine (again on theme change) ----------
     function clear() {
+      neighbors.forEach(function(n){scene.remove(n);n.traverse(function(o){if(o.material)o.material.dispose();});});neighbors=[];
       [group, boardG].forEach(function (g) {
         for (var i = g.children.length - 1; i >= 0; i--) {
           var o = g.children[i];
@@ -777,7 +796,7 @@ var SHRender = (function () {
       group.add(lane);
       // floor around the machine (below everything)
       var floor = quad([-8, -0.4, -4], [8, -0.4, -4], [-8, -0.4, 16], [8, -0.4, 16], [0, 1, 0], mat(0xffffff, { map:floorTexture(t), rough: .95 }));
-      group.add(floor);
+      floor.name="room-floor";group.add(floor);
       // ramp: a curved sheet
       (function () {
         var n = 14, pos = [], idx = [], uv = [];
@@ -874,6 +893,13 @@ var SHRender = (function () {
       });
       shadow = new THREE.Mesh(new THREE.PlaneGeometry(SH.RB * 3, SH.RB * 3), new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false }));
       group.add(shadow);
+      // Background machines reuse geometry/textures; private materials keep score flashes independent.
+      [-1,1].forEach(function(side){
+        var neighbor=group.clone(true);neighbor.position.set(side*(2*H2+.55),0,1.4);
+        var remove=[];neighbor.traverse(function(o){if(o.name==='room-floor'||(o.material&&o.material.blending===THREE.AdditiveBlending))remove.push(o);
+          if(o.material){o.material=o.material.clone();if(o.material.color)o.material.color.multiplyScalar(.65);if(o.material.emissiveIntensity)o.material.emissiveIntensity*=.55;}
+        });remove.forEach(function(o){o.parent.remove(o);if(o.material)o.material.dispose();});scene.add(neighbor);neighbors.push(neighbor);
+      });
       sparks = [];
     }
 
