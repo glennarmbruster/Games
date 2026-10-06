@@ -102,6 +102,18 @@ html.gg-fs .cat .nm svg { width: clamp(18px, 2.8dvh, 26px); height: clamp(18px, 
 html.gg-fs .sub { font-size: clamp(13px, 1.8dvh, 16px); }
 html.gg-fs .die { width: clamp(48px, min(17vw, 8dvh), 76px); height: clamp(48px, min(17vw, 8dvh), 76px); border-radius: 22%; }
 html.gg-fs .tray { padding: 2px 0 14px; }
+/* Polished ivory dice with recessed pips; held and scoring states remain distinct. */
+:root { --rc-die:#fffdf5; --rc-pip:#252a33; --rc-red:#b83b2e; }
+.die { background:radial-gradient(ellipse at 32% 18%,#fff,var(--rc-die) 55%,#e8deca); box-shadow:inset 0 1px 2px #fff,inset -1px -2px 3px #bbaa8733,0 3px 0 #c9bfae,0 6px 9px -3px #0005; }
+.die::before { content:''; position:absolute; inset:4%; border:1px solid #fff9; border-radius:11px; pointer-events:none; }
+.die .pip { filter:drop-shadow(0 1px .45px #fff); }
+.die.held { background:radial-gradient(ellipse at 30% 15%,#fff6d8,var(--rc-held)); box-shadow:inset 0 1px #fff,0 3px 0 #c6a048,0 8px 12px -4px #0005; }
+.cat { border-radius:8px; box-shadow:0 1px 2px #00000008; font-weight:650; }
+.cat .v { font-weight:750; }
+.cat.can:not(.pick) { border-color:color-mix(in srgb,var(--accent) 30%,var(--line)); }
+.cat.pick { border-color:transparent; }
+@media(prefers-reduced-motion:reduce) { .die.rolling,.cat.flash { animation:none; } }
+
 </style>
 </head>
 <body>
