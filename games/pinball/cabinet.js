@@ -8,7 +8,7 @@ export function create(stage, PB, machine) {
   renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;
   const scene=new T.Scene();scene.background=new T.Color('#11151a');
   const camera=new T.OrthographicCamera(-50,50,92,-92,.1,600);camera.position.set(50,280,92);camera.up.set(0,0,-1);camera.lookAt(50,0,92);
-  const harbor=machine==='harbor',accent=harbor?0x0088ff:0xf0ff00,red=0xff083b;
+  const harbor=machine==='harbor',accent=harbor?0x0088ff:0x00dfff,red=0xff083b;
   scene.add(new T.HemisphereLight(0xe9f1ff,0x253039,.65));
   const sun=new T.DirectionalLight(0xfff4dd,1.5);sun.position.set(-45,160,15);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-130,right:130,top:130,bottom:-130,near:1,far:400});sun.shadow.bias=-.0003;sun.shadow.normalBias=.12;scene.add(sun);
   const fill=new T.DirectionalLight(0xa9d5ed,.35);fill.position.set(125,65,140);scene.add(fill);
@@ -43,7 +43,7 @@ export function create(stage, PB, machine) {
   // Grade in display (sRGB) space: preserve black ink while giving colored ink
   // a bright, saturated arcade finish. A linear-space saturation boost alone
   // leaves the source artwork's muted midtones and gold/yellow unchanged.
-  artMat.onBeforeCompile=function(shader){shader.fragmentShader=shader.fragmentShader.replace('#include <colorspace_fragment>', `
+  if(harbor)artMat.onBeforeCompile=function(shader){shader.fragmentShader=shader.fragmentShader.replace('#include <colorspace_fragment>', `
 #include <colorspace_fragment>
 vec3 ink=gl_FragColor.rgb;
 float hi=max(ink.r,max(ink.g,ink.b)),lo=min(ink.r,min(ink.g,ink.b));
@@ -57,7 +57,7 @@ float peak=mix(hi,min(1.0,hi*1.32+0.13),mask);
 gl_FragColor.rgb=mix(ink,vivid*peak,mask*0.9);
 `);};
   plane(100,184,artMat,50,0,92);
-  new T.TextureLoader().load('assets/'+(harbor?'harbor':'goober')+'-playfield-v1.webp',t=>{if(disposed){t.dispose();return;}t.colorSpace=T.SRGBColorSpace;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());assets.push(t);artMat.map=t;artMat.color.set('#ffffff');artMat.needsUpdate=true;});
+  new T.TextureLoader().load('assets/'+(harbor?'harbor-playfield-v1.webp':'goober-playfield-v2.webp'),t=>{if(disposed){t.dispose();return;}t.colorSpace=T.SRGBColorSpace;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());assets.push(t);artMat.map=t;artMat.color.set('#ffffff');artMat.needsUpdate=true;});
   // Black anodized shooter lane and cabinet edge, with narrow polished trim.
   plane(7.2,134,dark,95.6,.045,117);
   for(const x of [1.2,99.3]){add(new T.BoxGeometry(1.3,4,184),metal,x,1.5,92);}
@@ -69,8 +69,8 @@ gl_FragColor.rgb=mix(ink,vivid*peak,mask*0.9);
   });
   PB.circles.filter(c=>c.kind!=='bumper').forEach(c=>{shadow(c.x,c.y,c.r*4);disk(c.r,1.4,redRubber,c.x,.75,c.y);disk(c.r*.8,.7,ivory,c.x,1.8,c.y);disk(c.r*.45,.25,metal,c.x,2.3,c.y);line(c.x-.3,c.y,c.x+.3,c.y,.09,2.46,dark);});
   function label(text,x,z,w,h,color='#f4e8cb',bg='transparent',size=38){const map=texture(512,128,(c,W,H)=>{if(bg!=='transparent'){c.fillStyle=bg;c.fillRect(0,0,W,H);}c.fillStyle=color;c.font='800 '+size+'px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2,W-24);});return plane(w,h,new T.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false}),x,.085,z);}
-  label(harbor?'HARBOR LIGHTS':'GOOBER BALL',48,135,43,10,harbor?'#00cfff':'#efff00','transparent',48);
-  label(harbor?'COASTAL CLASSIC':'ORBITAL EDITION',48,143,35,4,'#b7c7ce');
+  label(harbor?'HARBOR LIGHTS':'GOOBER BALL',48,135,43,10,harbor?'#00cfff':'#e6f6ff','transparent',48);
+  label(harbor?'COASTAL CLASSIC':'GRAND ORBITAL',48,143,35,4,'#b7c7ce');
   // Apron is an actual raised metal/plastic assembly, not decorative play area.
   for(const x of [20,74])add(new T.BoxGeometry(x===20?40:36,1,5.3),dark,x,.5,181.35);
   label(harbor?'HARBOR LIGHTS':'GOOBER BALL',20,181.2,34,3,'#d6c18c');label('3 BALLS  •  FREE PLAY',74,181.2,30,3,'#d6c18c');
@@ -78,29 +78,36 @@ gl_FragColor.rgb=mix(ink,vivid*peak,mask*0.9);
   scene.children.slice(-2).forEach(m=>m.position.y=1.03);
   const lampGlow=texture(64,64,(c,w,h)=>{const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,.7)');g.addColorStop(.35,'rgba(255,255,255,.22)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,w,h);});
   function light(x,z,color,r=2.1){disk(r+.28,.12,dark,x,.12,z);const mat=arcadePlastic(color);disk(r,.13,mat,x,.2,z);const gm=new T.MeshBasicMaterial({map:lampGlow,color,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0,toneMapped:false});plane(r*4,r*4,gm,x,.29,z);return {set(on){mat.emissiveIntensity=on?.65:.06;mat.color.setHex(color).multiplyScalar(on?1:.48);gm.opacity=on?.45:0;}};}
-  const lanes=PB.LANES.map((x,i)=>{label((harbor?'SEA':'GBL')[i],x,46,4,3);return light(x,42,0xedff00);});
-  const mult=[39,45,51,57].map((x,i)=>{label((i+2)+'X',x,154,4,2.7);return light(x,150,0xf4ff00,1.8);});
-  const locks=[[72,88],[78,90],[84,88]].map(p=>light(...p,0x0066ff,1.6));label('LOCK',78,94,12,3);
-  const again=light(48,171,0xff003c),kick=light(8.2,127,0xff00bb,1.5),jack=light(81,83,0xeaff00,1.6);label('SHOOT AGAIN',48,175,18,2.6);label(harbor?'LIGHTHOUSE':'POWER CORE',80,64,19,3);
+  const lanes=PB.LANES.map((x,i)=>{label((harbor?'SEA':'GBL')[i],x,46,4,3);return light(x,42,(harbor?0x00ffad:0x00cfff));});
+  const mult=[39,45,51,57].map((x,i)=>{label((i+2)+'X',x,154,4,2.7);return light(x,150,(harbor?0x00cfff:0xa04aff),1.8);});
+  const lockY=PB.SAUCER.y+14;const locks=[[72,lockY],[78,lockY+2],[84,lockY]].map(p=>light(...p,harbor?0x00de98:0x0066ff,1.6));label('LOCK',78,lockY+6,12,3);
+  const again=light(48,171,0xff003c),kick=light(8.2,127,0xff00bb,1.5),jack=light(PB.SAUCER.x,PB.SAUCER.y+9,harbor?0x00ffad:0xff6430,1.6);label('SHOOT AGAIN',48,175,18,2.6);label(harbor?'LIGHTHOUSE':'POWER CORE',PB.SAUCER.x,PB.SAUCER.y-10,19,3);
   const bumpers=PB.bumpers.map((b,i)=>{shadow(b.x,b.y,17);disk(b.r,1.4,rubber,b.x,.85,b.y);disk(b.r*.98,.4,metal,b.x,1.7,b.y);disk(b.r*.85,.9,ivory,b.x,2.35,b.y);
-    const mat=arcadePlastic(i===1?accent:(i===2?0xff00a8:red));disk(b.r*.83,1.1,mat,b.x,3.25,b.y);disk(b.r*.38,.2,gold,b.x,3.86,b.y);
+    const mat=arcadePlastic(harbor?[0x0088ff,0x00db9c,0xff3864][i]:[0xff185a,0x00cfff,0x923cff,0x00ed94,0xff8b20][i]);disk(b.r*.83,1.1,mat,b.x,3.25,b.y);disk(b.r*.38,.2,metal,b.x,3.86,b.y);
     const tx=label('100',b.x,b.y,5,2.5,'#fff0cb');tx.position.y=4;return mat;});
   const slingMats=[];
   PB.slings.forEach(s=>{const shape=new T.Shape();shape.moveTo(s.x1,s.y1);shape.lineTo(s.x2,s.y2);shape.lineTo(s.side?77:19,140.5);shape.closePath();const geo=new T.ExtrudeGeometry(shape,{depth:1.2,bevelEnabled:true,bevelSize:.35,bevelThickness:.2,bevelSegments:2,steps:1});geo.rotateX(Math.PI/2);
-    const mat=arcadePlastic(harbor?0x0070ff:0xff00bb);add(geo,mat,0,2,0);line(s.x1,s.y1,s.x2,s.y2,s.r,1.4,ivory);slingMats.push(mat);});
-  const drops=PB.drops.map(d=>{const s=d.seg;const m=add(new T.BoxGeometry(2,2.8,s.y2-s.y1),arcadePlastic(0xeaff00),s.x1,1.5,(s.y1+s.y2)/2);return m;});
+    const mat=arcadePlastic(harbor?0x008ccf:(s.side?0x8b35ff:0xff00bb));add(geo,mat,0,2,0);line(s.x1,s.y1,s.x2,s.y2,s.r,1.4,ivory);slingMats.push(mat);});
+  const drops=PB.drops.map(d=>{const s=d.seg;const m=add(new T.BoxGeometry(2,2.8,s.y2-s.y1),arcadePlastic(harbor?0x00db9c:0xff6b24),s.x1,1.5,(s.y1+s.y2)/2);return m;});
   const standups=PB.standups.map(s=>add(new T.BoxGeometry(2,2,s.y2-s.y1),arcadePlastic(0x0080ff),s.x1,1.2,(s.y1+s.y2)/2));
   disk(PB.SAUCER.r+.6,.22,metal,PB.SAUCER.x,.23,PB.SAUCER.y);disk(PB.SAUCER.r,.24,rubber,PB.SAUCER.x,.37,PB.SAUCER.y);disk(PB.SAUCER.r*.7,.25,dark,PB.SAUCER.x,.51,PB.SAUCER.y);
   function flipperShape(len,r1,r2){const s=new T.Shape();s.absarc(0,0,r1,Math.PI/2,Math.PI*1.5,false);s.lineTo(len,-r2);s.absarc(len,0,r2,-Math.PI/2,Math.PI/2,false);s.closePath();return s;}
   const flips=PB.flippers.map(f=>{const group=new T.Group();group.position.set(f.px,0,f.py);scene.add(group);
     for(const [r1,r2,depth,y,mat] of [[PB.P.flipR1,PB.P.flipR2,1.4,1.7,redRubber],[PB.P.flipR1-.4,PB.P.flipR2-.25,.8,2.4,ivory]]){const geo=new T.ExtrudeGeometry(flipperShape(f.len,r1,r2),{depth,bevelEnabled:true,bevelSegments:3,bevelSize:.2,bevelThickness:.15,steps:1,curveSegments:20});geo.rotateX(Math.PI/2);add(geo,mat,0,y,0,group);}disk(.7,.2,metal,0,2.66,0,group);line(-.35,0,.35,0,.08,2.8,dark,group);return group;});
+  if(!harbor){
+    label('ORBIT RETURN',13,96,15,2.6,'#60ffcf');
+    label('LEFT FLIPPER',23,114,20,2.4,'#a2cfff');
+    label('REACTOR BANK',77,128,19,2.7,'#ffad76');
+    // Individual rings emphasize the constellation, flat on the printed playfield.
+    PB.bumpers.forEach((b,i)=>{const mat=new T.MeshBasicMaterial({color:[0xff185a,0x00cfff,0x923cff,0x00ed94,0xff8b20][i],toneMapped:false});const ring=add(new T.RingGeometry(b.r+1.2,b.r+1.55,48),mat,b.x,.025,b.y);ring.rotation.x=-Math.PI/2;});
+  }
   const balls=[],ballShadows=[];
   const spring=new T.Group();spring.position.set(PB.PLUNGER.x,1.15,PB.PLUNGER.y+1);scene.add(spring);
   const springPoints=[];for(let i=0;i<=100;i++){const a=i/100*Math.PI*16;springPoints.push(new T.Vector3(Math.cos(a)*1.4,Math.sin(a)*.5,i/100*7));}
   add(new T.TubeGeometry(new T.CatmullRomCurve3(springPoints),100,.18,6,false),metal,0,0,0,spring);
   const plunger=disk(2.2,1,gold,PB.PLUNGER.x,1.2,PB.PLUNGER.y);plunger.rotation.x=Math.PI/2;
   // Small real bulbs, not a moving spotlight sweeping over the ball.
-  const arch=[];for(let i=0;i<26;i++){const a=Math.PI*.03-Math.PI*1.06*(i+.5)/26;arch.push(light(51.6+Math.cos(a)*44.6,46+Math.sin(a)*44.6,i%2?0xff00bb:0x0070ff,.55));}
+  const arch=[];for(let i=0;i<26;i++){const a=Math.PI*.03-Math.PI*1.06*(i+.5)/26;arch.push(light(51.6+Math.cos(a)*44.6,46+Math.sin(a)*44.6,harbor?(i%2?0x00ffad:0x0070ff):[0xff00bb,0x0070ff,0x00e7c3][i%3],.55));}
   stage.insertBefore(canvas,stage.firstChild);
   function resize(w,h){renderer.setSize(w,h,false);}
   function render(g){if(disposed||!g)return;

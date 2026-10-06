@@ -122,10 +122,10 @@ body.pb { background:#0b0e13; }
     <div class="cardicon"><svg viewBox="0 0 100 100"><use href="#hl-logo"/></svg></div>
     <h2 id="pauseTitle">Goober Ball</h2>
     <div class="machine-picker" id="machinePicker" aria-label="Choose a pinball machine">
-      <button data-machine="goober" aria-pressed="true"><strong>Goober Ball</strong><small>Orbital Edition</small></button>
+      <button data-machine="goober" aria-pressed="true"><strong>Goober Ball</strong><small>Grand Orbital Edition</small></button>
       <button data-machine="harbor" aria-pressed="false"><strong>Harbor Lights</strong><small>Coastal Classic</small></button>
     </div>
-    <p class="machine-note">Each machine keeps its own high scores. Switching starts a new game.</p>
+    <p class="machine-note">Separate high scores. Goober Ball: five bumpers and three flippers; the left control operates both left flippers. Switching starts a new game.</p>
     <div class="actions"><button class="btn red" id="btnResume">Play</button><button class="btn" id="btnNewGame">New game</button><button class="btn" id="btnHomeP">All games</button></div>
     <div class="setbox">
       <label class="row"><div>Sound<small>Flippers, bumpers, bells.</small></div><span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
@@ -217,6 +217,35 @@ var PB = (function () {
   var PLUNGER = { x: 95.8, y: 176 };
   var W = 100, H = 184;
 
+  // Geometry profiles retain shared physics; restore the classic table exactly on switch.
+  var machineId='harbor';
+  var classic=[segs,circles,flippers,sensors].map(function(list){return {list:list,items:list.slice(),data:list.map(function(o){return JSON.parse(JSON.stringify(o));})};});
+  var classicBumpers=bumpers.slice();
+  function setMachine(id){
+    machineId=id;
+    classic.forEach(function(group){group.list.length=0;group.items.forEach(function(o,i){Object.keys(o).forEach(function(k){delete o[k];});Object.assign(o,JSON.parse(JSON.stringify(group.data[i])));group.list.push(o);});});
+    bumpers.length=0;classicBumpers.forEach(function(b){bumpers.push(b);});
+    LANES.splice(0,3,40,52,64);Object.assign(SAUCER,{x:81,y:74,r:3.4});
+    Object.assign(standups[0],{x1:90.5,y1:94,x2:90.5,y2:104});
+    if(id==='harbor')return;
+    // Offset skill lanes and a broad five-pop constellation.
+    var laneWalls=segs.filter(function(s){return s.y1===27&&s.y2===35;});
+    laneWalls.forEach(function(s,i){s.x1=s.x2=22+i*12;});
+    LANES.splice(0,3,28,40,52);sensors.filter(function(s){return s.kind==='top';}).forEach(function(s,i){s.x=LANES[i];});
+    var pops=[[33,50],[57,47],[46,70],[70,86],[29,87]];
+    pops.forEach(function(p,i){var b=bumpers[i];if(!b){b=post(p[0],p[1],5.4,{e:.4,kind:'bumper'});b.i=i;b.flash=0;bumpers.push(b);}b.x=p[0];b.y=p[1];});
+    // Scoop moved to the upper right, with its physical shelter and targets relocated.
+    Object.assign(SAUCER,{x:80,y:61});
+    var roof=segs.find(function(s){return s.x1===73.5&&s.y1===67.5;});Object.assign(roof,{x1:73.5,y1:54,x2:89,y2:47});
+    drops.forEach(function(d,i){Object.assign(d.seg,{x1:83,y1:98+i*8.2,x2:83,y2:104.6+i*8.2});});
+    segs.filter(function(s){return s.x1===4&&(s.y1===70||s.y1===102);}).forEach(function(s,i){Object.assign(s,i?{x1:83,y1:121.6,x2:91,y2:126}:{x1:83,y1:97.4,x2:91,y2:92});});
+    var target=segs.find(function(s){return s.kind==='standup';});Object.assign(target,{x1:7.5,y1:60,x2:7.5,y2:71});Object.assign(standups[0],{x1:7.5,y1:60,x2:7.5,y2:71});
+    // Open left orbit feeds a third flipper; all rails are real collision segments.
+    poly([[20,36],[15,49],[14,68],[16,88],[21,102]],{r:.7});
+    var upper=flipper(23,108,0);upper.len=11.5;flippers.push(upper);
+    post(23,108,1.2); // pivot hardware shares the flipper's occupied area
+  }
+
   // ---------------- game state ----------------
   function newGame(opts) {
     opts = opts || {};
@@ -270,7 +299,7 @@ var PB = (function () {
       if (nx * n2[0] + ny * n2[1] > 0.5) { b.vx += n2[0] * P.slingKick; b.vy += n2[1] * P.slingKick; add(g, 10, 1); ev(g, 'sling', { side: s.side }); s.flash = 1; }
     }
     if (s.kind === 'drop' && imp > 12) hitDrop(g, s.di);
-    if (s.kind === 'standup' && imp > 12) { add(g, 1000, 1); standups[0].flash = 1; g.lighthouse += 2500; ev(g, 'standup'); msg(g, 'LIGHTHOUSE ' + fmt(g.lighthouse)); }
+    if (s.kind === 'standup' && imp > 12) { add(g, 1000, 1); standups[0].flash = 1; g.lighthouse += 2500; ev(g, 'standup'); msg(g, (machineId==='harbor'?'LIGHTHOUSE ':'POWER CORE ') + fmt(g.lighthouse)); }
     if (imp > 40 && s.kind === 'wall') ev(g, 'thud', { v: imp });
   }
   function norm(v) { var l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; }
@@ -316,13 +345,13 @@ var PB = (function () {
     b.held = P.saucerHold; b.vx = 0; b.vy = 0; b.x = SAUCER.x; b.y = SAUCER.y; ev(g, 'saucer');
     add(g, 3000, 2);
     if (g.multiball) { add(g, g.jackpot); msg(g, 'JACKPOT ' + fmt(g.jackpot), 2.2); g.jackpot += 10000; ev(g, 'jackpot'); return; }
-    add(g, g.lighthouse); msg(g, 'LIGHTHOUSE ' + fmt(g.lighthouse), 1.8);
+    add(g, g.lighthouse); msg(g, (machineId==='harbor'?'LIGHTHOUSE ':'POWER CORE ') + fmt(g.lighthouse), 1.8);
     g.locks++;
     if (g.locks >= 3) { g.locks = 0; startMultiball(g); }
     else { msg(g, 'LOCK ' + g.locks + ' OF 3', 1.6); }
   }
   function startMultiball(g) {
-    g.multiball = true; msg(g, 'LIGHTHOUSE MULTIBALL!', 2.6); ev(g, 'multiball');
+    g.multiball = true; msg(g, machineId==='harbor'?'LIGHTHOUSE MULTIBALL!':'ORBITAL MULTIBALL!', 2.6); ev(g, 'multiball');
     var nb = ballObj(PLUNGER.x, PLUNGER.y - R); nb.inLane = true; nb.autoFire = 0.6; g.balls_.push(nb); g.saveT = Math.max(g.saveT, 8);
   }
   // lane change: the lit top lanes rotate with a flipper press
@@ -338,9 +367,9 @@ var PB = (function () {
     // flippers
     var press = [!!inp.left, !!inp.right];
     flippers.forEach(function (f, i) {
-      if (press[i] && !f.up) { ev(g, 'flip', { side: i }); laneChange(g, i ? 1 : -1); }
-      if (!press[i] && f.up) ev(g, 'flipDown', { side: i });
-      f.up = press[i];
+      if (press[f.side] && !f.up) { ev(g, 'flip', { side: i }); if(i<2)laneChange(g, i ? 1 : -1); }
+      if (!press[f.side] && f.up) ev(g, 'flipDown', { side: i });
+      f.up = press[f.side];
     });
     // plunger
     var lane = g.balls_.filter(function (b) { return b.inLane && b.live && b.y > PLUNGER.y - R - 3 && b.x > 92; })[0];
@@ -420,7 +449,7 @@ var PB = (function () {
     });
   }
   return { R: R, W: W, H: H, P: P, segs: segs, circles: circles, flippers: flippers, sensors: sensors, drops: drops, standups: standups, bumpers: bumpers, slings: slings,
-    setMachine: function(id) { var positions=id==='harbor'?[[37,58],[59,55],[48,76]]:[[32,59],[58,57],[45,80]];bumpers.forEach(function(b,i){b.x=positions[i][0];b.y=positions[i][1];}); },
+    setMachine: setMachine,
     SAUCER: SAUCER, PLUNGER: PLUNGER, LANES: LANES, TOP: TOP, newGame: newGame, step: step, fmt: fmt };
 })();
 if (typeof module !== 'undefined') module.exports = PB;
@@ -456,7 +485,7 @@ var HLSound = (function () {
     setEnabled: function (v) { on = !!v; if (on) ctx(); }, unlock: function () { if (on) ctx(); },
     flip: function () { if (thr('flip', 30)) return; noise(1800, 2.5, 0.05, 0.5); tone('square', 180, 90, 0.05, 0.08); },
     flipDown: function () { if (!thr('fd', 40)) noise(900, 2, 0.03, 0.2); },
-    bumper: function (i) { if (thr('bump', 25)) return; tone('square', [520, 620, 740][i || 0], 260, 0.09, 0.12); noise(2200, 1.2, 0.06, 0.4); },
+    bumper: function (i) { if (thr('bump', 25)) return; tone('square', [520, 620, 740, 880, 990][i || 0], 260, 0.09, 0.12); noise(2200, 1.2, 0.06, 0.4); },
     sling: function () { if (thr('sling', 30)) return; noise(1300, 1.5, 0.08, 0.6); tone('triangle', 300, 160, 0.08, 0.12); },
     thud: function (v) { if (thr('thud', 45)) return; noise(400, 1, 0.06, Math.min(0.5, v / 500)); },
     lane: function () { bell(1568, 0); }, inlane: function () { bell(1175, 0, 0.1); },
@@ -503,12 +532,12 @@ var HLSound = (function () {
   var MD = { seen: false, finished: 0, lastAdAt: 0, scores: [], games: 0 };
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
   function saveMeta() { store.set(metaKey(), meta); }
-  var artImages={};['goober','harbor'].forEach(function(id){var im=new Image();im.onload=function(){artImages[id]=im;bg=null;};im.src='assets/'+id+'-playfield-v1.webp';});
+  var artImages={};['goober','harbor'].forEach(function(id){var im=new Image();im.onload=function(){artImages[id]=im;bg=null;};im.src='assets/'+id+'-playfield-'+(id==='goober'?'v2':'v1')+'.webp';});
   function machineUi(){document.querySelectorAll('[data-machine]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.machine===machine));});$('pauseTitle').textContent=machineTitle();document.querySelectorAll('.cardicon').forEach(function(e){e.innerHTML='<img src="../../icons/games/pinball-'+(machine==='harbor'?'v1':'v2')+'.webp" alt="">';});}
   function rebuildCabinet(){if(cabinet){cabinet.dispose();cabinet=null;}if(cabinetFactory){try{cabinet=cabinetFactory($('stage'),PB,machine);fit();}catch(e){cabinet=null;}}}
   function selectMachine(id){
     if(id!=='goober'&&id!=='harbor')return;
-    if(id!==machine){machine=id;meta=store.get(metaKey(),null)||{};for(var key in MD)if(meta[key]===undefined)meta[key]=Array.isArray(MD[key])?[]:MD[key];PB.setMachine(machine);bg=null;touches={};keys={};fx.parts=[];fx.pops=[];fx.banner=null;rebuildCabinet();newGame();}
+    if(id!==machine){machine=id;meta=store.get(metaKey(),null)||{};for(var key in MD)if(meta[key]===undefined)meta[key]=Array.isArray(MD[key])?[]:MD[key];PB.setMachine(machine);syncInserts();bg=null;touches={};keys={};fx.parts=[];fx.pops=[];fx.banner=null;rebuildCabinet();newGame();}
     store.set('machine',machine);machineUi();$('ovPause').classList.remove('show');
   }
 
@@ -524,6 +553,12 @@ var HLSound = (function () {
 
   // ================= the painted table =================
   var INS = { lanes: PB.LANES.map(function (x) { return [x, 42]; }), mult: [[39, 150], [45, 150], [51, 150], [57, 150]], again: [48, 171], locks: [[72, 88], [78, 90], [84, 88]], kick: [8.2, 127], drops: [14, 85], light: [83.5, 110], jack: [81, 83] };
+  function syncInserts(){
+    INS.lanes=PB.LANES.map(function(x){return [x,42];});INS.jack=[PB.SAUCER.x,PB.SAUCER.y+9];
+    var y=PB.SAUCER.y+14;INS.locks=[[72,y],[78,y+2],[84,y]];
+    INS.drops=machine==='harbor'?[14,85]:[77,108];INS.light=machine==='harbor'?[83.5,110]:[12,66];
+  }
+
   // arrow inserts: where they point, their unlit and lit colors, and what lights them
   var ARROWS = [
     { x: 18, y: 88, a: Math.PI, dim: 'rgba(90,70,10,.75)', lit: 'rgba(255,220,60,1)', on: function () { return !g.drops.every(Boolean); } },
@@ -830,7 +865,7 @@ var HLSound = (function () {
   }
 
   function init() {
-    cv = $('cv'); cx = cv.getContext('2d');PB.setMachine(machine);machineUi();
+    cv = $('cv'); cx = cv.getContext('2d');PB.setMachine(machine);syncInserts();machineUi();
     $('machinePicker').addEventListener('click',function(e){var b=e.target.closest('[data-machine]');if(b)selectMachine(b.dataset.machine);});
     import('./cabinet.js').then(function(m){cabinetFactory=m.create;rebuildCabinet();}).catch(function(){/* canvas fallback keeps the table playable */});
     document.addEventListener('pointerdown', function (e) { if (e.target.closest('button, .overlay, .dmdrow')) return; onDown(e); }, { passive: false });
