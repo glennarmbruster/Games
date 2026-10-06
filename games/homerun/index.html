@@ -490,8 +490,8 @@ var MSRender = (function () {
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
     var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 1, 0.05, 1200);
-    // The 3D view: from behind the plate. (The side view is a flat 2D picture like the original's, side.js; after a hit
-    // in either view this 3D view follows the ball.) Phones are held sideways (Glenn, 2026-09-28), so the view is wide:
+    // The 3D view: from behind the plate. The side overlay caches this same park
+    // with a side-on camera; after a hit this camera follows the ball. The view is wide:
     // fov[0] for landscape, fov[1] for a tall screen.
     var VIEWS = {
       back: { pos: new THREE.Vector3(0, 1.28, -2.5), look: new THREE.Vector3(0, 1.35, 18), fov: [30, 40], ball: 1 }
@@ -500,7 +500,7 @@ var MSRender = (function () {
     camera.position.copy(HOME_POS); camera.lookAt(HOME_LOOK);
     var hemi=new THREE.HemisphereLight(0xeaf4ff, 0x544b3c, 1.05);scene.add(hemi);
     var sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-40, 80, -30); scene.add(sun);
-    var W = 1, H = 1, raf = 0, onFrame = null;
+    var W = 1, H = 1, raf = 0, onFrame = null, sceneryRevision=0;
 
     function canvasTex(w, h, draw, repeat) {
       var c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -527,11 +527,27 @@ var MSRender = (function () {
     ground.rotation.x = -Math.PI / 2; scene.add(ground);
     var clay=canvasTex(256,256,function(c,w,h){c.fillStyle='#a16d4e';c.fillRect(0,0,w,h);var seed=71;for(var i=0;i<6500;i++){seed=(seed*16807)%2147483647;var x=seed%256;seed=(seed*16807)%2147483647;var y=seed%256;c.fillStyle=i%3?'rgba(50,30,20,.14)':'rgba(239,207,168,.22)';c.fillRect(x,y,1+(i%2),1);}},[6,6]);
     var dirtMat = new THREE.MeshStandardMaterial({ map:clay,roughness:1 });
-    var infield = new THREE.Mesh(new THREE.PlaneGeometry(27.4, 27.4), dirtMat);
-    infield.rotation.x = -Math.PI / 2; infield.rotation.z = Math.PI / 4; infield.position.set(0, 0.01, 19.4 * 0.0 + 19.4); scene.add(infield);
-    var inGrass = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshLambertMaterial({ map: grass }));
-    inGrass.rotation.x = -Math.PI / 2; inGrass.rotation.z = Math.PI / 4; inGrass.position.set(0, 0.02, 19.4); scene.add(inGrass);
-    var mound = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.25, 32), dirtMat); mound.position.set(0, 0.12, 18.4); scene.add(mound);
+    // A rounded, continuous dirt apron extends beyond all three bases.
+    // Its outer arc is centred on the pitching rubber, like a maintained ballpark.
+    var apron = new THREE.Shape();
+    apron.moveTo(-3, -2); apron.lineTo(3, -2); apron.lineTo(25.5, 21);
+    apron.bezierCurveTo(26.5, 32, 15, 43, 0, 44);
+    apron.bezierCurveTo(-15, 43, -26.5, 32, -25.5, 21); apron.closePath();
+    function fieldShape(shape,material,y,name){
+      var geo=new THREE.ShapeGeometry(shape,64),pos=geo.attributes.position,uv=geo.attributes.uv;
+      for(var i=0;i<pos.count;i++){var x=pos.getX(i),z=pos.getY(i);pos.setXYZ(i,x,0,z);uv.setXY(i,x/27.4,z/27.4);}
+      // ShapeGeometry's winding is reversed when its Y coordinate becomes world Z.
+      var ix=geo.index;for(var j=0;j<ix.count;j+=3){var t=ix.getX(j);ix.setX(j,ix.getX(j+2));ix.setX(j+2,t);}geo.computeVertexNormals();
+      var mesh=new THREE.Mesh(geo,material);mesh.position.y=y;mesh.name=name;scene.add(mesh);return mesh;
+    }
+    var infield=fieldShape(apron,dirtMat,.014,'infield-apron');
+    var turfShape=new THREE.Shape();turfShape.moveTo(0,5);
+    turfShape.quadraticCurveTo(1,5,14,18);turfShape.quadraticCurveTo(15.5,19.4,14,21);
+    turfShape.lineTo(2,33);turfShape.quadraticCurveTo(0,35,-2,33);
+    turfShape.lineTo(-14,21);turfShape.quadraticCurveTo(-15.5,19.4,-14,18);
+    turfShape.lineTo(-2,6);turfShape.quadraticCurveTo(-1,5,0,5);
+    var inGrass=fieldShape(turfShape,new THREE.MeshLambertMaterial({map:grass}),.022,'infield-turf');
+    var mound = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.25, 32), dirtMat); mound.name='pitching-mound'; mound.position.set(0, 0.12, 18.4); scene.add(mound);
     var homeDirt = new THREE.Mesh(new THREE.CircleGeometry(3.6, 32), dirtMat); homeDirt.rotation.x = -Math.PI / 2; homeDirt.position.set(0, 0.015, 0); scene.add(homeDirt);
     var plate = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 5), new THREE.MeshLambertMaterial({ color: 0xffffff }));
     plate.rotation.y = Math.PI / 5 + Math.PI; plate.position.set(0, 0.03, 0.15); scene.add(plate);
@@ -554,10 +570,10 @@ var MSRender = (function () {
       for (var i = 0; i < 700; i++) { x.fillStyle = cols[Math.floor(Math.random() * cols.length)]; x.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
     }, [6, 2]);
     var loader=new THREE.TextureLoader();
-    loader.load('assets/turf-v1.webp',function(t){t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(28,28);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());ground.material.map=t;ground.material.needsUpdate=true;var inner=t.clone();inner.repeat.set(4,4);inner.needsUpdate=true;inGrass.material.map=inner;inGrass.material.needsUpdate=true;kick();});
-    loader.load('assets/grandstand-v1.webp',function(t){crowd.image=t.image;crowd.repeat.set(1,1);crowd.needsUpdate=true;t.dispose();kick();});
+    loader.load('assets/turf-v1.webp',function(t){t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(28,28);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());sceneryRevision++;ground.material.map=t;ground.material.needsUpdate=true;var inner=t.clone();inner.repeat.set(4,4);inner.needsUpdate=true;inGrass.material.map=inner;inGrass.material.needsUpdate=true;kick();});
+    loader.load('assets/grandstand-v1.webp',function(t){t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;scene.traverse(function(o){if(o.material&&o.material.map===crowd){o.material.map=t;o.material.needsUpdate=true;}});crowd.dispose();crowd=t;sceneryRevision++;kick();});
     var parkSkies={},currentSky='day';
-    ['day','dusk','night'].forEach(function(k){loader.load('assets/stadium-'+k+'-v1.webp',function(t){var c=document.createElement('canvas');c.width=1024;c.height=256;c.getContext('2d').drawImage(t.image,0,0,t.image.width,t.image.height*.42,0,0,1024,256);var skyMap=new THREE.CanvasTexture(c);skyMap.colorSpace=THREE.SRGBColorSpace;parkSkies[k]=skyMap;t.dispose();if(currentSky===k){sky.material.map=skyMap;sky.material.needsUpdate=true;kick();}});});
+    ['day','dusk','night'].forEach(function(k){loader.load('assets/stadium-'+k+'-v1.webp',function(t){var c=document.createElement('canvas');c.width=1024;c.height=256;c.getContext('2d').drawImage(t.image,0,0,t.image.width,t.image.height*.42,0,0,1024,256);var skyMap=new THREE.CanvasTexture(c);skyMap.colorSpace=THREE.SRGBColorSpace;sceneryRevision++;parkSkies[k]=skyMap;t.dispose();if(currentSky===k){sky.material.map=skyMap;sky.material.needsUpdate=true;kick();}});});
     var padTexture=canvasTex(256,128,function(c,w,h){var g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#304e47');g.addColorStop(.5,'#1c3833');g.addColorStop(1,'#102722');c.fillStyle=g;c.fillRect(0,0,w,h);for(var x=0;x<w;x+=64){c.fillStyle='#10251f';c.fillRect(x,0,2,h);c.fillStyle='#496258';c.fillRect(x+3,0,1,h);}});
     wallMat.map=padTexture;wallMat.color.set('#ffffff');padMat.color.set('#baa773');
     var N = 36;
@@ -589,22 +605,32 @@ var MSRender = (function () {
     }
     var trackGeo=new THREE.BufferGeometry();trackGeo.setAttribute('position',new THREE.Float32BufferAttribute(trackPositions,3));trackGeo.setAttribute('uv',new THREE.Float32BufferAttribute(trackUVs,2));trackGeo.computeVertexNormals();
     var trackMesh=new THREE.Mesh(trackGeo,dirtMat);trackMesh.name='warning-track';fenceGroup.add(trackMesh);
-    // stands along the first-base side and behind the plate: the backdrop of the side view
-    (function () {
-      var u = new THREE.Vector3(1, 0, 1).normalize(), o = new THREE.Vector3(1, 0, -1).normalize(), yaw = Math.atan2(u.x, u.z);
-      var low = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.4, 60), wallMat); low.position.copy(u.clone().multiplyScalar(22).add(o.clone().multiplyScalar(11))); low.position.y = 0.7; low.rotation.y = yaw; fenceGroup.add(low);
-      var lowPad = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 60), padMat); lowPad.position.copy(low.position); lowPad.position.y = 1.45; lowPad.rotation.y = yaw; fenceGroup.add(lowPad);
-      for (var t = 0; t < 5; t++) {
-        var d = 14 + t * 4.2, h = 2.4 + t * 2.6, cm = u.clone().multiplyScalar(26).add(o.clone().multiplyScalar(d));
-        var st = new THREE.Mesh(new THREE.BoxGeometry(4.2, h, 64), new THREE.MeshLambertMaterial({ color: standColors[t % 4], map: crowd }));
-        st.position.set(cm.x, h / 2, cm.z); st.rotation.y = yaw; fenceGroup.add(st);
+    // Matched seating sections run down BOTH foul lines, with aisles and dugouts.
+    [-1,1].forEach(function(side){
+      var u=new THREE.Vector3(side,0,1).normalize(),o=new THREE.Vector3(side,0,-1).normalize(),yaw=Math.atan2(u.x,u.z);
+      var group=new THREE.Group();group.name=side===1?'first-base-stands':'third-base-stands';fenceGroup.add(group);
+      function block(width,height,length,along,out,material,y){
+        var m=new THREE.Mesh(new THREE.BoxGeometry(width,height,length),material),v=u.clone().multiplyScalar(along).add(o.clone().multiplyScalar(out));
+        m.position.set(v.x,y==null?height/2:y,v.z);m.rotation.y=yaw;group.add(m);return m;
       }
-      var roof = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 64), new THREE.MeshLambertMaterial({ color: 0xe8ecf4 }));
-      var rc = u.clone().multiplyScalar(26).add(o.clone().multiplyScalar(26)); roof.position.set(rc.x, 16.5, rc.z); roof.rotation.y = yaw; fenceGroup.add(roof);
-      // behind the plate
-      var back = new THREE.Mesh(new THREE.BoxGeometry(40, 3, 0.4), wallMat); back.position.set(0, 1.5, -18); fenceGroup.add(back);
-      for (var t2 = 0; t2 < 4; t2++) { var sb = new THREE.Mesh(new THREE.BoxGeometry(46, 3 + t2 * 3, 4), new THREE.MeshLambertMaterial({ color: standColors[(t2 + 2) % 4], map: crowd })); sb.position.set(0, (3 + t2 * 3) / 2, -22 - t2 * 4); fenceGroup.add(sb); }
-    })();
+      block(.45,1.6,104,43,10,wallMat);block(.6,.18,104,43,10,padMat,1.65);
+      var concrete=new THREE.MeshLambertMaterial({color:0xb8b5a8}),roofMat=new THREE.MeshStandardMaterial({color:0x344c50,roughness:.65});
+      for(var section=0;section<6;section++){
+        var along=-1+section*17.5;
+        for(var tier=0;tier<6;tier++){
+          var h=1.5+tier*1.35,out=14+tier*3.2;
+          block(3.2,h,16,along,out,new THREE.MeshLambertMaterial({color:standColors[tier%4],map:crowd}));
+          block(3.2,h+.03,1.5,along+8.75,out,concrete);
+          block(.12,.12,16,along,out-1.6,padMat,h+.15);
+        }
+      }
+      block(11,.4,104,43,29,roofMat,9.8);
+      // Recessed dugout opening and canopy, beyond the playable dirt.
+      block(2.6,1.7,12,18,11.8,new THREE.MeshLambertMaterial({color:0x102321}));
+      block(3.4,.18,13,18,11.5,roofMat,2.1);
+    });
+    var back=new THREE.Mesh(new THREE.BoxGeometry(38,3,.4),wallMat);back.position.set(0,1.5,-18);fenceGroup.add(back);
+    for(var t2=0;t2<5;t2++){var sb=new THREE.Mesh(new THREE.BoxGeometry(46,3+t2*2.5,3.5),new THREE.MeshLambertMaterial({color:standColors[t2%4],map:crowd}));sb.position.set(0,(3+t2*2.5)/2,-21-t2*3.5);fenceGroup.add(sb);}
     function signTex(txt) { return canvasTex(128, 64, function (x, w, h) { x.fillStyle = '#ffffff'; x.font = '900 44px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, w / 2, h / 2 + 2); }); }
     [[-Math.PI / 4, '330'], [-Math.PI / 8, '375'], [0, '400'], [Math.PI / 8, '375'], [Math.PI / 4, '330']].forEach(function (s) {
       var r = MS.fenceAt(s[0]) - 1.1, sg = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.8), new THREE.MeshBasicMaterial({ map: signTex(s[1]), transparent: true }));
@@ -616,10 +642,10 @@ var MSRender = (function () {
       var lamp = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 1.2), new THREE.MeshBasicMaterial({ color: 0xfffbe6 })); lamp.position.set(s * 95, 43, 90); lamp.rotation.y = -s * 0.6; scene.add(lamp);
     });
 
-    // ---------- the pitching machine (our own: a friendly robot cannon) ----------
-    var machine = new THREE.Group(); machine.position.set(0, 0.25, 18.6); scene.add(machine);
+    // ---------- the pitching machine, fixed to the mound ----------
+    var machine = new THREE.Group(); machine.name='pitching-machine'; machine.position.set(0, 0.25, 18.6); scene.add(machine);
     var mBody = new THREE.MeshStandardMaterial({ color: 0x233744, roughness: 0.62 }), mMetal = new THREE.MeshStandardMaterial({ color: 0xc9d0de, roughness: 0.35, metalness: 0.4 });
-    var legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.45, 0.9, 12), mMetal); legs.position.y = 0.45; machine.add(legs);
+    [[-.48,0,-.3],[.48,0,-.3],[0,0,.58]].forEach(function(p){var end=new THREE.Vector3(p[0],p[1],p[2]),top=new THREE.Vector3(0,.95,0),dir=top.clone().sub(end);var leg=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,dir.length(),10),mBody);leg.position.copy(end.clone().add(top).multiplyScalar(.5));leg.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());machine.add(leg);});
     var body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.75, 0.9), mBody); body.position.y = 1.15; machine.add(body);
     var barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 0.9, 16), mMetal); barrel.rotation.x = Math.PI / 2 - 0.1; barrel.position.set(0, 1.3, -0.55); machine.add(barrel);
     var rubber=new THREE.MeshStandardMaterial({color:0x171b1e,roughness:.92});
@@ -664,6 +690,15 @@ var MSRender = (function () {
     var targets = [], BAL = [0xff5a5f, 0xffc53d, 0x3b82f6, 0x22c55e, 0xa855f7];
     function starShape() { var s = new THREE.Shape(); for (var k = 0; k < 10; k++) { var r = k % 2 ? 0.45 : 1, a = Math.PI / 2 + k * Math.PI / 5; if (k) s.lineTo(Math.cos(a) * r, Math.sin(a) * r); else s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } return s; }
     var starGeo = new THREE.ExtrudeGeometry(starShape(), { depth: 0.3, bevelEnabled: false });
+    // Latex silhouette, a tied neck, and a fine curved string (shared geometry).
+    var balloonProfile=[[.035,-1.14],[.08,-1.06],[.23,-.88],[.54,-.64],[.79,-.32],[.95,.06],[.96,.35],[.84,.68],[.59,.94],[.29,1.10],[0,1.15]];
+    var balloonCurve=new THREE.CatmullRomCurve3(balloonProfile.map(function(p){return new THREE.Vector3(p[0],p[1],0);}));
+    var balloonGeo=new THREE.LatheGeometry(balloonCurve.getPoints(80).map(function(p){return new THREE.Vector2(Math.max(0,p.x),p.y);}),48);
+    var knotGeo=new THREE.ConeGeometry(.09,.17,10);
+    var stringCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,-1.2,0),new THREE.Vector3(.06,-1.75,.03),new THREE.Vector3(-.14,-2.35,.06),new THREE.Vector3(-.04,-3.05,.02),new THREE.Vector3(.12,-3.7,0)]);
+    var stringGeo=new THREE.TubeGeometry(stringCurve,28,.012,5,false);
+    var stringMat=new THREE.MeshStandardMaterial({color:0xf2e7d0,roughness:.9});
+    var balloonMats=BAL.map(function(color){return new THREE.MeshPhysicalMaterial({color:color,emissive:color,emissiveIntensity:.12,roughness:.22,metalness:0,clearcoat:1,clearcoatRoughness:.12});});
     function setTargets(list) {
       targets.forEach(function (t) { scene.remove(t.obj); });
       targets = list.map(function (b) {
@@ -672,15 +707,18 @@ var MSRender = (function () {
         else if (b.kind === 'star') { obj = new THREE.Mesh(starGeo, new THREE.MeshBasicMaterial({ color: 0xffe066 })); obj.scale.setScalar(b.r); obj.rotation.y = Math.PI; }
         else {
           obj = new THREE.Group();
-          var bb = new THREE.Mesh(new THREE.SphereGeometry(b.r, 20, 16), new THREE.MeshStandardMaterial({ color: BAL[b.c || 0], roughness: 0.3 })); bb.scale.y = 1.18; obj.add(bb);
-          var str = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 5, 4), new THREE.MeshBasicMaterial({ color: 0xffffff })); str.position.y = -b.r - 2.5; obj.add(str);
+          var latex=balloonMats[b.c||0],body=new THREE.Mesh(balloonGeo,latex);body.scale.setScalar(b.r);obj.add(body);
+          var knot=new THREE.Mesh(knotGeo,latex);knot.position.y=-1.17*b.r;knot.scale.setScalar(b.r);obj.add(knot);
+          var str=new THREE.Mesh(stringGeo,stringMat);str.scale.setScalar(b.r);obj.add(str);
+          obj.name='balloon-'+b.id;
+
         }
         obj.position.set(b.p[0], b.p[1], b.p[2]); scene.add(obj);
         return { b: b, obj: obj, pop: 0 };
       });
     }
     function popTarget(id) { targets.forEach(function (t) { if (t.b.id === id) t.pop = performance.now(); }); kick(); }
-    function setSky(k) { currentSky=k;sky.material.map=parkSkies[k]||skyTex(k);sky.material.needsUpdate=true;sun.color.set(k==='dusk'?0xffdbb0:0xf1f5ff);sun.intensity=k==='night'?1.3:1.6;hemi.intensity=k==='night'?.65:1.05;sky.material.toneMapped=false;kick(); }
+    function setSky(k) { sceneryRevision++;currentSky=k;sky.material.map=parkSkies[k]||skyTex(k);sky.material.needsUpdate=true;sun.color.set(k==='dusk'?0xffdbb0:0xf1f5ff);sun.intensity=k==='night'?1.3:1.6;hemi.intensity=k==='night'?.65:1.05;sky.material.toneMapped=false;kick(); }
 
     // ---------- the play ----------
     // mode: 'idle' | 'pitch' {pitch, t0} | 'flight' {res, t0} ; camera moves back home between balls
@@ -733,7 +771,7 @@ var MSRender = (function () {
         busy = cam.pos.distanceTo(HOME_POS) > 0.01;
       }
       targets.forEach(function (t) {
-        if (!t.pop) { if (t.b.kind === 'balloon') t.obj.position.y = t.b.p[1] + Math.sin(now / 900 + t.b.id) * 0.4; if (t.b.kind === 'star') t.obj.rotation.y += 0.01; return; }
+        if (!t.pop) { if (t.b.kind === 'balloon') {t.obj.position.y = t.b.p[1] + Math.sin(now / 900 + t.b.id) * 0.4;t.obj.rotation.z=Math.sin(now/1500+t.b.id)*.025;} if (t.b.kind === 'star') t.obj.rotation.y += 0.01; return; }
         var k = (now - t.pop) / 350;
         if (k >= 1) { t.obj.visible = false; return; }
         t.obj.scale.setScalar((t.b.kind === 'star' ? t.b.r : 1) * (1 + k * 0.8)); busy = true;
@@ -777,128 +815,62 @@ var MSRender = (function () {
       HOME_POS.copy(view.pos); HOME_LOOK.copy(view.look); cam.pos.copy(HOME_POS); cam.look.copy(HOME_LOOK);
       resize();
     }
+    var sideCamera=new THREE.OrthographicCamera();
+    function sideBackdrop(out,L,width,height){
+      var scale=L.sx,tilt=.12,norm=Math.sqrt(1+tilt*tilt),cz=(width/2-L.plateX)/scale;
+      var offset=(L.groundY-height/2)/scale;
+      sideCamera.left=-width/(2*scale);sideCamera.right=width/(2*scale);
+      sideCamera.top=height/(2*scale);sideCamera.bottom=-height/(2*scale);
+      sideCamera.near=.1;sideCamera.far=1100;
+      // Just inside the third-base seats, facing across the diamond toward first base.
+      sideCamera.position.set(-160+offset*tilt/norm,19.2+offset/norm,cz);
+      sideCamera.lookAt(offset*tilt/norm,offset/norm,cz);sideCamera.updateProjectionMatrix();
+      var transient=[ball,shadow,multSprite,trail,ring,scene.getObjectByName('third-base-stands')].concat(fakes).concat(targets.map(function(t){return t.obj;}));
+      var visible=transient.map(function(o){var v=o.visible;o.visible=false;return v;});
+      renderer.render(scene,sideCamera);
+      out.drawImage(renderer.domElement,0,0,out.canvas.width,out.canvas.height);
+      transient.forEach(function(o,i){o.visible=visible[i];});
+    }
     resize();
-    return { pitch: pitchNow, setView: setView, hit: hitNow, idle: idle, setTargets: setTargets, popTarget: popTarget, setSky: setSky, project: project,
+    return { sideBackdrop:sideBackdrop, sceneryRevision:function(){return sceneryRevision;}, pitch: pitchNow, setView: setView, hit: hitNow, idle: idle, setTargets: setTargets, popTarget: popTarget, setSky: setSky, project: project,
       size: function () { return [W, H]; }, redraw: kick, setPaused: setPaused, onFrame: function (cb) { onFrame = cb; } };
   }
   return { create: create };
 })();
 </script>
 <script>
-/* Moonshot side view (2D canvas), like the original's: the pitching machine stands on the right, the ball flies
-   across the screen to the dotted hitting line on the left, in front of a town skyline, a fence and grass.
-   The ball is drawn big, as in the original. After a hit the 3D view takes over to follow the ball.
-   Our own art: skyline, fence, and the friendly robot pitching machine. */
+/* Moonshot batting overlay. Its backdrop is an orthographic side view of the shared
+   3D stadium; the enlarged ball and contact guide remain easy to use on phones. */
 var MSSide = (function () {
   'use strict';
   var LINE_Z = 0.15; // the dotted line: a ball met here goes straight out to centre field
-  function create(canvas) {
+  function create(canvas,park) {
     var ctx = canvas.getContext('2d'), W = 1, H = 1, dpr = 1, sky = 'day', bgCache = null;
-    var machinePhoto=null, equipment=new Image();equipment.onload=function(){machinePhoto=equipment;bgCache=null;};equipment.src='assets/pitching-machine-v1.webp';
-    var stadiumPhotos={};
-    ['day','dusk','night'].forEach(function(k){var im=new Image();im.onload=function(){stadiumPhotos[k]=im;bgCache=null;};im.src='assets/stadium-'+k+'-v1.webp';});
+    var lastRevision=-1,sidePhotos={};
+    ['day','dusk','night'].forEach(function(k){var im=new Image();im.onload=function(){sidePhotos[k]=im;bgCache=null;window.dispatchEvent(new Event('moonartready'));};im.src='assets/side-'+k+'-v2.webp';});
     var L = {}; // layout: plateX, mouthX, groundY, sx (px per metre along the pitch), sy (px per metre up), r (ball radius)
     function resize() {
       var r = canvas.getBoundingClientRect();
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = Math.max(1, r.width); H = Math.max(1, r.height);
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-      L.plateX = W * 0.4; L.mouthX = W * 0.78; L.groundY = H * 0.86;
+      L.scale=Math.max(W/750,H/375);L.dx=(W-750*L.scale)/2;L.dy=(H-375*L.scale)/2;
+      L.plateX=L.dx+750*.205*L.scale;L.mouthX=L.dx+750*.525*L.scale;L.groundY=L.dy+375*.79*L.scale;
       L.sx = (L.mouthX - L.plateX) / MS.RELEASE[2];
-      L.sy = H * 0.26;
-      L.r = Math.max(12, H * 0.06);
+      L.sy = L.sx / Math.sqrt(1.0144);
+      L.r = Math.max(12, H * 0.038);
       L.lineX = L.plateX + LINE_Z * L.sx;
       bgCache = null;
     }
     // world (metres) -> screen (px). Sideways movement (curves, wobbles, the Triplet's two fakes) shows as up/down, as if seen from a little above.
-    function project(p) { return [L.plateX + p[2] * L.sx, L.groundY - (p[1] - 0.25 * p[0]) * L.sy]; } // a little of the sideways movement shows as height (1.4.0: less, so curves don't look like dips)
+    function project(p) { return [L.plateX + p[2] * L.sx, L.groundY - (p[1] + 0.12 * p[0]) * L.sy]; } // a little of the sideways movement shows as height (1.4.0: less, so curves don't look like dips)
 
-    // ---------- the backdrop (drawn once per size and sky) ----------
-    var SKIES = {
-      day: { top: '#4fc0dc', bottom: '#c8f3ec', far: '#a9dcd6', near: ['#6db5ae', '#7cc2b9'], win: '#effcf8', cloud: '#ffffff', lit: 0.3 },
-      dusk: { top: '#ff8f6e', bottom: '#ffd9a6', far: '#e6a49a', near: ['#8e5877', '#9d6482'], win: '#ffe39a', cloud: '#fff0e2', lit: 0.5 },
-      night: { top: '#0d1340', bottom: '#2f3380', far: '#262c6a', near: ['#151a46', '#1b2152'], win: '#ffd76b', cloud: '#3a4290', lit: 0.55 }
-    };
-    function drawBackdrop() {
-      var c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
-      var x = c.getContext('2d'), s = SKIES[sky] || SKIES.day;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if(stadiumPhotos[sky]) {
-        var photo=stadiumPhotos[sky],scale=Math.max(W/photo.width,H/photo.height),dw=photo.width*scale,dh=photo.height*scale;
-        x.drawImage(photo,(W-dw)/2,(H-dh)/2,dw,dh);
-        // Chalk first/third-base foul lines, tapered into the photographic field.
-        x.save();x.fillStyle='rgba(249,247,232,.88)';
-        [-1,1].forEach(function(side){var nearX=L.plateX+side*H*.04,farX=L.plateX+side*W*.78,farY=H*.64,nearY=L.groundY+H*.008;
-          var dx=farX-nearX,dy=farY-nearY,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len,nearW=H*.0035,farW=H*.001;
-          x.beginPath();x.moveTo(nearX-nx*nearW,nearY-ny*nearW);x.lineTo(farX-nx*farW,farY-ny*farW);x.lineTo(farX+nx*farW,farY+ny*farW);x.lineTo(nearX+nx*nearW,nearY+ny*nearW);x.closePath();x.fill();
-        });x.restore();
-        // A subtle ground shadow anchors equipment without obscuring the pitch.
-        var mx=L.mouthX,my=L.groundY;var sh=x.createRadialGradient(mx+H*.09,my,0,mx+H*.09,my,H*.18);sh.addColorStop(0,'rgba(0,0,0,.42)');sh.addColorStop(1,'rgba(0,0,0,0)');x.save();x.translate(mx+H*.09,my);x.scale(1,.18);x.fillStyle=sh;x.translate(-mx-H*.09,-my);x.fillRect(mx-H*.12,my-H*.2,H*.42,H*.4);x.restore();
-        x.fillStyle='#e7e3d8';x.beginPath();x.moveTo(L.plateX-H*.04,L.groundY);x.lineTo(L.plateX+H*.04,L.groundY);x.lineTo(L.plateX+H*.04,L.groundY+H*.015);x.lineTo(L.plateX,L.groundY+H*.029);x.lineTo(L.plateX-H*.04,L.groundY+H*.015);x.closePath();x.fill();
-        machine(x);return c;
-      }
-      var g = x.createLinearGradient(0, 0, 0, L.groundY); g.addColorStop(0, s.top); g.addColorStop(1, s.bottom); x.fillStyle = g; x.fillRect(0, 0, W, H);
-      if (sky === 'night') { x.fillStyle = 'rgba(255,255,255,.8)'; for (var st = 0; st < 70; st++) { var sxp = (st * 137.5) % W, syp = (st * 71.3) % (H * 0.5); x.fillRect(sxp, syp, 1.5, 1.5); } }
-      // clouds: puffs of one flat colour
-      x.fillStyle = s.cloud;
-      [[0.2, 0.36, 0.9], [0.66, 0.3, 1.1], [0.93, 0.42, 0.8]].forEach(function (cl) {
-        var cx = W * cl[0], cy = H * cl[1], k = H * 0.05 * cl[2];
-        [[0, 0, 2.3, 0.75], [-0.9, 0.05, 1, 0.9], [0.5, -0.45, 1.2, 1.1], [1.4, 0.1, 0.9, 0.7]].forEach(function (e) {
-          x.beginPath(); x.ellipse(cx + e[0] * k, cy + e[1] * k, e[2] * k, e[3] * k, 0, 0, Math.PI * 2); x.fill();
-        });
-      });
-      // a town skyline (our own blocky buildings): a pale far row, then a nearer row with windows
-      var base = L.groundY - H * 0.17, seed = 7;
-      function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
-      x.fillStyle = s.far;
-      for (var fx = -10; fx < W;) { var fw = W * (0.04 + rnd() * 0.06), fh2 = H * (0.2 + rnd() * 0.22); x.fillRect(fx, base - fh2, fw + 1, fh2 + 4); fx += fw; }
-      for (var bx = -5; bx < W;) {
-        var bw = W * (0.05 + rnd() * 0.08), bh = H * (0.1 + rnd() * 0.2), top = base - bh;
-        x.fillStyle = s.near[rnd() < 0.5 ? 0 : 1]; x.fillRect(bx, top, bw + 1, bh + 4);
-        if (rnd() < 0.3) x.fillRect(bx + bw * 0.3, top - H * 0.03, bw * 0.4, H * 0.03);
-        if (rnd() < 0.25) { x.beginPath(); x.moveTo(bx, top); x.lineTo(bx + bw / 2, top - H * 0.06); x.lineTo(bx + bw, top); x.fill(); }
-        x.fillStyle = s.win;
-        for (var wy = top + H * 0.035; wy < base - H * 0.03; wy += H * 0.06) for (var wx = bx + bw * 0.18; wx < bx + bw - bw * 0.25; wx += bw * 0.32) if (rnd() < s.lit) x.fillRect(wx, wy, bw * 0.13, H * 0.025);
-        bx += bw + (rnd() < 0.3 ? W * 0.02 : 0);
-      }
-      // grass behind the fence, the fence, grass in front
-      x.fillStyle = sky === 'night' ? '#1f5a36' : sky === 'dusk' ? '#5a9a48' : '#56b556'; x.fillRect(0, base, W, L.groundY - base + 4);
-      var fy = L.groundY - H * 0.16, fh = H * 0.16, pw = Math.max(8, H * 0.035), gap = pw * 0.9;
-      x.fillStyle = sky === 'night' ? '#b9bcc9' : '#e9e6d6'; x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1;
-      x.fillRect(0, fy + fh * 0.3, W, fh * 0.1); x.fillRect(0, fy + fh * 0.72, W, fh * 0.1);
-      for (var px = gap / 2; px < W; px += pw + gap) {
-        x.beginPath(); x.moveTo(px, fy + fh); x.lineTo(px, fy + pw * 0.6); x.lineTo(px + pw / 2, fy); x.lineTo(px + pw, fy + pw * 0.6); x.lineTo(px + pw, fy + fh); x.closePath(); x.fill(); x.stroke();
-      }
-      var gg = x.createLinearGradient(0, L.groundY - 6, 0, H); gg.addColorStop(0, sky === 'night' ? '#3b8a4a' : '#8bd64f'); gg.addColorStop(1, sky === 'night' ? '#256b36' : '#5db83a');
-      x.fillStyle = gg; x.fillRect(0, L.groundY - 4, W, H - L.groundY + 4);
-      x.strokeStyle = sky === 'night' ? '#4ea35d' : '#a6e66b'; x.lineWidth = 2;
-      for (var gx = 0; gx < W; gx += 6) { x.beginPath(); x.moveTo(gx, L.groundY + 2); x.lineTo(gx + 2, L.groundY - 5 - (gx * 7 % 5)); x.stroke(); }
-      // home plate
-      x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(L.plateX, L.groundY + 5, H * 0.05, H * 0.012, 0, 0, Math.PI * 2); x.fill();
-      machine(x);
-      return c;
+    // Photographic finish registered to the shared park's side-camera reference.
+    // The live 3D park remains the load-failure fallback.
+    function drawBackdrop(){
+      var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
+      var x=c.getContext('2d');if(sidePhotos[sky]){x.setTransform(dpr,0,0,dpr,0,0);x.drawImage(sidePhotos[sky],L.dx,L.dy,750*L.scale,375*L.scale);}else park.sideBackdrop(x,L,W,H);lastRevision=park.sceneryRevision();return c;
     }
-    // the pitching machine: our friendly robot cannon on a stand, barrel pointing left at the plate
-    function machine(x) {
-      var mx=L.mouthX,my=L.groundY-MS.RELEASE[1]*L.sy,u=H*.016;
-      if(machinePhoto){var ih=(L.groundY-my)/(.985-.217),iw=ih*machinePhoto.width/machinePhoto.height;x.save();if(sky==='night')x.globalAlpha=.94;x.drawImage(machinePhoto,mx-iw*.145,my-ih*.217,iw,ih);x.restore();return;}
-      x.save();x.lineCap='round';
-      // Braced steel tripod, feet and transport wheels.
-      x.strokeStyle='#20282c';x.lineWidth=u*.95;x.beginPath();x.moveTo(mx+7*u,my+4*u);x.lineTo(mx+2*u,L.groundY);x.moveTo(mx+8*u,my+4*u);x.lineTo(mx+15*u,L.groundY);x.moveTo(mx+8*u,my+4*u);x.lineTo(mx+8*u,L.groundY);x.stroke();
-      x.strokeStyle='#9ca6a9';x.lineWidth=u*.25;x.beginPath();x.moveTo(mx+7*u,my+5*u);x.lineTo(mx+2*u,L.groundY-u);x.moveTo(mx+8*u,my+5*u);x.lineTo(mx+15*u,L.groundY-u);x.stroke();
-      [2,15].forEach(function(k){x.fillStyle='#202326';x.beginPath();x.arc(mx+k*u,L.groundY-u*.8,u*1.2,0,Math.PI*2);x.fill();x.fillStyle='#8d979b';x.beginPath();x.arc(mx+k*u,L.groundY-u*.8,u*.4,0,Math.PI*2);x.fill();});
-      var metal=x.createLinearGradient(mx,my-8*u,mx,my+6*u);metal.addColorStop(0,'#62747f');metal.addColorStop(.35,'#344953');metal.addColorStop(1,'#182b33');x.fillStyle=metal;x.strokeStyle='#142127';x.lineWidth=u*.3;roundRect(x,mx+u,my-7*u,13*u,12*u,u);x.fill();x.stroke();
-      // Twin rubber launching wheels, metal hubs and feed chute.
-      [my-4*u,my+4*u].forEach(function(y){var g=x.createRadialGradient(mx+5*u,y,u*.5,mx+5*u,y,3.1*u);g.addColorStop(0,'#6c7479');g.addColorStop(.32,'#353c40');g.addColorStop(.55,'#171c20');g.addColorStop(1,'#353b3e');x.fillStyle=g;x.beginPath();x.arc(mx+5*u,y,3.1*u,0,Math.PI*2);x.fill();x.strokeStyle='#828c90';x.lineWidth=u*.2;x.beginPath();x.arc(mx+5*u,y,u*.8,0,Math.PI*2);x.stroke();});
-      x.fillStyle='#bac2c4';x.beginPath();x.moveTo(mx+9*u,my-7*u);x.lineTo(mx+11*u,my-13*u);x.lineTo(mx+15*u,my-13*u);x.lineTo(mx+12*u,my-6*u);x.closePath();x.fill();x.fillStyle='#455159';x.fillRect(mx+11*u,my-13*u,4*u,u);
-      x.fillStyle='#bac1c3';x.fillRect(mx-u,my-u*.7,4*u,1.4*u);x.fillStyle='#121b20';x.fillRect(mx-u,my-u*.5,u*.5,u);
-      x.fillStyle='#adb8bd';for(var k=0;k<5;k++)x.fillRect(mx+10*u,my-u*3+k*u,2*u,u*.3);
-      x.fillStyle='#d6bd7d';x.fillRect(mx+9*u,my+3*u,3*u,u*.8);
-      x.restore();
-    }
-    function roundRect(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
-
-    // ---------- the ball ----------
     function face(x,kind,r){
       x.save();x.beginPath();x.arc(0,0,r*.98,0,Math.PI*2);x.clip();
       for(var k=0;k<180;k++){x.fillStyle=k%2?'rgba(255,255,255,.25)':'rgba(30,25,20,.07)';x.fillRect(((k*37)%101)/50*r-r,((k*61)%101)/50*r-r,.65,.65);}
@@ -923,7 +895,7 @@ var MSSide = (function () {
     // ---------- a frame ----------
     // state: { pitch, t (s since release) } or null
     function draw(state) {
-      if (!bgCache) bgCache = drawBackdrop();
+      if (!bgCache || lastRevision!==park.sceneryRevision()) bgCache = drawBackdrop();
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bgCache, 0, 0);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       // the dotted hitting line
@@ -936,7 +908,7 @@ var MSSide = (function () {
     }
     function setSky(k) { sky = k; bgCache = null; }
     resize();
-    return { resize: resize, project: project, draw: draw, setSky: setSky, size: function () { return [W, H]; }, radius: function () { return L.r; } };
+    return { resize: resize, project: project, draw: draw, setSky: setSky, size: function () { return [W, H]; }, radius: function () { return Math.max(12,H*.06); } /* preserve the original touch tolerance */ };
   }
   return { create: create };
 })();
@@ -1010,7 +982,7 @@ var MSSound = (function () {
 /* Moonshot app: modes, the flick swing, pitches, results, saves, stats, upgrades and house ads. */
 (function () {
   'use strict';
-  var S = MSSound, THREE = null, R3 = null, SV = null; // SV: the 2D side view (side.js)
+  var S = MSSound, THREE = null, R3 = null, SV = null; // SV: the side-view ball overlay
   var MAJOR_AT = 10;                  // clear Minor step 10 to open Major
   var MODE_NAMES = { minor: 'Minor', major: 'Major', moonstar: 'Moon-Star', training: 'Training' };
   var SKY = { minor: 'day', major: 'dusk', moonstar: 'night', training: 'day' };
@@ -1415,7 +1387,7 @@ var MSSound = (function () {
     Goobs.themePicker($('themes'));
     try { R3 = MSRender.create(THREE, $('cv')); }
     catch (e) { $('building').textContent = 'This phone couldn’t start the 3D view.'; $('building').classList.add('show'); return; }
-    SV = MSSide.create($('side'));
+    SV = MSSide.create($('side'),R3);window.addEventListener('moonartready',kickSide);
     if (window.ResizeObserver) new ResizeObserver(function () { SV.resize(); kickSide(); }).observe($('side'));
     window.addEventListener('resize', function () { SV.resize(); kickSide(); });
     renderChips();
