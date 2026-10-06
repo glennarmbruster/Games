@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Brickyard</title>
+<style>
+/* Brickyard styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand svg { border-radius: 10px; }
+.cardicon svg { border-radius: 16px; }
+
+/* Full screen (1.2.0, Glenn: "not full screen yet"): the canvas covers the whole phone, edge to edge behind the status bar
+   and the home bar, painted with the level's backdrop; the field sits in it with its walls (fit() in app.js). The kit's
+   html.gg-fs-over floats the back / Sound / Pause / Menu buttons; the counters are pills. --bk-bg is the level's color. */
+html.gg-fs-over, html.gg-fs-over body { background: var(--bk-bg, #1c1f3a); }
+.stage { position: fixed; inset: 0; background: var(--bk-bg, #1c1f3a); touch-action: none; }
+.stage canvas { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+.playarea { position: fixed; visibility: hidden; pointer-events: none;
+  top: calc(env(safe-area-inset-top, 0px) + 92px); bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px); }
+/* the score pill sits in the top row between the back button and the round buttons; touches go through to the game */
+.scorepill { pointer-events: none !important; height: 44px; box-sizing: border-box; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+  padding: 0 14px; line-height: 44px; font-size: 22px; font-weight: 900; min-width: 0; overflow: hidden; letter-spacing: -.3px; }
+.scorepill small, .hud small { font-size: 11px; font-weight: 800; color: #6b7080; letter-spacing: .3px; text-transform: uppercase; }
+/* level (with the paddles left) and best, just under the top row */
+.hud { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 56px); z-index: 5; pointer-events: none;
+  display: flex; justify-content: center; gap: 8px; padding: 0 10px; }
+.hud .ggpill { height: 30px; box-sizing: border-box; padding: 0 12px; font-size: 15px; line-height: 30px; display: flex; align-items: center; gap: 6px; }
+.hud .of { color: #6b7080; font-weight: 700; }
+.hud .lives { display: flex; gap: 3px; margin-left: 2px; }
+.hud .lives i { width: 14px; height: 6px; border-radius: 3px; background: #7c5cff; }
+html.gg-fs-over .top #btnPause:disabled { opacity: .5; }
+.ready { position: absolute; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 18px; color: #fff;
+  border-radius: 12px; background: rgba(14,16,40,.72); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.ready.show { display: flex; }
+.ready h2 { margin: 0; font-size: 28px; font-weight: 800; }
+.ready p { margin: 0; color: #d6daf2; font-size: 15px; line-height: 1.4; max-width: 270px; }
+.ready .go { min-height: 50px; width: 210px; flex: none; }
+.ready .caps { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; text-align: left; font-size: 13px; color: #d6daf2; }
+.ready .caps b { display: inline-block; width: 30px; text-align: center; border-radius: 8px; color: #fff; font-size: 12px; padding: 1px 0; }
+.ready.compact .caps { display: none; }
+
+/* 1.3.0: the power-up line above the bricks: what the falling capsule is and does (and if it would end yours), or the
+   power-up you have now. Touches go through to the game. */
+.powerline { position: fixed; z-index: 4; height: 26px; box-sizing: border-box; display: none; align-items: center; justify-content: center; gap: 6px;
+  pointer-events: none; color: #e8ebff; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; padding: 0 6px; }
+.powerline.show { display: flex; }
+.powerline > span { overflow: hidden; text-overflow: ellipsis; }
+.powerline b { flex: none; width: 26px; height: 18px; border-radius: 9px; color: #fff; font-size: 12px; font-weight: 900; line-height: 18px; text-align: center;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,.18); }
+.powerline strong { font-weight: 900; color: #fff; }
+.powerline small { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: #9aa0c8; }
+.powerline em { font-style: normal; font-weight: 800; color: #ffd43b; }
+.powerline.falling { animation: plpulse 1s ease-in-out infinite alternate; }
+@keyframes plpulse { from { opacity: .82; } to { opacity: 1; } }
+@media (max-width: 380px) { .powerline { font-size: 13px; gap: 5px; } }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="bk-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#1c1f3a"/>
+<g stroke="rgba(0,0,0,.25)" stroke-width="1"><rect x="10" y="16" width="18" height="9" rx="2" fill="#ff6b6b"/><rect x="30" y="16" width="18" height="9" rx="2" fill="#ffa94d"/><rect x="50" y="16" width="18" height="9" rx="2" fill="#ffd43b"/><rect x="70" y="16" width="18" height="9" rx="2" fill="#69db7c"/>
+<rect x="10" y="27" width="18" height="9" rx="2" fill="#4dabf7"/><rect x="50" y="27" width="18" height="9" rx="2" fill="#9775fa"/><rect x="70" y="27" width="18" height="9" rx="2" fill="#c9ced6"/><rect x="30" y="38" width="18" height="9" rx="2" fill="#f783ac"/></g>
+<circle cx="44" cy="62" r="4.5" fill="#fff"/><path d="M36 30 L44 60" stroke="#fff" stroke-width="1.6" stroke-dasharray="2 3" opacity=".6"/><rect x="30" y="78" width="36" height="8" rx="4" fill="#7c5cff"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <!-- full screen (1.2.0): the canvas fills the whole phone with the level's backdrop; the field (with its walls) sits in
+       it, and the round buttons and counter pills float on top. Slide anywhere to move the paddle. -->
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="ready" id="ready"></div>
+    <!-- 1.3.0: what the falling capsule does (and what it would replace), or the power-up you have, just above the bricks -->
+    <div class="powerline" id="powerline" aria-live="polite"></div>
+  </div>
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#bk-logo"/></svg>
+      <h1>Brickyard</h1>
+    </button>
+    <div class="ggpill scorepill" id="pillScore"></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnPause" aria-label="Pause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+  <div class="hud" id="info"></div>
+  <!-- not drawn: marks the free space for the field (under the pills, above the home bar); fit() reads it -->
+  <div class="playarea" id="playarea"></div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <div class="row"><div>Paddle speed<small>How far the paddle moves for a slide of your finger.</small></div>
+        <div class="stepper"><button id="spLess" aria-label="Slower">&minus;</button><b id="spVal">1.0</b><button id="spMore" aria-label="Faster">+</button></div></div>
+      <label class="row"><div>Sound<small>Plinks, bonks and zaps.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Brickyard</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Brickyard records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Brickyard logic: the brick breaker (Arkanoid rules). A 13-brick-wide field, a paddle, balls, colored bricks
+   (one hit), silver bricks (several hits), gold bricks (can't be broken), falling capsules (Slow, Catch, Expand,
+   Divide, Laser, Break, Player), extra lives, and levels made from patterns and checked by a bot.
+   Units: a brick is 1 wide and 0.5 tall. One tick() = one frame at 60 Hz. Runs in Node. */
+var BK = (function () {
+  'use strict';
+  var FW = 13, FH = 18.2, TOP = 2, BH = 0.5, PADY = 16.6, PADH = 0.42, BALLR = 0.17;
+  var PADW = 2.3, PADW_BIG = 3.4, SPEED0 = 0.15, SPEEDMAX = 0.28, SPEEDSLOW = 0.11, CAPV = 0.055;
+  // brick kinds: 1-8 colors, 9 silver, 10 gold
+  var POINTS = [0, 50, 60, 70, 80, 90, 100, 110, 120];
+  var CAPS = ['S', 'C', 'E', 'D', 'L', 'B', 'P'];
+  var CAPW = [16, 14, 16, 16, 14, 3, 5];     // how often each capsule comes (the original makes Break and Player rare)
+
+  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  // ---------- levels made from patterns ----------
+  // each pattern says, for a brick at (col, row) of a 13 x rows grid, what goes there ('.' empty, 1-8 color, 'S' silver, 'G' gold)
+  var PATTERNS = [
+    function (c, r) { return r === 0 ? 'S' : String(1 + (r % 8)); },                                              // rows of color, a silver top
+    function (c, r, n) { return Math.abs(c - 6) <= r ? String(1 + ((r + n) % 8)) : '.'; },                        // a pyramid
+    function (c, r) { return (c + r) % 2 ? String(1 + (c % 8)) : '.'; },                                           // a checkerboard
+    function (c, r, n, R) { var m = Math.floor(R / 2), d = Math.abs(c - 6) + Math.abs(r - m); return d <= m + 1 ? (d === m + 1 ? 'S' : String(1 + (d % 8))) : '.'; }, // a diamond
+    function (c, r) { return c % 4 === 0 ? (r % 3 === 2 ? 'G' : r % 3 === 0 ? 'S' : String(1 + ((r + 4) % 8))) : String(1 + (r % 8)); },                   // pillars
+    function (c, r, n, R) { var y = r / R, x = (c - 6) / 6.5, v = Math.pow(x * x + y * y * 1.1 - 0.55, 3) - x * x * Math.pow(1 - y, 3) * 1.2; return v < 0.02 ? String(5 + (r % 2)) : '.'; }, // a heart
+    function (c, r) { return r % 2 === 0 ? String(1 + ((c + r) % 8)) : (c === 0 || c === 12 ? 'G' : '.'); },       // stripes
+    function (c, r, n, R) { return r === R - 1 && c % 3 !== 1 ? 'G' : r < R - 1 ? String(1 + ((c * 3 + r) % 8)) : '.'; } // a floor with gaps
+  ];
+  function makeLevel(n) {
+    var R = Math.min(12, 5 + Math.floor(n / 3)), p = PATTERNS[(n - 1) % PATTERNS.length], rows = [];
+    for (var r = 0; r < R; r++) {
+      var row = '';
+      for (var c = 0; c < FW; c++) {
+        var v = p(c, r, n, R);
+        if (v !== '.' && v !== 'G' && v !== 'S' && n > 4 && ((c * 7 + r * 13 + n) % 17 === 0)) v = 'S'; // more silver as levels go on
+        row += v;
+      }
+      rows.push(row);
+    }
+    rows = rows.map(function (row) { return row.slice(0, FW); });
+    return { rows: rows, n: n };
+  }
+
+  // ---------- a game ----------
+  function create(level, opts) {
+    var g = { level: level.n, bricks: [], balls: [], caps: [], shots: [], score: (opts && opts.score) || 0, lives: (opts && opts.lives != null) ? opts.lives : 3,
+      pad: { x: FW / 2, w: PADW, want: PADW }, power: '', catchT: 0, laserT: 0, breakOpen: false, t: 0, seed: ((opts && opts.seed) >>> 0) || 1, over: false, cleared: false,
+      warped: false, nextLife: (opts && opts.nextLife) || 20000, speedUp: 0, sinceHit: 0, ev: [] };
+    g.rnd = rng(g.seed);
+    var silverHits = Math.min(4, 2 + Math.floor((level.n - 1) / 12));
+    level.rows.forEach(function (row, r) {
+      for (var c = 0; c < row.length; c++) {
+        var ch = row[c]; if (ch === '.') continue;
+        var kind = ch === 'S' ? 9 : ch === 'G' ? 10 : +ch;
+        g.bricks.push({ c: c, r: r, x: c, y: TOP + r * BH, kind: kind, hits: kind === 9 ? silverHits : kind === 10 ? Infinity : 1, flash: 0 });
+      }
+    });
+    serve(g);
+    return g;
+  }
+  function serve(g) {
+    g.balls = [{ x: g.pad.x, y: PADY - BALLR - 0.01, vx: 0, vy: 0, speed: SPEED0, stuck: true, off: 0.3 }];
+    g.caps = []; g.shots = []; g.power = ''; g.pad.want = PADW; g.pad.w = PADW;
+  }
+  function breakable(b) { return b.kind !== 10; }
+  function left(g) { var n = 0; g.bricks.forEach(function (b) { if (breakable(b)) n++; }); return n; }
+
+  // ---------- controls ----------
+  function movePad(g, x) { g.pad.x = Math.max(g.pad.w / 2, Math.min(FW - g.pad.w / 2 + (g.breakOpen ? g.pad.w : 0), x)); }
+  // launch a stuck ball (at the start, or after Catch)
+  function release(g) {
+    var any = false;
+    g.balls.forEach(function (b) {
+      if (!b.stuck) return;
+      b.stuck = false; any = true;
+      var a = b.off / (g.pad.w / 2) * 1.0; // the angle from where it sits on the paddle
+      a = Math.max(-1.0, Math.min(1.0, a)) || 0.35;
+      b.vx = Math.sin(a) * b.speed; b.vy = -Math.cos(a) * b.speed;
+    });
+    return any;
+  }
+  function fire(g) {
+    if (g.power !== 'L' || g.laserT > 0) return false;
+    g.laserT = 18;
+    g.shots.push({ x: g.pad.x - g.pad.w / 2 + 0.25, y: PADY - 0.3 }, { x: g.pad.x + g.pad.w / 2 - 0.25, y: PADY - 0.3 });
+    g.ev.push({ t: 'laser' });
+    return true;
+  }
+
+  // ---------- bricks being hit ----------
+  function hitBrick(g, b, byLaser) {
+    b.flash = 8;
+    if (b.kind === 10) { g.ev.push({ t: 'gold' }); return; }
+    b.hits--;
+    if (b.hits > 0) { g.ev.push({ t: 'silver' }); return; }
+    g.bricks.splice(g.bricks.indexOf(b), 1);
+    addScore(g, b.kind === 9 ? 50 * g.level : POINTS[b.kind]);
+    g.ev.push({ t: 'brick', kind: b.kind, x: b.x + 0.5, y: b.y + BH / 2 });
+    // a capsule, now and then (not while a capsule is falling or while there are several balls, like the original)
+    if (b.kind !== 9 && !g.caps.length && g.balls.length === 1 && g.rnd() < 0.16) {
+      var tot = 0, i; for (i = 0; i < CAPS.length; i++) tot += CAPW[i];
+      var pick = g.rnd() * tot, k = 0; for (i = 0; i < CAPS.length; i++) { pick -= CAPW[i]; if (pick < 0) { k = i; break; } }
+      if (CAPS[k] === g.power && CAPS[k] !== 'P') k = (k + 1) % CAPS.length;
+      g.caps.push({ x: b.x + 0.5, y: b.y + BH / 2, kind: CAPS[k] });
+    }
+    if (left(g) === 0) { g.cleared = true; g.ev.push({ t: 'cleared' }); }
+  }
+  function addScore(g, n) {
+    g.score += n;
+    while (g.score >= g.nextLife) { g.lives++; g.nextLife = g.nextLife === 20000 ? 60000 : g.nextLife + 60000; g.ev.push({ t: 'life' }); }
+  }
+  function catchPower(g, k) {
+    g.ev.push({ t: 'cap', kind: k });
+    addScore(g, 1000);
+    if (k === 'P') { g.lives++; g.ev.push({ t: 'life' }); return; }
+    if (k === 'D') {
+      var b = g.balls[0], out = [b];
+      if (b && !b.stuck) {
+        var sp = Math.hypot(b.vx, b.vy), a = Math.atan2(b.vx, -b.vy);
+        [-0.35, 0.35].forEach(function (d) { out.push({ x: b.x, y: b.y, vx: Math.sin(a + d) * sp, vy: -Math.cos(a + d) * sp, speed: b.speed, stuck: false, off: 0 }); });
+      }
+      g.balls = out; g.power = ''; g.pad.want = PADW;
+      return;
+    }
+    if (k === 'B') { g.breakOpen = true; return; }
+    g.power = k;
+    g.pad.want = k === 'E' ? PADW_BIG : PADW;
+    if (k === 'S') g.balls.forEach(function (b) { setSpeed(b, SPEEDSLOW); });
+    if (k !== 'C') g.balls.forEach(function (b) { if (b.stuck) { /* keep */ } });
+  }
+  function setSpeed(b, s) { b.speed = s; var v = Math.hypot(b.vx, b.vy) || 1; if (!b.stuck) { b.vx = b.vx / v * s; b.vy = b.vy / v * s; } }
+
+  // ---------- one frame ----------
+  function tick(g) {
+    if (g.over || g.cleared || g.warped) return;
+    g.t++;
+    // the paddle grows or shrinks smoothly
+    g.pad.w += (g.pad.want - g.pad.w) * 0.2;
+    if (g.laserT > 0) g.laserT--;
+    // through the Break door
+    if (g.breakOpen && g.pad.x + g.pad.w / 2 > FW + 0.2) { g.warped = true; addScore(g, 10000); g.ev.push({ t: 'warp' }); return; }
+    // balls
+    for (var i = g.balls.length - 1; i >= 0; i--) {
+      var b = g.balls[i];
+      if (b.stuck) { b.x = g.pad.x + b.off; b.y = PADY - BALLR - 0.01; continue; }
+      // speed creeps up over time (the original speeds up after so many hits and as time passes)
+      if (g.power !== 'S' && g.t % 600 === 0 && b.speed < SPEEDMAX) setSpeed(b, Math.min(SPEEDMAX, b.speed + 0.012));
+      var steps = Math.ceil(b.speed / (BALLR * 0.5)), lost = false;
+      for (var s = 0; s < steps && !lost; s++) lost = moveBall(g, b, 1 / steps);
+      if (lost) g.balls.splice(i, 1);
+      else if (++g.sinceHit > 60 * 12) { // a ball stuck bouncing in a loop: nudge it
+        g.sinceHit = 0; var a = Math.atan2(b.vx, -b.vy) + (g.rnd() < 0.5 ? -0.25 : 0.25); b.vx = Math.sin(a) * b.speed; b.vy = -Math.cos(a) * b.speed;
+      }
+    }
+    if (!g.balls.length) {
+      g.lives--; g.ev.push({ t: 'lost' });
+      g.breakOpen = false;
+      if (g.lives <= 0) { g.over = true; g.ev.push({ t: 'over' }); return; }
+      serve(g); return;
+    }
+    // capsules
+    for (var k = g.caps.length - 1; k >= 0; k--) {
+      var cp = g.caps[k]; cp.y += CAPV;
+      if (cp.y > PADY - 0.25 && cp.y < PADY + PADH + 0.25 && Math.abs(cp.x - g.pad.x) < g.pad.w / 2 + 0.4) { g.caps.splice(k, 1); catchPower(g, cp.kind); continue; }
+      if (cp.y > FH) g.caps.splice(k, 1);
+    }
+    // laser shots
+    for (var q = g.shots.length - 1; q >= 0; q--) {
+      var sh = g.shots[q]; sh.y -= 0.45;
+      var hitB = null;
+      for (var j = 0; j < g.bricks.length; j++) { var br = g.bricks[j]; if (sh.x >= br.x && sh.x <= br.x + 1 && sh.y <= br.y + BH && sh.y >= br.y - 0.45) { hitB = br; break; } }
+      if (hitB) { g.shots.splice(q, 1); hitBrick(g, hitB, true); if (g.cleared) return; }
+      else if (sh.y < TOP - 1) g.shots.splice(q, 1);
+    }
+    g.bricks.forEach(function (bb) { if (bb.flash) bb.flash--; });
+  }
+  // move a ball part of a frame; returns true if it fell off the bottom
+  function moveBall(g, b, frac) {
+    b.x += b.vx * frac; b.y += b.vy * frac;
+    // walls and the top
+    if (b.x < BALLR) { b.x = BALLR; b.vx = Math.abs(b.vx); g.ev.push({ t: 'wall' }); }
+    else if (b.x > FW - BALLR) { b.x = FW - BALLR; b.vx = -Math.abs(b.vx); g.ev.push({ t: 'wall' }); }
+    if (b.y < TOP - 1.4 + BALLR) { b.y = TOP - 1.4 + BALLR; b.vy = Math.abs(b.vy); g.ev.push({ t: 'wall' }); }
+    // the paddle: where it lands sets the angle (up to 60 degrees from straight up)
+    var p = g.pad;
+    if (b.vy > 0 && b.y + BALLR >= PADY && b.y - BALLR <= PADY + PADH && b.x >= p.x - p.w / 2 - BALLR && b.x <= p.x + p.w / 2 + BALLR) {
+      var off = (b.x - p.x) / (p.w / 2), a = Math.max(-1, Math.min(1, off)) * 1.05;
+      if (Math.abs(a) < 0.12) a = a < 0 ? -0.12 : 0.12; // never straight up and down
+      b.y = PADY - BALLR;
+      g.sinceHit = 0;
+      if (g.power === 'C') { b.stuck = true; b.off = b.x - p.x; b.vx = 0; b.vy = 0; g.ev.push({ t: 'catch' }); return false; }
+      b.vx = Math.sin(a) * b.speed; b.vy = -Math.cos(a) * b.speed;
+      g.ev.push({ t: 'paddle' });
+      return false;
+    }
+    if (b.y > FH + 1) return true;
+    // bricks: find the one it overlaps and bounce off the side it came through
+    for (var i = 0; i < g.bricks.length; i++) {
+      var br = g.bricks[i];
+      var nx = Math.max(br.x, Math.min(b.x, br.x + 1)), ny = Math.max(br.y, Math.min(b.y, br.y + BH)), dx = b.x - nx, dy = b.y - ny;
+      if (dx * dx + dy * dy > BALLR * BALLR) continue;
+      // push out along the shallower axis
+      var penX = b.vx > 0 ? (b.x + BALLR) - br.x : (br.x + 1) - (b.x - BALLR);
+      var penY = b.vy > 0 ? (b.y + BALLR) - br.y : (br.y + BH) - (b.y - BALLR);
+      if (dx !== 0 && dy !== 0 && Math.abs(Math.abs(dx) - Math.abs(dy)) < 0.02) { b.vx = -b.vx; b.vy = -b.vy; }  // a corner
+      else if (penX / Math.abs(b.vx || 1e-6) < penY / Math.abs(b.vy || 1e-6)) { b.vx = -b.vx; b.x += b.vx > 0 ? penX : -penX; }
+      else { b.vy = -b.vy; b.y += b.vy > 0 ? penY : -penY; }
+      g.sinceHit = br.kind === 10 ? g.sinceHit : 0;
+      hitBrick(g, br, false);
+      // each brick hit speeds the ball up a touch
+      if (g.power !== 'S' && b.speed < SPEEDMAX) setSpeed(b, Math.min(SPEEDMAX, b.speed + 0.0015));
+      break;
+    }
+    return false;
+  }
+  function takeEvents(g) { var e = g.ev; g.ev = []; return e; }
+
+  // ---------- a bot that keeps the paddle under the ball (to check a level can be cleared) ----------
+  function botPlay(level, maxFrames) {
+    var g = create(level, { lives: 99, seed: level.n * 17 }), R2 = rng(level.n * 31 + 7), aimOff = 0, lastBreak = 0, lastLeft = -1;
+    release(g);
+    for (var f = 0; f < maxFrames && !g.cleared && !g.warped && !g.over; f++) {
+      var b = g.balls[0];
+      if (b) {
+        if (b.vy > 0 && b.y > PADY - 4) {
+          if (!b.aimSet) {
+            // aim at a brick: mostly the lowest ones, sometimes any (a straight-line guess, ignoring bounces)
+            var bs = g.bricks.filter(function (x) { return x.kind !== 10; });
+            if (bs.length && g.t - lastBreak > 60 * 20) { aimOff = (R2() - 0.5) * g.pad.w * 0.95; }   // stuck on the last few: try any angle
+            else if (bs.length) {
+              bs.sort(function (p, q) { return q.y - p.y; });
+              var t = R2() < 0.6 ? bs[Math.floor(R2() * Math.min(4, bs.length))] : bs[Math.floor(R2() * bs.length)];
+              var a = Math.atan2(t.x + 0.5 - b.x, PADY - (t.y + BH));
+              a = Math.max(-1.0, Math.min(1.0, a));
+              aimOff = a / 1.05 * (g.pad.w / 2);
+            } else aimOff = 0;
+            b.aimSet = true;
+          }
+        } else b.aimSet = false;
+        movePad(g, b.x - aimOff);
+      }
+      if (g.balls.some(function (x) { return x.stuck; })) release(g);
+      tick(g); takeEvents(g);
+      var lf = left(g); if (lf !== lastLeft) { lastLeft = lf; lastBreak = g.t; }
+    }
+    return { cleared: g.cleared || g.warped, frames: g.t, lost: 99 - g.lives, left: left(g) };
+  }
+  return { FW: FW, FH: FH, TOP: TOP, BH: BH, PADY: PADY, PADH: PADH, BALLR: BALLR, CAPS: CAPS, makeLevel: makeLevel, create: create, tick: tick, movePad: movePad, release: release, fire: fire,
+    takeEvents: takeEvents, left: left, serve: serve, botPlay: botPlay, PATTERNS: PATTERNS };
+})();
+if (typeof module !== 'undefined') module.exports = BK;
+</script>
+<script>
+/* Brickyard sounds: synthesized with Web Audio (no audio files). */
+var BKSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    paddle: function () { if (on) { tone('square', 330, 0, 0.05, 0.08); } },
+    wall: function () { if (on) tone('square', 220, 0, 0.03, 0.04); },
+    brick: function (k) { if (on) { tone('square', 440 + (k % 8) * 70, 0, 0.06, 0.08); noise(3500, 3, 0.03, 0.08); } },
+    silver: function () { if (on) { tone('triangle', 1760, 0, 0.08, 0.1); tone('triangle', 2350, 0, 0.1, 0.06, 0.02); } },
+    gold: function () { if (on) tone('triangle', 1175, 0, 0.12, 0.1); },
+    cap: function () { if (on) [523, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, 0.1, 0.18, i * 0.06); }); },
+    laser: function () { if (on) tone('sawtooth', 1400, 300, 0.1, 0.06); },
+    life: function () { if (on) [784, 988, 1175, 1568].forEach(function (f, i) { tone('square', f, 0, 0.1, 0.08, i * 0.08); }); },
+    lost: function () { if (on) { tone('sawtooth', 500, 90, 0.7, 0.14); } },
+    warp: function () { if (on) { tone('sine', 300, 1800, 0.6, 0.15); } },
+    clear: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, i === 4 ? 0.5 : 0.16, 0.26, i * 0.09); }); },
+    over: function () { if (on) [440, 392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.25, 0.2, i * 0.18); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Brickyard app: the field, sliding the paddle, launching, lasers, the fixed 60 Hz loop, levels, lives,
+   saves, stats and house ads. */
+(function () {
+  'use strict';
+  var S = BKSound, STEP = 1000 / 60, LAST = 32;
+  var BCOL = ['', '#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f783ac', '#3bc9db', '#c9ced6', '#e3b341'];
+  var CAPCOL = { S: '#ff922b', C: '#40c057', E: '#4c6ef5', D: '#15aabf', L: '#fa5252', B: '#e64980', P: '#868e96' };
+  // 1.3.0: the one-liner above the bricks says what a falling capsule is ("S" = Slow) and whether catching it would end
+  // the power-up you have, so you can choose to let it fall (Glenn: "If I have laser, and slow is dropping I'll avoid slow")
+  var CAPSHORT = { S: ['Slow', 'slower ball'], C: ['Catch', 'ball sticks to the paddle'], E: ['Expand', 'wider paddle'], D: ['Divide', 'three balls'],
+    L: ['Laser', 'hold to fire'], B: ['Break', 'door to the next level'], P: ['Player', 'extra paddle'] };
+  var CAPNAME = { S: 'Slow: the ball slows down', C: 'Catch: the ball sticks to the paddle (tap to let go)', E: 'Expand: a longer paddle', D: 'Divide: three balls', L: 'Laser: tap and hold to fire', B: 'Break: a door opens on the right; slide through it to skip the level', P: 'Player: an extra life' };
+
+  // ================= storage =================
+  var store = Goobs.store('bricks');
+  var settings = { sound: false, adEvery: 3, speed: 1.0 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    settings.speed = Math.min(2, Math.max(0.5, Math.round(settings.speed * 10) / 10));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { seen: false, finished: 0, lastAdAt: 0, best: 0, maxLevel: 1 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { games: 0, bricks: 0, caps: 0, levels: 0, ms: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || GoobsAds.isOpen(); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+
+  // ================= game =================
+  // phase: 'ready' (start panel), 'run', 'paused', 'between' (level cleared), 'over'
+  var g = null, phase = 'ready', acc = 0, lastT = 0, parts = [], serveT = 0, betweenT = 0;
+  function newRun(level) {
+    g = BK.create(BK.makeLevel(level || 1), { seed: newSeed() });
+    phase = 'ready'; parts = []; serveT = 0;
+    store.del('run'); renderAll();
+  }
+  function nextLevel() {
+    var n = g.level + 1;
+    if (n > LAST) { finishAll(); return; }
+    g = BK.create(BK.makeLevel(n), { seed: newSeed(), score: g.score, lives: g.lives, nextLife: g.nextLife });
+    meta.maxLevel = Math.max(meta.maxLevel, n); saveMeta();
+    parts = []; serveT = 0; phase = 'run'; lastT = performance.now(); acc = 0;
+    save(); renderInfo();
+  }
+  function save() { if (g && (phase === 'run' || phase === 'paused') && !g.over) store.set('run', g); else store.del('run'); }
+  function load() {
+    var r = store.get('run', null);
+    if (!r || !Array.isArray(r.bricks) || r.over) return false;
+    g = r; g.rnd = (function (seed) { var s2 = seed >>> 0 || 1; return function () { s2 = (s2 + 0x6D2B79F5) | 0; var t = Math.imul(s2 ^ (s2 >>> 15), s2 | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })(g.seed + g.t);
+    g.bricks.forEach(function (b) { if (b.kind === 10) b.hits = Infinity; });
+    g.balls.forEach(function (b) { b.stuck = true; b.off = 0.3; }); // come back with the ball on the paddle
+    g.ev = []; phase = 'paused'; renderAll(); return true;
+  }
+  function begin() { if (phase !== 'ready') return; phase = 'run'; lastT = performance.now(); acc = 0; S.unlock(); renderReady(); renderTools(); }
+  function pause() { if (phase !== 'run') return; phase = 'paused'; save(); renderReady(); renderTools(); }
+  function resume() { if (phase !== 'paused') return; phase = 'run'; lastT = performance.now(); acc = 0; renderReady(); renderTools(); }
+
+  // ================= loop =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(100, t - lastT); lastT = t;
+    if (!g) return;
+    if (phase === 'run' && !sheetOpen()) {
+      acc += dt; var n = 0;
+      while (acc >= STEP && n++ < 6) {
+        acc -= STEP;
+        if (held && g.power === 'L') BK.fire(g);
+        // the ball launches by itself after 3 seconds on the paddle
+        if (g.balls.some(function (b) { return b.stuck; })) { if (++serveT > 180) { BK.release(g); serveT = 0; } } else serveT = 0;
+        BK.tick(g); events();
+        if (phase !== 'run') break;
+      }
+      stats.ms += dt;
+    }
+    if (phase === 'between' && performance.now() > betweenT) nextLevel();
+    parts.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.01; p.t++; });
+    parts = parts.filter(function (p) { return p.t < 40; });
+    draw();
+  }
+  function events() {
+    BK.takeEvents(g).forEach(function (e) {
+      if (e.t === 'brick') { S.brick(e.kind); stats.bricks++; burst(e.x, e.y, BCOL[e.kind]); renderInfo(); }
+      else if (e.t === 'silver') S.silver();
+      else if (e.t === 'gold') S.gold();
+      else if (e.t === 'paddle' || e.t === 'catch') S.paddle();
+      else if (e.t === 'wall') S.wall();
+      else if (e.t === 'cap') { S.cap(); stats.caps++; toastCap(e.kind); renderInfo(); }
+      else if (e.t === 'laser') S.laser();
+      else if (e.t === 'life') { S.life(); renderInfo(); }
+      else if (e.t === 'lost') { S.lost(); renderInfo(); }
+      else if (e.t === 'cleared' || e.t === 'warp') { if (e.t === 'warp') S.warp(); else S.clear(); stats.levels++; saveStats(); phase = 'between'; betweenT = performance.now() + 1600; banner = { text: e.t === 'warp' ? 'Through the door! +10,000' : 'Level ' + g.level + ' cleared!', t: performance.now() }; }
+      else if (e.t === 'over') { phase = 'over'; S.over(); setTimeout(gameOver, 900); }
+    });
+  }
+  var banner = null, capToast = null;
+  function toastCap(k) { capToast = { k: k, t: performance.now() }; }
+  function burst(x, y, col) { for (var i = 0; i < 7; i++) parts.push({ x: x + (Math.random() - 0.5) * 0.8, y: y, vx: (Math.random() - 0.5) * 0.12, vy: -Math.random() * 0.1, col: col, t: 0 }); }
+  function gameOver() {
+    stats.games++; saveStats();
+    var nb = g.score > meta.best; if (nb) meta.best = g.score;
+    meta.finished++; saveMeta(); store.del('run');
+    var lv = g.level, b = [{ label: 'New game', red: true, go: function () { between(function () { newRun(1); }); } }];
+    if (lv > 1) b.push({ label: 'Continue from level ' + lv, go: function () { between(function () { newRun(lv); }); } });
+    showCard('Game over', 'Score <b>' + fmt(g.score) + '</b> &middot; level ' + lv + (nb ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(meta.best)) + (lv > 1 ? '<br><small>Continuing starts that level again with a fresh score.</small>' : ''), b);
+  }
+  function finishAll() {
+    phase = 'over'; stats.games++; saveStats();
+    var nb = g.score > meta.best; if (nb) meta.best = g.score;
+    meta.finished++; saveMeta(); store.del('run'); S.clear();
+    showCard('All ' + LAST + ' levels!', 'You cleared the whole Brickyard. Score <b>' + fmt(g.score) + '</b>' + (nb ? '<br><span class="newbest">New best!</span>' : ''), [{ label: 'Play again', red: true, go: function () { between(function () { newRun(1); }); } }]);
+  }
+
+  // ================= drawing =================
+  var cv, cx, dpr = 1, k = 28, W = BK.FW, H = BK.FH;
+  // full screen (1.2.0): the canvas is the whole screen (CSS px VW x VH); the field is W x H cells of k px at (OX, OY),
+  // with WALL px walls on its sides and the ceiling band on top. Nothing about the rules changes, only where it's drawn.
+  var VW = 390, VH = 844, OX = 0, OY = 0, WALL = 4, bgCache = null, bgKey = '';
+  // 1.3.0: PL px are kept free above the field for the power-up line
+  var PL = 30, plKey = '';
+  function fit() {
+    // the free space is the .playarea box (under the pills, above the home bar). The field takes all the width it can
+    // (less its walls) or the height, on short phones; quarter-pixel steps keep the size stable. It sits
+    // low in that space ("the field reaching down near the bottom"), with a thumb margin under it of up to 96 px; any
+    // height left over goes above it.
+    var st = $('stage').getBoundingClientRect(), pa = $('playarea').getBoundingClientRect();
+    VW = st.width; VH = st.height;
+    k = Math.max(10, Math.floor(4 * Math.min((pa.width - 2 * WALL) / W, (pa.height - 24 - PL) / H)) / 4);
+    var fw = W * k, fh = H * k, spare = Math.max(0, pa.height - PL - fh);
+    OX = Math.round(pa.left + (pa.width - fw) / 2);
+    OY = Math.round(pa.bottom - Math.min(spare, 96) - fh);
+    var pl = $('powerline').style; pl.left = (OX - WALL) + 'px'; pl.width = (fw + 2 * WALL) + 'px'; pl.top = (OY - PL + 2) + 'px'; plKey = '';
+    var r = $('ready').style; r.left = OX + 'px'; r.top = (OY + (BK.TOP - 1.4) * k) + 'px'; r.width = fw + 'px'; r.height = (fh - (BK.TOP - 1.4) * k) + 'px';
+    $('ready').classList.toggle('compact', fh < 460);
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.width = Math.round(VW * dpr); cv.height = Math.round(VH * dpr);
+    bgKey = '';
+  }
+  function rr(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+  var BGS = [['#1c1f3a', '#262a52'], ['#132b3a', '#1b3d52'], ['#2a1a3a', '#3a2452'], ['#1a3326', '#244a36']];
+  // the backdrop: the level's color and its quiet diamond pattern over the WHOLE screen, lined up with the field's cells
+  // so the field and the space around it read as one. Drawn once per size and level into a spare canvas.
+  function backdrop(bg) {
+    var key = VW + 'x' + VH + ':' + k + ':' + OX + ',' + OY + ':' + bg[0] + ':' + dpr;
+    if (bgKey === key && bgCache) return bgCache;
+    bgKey = key; bgCache = bgCache || document.createElement('canvas');
+    bgCache.width = cv.width; bgCache.height = cv.height;
+    var c = bgCache.getContext('2d'), s2 = 1.2 * k;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.fillStyle = bg[0]; c.fillRect(0, 0, VW, VH);
+    c.fillStyle = bg[1];
+    var j0 = Math.floor(-OY / s2) - 1, j1 = Math.ceil((VH - OY) / s2) + 1, i0 = Math.floor(-OX / s2) - 1, i1 = Math.ceil((VW - OX) / s2) + 1;
+    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+      var x = OX + i * s2 + (((j % 2) + 2) % 2) * 0.6 * k, y = OY + j * s2, d = 0.25 * k;
+      c.beginPath(); c.moveTo(x, y - d); c.lineTo(x + d, y); c.lineTo(x, y + d); c.lineTo(x - d, y); c.fill();
+    }
+    document.documentElement.style.setProperty('--bk-bg', bg[0]); // the page behind the canvas matches (overscroll, rotation)
+    return bgCache;
+  }
+  // the power-up line: a falling capsule wins (its name, what it does, what it would end); otherwise the power-up you have
+  var POWERS = { S: 1, C: 1, E: 1, L: 1 };
+  function capBadge(c) { return '<b style="background:' + CAPCOL[c] + '">' + c + '</b>'; }
+  function powerLine() {
+    var el = $('powerline'), cap = g && !g.over && g.caps.length ? g.caps[0].kind : '', pw = g && !g.over ? g.power : '';
+    var key = cap + '|' + pw + '|' + (g && g.balls.length > 1 ? 'm' : '');
+    if (key === plKey) return;
+    plKey = key;
+    var h = '';
+    if (cap) {
+      var lose = POWERS[pw] && (POWERS[cap] || cap === 'D') && cap !== pw ? ' · <em>ends your ' + CAPSHORT[pw][0] + '</em>' : '';
+      h = capBadge(cap) + '<span><strong>' + CAPSHORT[cap][0] + '</strong>: ' + CAPSHORT[cap][1] + lose + '</span>';
+    } else if (pw) h = '<small>You have</small>' + capBadge(pw) + '<span><strong>' + CAPSHORT[pw][0] + '</strong>: ' + CAPSHORT[pw][1] + '</span>';
+    el.innerHTML = h;
+    el.className = 'powerline' + (h ? ' show' : '') + (cap ? ' falling' : '');
+  }
+  function draw() {
+    if (!cx || !g) return;
+    powerLine();
+    var bg = BGS[(g.level - 1) % BGS.length], now = performance.now(), fw = W * k, fh = H * k, ceil = (BK.TOP - 1.4) * k;
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.drawImage(backdrop(bg), 0, 0);
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // the walls the ball bounces off: the ceiling band and the two sides, fading out under the paddle (the bottom is open)
+    var wg = cx.createLinearGradient(0, OY + BK.PADY * k, 0, OY + fh);
+    wg.addColorStop(0, '#3a3f6b'); wg.addColorStop(1, 'rgba(58,63,107,0)');
+    cx.fillStyle = '#3a3f6b';
+    rr(OX - WALL, OY, fw + 2 * WALL, ceil, Math.min(8, ceil / 2)); cx.fill();
+    cx.fillRect(OX - WALL, OY + ceil / 2, WALL, BK.PADY * k - ceil / 2); cx.fillRect(OX + fw, OY + ceil / 2, WALL, BK.PADY * k - ceil / 2);
+    cx.fillStyle = wg; cx.fillRect(OX - WALL, OY + BK.PADY * k, WALL, fh - BK.PADY * k); cx.fillRect(OX + fw, OY + BK.PADY * k, WALL, fh - BK.PADY * k);
+    cx.fillStyle = 'rgba(255,255,255,.10)'; cx.fillRect(OX - 1, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX + fw, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX, OY + ceil, fw, 1);
+    // the Break door: a glowing gap in the right wall at paddle height
+    if (g.breakOpen) {
+      var gl = 0.5 + 0.5 * Math.sin(now / 150);
+      cx.fillStyle = bg[0]; cx.fillRect(OX + fw, OY + (BK.PADY - 1.2) * k, WALL, 2.4 * k);
+      cx.fillStyle = 'rgba(230,73,128,' + (0.4 + 0.5 * gl).toFixed(2) + ')'; cx.fillRect(OX + fw, OY + (BK.PADY - 1.2) * k, WALL, 2.4 * k);
+    }
+    // everything in the field is drawn in field coordinates, clipped to the field (plus the way out through the door)
+    cx.save(); cx.translate(OX, OY);
+    cx.beginPath(); cx.rect(0, ceil, fw + (g.breakOpen ? 4 * k : 0), fh - ceil); cx.clip();
+    // bricks
+    g.bricks.forEach(function (b) {
+      var x = b.x * k + 1, y = b.y * k + 1, w = k - 2, h = BK.BH * k - 2, col = BCOL[b.kind];
+      rr(x, y, w, h, Math.min(4, h * 0.3)); cx.fillStyle = col; cx.fill();
+      cx.fillStyle = 'rgba(255,255,255,.35)'; cx.fillRect(x + 2, y + 1.5, w - 4, Math.max(1.5, h * 0.22));
+      cx.fillStyle = 'rgba(0,0,0,.2)'; cx.fillRect(x + 2, y + h - Math.max(1.5, h * 0.18), w - 4, Math.max(1.5, h * 0.18));
+      if (b.kind === 9 || b.kind === 10) { cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(x + w * 0.2, y + h - 2); cx.lineTo(x + w * 0.35, y + 2); cx.moveTo(x + w * 0.45, y + h - 2); cx.lineTo(x + w * 0.6, y + 2); cx.stroke(); }
+      if (b.flash) { rr(x, y, w, h, 3); cx.fillStyle = 'rgba(255,255,255,' + (b.flash / 10).toFixed(2) + ')'; cx.fill(); }
+    });
+    // capsules
+    g.caps.forEach(function (c) {
+      var x = c.x * k, y = c.y * k, w = 0.9 * k, h = 0.42 * k;
+      rr(x - w / 2, y - h / 2, w, h, h / 2); cx.fillStyle = CAPCOL[c.kind]; cx.fill();
+      cx.fillStyle = 'rgba(255,255,255,.35)'; cx.fillRect(x - w / 2 + h / 2, y - h / 2 + 2, w - h, h * 0.25);
+      cx.fillStyle = '#fff'; cx.font = '900 ' + Math.round(h * 0.8) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(c.kind, x, y + 1);
+    });
+    // lasers
+    cx.fillStyle = '#ff8787';
+    g.shots.forEach(function (s) { cx.fillRect(s.x * k - 1.5, s.y * k - 0.35 * k, 3, 0.45 * k); });
+    // the paddle
+    var p = g.pad, pw = p.w * k, ph = BK.PADH * k, pxx = (p.x - p.w / 2) * k, pyy = BK.PADY * k;
+    rr(pxx, pyy, pw, ph, ph / 2); var pg = cx.createLinearGradient(0, pyy, 0, pyy + ph); pg.addColorStop(0, '#a38bff'); pg.addColorStop(1, '#6a4cf0'); cx.fillStyle = pg; cx.fill();
+    cx.fillStyle = g.power === 'C' ? '#40c057' : '#ffd43b'; rr(pxx + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill(); rr(pxx + pw - ph + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill();
+    if (g.power === 'L') { cx.fillStyle = '#fa5252'; cx.fillRect(pxx + 0.12 * k, pyy - 0.25 * k, 0.26 * k, 0.3 * k); cx.fillRect(pxx + pw - 0.38 * k, pyy - 0.25 * k, 0.26 * k, 0.3 * k); }
+    // balls
+    g.balls.forEach(function (b) {
+      cx.fillStyle = 'rgba(255,255,255,.18)'; cx.beginPath(); cx.arc((b.x - b.vx * 1.5) * k, (b.y - b.vy * 1.5) * k, BK.BALLR * k * 0.9, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(b.x * k, b.y * k, BK.BALLR * k, 0, Math.PI * 2); cx.fill();
+    });
+    if (g.balls.some(function (b) { return b.stuck; }) && phase === 'run') {
+      cx.fillStyle = 'rgba(255,255,255,.75)'; cx.font = '800 ' + Math.round(k * 0.5) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.fillText('Tap to launch', W * k / 2, (BK.PADY - 2.2) * k);
+    }
+    // bits of broken bricks
+    parts.forEach(function (q) { cx.globalAlpha = 1 - q.t / 40; cx.fillStyle = q.col; cx.fillRect(q.x * k - 2, q.y * k - 2, 4, 4); });
+    cx.globalAlpha = 1;
+    // messages
+    if (banner && now - banner.t < 1600) { txt(banner.text, H * 0.55, '#ffd43b', 0.75); }
+    if (capToast && now - capToast.t < 1800) { txt(CAPNAME[capToast.k].split(':')[0] + '!', H * 0.62, CAPCOL[capToast.k], 0.6); }
+    cx.restore();
+  }
+  function txt(t, y, col, size) {
+    cx.font = '900 ' + Math.round(k * size) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.lineWidth = 4; cx.strokeStyle = 'rgba(0,0,0,.5)'; cx.strokeText(t, W * k / 2, y * k); cx.fillStyle = col; cx.fillText(t, W * k / 2, y * k);
+  }
+
+  // ================= touch: slide anywhere on the screen; tap to launch; hold to fire =================
+  var drag = null, held = false;
+  function onDown(e) {
+    if (!g || sheetOpen()) return;
+    // full screen (1.2.0): the whole screen is the slide area (the field and the backdrop around it), except the buttons
+    if (e.target.closest('button, .overlay, .top, .toolbar, .ready.show')) return;
+    if (!e.target.closest('#stage')) return;
+    S.unlock();
+    if (phase === 'ready') { begin(); }
+    else if (phase === 'paused') { resume(); }
+    if (phase !== 'run') return;
+    drag = { id: e.pointerId, x0: e.clientX, p0: g.pad.x, moved: false, t0: performance.now() };
+    held = true;
+    if (g.power === 'L') BK.fire(g);
+  }
+  function onMove(e) {
+    if (!drag || e.pointerId !== drag.id || !g) return;
+    var dx = (e.clientX - drag.x0) / k * settings.speed;
+    if (Math.abs(e.clientX - drag.x0) > 6) drag.moved = true;
+    BK.movePad(g, drag.p0 + dx);
+  }
+  function onUp(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    held = false;
+    if (!drag.moved || performance.now() - drag.t0 < 250) { if (g && BK.release(g)) serveT = 0; }
+    drag = null;
+  }
+
+  // ================= info and panels =================
+  function renderInfo() {
+    if (!g) return;
+    // full screen (1.2.0): score in a pill in the top row; level (with the spare paddles) and best in pills under it
+    var lives = ''; for (var i = 0; i < Math.min(5, g.lives - 1); i++) lives += '<i></i>';
+    $('pillScore').innerHTML = '<small>Score</small>' + fmt(g.score);
+    $('info').innerHTML = '<div class="ggpill"><small>Level</small><span>' + g.level + '<span class="of">/' + LAST + '</span></span>' + (lives ? '<span class="lives" aria-label="' + (g.lives - 1) + ' spare paddles">' + lives + '</span>' : '<small>last paddle</small>') + '</div>' +
+      '<div class="ggpill"><small>Best</small>' + fmt(Math.max(meta.best, g.score)) + '</div>';
+  }
+  function renderTools() {
+    var p = $('btnPause'), paused = phase === 'paused';
+    // an icon button in the top row since the full-screen layout (1.1.0)
+    p.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-' + (paused ? 'play' : 'pause') + '"/></svg>'; p.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    p.disabled = !(phase === 'run' || phase === 'paused');
+  }
+  function renderReady() {
+    var r = $('ready');
+    if (phase === 'paused') { r.innerHTML = '<h2>Paused</h2><p>Level ' + g.level + ' &middot; ' + fmt(g.score) + ' points</p><button class="btn red go" id="btnGo">Resume</button>'; r.classList.add('show'); $('btnGo').addEventListener('click', resume); return; }
+    if (phase !== 'ready') { r.classList.remove('show'); return; }
+    var caps = BK.CAPS.map(function (c) { return '<b style="background:' + CAPCOL[c] + '">' + c + '</b><span>' + CAPNAME[c].split(':')[1] + '</span>'; }).join('');
+    r.innerHTML = '<h2>Level ' + g.level + '</h2><p>Slide to move the paddle, tap to launch. Break every brick (gold ones can’t be broken).</p><div class="caps">' + caps + '</div><button class="btn red go" id="btnGo">Start</button>';
+    r.classList.add('show'); $('btnGo').addEventListener('click', begin);
+  }
+  function renderAll() { renderInfo(); renderTools(); renderReady(); draw(); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#bk-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return;
+    }
+    next();
+  }
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Brickyard';
+    $('helpList').innerHTML = [
+      '<b>Slide</b> your finger anywhere on the screen (under the paddle is handy) to move the paddle (it follows the slide, so your finger doesn’t have to cover the ball). <b>Tap</b> to launch the ball; it goes by itself after 3 seconds.',
+      'Keep the ball in play and break every brick. Where the ball lands on the paddle sets its angle: the ends send it off at a slant. It gets faster as you go.',
+      'Colored bricks break with one hit. <b>Silver</b> ones take a few hits (more on later levels) and score 50 × the level. <b>Gold</b> ones can’t be broken.',
+      'Catch the falling capsules: ' + BK.CAPS.map(function (c) { return '<b>' + c + '</b> ' + CAPNAME[c].split(': ')[1]; }).join('; ') + '. Only one of Slow, Catch, Expand or Laser works at a time; a new one replaces it (and Divide ends it). The line above the bricks names a falling capsule and says when it would end the power-up you have, so you can let it drop. No capsules fall while three balls are in play.',
+      'You have 3 paddles, and get another at 20,000 points and every 60,000 after. 32 levels, each checked to be clearable. After a game over you can carry on from the level you reached (with a fresh score).',
+      'Settings: <b>paddle speed</b>, how far it moves for a slide.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + fmt(meta.best) + '</b><span>Best score</span></div><div class="tile"><b>' + meta.maxLevel + '</b><span>Furthest level</span></div><div class="tile"><b>' + stats.games + '</b><span>Games</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.bricks) + '</b><span>Bricks</span></div><div class="tile"><b>' + stats.levels + '</b><span>Levels cleared</span></div><div class="tile"><b>' + stats.caps + '</b><span>Capsules</span></div></div>' +
+      '<p class="version">' + Math.round(stats.ms / 60000) + ' min played</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function syncSpeed() { $('spVal').textContent = settings.speed.toFixed(1); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { pause(); if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    // full screen: How to, Stats, Settings and Restart live in the Menu; opening it pauses (tap the field to go on).
+    // 1.2.0: overlay mode, the game fills the screen and the buttons float on it; Pause stays in the top row.
+    Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnStats', 'btnSettings', 'btnNew'], onOpen: pause,
+      info: function () { return g ? 'Level <b>' + g.level + '</b> of ' + LAST + ' &middot; score <b>' + fmt(g.score) + '</b> &middot; best ' + fmt(Math.max(meta.best, g.score)) : ''; } });
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    document.addEventListener('pointerdown', onDown); document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp); document.addEventListener('pointercancel', function () { drag = null; held = false; });
+    document.addEventListener('touchmove', function (e) { if (drag) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) {
+      if (!g) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); if (phase === 'ready') begin(); BK.movePad(g, g.pad.x + (e.key === 'ArrowLeft' ? -0.6 : 0.6)); }
+      else if (e.key === ' ') { e.preventDefault(); if (phase === 'ready') begin(); else if (phase === 'paused') resume(); else { BK.release(g); BK.fire(g); } }
+      else if (e.key === 'p') { if (phase === 'run') pause(); else if (phase === 'paused') resume(); }
+    });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { pause(); save(); Goobs.home(); });
+    $('btnPause').addEventListener('click', function () { if (phase === 'run') pause(); else if (phase === 'paused') resume(); });
+    $('btnNew').addEventListener('click', function () {
+      if (phase === 'run') pause();
+      if (phase === 'paused' && g.score > 0) { showCard('Start over?', 'This game ends now with ' + fmt(g.score) + ' points.', [{ label: 'Start over', red: true, go: function () { stats.games++; saveStats(); if (g.score > meta.best) { meta.best = g.score; saveMeta(); } between(function () { newRun(1); }); } }, { label: 'Keep playing', go: function () {} }]); return; }
+      newRun(1);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnHelp').addEventListener('click', function () { pause(); openHelp(); });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('spLess').addEventListener('click', function () { settings.speed = Math.max(0.5, Math.round((settings.speed - 0.1) * 10) / 10); saveSettings(); syncSpeed(); });
+    $('spMore').addEventListener('click', function () { settings.speed = Math.min(2, Math.round((settings.speed + 0.1) * 10) / 10); saveSettings(); syncSpeed(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) new ResizeObserver(function () { fit(); draw(); }).observe($('stage'));
+    window.addEventListener('resize', function () { fit(); draw(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); save(); } });
+    window.addEventListener('pagehide', function () { pause(); save(); });
+    syncSound(); syncAds(); syncSpeed(); fit();
+    if (!load()) newRun(1);
+    if (!meta.seen) openHelp();
+    lastT = performance.now(); requestAnimationFrame(frame);
+    Goobs.markPlayed('bricks');
+    Goobs.initUpdates({ beforeReload: function () { pause(); save(); }, onVersions: function (v) { $('version').textContent = 'Brickyard ' + (v.bricks || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+
+  // hook for automated tests
+  window.__bk = { get g() { return g; }, get phase() { return phase; }, BK: BK, begin: begin, newRun: newRun, meta: function () { return meta; }, get k() { return k; }, field: function () { return { x: OX, y: OY, w: W * k, h: H * k, k: k }; } };
+
+  init();
+})();
+</script>
+</body>
+</html>

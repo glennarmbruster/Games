@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Fizz Pop</title>
+<style>
+/* Fizz Pop styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand svg { border-radius: 10px; }
+.modes button { font-size: 15px; }
+/* full screen (1.2.0): Glenn: "not full screen yet". The soda blue covers the whole phone (behind the notch and the home
+   bar), the kit floats back / Sound / Menu over it with the counters as pills between them, and the field (launcher and
+   next bubble included) is centred in the free space as big as it fits (fit() in app.js). The canvas is see-through, so
+   the field and the space round it are the same backdrop; a thin line marks the walls the bubbles bounce off. */
+html.gg-fs-over, html.gg-fs-over body { background: #1e2a5a; }
+.stagewrap { position: fixed; inset: 0; background: linear-gradient(#26336b, #1a2350); touch-action: none; overflow: hidden; }
+.stage { position: absolute; left: 0; top: 0; box-shadow: 0 0 0 1.5px rgba(170,185,255,.3); touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+/* the free space the field may use (read by fit(); CSS knows the safe areas, JS doesn't) */
+.fitbox { position: absolute; left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px); top: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); visibility: hidden; pointer-events: none; }
+.hud { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; gap: 5px; }
+.hud .ggpill { height: 44px; box-sizing: border-box; min-width: 50px; padding: 3px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  line-height: 1.05; font-size: 17px; border-radius: 22px; }
+.hud .ggpill small { font-size: 10px; font-weight: 800; color: #6b7080; letter-spacing: .4px; text-transform: uppercase; }
+.ggmenu .modes { margin: 4px 0 2px; }
+@media (max-width: 385px) { .hud { gap: 4px; } .hud .ggpill { padding: 3px 8px; min-width: 46px; } }
+.toast { position: absolute; left: 50%; top: 42%; transform: translateX(-50%); text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(10,14,36,.78); color: #fff; font-weight: 800; font-size: 16px; padding: 8px 15px; border-radius: 14px; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.lvgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.lv { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); height: 52px; font-weight: 800; font-size: 16px; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.lv small { font-size: 11px; color: #e0a800; letter-spacing: -1px; }
+.lv.cur { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.lv:disabled { opacity: .35; }
+.lv { min-width: 0; }
+.lv.long { font-size: 12px; letter-spacing: -.3px; } /* 1.3.0: five- and six-digit level numbers past the bank */
+.lvmore { grid-column: 1 / -1; }
+.stars { font-size: 26px; color: #ffc83d; letter-spacing: 2px; }
+.stars .off { color: var(--line-strong); }
+.cardicon svg { border-radius: 16px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="fp-logo" viewBox="0 0 100 100"><defs><radialGradient id="fpg1" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="100" height="100" rx="24" fill="#1e2a5a"/>
+<g><circle cx="26" cy="26" r="13" fill="#ff4d6d"/><circle cx="52" cy="26" r="13" fill="#ffd23f"/><circle cx="78" cy="26" r="13" fill="#3a86ff"/><circle cx="39" cy="48" r="13" fill="#2ec27e"/><circle cx="65" cy="48" r="13" fill="#ff4d6d"/>
+<circle cx="50" cy="82" r="11" fill="#ff4d6d"/></g><g fill="url(#fpg1)"><circle cx="26" cy="26" r="13"/><circle cx="52" cy="26" r="13"/><circle cx="78" cy="26" r="13"/><circle cx="39" cy="48" r="13"/><circle cx="65" cy="48" r="13"/><circle cx="50" cy="82" r="11"/></g>
+<path d="M50 70 L58 58" stroke="#fff" stroke-width="3" stroke-dasharray="3 4" stroke-linecap="round"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#fp-logo"/></svg>
+      <h1>Fizz Pop</h1>
+    </button>
+    <div class="hud" id="hud"></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="levels">Levels</button>
+    <button data-mode="endless">Endless</button>
+  </div>
+
+  <!-- 1.2.0: the soda blue fills the whole screen; the field (with its launcher) is centred in it -->
+  <div class="stagewrap" id="stagewrap">
+    <div class="fitbox" id="fitbox"></div>
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnLevels"><svg viewBox="0 0 24 24"><use href="#i-levels"/></svg><span>Levels</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Level picker -->
+<div class="overlay" id="ovLevels">
+  <div class="sheet" role="dialog" aria-label="Levels">
+    <h2>Levels</h2>
+    <div class="sheetbody"><div class="lvgrid" id="lvgrid"></div></div>
+    <div class="actions"><button class="btn" id="btnCloseLevels">Close</button></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Aim line<small>A dotted line shows where the bubble will go, off one wall.</small></div>
+        <span class="switch"><input type="checkbox" id="setGuide"><span></span></span></label>
+      <label class="row"><div>Shapes on bubbles<small>A small shape on each color, to tell them apart easily.</small></div>
+        <span class="switch"><input type="checkbox" id="setShapes"><span></span></span></label>
+      <label class="row"><div>Sound<small>Pops, plinks and cheers.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Fizz Pop</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Fizz Pop records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Fizz Pop logic: the bubble shooter (Puzzle Bobble rules). A hex grid 8 bubbles wide (rows of 8 and 7), a
+   launcher at the bottom, bank shots off the side walls, 3 or more of a color pop, bubbles cut off from the top fall,
+   the ceiling comes down every few shots, and it's over when a bubble passes the line. Units: bubble diameter = 1.
+   Runs in Node (tools/gen.js checks every level with a bot). */
+// 1.3.0: the module is a named function (FPModule) so the app can rebuild it inside a Web Worker from its own source
+// (a Blob, no extra file) to check the levels it makes past the bank without stalling the page.
+function FPModule() {
+  'use strict';
+  var COLS = 8, R = 0.5, ROWH = Math.sqrt(3) / 2, LINE = 12;      // rows 0..11 fit above the line
+  var WIDTH = COLS;                                                // the playfield is 8 bubbles wide
+  var LAUNCH_Y = LINE * ROWH + 1.7;                                // the launcher, below the line
+  var SPEED = 0.34;                                                // bubble diameters per frame (about 20 a second)
+  var COLORS = 6;
+
+  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  // rows alternate 8 and 7 bubbles; "odd" rows sit half a bubble to the right. The parity is fixed to the
+  // grid (not the screen), so it doesn't change when the ceiling comes down.
+  function rowLen(r) { return r % 2 ? COLS - 1 : COLS; }
+  function cellXY(g, r, c) { return [R + c + (r % 2 ? R : 0), R + (r + g.drop) * ROWH]; }
+  function key(r, c) { return r * COLS + c; }
+  function nbrs(r, c) {
+    var o = r % 2, out = [[r, c - 1], [r, c + 1]];
+    if (o) out.push([r - 1, c], [r - 1, c + 1], [r + 1, c], [r + 1, c + 1]);
+    else out.push([r - 1, c - 1], [r - 1, c], [r + 1, c - 1], [r + 1, c]);
+    return out.filter(function (p) { return p[0] >= 0 && p[1] >= 0 && p[1] < rowLen(p[0]); });
+  }
+
+  // ---------- a game ----------
+  // level: { rows: ['01.2...', ...] (digits = colors, . = empty), drop: shots per ceiling drop, seed }
+  function create(level, mode) {
+    var g = { mode: mode || 'levels', grid: {}, drop: 0, shots: 0, sinceDrop: 0, dropEvery: level.drop || 8, score: 0, over: false, won: false,
+      seed: level.seed >>> 0 || 1, draws: 0, cur: 0, next: 0, pops: 0, fell: 0, maxRows: 0 };
+    level.rows.forEach(function (row, r) { for (var c = 0; c < row.length && c < rowLen(r); c++) if (row[c] !== '.') g.grid[key(r, c)] = +row[c]; });
+    g.cur = draw(g); g.next = draw(g);
+    return g;
+  }
+  function colorsLeft(g) { var s = {}; for (var k in g.grid) s[g.grid[k]] = 1; return Object.keys(s).map(Number).sort(); }
+  // the next bubble: a color still on the board (seeded, so a level plays the same for the same shots)
+  function draw(g) {
+    var cs = colorsLeft(g); if (!cs.length) cs = [0];
+    var R2 = rng(g.seed + g.draws * 2654435761); g.draws++;
+    return cs[Math.floor(R2() * cs.length)];
+  }
+  function occupied(g, r, c) { return g.grid[key(r, c)] !== undefined; }
+
+  // ---------- flight ----------
+  // the path of a shot at angle a (radians from straight up, left negative) until it sticks: returns
+  // { cell: [r, c], path: [[x, y], ...] } (path = bounce points, for the aim line)
+  function trace(g, a, maxBounces) {
+    var x = WIDTH / 2, y = LAUNCH_Y, dx = Math.sin(a), dy = -Math.cos(a), path = [[x, y]], step = 0.1, bounces = 0;
+    for (var n = 0; n < 4000; n++) {
+      x += dx * step; y += dy * step;
+      if (x < R) { x = 2 * R - x; dx = -dx; path.push([x, y]); if (++bounces > (maxBounces == null ? 99 : maxBounces)) return { cell: null, path: path }; }
+      else if (x > WIDTH - R) { x = 2 * (WIDTH - R) - x; dx = -dx; path.push([x, y]); if (++bounces > (maxBounces == null ? 99 : maxBounces)) return { cell: null, path: path }; }
+      // the ceiling
+      if (y <= R + g.drop * ROWH) { path.push([x, y]); return { cell: snap(g, x, y), path: path, at: [x, y] }; }
+      // touching a bubble
+      var hit = false;
+      var rr = Math.round((y - R) / ROWH - g.drop);
+      for (var r = rr - 1; r <= rr + 1 && !hit; r++) {
+        if (r < 0) continue;
+        for (var c = 0; c < rowLen(r); c++) {
+          if (!occupied(g, r, c)) continue;
+          var p = cellXY(g, r, c), ddx = p[0] - x, ddy = p[1] - y;
+          if (ddx * ddx + ddy * ddy < 0.8 * 0.8) { hit = true; break; }
+        }
+      }
+      if (hit) { path.push([x, y]); return { cell: snap(g, x, y), path: path, at: [x, y] }; }
+    }
+    return { cell: null, path: path };
+  }
+  // the empty cell nearest to where the bubble stopped, that touches the ceiling or another bubble
+  function snap(g, x, y) {
+    var best = null, bd = Infinity, rr = Math.round((y - R) / ROWH - g.drop);
+    for (var r = Math.max(0, rr - 1); r <= rr + 1; r++) for (var c = 0; c < rowLen(r); c++) {
+      if (occupied(g, r, c)) continue;
+      var anchored = r === 0 || nbrs(r, c).some(function (p) { return occupied(g, p[0], p[1]); });
+      if (!anchored) continue;
+      var p = cellXY(g, r, c), d = (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y);
+      if (d < bd) { bd = d; best = [r, c]; }
+    }
+    return best;
+  }
+
+  // ---------- placing a bubble: pops, falls, the ceiling ----------
+  function place(g, cell, color) {
+    var res = { popped: [], fell: [], points: 0, dropped: false };
+    g.grid[key(cell[0], cell[1])] = color;
+    // same color group
+    var group = [cell], seen = {}; seen[key(cell[0], cell[1])] = 1;
+    for (var i = 0; i < group.length; i++) nbrs(group[i][0], group[i][1]).forEach(function (p) {
+      var k = key(p[0], p[1]); if (!seen[k] && g.grid[k] === color) { seen[k] = 1; group.push(p); }
+    });
+    if (group.length >= 3) {
+      group.forEach(function (p) { delete g.grid[key(p[0], p[1])]; res.popped.push({ r: p[0], c: p[1], color: color }); });
+      // anything no longer hanging from the top falls
+      var hung = {}, stack = [];
+      for (var c = 0; c < rowLen(0); c++) if (occupied(g, 0, c)) { hung[key(0, c)] = 1; stack.push([0, c]); }
+      while (stack.length) { var q = stack.pop(); nbrs(q[0], q[1]).forEach(function (p) { var k = key(p[0], p[1]); if (!hung[k] && occupied(g, p[0], p[1])) { hung[k] = 1; stack.push(p); } }); }
+      for (var k2 in g.grid) if (!hung[k2]) { var r2 = Math.floor(k2 / COLS), c2 = k2 % COLS; res.fell.push({ r: r2, c: c2, color: g.grid[k2] }); delete g.grid[k2]; }
+      res.points = res.popped.length * 10 + (res.fell.length ? 10 * Math.pow(2, Math.min(res.fell.length, 14)) : 0);
+      g.score += res.points; g.pops += res.popped.length; g.fell += res.fell.length;
+    }
+    g.shots++;
+    if (Object.keys(g.grid).length === 0) {
+      if (g.mode !== 'endless') { g.won = true; g.over = true; return res; }
+      // endless: a cleared board earns a bonus and fills back up
+      res.cleared = true; g.score += 1000; res.points += 1000; pushRow(g); pushRow(g); g.sinceDrop = 0;
+      g.cur = draw(g); g.next = draw(g);
+      return res;
+    }
+    // the ceiling comes down (levels), or a new row pushes in (endless)
+    if (++g.sinceDrop >= g.dropEvery) {
+      g.sinceDrop = 0; res.dropped = true;
+      if (g.mode === 'endless') pushRow(g); else g.drop++;
+    }
+    if (lowest(g) >= LINE) { g.over = true; g.won = false; }
+    // the next bubbles: keep them to colors still on the board
+    var cs = colorsLeft(g);
+    g.cur = cs.indexOf(g.next) >= 0 ? g.next : draw(g);
+    g.next = draw(g);
+    return res;
+  }
+  function lowest(g) { var m = -1; for (var k in g.grid) m = Math.max(m, Math.floor(k / COLS)); return m < 0 ? -1 : m + g.drop; }
+  // endless: everything moves down two rows (so the 8/7 pattern stays put) and two new rows come in at the top
+  function pushRow(g) {
+    var ng = {}, R2 = rng(g.seed * 31 + g.shots);
+    for (var k in g.grid) { var r = Math.floor(k / COLS), c = k % COLS; ng[key(r + 2, c)] = g.grid[k]; }
+    var ncol = Math.min(COLORS, 4 + Math.floor(g.shots / 60));
+    for (var r2 = 0; r2 < 2; r2++) for (var c2 = 0; c2 < rowLen(r2); c2++) {
+      var left = c2 > 0 ? ng[key(r2, c2 - 1)] : undefined;
+      ng[key(r2, c2)] = left !== undefined && R2() < 0.45 ? left : Math.floor(R2() * ncol);
+    }
+    g.grid = ng;
+  }
+  function swap(g) { var t = g.cur; g.cur = g.next; g.next = t; }
+  function count(g) { return Object.keys(g.grid).length; }
+
+  // ---------- a level made from rules ----------
+  function makeLevel(n, seed) {
+    var R2 = rng(seed), rows = Math.min(9, 4 + Math.floor(n / 7)), ncol = Math.min(COLORS, 3 + Math.floor((n + 2) / 9));
+    var pattern = n % 5, grid = [];
+    for (var r = 0; r < rows; r++) {
+      var len = rowLen(r), row = '';
+      for (var c = 0; c < len; c++) {
+        var empty = false;
+        if (pattern === 1) empty = (c + r) % 4 === 3 && r > 0;                 // gaps on a slant
+        else if (pattern === 2) empty = r >= 2 && (c === 0 || c === len - 1) && r % 2 === 0; // notched sides
+        else if (pattern === 3) empty = r > 0 && Math.abs(c - (len - 1) / 2) > len / 2 - r / 2 - 1 && r >= rows - 2; // a rounded bottom
+        else if (pattern === 4) empty = r >= 3 && (c === Math.floor(len / 2) || c === Math.floor((len - 1) / 2)) && r % 2 === 1; // a channel
+        if (empty) { row += '.'; continue; }
+        // clumps: often the same as a neighbor above or to the left
+        var up = r > 0 ? grid[r - 1][Math.min(grid[r - 1].length - 1, r % 2 ? c : Math.max(0, c - 1))] : '.';
+        var left = c > 0 ? row[c - 1] : '.';
+        var pick = R2();
+        var pl = 0.36 - Math.min(0.14, n * 0.0016), pu = pl + 0.26 - Math.min(0.1, n * 0.001);
+        var col = pick < pl && left !== '.' ? left : pick < pu && up !== '.' && up !== undefined ? up : String(Math.floor(R2() * ncol));
+        row += col;
+      }
+      grid.push(row);
+    }
+    // mirror the left half onto the right on some patterns, for a tidier look
+    if (n % 3 === 0) grid = grid.map(function (row, r) { var len = rowLen(r), a = row.split(''); for (var c = 0; c < Math.floor(len / 2); c++) a[len - 1 - c] = a[c]; return a.join(''); });
+    return { rows: grid, drop: Math.max(5, 9 - Math.floor(n / 14)), seed: seed, colors: ncol };
+  }
+
+  // ---------- 1.3.0: levels past the bank (101 and on, no end) ----------
+  // The bank (1-100) already reached makeLevel's top tier (9 rows, 6 colors, the ceiling every 5 shots), so past it
+  // the difficulty holds there and the variety comes from rotating the layout (10 shapes), how the colors are laid out
+  // (clumps, bands, columns), 5 or 6 colors, 8 or 9 rows and a mirror. Clumps thin out a little more over levels
+  // 101-400 (the gentle growth), then hold. Every 10th level from 105 on (105, 115, ...) is an easier breather.
+  // Level n, attempt k is always the same layout (seeded by n and k), so every phone gets the same level n.
+  var SHAPES = 10;
+  function holes(shape, r, c, len, rows, flip) {
+    var mid = (len - 1) / 2, dm = Math.abs(c - mid);
+    switch (shape) {
+      case 1: return r > 0 && (c + r) % 4 === 3;                                                  // gaps on a slant
+      case 2: return r >= 2 && r % 2 === 0 && (c === 0 || c === len - 1);                          // notched sides
+      case 3: return r >= rows - 3 && r > 0 && dm > (rows - 1 - r) * 1.2 + 1;                      // a rounded bottom
+      case 4: return r >= 3 && r % 2 === 1 && (c === Math.floor(len / 2) || c === Math.floor((len - 1) / 2)); // a channel
+      case 5: return r >= 2 && dm > Math.max(1, len / 2 - 1 - Math.abs(r - (rows - 1) / 2));      // a diamond / hourglass
+      case 6: return r > 0 && (r * 3 + c + flip) % 5 === 0;                                        // scattered holes
+      case 7: return r >= 3 && dm < 1.5;                                                           // two hanging towers
+      case 8: return r >= 2 && dm < r - 2.5;                                                       // an arch (two legs)
+      case 9: return r % 3 === 2 && (c + flip) % 2 === 0;                                          // perforated rows
+      default: return false;                                                                       // a full block
+    }
+  }
+  function makeLevelPast(n, k) {
+    var seed = (n * 1000 + k) >>> 0, R2 = rng(seed ^ 0x5bd1e995), grow = Math.min(1, Math.max(0, n - 100) / 300);
+    var breather = n % 10 === 5;
+    // after many failed attempts (rare) ease off step by step, so a level is always found
+    var ease = k >= 40 ? 2 : k >= 20 ? 1 : 0;
+    var rows = breather ? 6 + Math.floor(R2() * 2) : (R2() < 0.6 ? 9 : 8) - ease;
+    var ncol = breather ? 4 + Math.floor(R2() * 2) : (R2() < 0.65 ? 6 : 5) - ease;
+    var drop = breather ? 7 : (R2() < 0.75 ? 5 : 6) + ease;
+    var shape = (n * 3 + k) % SHAPES, style = Math.floor(R2() * 5), flip = Math.floor(R2() * 2), off = Math.floor(R2() * ncol);
+    // style: 0-2 clumps (as the bank), 3 bands across, 4 columns; each with some random noise
+    var pl = (breather ? 0.4 : 0.22 - grow * 0.04), pu = pl + (breather ? 0.28 : 0.16 - grow * 0.02);
+    var grid = [];
+    for (var r = 0; r < rows; r++) {
+      var len = rowLen(r), row = '';
+      for (var c = 0; c < len; c++) {
+        if (holes(shape, r, c, len, rows, flip)) { row += '.'; continue; }
+        var up = r > 0 ? grid[r - 1][Math.min(grid[r - 1].length - 1, r % 2 ? c : Math.max(0, c - 1))] : '.';
+        var left = c > 0 ? row[c - 1] : '.', pick = R2(), col;
+        if (style === 3 && pick < 0.7) col = String((Math.floor(r / 2) + off) % ncol);
+        else if (style === 4 && pick < 0.65) col = String((Math.floor((c + (r % 2 ? 0.5 : 0)) / 2) + off) % ncol);
+        else col = pick < pl && left !== '.' ? left : pick < pu && up !== '.' && up !== undefined ? up : String(Math.floor(R2() * ncol));
+        row += col;
+      }
+      grid.push(row);
+    }
+    if (R2() < 0.35) grid = grid.map(function (row, r) { var len = rowLen(r), a = row.split(''); for (var c = 0; c < Math.floor(len / 2); c++) a[len - 1 - c] = a[c]; return a.join(''); });
+    // a shape can leave bubbles with nothing holding them to the top: take those out (they would hang in the air)
+    var on = {}, stack = [];
+    for (var c0 = 0; c0 < grid[0].length; c0++) if (grid[0][c0] !== '.') { on[key(0, c0)] = 1; stack.push([0, c0]); }
+    while (stack.length) { var q = stack.pop(); nbrs(q[0], q[1]).forEach(function (p) { var kk = key(p[0], p[1]); if (!on[kk] && p[0] < grid.length && grid[p[0]][p[1]] !== '.' && grid[p[0]][p[1]] !== undefined) { on[kk] = 1; stack.push(p); } }); }
+    grid = grid.map(function (row, r) { return row.split('').map(function (ch, c) { return on[key(r, c)] ? ch : '.'; }).join(''); });
+    while (grid.length > 1 && /^\.*$/.test(grid[grid.length - 1])) grid.pop();
+    return { rows: grid, drop: drop, seed: seed, colors: ncol, n: n, k: k, breather: breather };
+  }
+  // the bot plays a level with its own seeded bubbles; won = cleared before anything crossed the line
+  // (no time limit in here on purpose: which attempt passes must not depend on how fast the phone is; 400 shots caps it)
+  function botPlay(level) {
+    var g = create(level, 'levels'), shots = 0;
+    while (!g.over && shots < 400) {
+      var a = botAim(g), t = trace(g, a);
+      if (!t.cell) { g.over = true; break; }
+      place(g, t.cell, g.cur); shots++;
+    }
+    return { won: g.won, shots: shots, score: g.score };
+  }
+  // level n past the bank: the first attempt the bot clears. A level always comes out (the attempts ease off).
+  // It must also take the bot a fair number of shots (a layout that drops whole in a few shots is no level; the
+  // bank's top tier mostly takes 15-45), less for a breather.
+  function levelPast(n) {
+    for (var k = 0; k < 200; k++) {
+      var lv = makeLevelPast(n, k), r = botPlay(lv), need = lv.breather ? 6 : k >= 40 ? 8 : 15;
+      if (r.won && r.shots >= need) return { rows: lv.rows, drop: lv.drop, seed: lv.seed, bot: r.shots, n: n, k: k, breather: lv.breather };
+    }
+    // never seen: a short, easy layout the bot is sure to clear
+    return { rows: ['00112233', '0011223', '00112233'], drop: 9, seed: n, bot: 12, n: n, k: -1 };
+  }
+
+  // ---------- a bot (used to prove each level can be cleared) ----------
+  // tries aims across the whole fan and picks the one that pops/drops the most, else sticks next to its color
+  function botAim(g) {
+    var best = null, bv = -Infinity;
+    for (var d = -78; d <= 78; d += 1.5) {
+      var a = d * Math.PI / 180, t = trace(g, a);
+      if (!t.cell) continue;
+      var v = score(g, t.cell, g.cur);
+      if (v > bv) { bv = v; best = a; }
+    }
+    return best == null ? 0 : best;
+  }
+  function score(g, cell, color) {
+    // simulate on a copy
+    var copy = { grid: Object.assign({}, g.grid), drop: g.drop };
+    copy.grid[key(cell[0], cell[1])] = color;
+    var group = [cell], seen = {}; seen[key(cell[0], cell[1])] = 1;
+    for (var i = 0; i < group.length; i++) nbrs(group[i][0], group[i][1]).forEach(function (p) { var k = key(p[0], p[1]); if (!seen[k] && copy.grid[k] === color) { seen[k] = 1; group.push(p); } });
+    var v = 0;
+    if (group.length >= 3) {
+      group.forEach(function (p) { delete copy.grid[key(p[0], p[1])]; });
+      var hung = {}, stack = [];
+      for (var c = 0; c < rowLen(0); c++) if (copy.grid[key(0, c)] !== undefined) { hung[key(0, c)] = 1; stack.push([0, c]); }
+      while (stack.length) { var q = stack.pop(); nbrs(q[0], q[1]).forEach(function (p) { var k = key(p[0], p[1]); if (!hung[k] && copy.grid[k] !== undefined) { hung[k] = 1; stack.push(p); } }); }
+      var fell = 0; for (var k2 in copy.grid) if (!hung[k2]) fell++;
+      v = 100 + group.length * 12 + fell * 25;
+    } else {
+      v = group.length * 10;
+      nbrs(cell[0], cell[1]).forEach(function (p) { var cc = copy.grid[key(p[0], p[1])]; if (cc !== undefined && cc !== color) v -= 3; });
+      v -= (cell[0] + g.drop) * 4; // keep the pile high
+    }
+    return v;
+  }
+
+  return { COLS: COLS, R: R, ROWH: ROWH, LINE: LINE, WIDTH: WIDTH, LAUNCH_Y: LAUNCH_Y, SPEED: SPEED, COLORS: COLORS,
+    rowLen: rowLen, cellXY: cellXY, key: key, nbrs: nbrs, create: create, trace: trace, place: place, swap: swap, count: count, colorsLeft: colorsLeft,
+    lowest: lowest, makeLevel: makeLevel, botAim: botAim, pushRow: pushRow,
+    makeLevelPast: makeLevelPast, botPlay: botPlay, levelPast: levelPast, source: FPModule.toString() };
+}
+var FP = FPModule();
+if (typeof module !== 'undefined') module.exports = FP;
+</script>
+<script>
+window.FP_LEVELS = [{"rows":["22200201","22.002.","0.200.22",".211.22"],"drop":9,"seed":1000,"bot":8},{"rows":["00021111","1000021",".222222.","2221220"],"drop":9,"seed":2000,"bot":8},{"rows":["11122111","0112110","..1001..","..101.."],"drop":9,"seed":3000,"bot":5},{"rows":["21000110","2221012","12221222","112.121"],"drop":9,"seed":4000,"bot":13},{"rows":["10021100","1000111","11000212","0002220"],"drop":9,"seed":5000,"bot":9},{"rows":["00022000","00.2.00","1.1111.1",".01010."],"drop":9,"seed":6000,"bot":8},{"rows":["21331112","1110331",".221223.","1133023",".110000."],"drop":9,"seed":7000,"bot":14},{"rows":["33333330","1110300","11100333","..111..","...13..."],"drop":9,"seed":8000,"bot":2},{"rows":["20011002","1011101","11211211","022.220","00222200"],"drop":9,"seed":9000,"bot":14},{"rows":["11111200","1111120","33331102","1100330","10221300"],"drop":9,"seed":10000,"bot":7},{"rows":["01111211","23.131.","2.330.11",".003.33","210.333."],"drop":9,"seed":11000,"bot":13},{"rows":["22333322","1133311",".131131.","3231323",".323323."],"drop":9,"seed":12000,"bot":5},{"rows":["31111110","3311110","23223012","..203..","...00..."],"drop":9,"seed":13000,"bot":6},{"rows":["33320011","3000000","33300002","333.231","32221311","333.113"],"drop":8,"seed":14000,"bot":16},{"rows":["20000002","2122212","22322322","2133312","22000022","2200022"],"drop":8,"seed":15000,"bot":7},{"rows":["30044100","30.433.","3.444.33",".004.04","320.103.","32.411."],"drop":8,"seed":16000,"bot":10},{"rows":["24110010","2330444",".223313.","4320333",".433334.","4423312"],"drop":8,"seed":17000,"bot":22},{"rows":["33311333","3333333","13033031","1100011","...44...","...2..."],"drop":8,"seed":18000,"bot":4},{"rows":["22003040","0001100","22002111","332.211","31400211","333.023"],"drop":8,"seed":19000,"bot":18},{"rows":["44204232","4222444","44233342","4413334","00023333","0200210"],"drop":8,"seed":20000,"bot":20},{"rows":["44422444","40.2.04","3.0330.3",".12221.","123..321","13.1.31","1.3443.1"],"drop":8,"seed":21000,"bot":23},{"rows":["32231440","3112242",".343311.","2100122",".420042.","4201332",".433033."],"drop":8,"seed":22000,"bot":31},{"rows":["11332400","3103243","00001233","0030110","00000422","...2...","........"],"drop":8,"seed":23000,"bot":23},{"rows":["23233232","2233322","14433441","004.400","00100100","311.113","33444433"],"drop":8,"seed":24000,"bot":23},{"rows":["35032444","3500012","30000012","3445111","33322221","4333242","44314240"],"drop":8,"seed":25000,"bot":20},{"rows":["55122231","11.400.","1.244.05",".114.00","001.440.","00.345.","0.001.53"],"drop":8,"seed":26000,"bot":24},{"rows":["11255211","2115112",".222222.","3343433",".331133.","4001004",".022220."],"drop":8,"seed":27000,"bot":32},{"rows":["11105515","1114444","11004311","1102233","03133403","4344411","........","......."],"drop":7,"seed":28000,"bot":19},{"rows":["00005525","0000442","35210542","334.055","44321225","122.112","10024102","130.424"],"drop":7,"seed":29000,"bot":10},{"rows":["25100152","5533355","00533500","2203022","22000022","4441444","42422424","0052500"],"drop":7,"seed":30000,"bot":27},{"rows":["41111133","41.241.","1.113.13",".001.33","433.111.","52.200.","1.522.51",".400.35"],"drop":7,"seed":31000,"bot":10},{"rows":["33311022","3300032",".335001.","2325015",".533100.","0355050",".135445.","0133441"],"drop":7,"seed":32000,"bot":18},{"rows":["42222224","5222225","55522555","5555555","55555555","5553555","........","......."],"drop":7,"seed":33000,"bot":15},{"rows":["13241113","1530112","34440002","110.224","15504225","022.400","00044211","124.454"],"drop":7,"seed":34000,"bot":40},{"rows":["22224345","2244444","25211101","3322210","35523522","3042532","35523400","3522331","33500213"],"drop":7,"seed":35000,"bot":31},{"rows":["55011055","55.1.55","5.5445.5",".00000.","354..453","35.1.53","3.5225.3",".55255.","443..344"],"drop":7,"seed":36000,"bot":26},{"rows":["31141134","5511134",".555443.","3355443",".555114.","4553331",".355533.","4455533",".444422."],"drop":7,"seed":37000,"bot":15},{"rows":["42221125","4224102","40022244","0523320","52552125","5444213","50413043",".......","........"],"drop":7,"seed":38000,"bot":33},{"rows":["20422402","0000000","00044000","444.444","44144144","443.344","11533511","455.554","34444443"],"drop":7,"seed":39000,"bot":38},{"rows":["32200001","3000440","53331140","2225244","12225555","5223333","53315533","0034000","35544403"],"drop":7,"seed":40000,"bot":16},{"rows":["43003533","00.401.","0.033.55",".423.13","005.225.","00.222.","4.442.35",".004.00","355.114."],"drop":7,"seed":41000,"bot":37},{"rows":["11111111","1111111",".134431.","1134311",".103301.","3304033",".322223.","1312131",".555555."],"drop":6,"seed":42000,"bot":7},{"rows":["55345022","4214433","45311502","1550250","10000050","3441115","33444111",".......","........"],"drop":6,"seed":43000,"bot":30},{"rows":["25555044","2254301","25154502","221.444","23333002","225.112","22225522","242.544","00423041"],"drop":6,"seed":44000,"bot":45},{"rows":["22211222","2125212","22522522","2255522","20000002","2122212","22111122","5511155","55011055"],"drop":6,"seed":45000,"bot":10},{"rows":["44204432","44.204.","1.221.42",".444.34","534.504.","43.333.","3.333.11",".234.21","042.244."],"drop":6,"seed":46000,"bot":26},{"rows":["51022223","5332222",".511111.","3321111",".112222.","4333333",".452233.","0455033",".333344."],"drop":6,"seed":47000,"bot":19},{"rows":["00011000","0001000","00222200","1054501","13000031","4020204","41444414",".......","........"],"drop":6,"seed":48000,"bot":13},{"rows":["21115534","1114455","44000455","444.445","44443545","044.443","00014422","000.444","22011444"],"drop":6,"seed":49000,"bot":25},{"rows":["11434331","4114511","44131550","4111000","44155400","3012244","33341054","4355151","22235122"],"drop":6,"seed":50000,"bot":21},{"rows":["35444453","35.2.53","4.1111.4",".00000.","104..401","13.3.31","1.4554.1",".20202.","045..540"],"drop":6,"seed":51000,"bot":28},{"rows":["32103335","3122224",".222200.","5224122",".402225.","0000330",".000053.","1100103",".153414."],"drop":6,"seed":52001,"bot":22},{"rows":["23333143","0430314","00333114","0033440","33000430","5333344","11552204",".......","........"],"drop":6,"seed":53000,"bot":16},{"rows":["54300345","3133313","35111153","333.333","33422433","354.453","35555553","115.511","11444411"],"drop":6,"seed":54000,"bot":35},{"rows":["44022005","4434240","44230154","4441113","40444445","2344114","43555000","3123555","00022555"],"drop":6,"seed":55000,"bot":23},{"rows":["00114144","00.144.","3.012.52",".325.15","000.555.","22.153.","0.243.20",".222.00","005.220."],"drop":5,"seed":56001,"bot":15},{"rows":["32200223","2110112",".104401.","2531352",".222222.","2201022",".553355.","5251525",".555555."],"drop":5,"seed":57000,"bot":45},{"rows":["22111105","2333413","32253313","3150353","33300103","3510015","12002115",".......","........"],"drop":5,"seed":58000,"bot":31},{"rows":["14211211","1541110","11144054","021.114","40055231","550.100","11501444","115.224","31252223"],"drop":5,"seed":59000,"bot":41},{"rows":["13255231","5445445","54400445","3543453","32122123","3222223","31200213","3335333","32144123"],"drop":5,"seed":60000,"bot":37},{"rows":["45235515","45.551.","5.511.11",".225.24","344.252.","24.222.","2.451.44",".055.54","333.533."],"drop":5,"seed":61002,"bot":22},{"rows":["02222211","3222401",".144253.","3511113",".345553.","3335551",".333332.","4231415",".322255."],"drop":5,"seed":62001,"bot":40},{"rows":["33255233","3445443","13311331","1115111","11100111","3512153","35444453",".......","........"],"drop":5,"seed":63000,"bot":11},{"rows":["00422402","0142200","55542114","555.210","55455442","525.555","54440505","010.000","33110155"],"drop":5,"seed":64000,"bot":34},{"rows":["32211255","3331553","31131522","1414422","13344020","1324455","11304445","1144555","21314521"],"drop":5,"seed":65000,"bot":10},{"rows":["33000033","23.0.32","2.3553.2",".22522.","005..500","30.5.03","3.2552.3",".52125.","112..211"],"drop":5,"seed":66001,"bot":19},{"rows":["20541410","1224100",".154415.","5224411",".012444.","5052244",".100455.","2244005",".500445."],"drop":5,"seed":67000,"bot":27},{"rows":["44024443","4222222","05520222","0000000","00501005","1422223","11044220",".......","........"],"drop":5,"seed":68000,"bot":31},{"rows":["35544553","4455544","44222244","443.344","40322304","112.211","51444415","215.512","22111122"],"drop":5,"seed":69000,"bot":17},{"rows":["55112404","5554040","55544341","5550444","15350444","2444114","42252234","2022130","42251520"],"drop":5,"seed":70000,"bot":21},{"rows":["22555004","22.500.","2.210.00",".001.20","511.242.","31.134.","0.101.44",".055.21","022.155."],"drop":5,"seed":71000,"bot":16},{"rows":["04522540","3404043",".355553.","2333332",".230032.","0155510",".024420.","3254523",".335533."],"drop":5,"seed":72000,"bot":26},{"rows":["42250031","4421301","44401505","4200344","15501314","1555244","11531134",".......","........"],"drop":5,"seed":73000,"bot":30},{"rows":["05110011","2355111","14555542","304.514","43051050","443.145","44553155","144.553","22234500"],"drop":5,"seed":74000,"bot":27},{"rows":["50000005","4400044","44444444","4555554","11211211","1114111","15155151","0531350","52444425"],"drop":5,"seed":75001,"bot":16},{"rows":["30000403","30.234.","1.021.45",".500.23","553.110.","35.225.","3.501.11",".430.41","233.205."],"drop":5,"seed":76001,"bot":33},{"rows":["45541222","4424112",".253211.","0404411",".010442.","5443044",".505455.","0304445",".510400."],"drop":5,"seed":77001,"bot":33},{"rows":["15111151","1522251","21122112","3312133","34522543","1442441","15000051",".......","........"],"drop":5,"seed":78000,"bot":22},{"rows":["33111105","0351140","04335041","125.323","13210024","233.032","22342002","443.211","22433333"],"drop":5,"seed":79000,"bot":34},{"rows":["13233344","2555144","25225334","1330531","14332133","1155232","20355122","4324000","03042550"],"drop":5,"seed":80000,"bot":28},{"rows":["55300355","51.3.15","5.1441.5",".33333.","344..443","34.3.43","3.4444.3",".31113.","154..451"],"drop":5,"seed":81000,"bot":17},{"rows":["04154444","3335444",".313351.","2123333",".113230.","4100020",".431112.","5033123",".255353."],"drop":5,"seed":82000,"bot":29},{"rows":["21433433","1003313","11250355","0025334","00111341","4010432","55431002",".......","........"],"drop":5,"seed":83001,"bot":25},{"rows":["22533522","2553552","24444442","222.222","22555522","441.144","41111114","004.400","30233203"],"drop":5,"seed":84000,"bot":13},{"rows":["23111200","2513021","02534244","0220004","02021221","0002155","31412504","0022012","03510334"],"drop":5,"seed":85000,"bot":27},{"rows":["23202444","22.044.","0.230.41",".334.05","001.551.","22.445.","2.113.13",".524.34","554.455."],"drop":5,"seed":86000,"bot":25},{"rows":["00000000","4500054",".425524.","2550552",".522225.","4354534",".415514.","3221223",".332233."],"drop":5,"seed":87000,"bot":13},{"rows":["42233123","4222322","42220344","4220251","44220000","0031543","00333344",".......","........"],"drop":5,"seed":88000,"bot":32},{"rows":["44440335","0334555","22135533","444.553","42205550","332.340","35222442","332.222","34424330"],"drop":5,"seed":89000,"bot":12},{"rows":["54400445","5530355","00511500","2050502","42000024","4345434","24344342","2452542","23000032"],"drop":5,"seed":90001,"bot":23},{"rows":["30410332","22.400.","1.220.04",".433.51","444.513.","15.110.","1.222.33",".340.51","311.055."],"drop":5,"seed":91000,"bot":47},{"rows":["22155155","0205335",".133443.","2233002",".223100.","5224122",".452453.","4555125",".551552."],"drop":5,"seed":92000,"bot":30},{"rows":["03511530","4345434","44333344","4403044","34422443","3002003","43111134",".......","........"],"drop":5,"seed":93000,"bot":30},{"rows":["14452044","5233003","53333433","531.125","45111421","042.551","45433350","523.405","33001005"],"drop":5,"seed":94001,"bot":36},{"rows":["55441200","5425500","15555442","3445152","03535144","0023333","50111143","0421325","00005333"],"drop":5,"seed":95000,"bot":25},{"rows":["22000022","22.0.22","2.0000.2",".55555.","435..534","44.1.44","4.4224.4",".04440.","444..444"],"drop":5,"seed":96000,"bot":7},{"rows":["33333555","3353445",".554413.","2555520",".231052.","5034333",".501533.","4112003",".141111."],"drop":5,"seed":97000,"bot":40},{"rows":["44332122","3010011","33055555","0502222","43110031","4311552","42202552",".......","........"],"drop":5,"seed":98000,"bot":23},{"rows":["20111102","2225222","24222242","202.202","22000022","122.221","24411442","140.041","11111111"],"drop":5,"seed":99000,"bot":10},{"rows":["42214405","5221434","25222254","4444255","44434445","2101004","24521524","2521124","33221114"],"drop":5,"seed":100000,"bot":37}];
+</script>
+<script>
+/* Fizz Pop sounds: synthesized with Web Audio (no audio files). */
+var FPSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    shoot: function () { if (on) { noise(1600, 2, 0.08, 0.25); tone('sine', 300, 700, 0.1, 0.1); } },
+    bounce: function () { if (on) tone('triangle', 900, 700, 0.05, 0.08); },
+    stick: function () { if (on) { noise(900, 3, 0.05, 0.25); tone('sine', 420, 0, 0.05, 0.08); } },
+    pop: function (n) { if (!on) return; for (var i = 0; i < Math.min(n, 8); i++) { tone('sine', 700 + i * 90 + Math.random() * 60, 1400 + i * 90, 0.07, 0.12, i * 0.04); noise(3000, 3, 0.03, 0.1, i * 0.04); } },
+    fall: function (n) { if (!on) return; for (var i = 0; i < Math.min(n, 6); i++) tone('triangle', 900 - i * 90, 400 - i * 30, 0.14, 0.08, 0.08 + i * 0.05); },
+    ceiling: function () { if (on) { noise(160, 1, 0.3, 0.5); tone('sine', 110, 70, 0.3, 0.2); } },
+    swap: function () { if (on) { tone('sine', 660, 990, 0.06, 0.1); } },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 1319, 1568].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.18, 0.26, i * 0.09); }); },
+    lose: function () { if (on) [440, 392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.25, 0.2, i * 0.18); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Fizz Pop app: aiming and shooting, the flight along the traced path, pops and falls, the ceiling, levels with
+   stars, endless mode, saves, stats and house ads. Fixed 60 Hz steps for the flight and effects. */
+(function () {
+  'use strict';
+  var S = FPSound, LEVELS = window.FP_LEVELS || [];
+  var COLORS = ['#ff4d6d', '#ff9f1c', '#ffd23f', '#2ec27e', '#3a86ff', '#9b5de5'];
+  var STEP = 1000 / 60, MAXA = 78 * Math.PI / 180;
+
+  // ================= storage =================
+  var store = Goobs.store('bubbles');
+  var settings = { sound: false, adEvery: 3, guide: true, shapes: true };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'levels', level: 1, open: 1, stars: {}, seen: false, finished: 0, lastAdAt: 0, endlessBest: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { shots: 0, pops: 0, fell: 0, cleared: 0, games: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovLevels') || GoobsAds.isOpen(); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+
+  // ================= game =================
+  var g = null, levelNo = 1, flight = null, fx = [], aim = null, shake = 0, done = false, curBot = 20;
+
+  // ================= 1.3.0: levels past the bank, made on the phone =================
+  // Levels 1-100 are the bank (levels.json). From 101 on (no end), level n is made from its number by FP.levelPast
+  // (seeded, so it is the same level on every phone) and only kept once the bot clears it. That takes about a tenth of
+  // a second, sometimes more, so it runs in a Web Worker built from FP's own source (a Blob: no extra file), and the
+  // next level is made while this one is played. If the player gets there first, a small note shows until it's ready.
+  var made = {}, waiting = {}, worker = null, workerBroken = false, wantToken = 0;
+  (function () { var c = store.get('made', null); if (c && typeof c === 'object') for (var n in c) if (c[n] && c[n].rows) made[n] = c[n]; })();
+  function keepMade(n, lv) {
+    made[n] = lv;
+    // keep the last few made levels in the save, so reopening the app on a level past the bank needs no wait
+    var keys = Object.keys(made).map(Number).sort(function (a, b) { return b - a; }), keep = {};
+    keys.forEach(function (k2) { if (Math.abs(k2 - levelNo) <= 3 || k2 === meta.open) keep[k2] = made[k2]; });
+    store.set('made', keep);
+  }
+  function levelReady(n) { return n <= LEVELS.length ? LEVELS[n - 1] : made[n] || null; }
+  function gotLevel(lv) {
+    if (!lv || !lv.rows) return;
+    keepMade(lv.n, lv);
+    var cbs = waiting[lv.n] || []; delete waiting[lv.n];
+    cbs.forEach(function (cb) { cb(lv); });
+  }
+  function makeWorker() {
+    if (worker || workerBroken) return worker;
+    try {
+      var src = 'var FP = (' + FP.source + ')();\nonmessage = function (e) { postMessage(FP.levelPast(e.data)); };';
+      worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      worker.onmessage = function (e) { gotLevel(e.data); };
+      worker.onerror = function () { workerBroken = true; worker = null; for (var n in waiting) makeHere(+n); };
+    } catch (e) { workerBroken = true; worker = null; }
+    return worker;
+  }
+  // no Worker (very old phone, or it failed): make it on the page, after a beat so the note can show first
+  function makeHere(n) { setTimeout(function () { if (waiting[n]) gotLevel(FP.levelPast(n)); }, 40); }
+  function needLevel(n, cb) {
+    var lv = levelReady(n);
+    if (lv) { if (cb) cb(lv); return; }
+    var first = !waiting[n]; waiting[n] = waiting[n] || []; if (cb) waiting[n].push(cb);
+    if (!first) return;
+    if (makeWorker()) worker.postMessage(n); else makeHere(n);
+  }
+  function prefetch(n) { if (n > LEVELS.length && !levelReady(n)) needLevel(n, null); }
+  var noteT = 0;
+  function note(t) {
+    clearTimeout(noteT); var el = $('toast');
+    if (!t) { if (el.dataset.note) { el.classList.remove('show'); el.dataset.note = ''; } return; }
+    // only if it takes a moment: a level that's ready in a blink shows no note
+    noteT = setTimeout(function () { el.textContent = t; el.dataset.note = '1'; el.classList.add('show'); }, 250);
+  }
+  function startLevel(n) {
+    n = Math.max(1, Math.floor(n) || 1);
+    levelNo = n; meta.mode = 'levels'; meta.level = n; saveMeta();
+    var token = ++wantToken, lv = levelReady(n);
+    // not made yet: the old board goes (so nothing can be shot or saved under the new number) until it's ready
+    if (!lv) { g = null; flight = null; aim = null; fx = []; if (cx) cx.clearRect(0, 0, cv.width, cv.height); store.del('game'); note('Making level ' + fmt(n) + '\u2026'); $('hud').innerHTML = pill('Level', fmt(n)); }
+    needLevel(n, function (lv2) {
+      if (token !== wantToken) return;   // the player picked another level meanwhile
+      note(null);
+      curBot = lv2.bot || 20;
+      g = FP.create(lv2, 'levels');
+      reset();
+      prefetch(n + 1);
+    });
+  }
+  function startEndless() {
+    meta.mode = 'endless'; saveMeta();
+    wantToken++; note(null);
+    var seed = newSeed(), rows = [];
+    // six rows of four colors to start with
+    var lv = FP.makeLevel(12, seed); lv.rows = lv.rows.slice(0, 6).map(function (r) { return r.replace(/\./g, '0').replace(/[4-9]/g, function (d) { return String(d % 4); }); });
+    lv.drop = 6;
+    g = FP.create(lv, 'endless');
+    reset();
+  }
+  function reset() { flight = null; fx = []; aim = null; done = false; save(); renderAll(); }
+  function save() { if (g && !g.over) store.set('game', { g: g, level: levelNo, mode: meta.mode, bot: curBot }); else store.del('game'); }
+  function load() {
+    var r = store.get('game', null);
+    if (!r || !r.g || !r.g.grid || r.g.over) return false;
+    g = r.g; levelNo = r.level || 1; meta.mode = r.mode === 'endless' ? 'endless' : 'levels';
+    curBot = r.bot || (LEVELS[levelNo - 1] && LEVELS[levelNo - 1].bot) || 20;
+    if (meta.mode === 'levels') prefetch(levelNo + 1);
+    return true;
+  }
+
+  // ================= loop =================
+  var acc = 0, lastT = 0;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(100, t - lastT); lastT = t;
+    if (!sheetOpen()) { acc += dt; var n = 0; while (acc >= STEP && n++ < 6) { acc -= STEP; step(); } }
+    draw();
+  }
+  function step() {
+    if (flight) {
+      // move along the traced path
+      var left = FP.SPEED * 1.0;
+      while (left > 0 && flight) {
+        var tgt = flight.path[flight.i + 1];
+        if (!tgt) { land(); break; }
+        var dx = tgt[0] - flight.x, dy = tgt[1] - flight.y, d = Math.hypot(dx, dy);
+        if (d <= left) { flight.x = tgt[0]; flight.y = tgt[1]; flight.i++; left -= d; if (flight.i < flight.path.length - 1) S.bounce(); }
+        else { flight.x += dx / d * left; flight.y += dy / d * left; left = 0; }
+      }
+    }
+    fx.forEach(function (f) { f.t++; if (f.kind === 'fall') { f.vy += 0.018; f.y += f.vy; f.x += f.vx; } });
+    fx = fx.filter(function (f) { return f.kind === 'pop' ? f.t < 18 : f.kind === 'text' ? f.t < 60 : f.y < 20; });
+    if (shake > 0) shake--;
+  }
+  function shoot(a) {
+    if (!g || g.over || flight || done) return;
+    var t = FP.trace(g, a);
+    if (!t.cell) return;
+    // end the path at the cell the bubble will take
+    var end = FP.cellXY(g, t.cell[0], t.cell[1]);
+    t.path[t.path.length - 1] = end;
+    flight = { path: t.path, i: 0, x: t.path[0][0], y: t.path[0][1], cell: t.cell, color: g.cur };
+    stats.shots++;
+    S.shoot();
+  }
+  function land() {
+    var f = flight; flight = null;
+    var dropBefore = g.drop, res = FP.place(g, f.cell, f.color);
+    S.stick();
+    res.popped.forEach(function (b, i) { var p = FP.cellXY({ drop: dropBefore }, b.r, b.c); fx.push({ kind: 'pop', x: p[0], y: p[1], color: b.color, t: -Math.floor(i * 1.5) }); });
+    res.fell.forEach(function (b) { var p = FP.cellXY({ drop: dropBefore }, b.r, b.c); fx.push({ kind: 'fall', x: p[0], y: p[1], vx: (Math.random() - 0.5) * 0.05, vy: -0.05 - Math.random() * 0.08, color: b.color, t: 0 }); });
+    if (res.popped.length) { S.pop(res.popped.length); stats.pops += res.popped.length; }
+    if (res.fell.length) { S.fall(res.fell.length); stats.fell += res.fell.length; }
+    if (res.points) fx.push({ kind: 'text', x: f.cell ? FP.cellXY(g, f.cell[0], f.cell[1])[0] : 4, y: FP.cellXY(g, f.cell[0], f.cell[1])[1], text: '+' + fmt(res.points), t: 0 });
+    if (res.dropped) { S.ceiling(); shake = 18; }
+    saveStats(); save(); renderInfo();
+    if (g.over) { done = true; setTimeout(g.won ? won : lost, g.won ? 700 : 900); }
+  }
+  function starsFor(n, shots) { var bot = curBot || 20; return shots <= Math.round(bot * 1.15) + 2 ? 3 : shots <= Math.round(bot * 1.7) + 5 ? 2 : 1; }
+  function won() {
+    S.win(); stats.cleared++; stats.games++; saveStats();
+    meta.finished++;
+    var st = starsFor(levelNo, g.shots), before = meta.stars[levelNo] || 0;
+    meta.stars[levelNo] = Math.max(before, st);
+    // 1.3.0: no last level: the next one is always there (made on the phone past 100)
+    if (meta.open <= levelNo) meta.open = levelNo + 1;
+    saveMeta(); store.del('game');
+    prefetch(levelNo + 1);
+    showCard('Level ' + fmt(levelNo) + ' cleared!', '<div class="stars">' + [0, 1, 2].map(function (i) { return i < st ? '★' : '<span class="off">★</span>'; }).join('') + '</div>' +
+      g.shots + ' shots &middot; ' + fmt(g.score) + ' points',
+      [{ label: 'Next: level ' + fmt(levelNo + 1), red: true, go: function () { between(function () { startLevel(levelNo + 1); }); } }, { label: 'Play it again', go: function () { between(function () { startLevel(levelNo); }); } }]);
+  }
+  function lost() {
+    S.lose(); stats.games++; saveStats(); meta.finished++;
+    if (g.mode === 'endless') {
+      var nb = g.score > meta.endlessBest; if (nb) meta.endlessBest = g.score; saveMeta(); store.del('game');
+      showCard('Over the line', 'Score <b>' + fmt(g.score) + '</b>' + (nb ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(meta.endlessBest)), [{ label: 'Play again', red: true, go: function () { between(startEndless); } }]);
+      return;
+    }
+    saveMeta(); store.del('game');
+    showCard('Over the line', 'The bubbles reached the line. ' + FP.count(g) + ' left.', [{ label: 'Try again', red: true, go: function () { between(function () { startLevel(levelNo); }); } }, { label: 'Pick a level', go: function () { openLevels(); } }]);
+  }
+
+  // ================= drawing =================
+  var cv, cx, dpr = 1, k = 40, W = 8, H = 13.4, ox = 0, FS = null;
+  function fit() {
+    // full screen (1.2.0): the free space is the screen below the floating top row, clear of the notch and the home bar
+    // (#fitbox); the field is as big as it fits there (half-pixel steps; the cap keeps it sane on an iPad), centred in it
+    var box = $('fitbox').getBoundingClientRect(), y0 = document.querySelector('.top').getBoundingClientRect().bottom + 8, fh = box.bottom - y0;
+    k = Math.max(10, Math.floor(2 * Math.min((box.width - 2) / W, fh / H, 60)) / 2);
+    var st = $('stage'), w = W * k, h = H * k;
+    st.style.width = w + 'px'; st.style.height = h + 'px';
+    st.style.left = Math.round(box.left + (box.width - w) / 2) + 'px'; st.style.top = Math.round(y0 + Math.max(0, (fh - h) / 2)) + 'px';
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * k * dpr); cv.height = Math.round(H * k * dpr);
+    bubCache = {};
+  }
+  var bubCache = {};
+  function bubbleImg(color) {
+    var key = color + ':' + k + (settings.shapes ? 's' : '');
+    if (bubCache[key]) return bubCache[key];
+    var size = Math.round(k * dpr), c = document.createElement('canvas'); c.width = c.height = size;
+    var x = c.getContext('2d'), r = size / 2 - 0.5, col = COLORS[color] || '#ccc';
+    var gr = x.createRadialGradient(size * 0.36, size * 0.32, size * 0.05, size / 2, size / 2, r);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.22, col); gr.addColorStop(1, shade(col, -0.35));
+    x.fillStyle = gr; x.beginPath(); x.arc(size / 2, size / 2, r * 0.96, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = size * 0.03; x.stroke();
+    if (settings.shapes) shapeOn(x, color, size);
+    bubCache[key] = c; return c;
+  }
+  function shapeOn(x, color, size) {
+    var m = size / 2, s = size * 0.17;
+    x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath();
+    if (color === 0) { x.moveTo(m, m - s * 0.4); x.bezierCurveTo(m - s * 1.2, m - s * 1.4, m - s * 1.3, m + s * 0.3, m, m + s); x.bezierCurveTo(m + s * 1.3, m + s * 0.3, m + s * 1.2, m - s * 1.4, m, m - s * 0.4); }          // heart
+    else if (color === 1) { for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? s * 0.45 : s; x.lineTo(m + Math.cos(a) * rr, m + Math.sin(a) * rr); } }  // star
+    else if (color === 2) { x.arc(m, m, s * 0.8, 0, Math.PI * 2); }                                                                      // dot
+    else if (color === 3) { x.moveTo(m, m - s); x.lineTo(m + s, m + s * 0.8); x.lineTo(m - s, m + s * 0.8); }                          // triangle
+    else if (color === 4) { x.moveTo(m, m - s); x.lineTo(m + s, m); x.lineTo(m, m + s); x.lineTo(m - s, m); }                           // diamond
+    else { x.rect(m - s * 0.75, m - s * 0.75, s * 1.5, s * 1.5); }                                                                      // square
+    x.closePath(); x.fill();
+  }
+  function shade(hex, kk) { var n = parseInt(hex.slice(1), 16), f = function (v) { return Math.max(0, Math.min(255, Math.round(v * (1 + kk)))); }; return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; }
+  function bub(color, x, y, scale, alpha) {
+    var s = k * (scale || 1);
+    if (alpha != null) cx.globalAlpha = alpha;
+    cx.drawImage(bubbleImg(color), x * k - s / 2, y * k - s / 2, s, s);
+    if (alpha != null) cx.globalAlpha = 1;
+  }
+  function draw() {
+    if (!cx || !g) return;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var jolt = shake ? Math.sin(shake * 1.7) * 3 : 0;
+    // background
+    // 1.2.0: see-through, so the field shows the same soda blue as the screen round it (.stagewrap)
+    cx.clearRect(0, 0, W * k, H * k);
+    // rising fizz
+    cx.fillStyle = 'rgba(255,255,255,.06)';
+    var t = performance.now() / 1000;
+    for (var i = 0; i < 14; i++) { var fx0 = ((i * 0.61) % 1) * W, fy = H - ((t * (0.25 + (i % 5) * 0.06) + i * 0.37) % 1) * H; cx.beginPath(); cx.arc(fx0 * k, fy * k, k * (0.05 + (i % 3) * 0.03), 0, Math.PI * 2); cx.fill(); }
+    cx.translate(0, jolt);
+    // the ceiling (comes down)
+    var ceil = g.drop * FP.ROWH * k;
+    if (ceil > 0) { cx.fillStyle = '#3b4a8f'; cx.fillRect(0, 0, W * k, ceil); cx.fillStyle = 'rgba(255,255,255,.12)'; for (var cy = 0; cy < ceil; cy += k * 0.43) cx.fillRect(0, cy, W * k, 2); }
+    cx.fillStyle = '#ffc53d'; cx.fillRect(0, ceil - 3, W * k, 3);
+    // the line
+    var ly = FP.LINE * FP.ROWH * k + k * 0.02, near = FP.lowest(g) >= FP.LINE - 2;
+    cx.strokeStyle = near ? 'rgba(255,90,110,' + (0.6 + 0.4 * Math.sin(t * 8)).toFixed(2) + ')' : 'rgba(255,255,255,.35)'; cx.lineWidth = 2; cx.setLineDash([8, 7]);
+    cx.beginPath(); cx.moveTo(0, ly); cx.lineTo(W * k, ly); cx.stroke(); cx.setLineDash([]);
+    // bubbles on the board
+    for (var key in g.grid) { var r = Math.floor(key / FP.COLS), c = key % FP.COLS, p = FP.cellXY(g, r, c); bub(g.grid[key], p[0], p[1]); }
+    cx.translate(0, -jolt);
+    // aim line
+    var lx = FP.WIDTH / 2, lyy = FP.LAUNCH_Y;
+    if (aim && !flight && !done && settings.guide) {
+      var tr = FP.trace(g, aim.a, 1), pts = tr.path;
+      cx.fillStyle = 'rgba(255,255,255,.8)';
+      var dist = 0, gap = 0.45;
+      for (var s2 = 0; s2 < pts.length - 1; s2++) {
+        var ax = pts[s2][0], ay = pts[s2][1], bx = pts[s2 + 1][0], by = pts[s2 + 1][1], seg = Math.hypot(bx - ax, by - ay);
+        for (var u = (gap - (dist % gap)) % gap; u < seg; u += gap) { var q = u / seg; cx.beginPath(); cx.arc((ax + (bx - ax) * q) * k, (ay + (by - ay) * q) * k, k * 0.06, 0, Math.PI * 2); cx.fill(); }
+        dist += seg;
+      }
+    }
+    // the launcher
+    var a0 = aim ? aim.a : 0;
+    cx.save(); cx.translate(lx * k, lyy * k);
+    cx.fillStyle = '#3b4a8f'; cx.beginPath(); cx.arc(0, k * 0.35, k * 0.95, Math.PI, 0); cx.fill();
+    cx.rotate(a0); cx.fillStyle = '#c9d0f0'; cx.beginPath(); cx.moveTo(-k * 0.16, -k * 0.2); cx.lineTo(-k * 0.08, -k * 1.1); cx.lineTo(k * 0.08, -k * 1.1); cx.lineTo(k * 0.16, -k * 0.2); cx.fill();
+    cx.restore();
+    if (!flight && !done) bub(g.cur, lx, lyy);
+    // next bubble (tap to swap)
+    cx.fillStyle = 'rgba(255,255,255,.5)'; cx.font = '800 ' + Math.round(k * 0.26) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center';
+    cx.fillText('NEXT', (lx - 2) * k, (lyy + 0.95) * k);
+    bub(g.next, lx - 2, lyy + 0.25, 0.75);
+    // ceiling countdown dots
+    var leftShots = g.dropEvery - g.sinceDrop;
+    for (var d = 0; d < g.dropEvery; d++) { cx.fillStyle = d < leftShots ? 'rgba(255,197,61,.9)' : 'rgba(255,255,255,.18)'; cx.beginPath(); cx.arc((lx + 1.4 + d * 0.28) * k, (lyy + 0.25) * k, k * 0.08, 0, Math.PI * 2); cx.fill(); }
+    cx.fillStyle = 'rgba(255,255,255,.5)'; cx.fillText(g.mode === 'endless' ? 'NEW ROWS' : 'CEILING', (lx + 1.4 + (g.dropEvery - 1) * 0.14) * k, (lyy + 0.95) * k);
+    // the flying bubble
+    if (flight) bub(flight.color, flight.x, flight.y);
+    // effects
+    cx.translate(0, jolt);
+    fx.forEach(function (f) {
+      if (f.kind === 'pop') { if (f.t < 0) { bub(f.color, f.x, f.y); return; } var q = f.t / 18; bub(f.color, f.x, f.y, 1 + q * 0.6, 1 - q); }
+      else if (f.kind === 'fall') bub(f.color, f.x, f.y, 1, Math.max(0, 1 - f.t / 90));
+      else if (f.kind === 'text') { cx.globalAlpha = 1 - f.t / 60; cx.fillStyle = '#fff'; cx.font = '900 ' + Math.round(k * 0.5) + 'px -apple-system, system-ui, sans-serif'; cx.fillText(f.text, f.x * k, (f.y - f.t * 0.02) * k); cx.globalAlpha = 1; }
+    });
+    cx.translate(0, -jolt);
+  }
+
+  // ================= touch: drag to aim, let go to shoot, tap the next bubble to swap =================
+  var ptr = null;
+  function local(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / k, (e.clientY - r.top) / k]; }
+  function angleTo(p) { var a = Math.atan2(p[0] - FP.WIDTH / 2, FP.LAUNCH_Y - p[1]); return Math.max(-MAXA, Math.min(MAXA, a)); }
+  // 1.2.0: the whole screen takes the drag (not just the field), so a finger can aim from the blue round the field too;
+  // positions are still measured from the field (local), so the swap spots and the aim are unchanged
+  function onDown(e) {
+    if (!g || g.over || done || sheetOpen()) return;
+    S.unlock();
+    var p = local(e);
+    try { $('stagewrap').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    // the next bubble or the launcher: swap
+    if (Math.hypot(p[0] - (FP.WIDTH / 2 - 2), p[1] - (FP.LAUNCH_Y + 0.25)) < 0.7 || Math.hypot(p[0] - FP.WIDTH / 2, p[1] - FP.LAUNCH_Y) < 0.55) {
+      if (!flight) { FP.swap(g); S.swap(); save(); } ptr = null; return;
+    }
+    ptr = { id: e.pointerId };
+    aim = { a: angleTo(p) };
+  }
+  function onMove(e) { if (!ptr || e.pointerId !== ptr.id) return; aim = { a: angleTo(local(e)) }; }
+  function onUp(e) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    ptr = null;
+    var p = local(e);
+    if (p[1] < FP.LAUNCH_Y - 0.4) shoot(angleTo(p));
+    aim = null;
+  }
+
+  // ================= info and sheets =================
+  function pill(lbl, v) { return '<div class="ggpill"><small>' + lbl + '</small>' + v + '</div>'; }
+  function renderInfo() {
+    if (!g) return;
+    // 1.2.0: the counters are pills in the floating top row (the old info row above the field is gone)
+    $('hud').innerHTML = meta.mode === 'levels' ? pill('Level', fmt(levelNo)) + pill('Bubbles', FP.count(g)) + pill('Score', fmt(g.score))
+      : pill('Score', fmt(g.score)) + pill('Best', fmt(Math.max(meta.endlessBest, g.score)));
+    Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); });
+    $('btnLevels').style.display = meta.mode === 'levels' ? '' : 'none';
+  }
+  function renderAll() { renderInfo(); draw(); }
+  function openLevels(all) {
+    // 1.3.0: the bank plus the levels made past it, up to 30 past the furthest one open (the list grows as you go).
+    // A very long list starts 600 back (thousands of buttons are slow on a phone); a button above shows the rest.
+    var h = '', top = Math.max(LEVELS.length, meta.open + 30), from = all === true || top <= 600 ? 1 : Math.floor((top - 600) / 5) * 5 + 1;
+    if (from > 1) h += '<button class="btn lvmore" id="lvMore">Show levels 1&ndash;' + fmt(from - 1) + '</button>';
+    for (var n = from; n <= top; n++) {
+      var st = meta.stars[n] || 0;
+      h += '<button class="lv' + (n === levelNo && meta.mode === 'levels' ? ' cur' : '') + (n >= 10000 ? ' long' : '') + '" data-n="' + n + '"' + (n > meta.open ? ' disabled' : '') + '>' + n + '<small>' + '★★★'.slice(0, st) + '</small></button>';
+    }
+    $('lvgrid').innerHTML = h;
+    $('ovLevels').classList.add('show');
+    var cur = $('lvgrid').querySelector('.cur') || $('lvgrid').querySelector('button[data-n="' + Math.min(meta.open, top) + '"]');
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'center' });
+  }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 1500); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#fp-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return;
+    }
+    next();
+  }
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Fizz Pop';
+    $('helpList').innerHTML = [
+      '<b>Drag</b> anywhere above the launcher to aim (the dotted line shows the way, off one wall), and <b>let go</b> to shoot. Slide your finger back down below the launcher to cancel.',
+      'Bubbles stick where they touch. Make a group of <b>3 or more</b> of one color and they <b>pop</b>. Anything left hanging with nothing holding it to the top <b>falls</b>, for big points (each extra falling bubble doubles them).',
+      'Bank shots off the side walls to reach tricky spots. <b>Tap the NEXT bubble</b> (or the launcher) to swap the two.',
+      '<b>Levels</b>: clear every bubble. Every few shots the <b>ceiling</b> comes down a row (the gold dots count down). If a bubble crosses the dashed <b>line</b>, the level is lost. Fewer shots earn more stars. The levels never run out: after the first 100, each new one is made on your phone and checked to be clearable before you play it.',
+      '<b>Endless</b>: new rows push in from the top every 6 shots. Keep going as long as you can.',
+      'Settings: the aim line, and small <b>shapes</b> on the bubbles so colors are easy to tell apart.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var stars = 0; for (var n in meta.stars) stars += meta.stars[n];
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + Math.max(0, meta.open - 1) + '</b><span>Levels cleared</span></div><div class="tile"><b>' + stars + '</b><span>Stars</span></div><div class="tile"><b>' + fmt(meta.endlessBest) + '</b><span>Endless best</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.shots) + '</b><span>Shots</span></div><div class="tile"><b>' + fmt(stats.pops) + '</b><span>Popped</span></div><div class="tile"><b>' + fmt(stats.fell) + '</b><span>Dropped</span></div></div>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function inGame() { return g && !g.over && g.shots > 0; }
+  function init() {
+    // full screen: How to, Stats, Settings, Levels and Restart live in the Menu (a bubble in flight waits while it is open).
+    // 1.2.0: overlay mode (the top row floats on the soda blue) and the Levels / Endless tabs move to the top of the Menu
+    FS = Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnLevels', 'btnStats', 'btnSettings', 'btnNew'], info: function () {
+      if (!g) return '';
+      return meta.mode === 'levels' ? 'Level <b>' + fmt(levelNo) + '</b> &middot; furthest ' + fmt(meta.open) + ' &middot; ' + FP.count(g) + ' bubbles left' : 'Endless &middot; score <b>' + fmt(g.score) + '</b> &middot; best ' + fmt(Math.max(meta.endlessBest, g.score));
+    } });
+    FS.list.parentNode.insertBefore($('modes'), FS.list);
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    var sw = $('stagewrap');
+    sw.addEventListener('pointerdown', onDown); sw.addEventListener('pointermove', onMove); sw.addEventListener('pointerup', onUp);
+    sw.addEventListener('pointercancel', function () { ptr = null; aim = null; });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      FS.close();
+      if (b.dataset.mode === meta.mode) return;
+      var go = b.dataset.mode === 'endless' ? startEndless : function () { startLevel(meta.level); };
+      if (inGame()) { showCard('Leave this game?', 'It ends here.', [{ label: 'Leave it', red: true, go: go }, { label: 'Keep playing', go: function () {} }]); return; }
+      go();
+    });
+    $('btnNew').addEventListener('click', function () {
+      var go = meta.mode === 'endless' ? startEndless : function () { startLevel(levelNo); };
+      if (inGame()) { showCard('Restart?', 'This one starts over.', [{ label: 'Restart', red: true, go: go }, { label: 'Keep playing', go: function () {} }]); return; }
+      go();
+    });
+    $('btnLevels').addEventListener('click', function () { openLevels(); });
+    $('lvgrid').addEventListener('click', function (e) { if (e.target.closest('#lvMore')) { openLevels(true); return; } var b = e.target.closest('button[data-n]'); if (!b) return; $('ovLevels').classList.remove('show'); startLevel(+b.dataset.n); });
+    sheet(null, 'ovLevels', 'btnCloseLevels');
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnHelp').addEventListener('click', openHelp);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setGuide').checked = settings.guide; $('setShapes').checked = settings.shapes;
+    $('setGuide').addEventListener('change', function () { settings.guide = this.checked; saveSettings(); });
+    $('setShapes').addEventListener('change', function () { settings.shapes = this.checked; saveSettings(); bubCache = {}; });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('stagewrap'));
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); fit();
+    if (!load()) { if (meta.mode === 'endless') startEndless(); else startLevel(Math.min(meta.level, meta.open)); } else renderAll();
+    if (!meta.seen) openHelp();
+    lastT = performance.now(); requestAnimationFrame(frame);
+    Goobs.markPlayed('bubbles');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Fizz Pop ' + (v.bubbles || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+
+  // hook for automated tests
+  window.__fp = { get g() { return g; }, shoot: shoot, FP: FP, startLevel: startLevel, startEndless: startEndless, meta: function () { return meta; }, get flight() { return flight; }, get k() { return k; },
+    get levelNo() { return levelNo; }, get curBot() { return curBot; }, made: made, needLevel: needLevel, get worker() { return !!worker; }, setOpen: function (n) { meta.open = n; saveMeta(); } };
+
+  init();
+})();
+</script>
+</body>
+</html>

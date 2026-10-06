@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en" class="gg-landscape">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Moonshot</title>
+<style>
+/* Moonshot styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+/* Moonshot is played sideways (Glenn, 2026-09-28): the ballpark fills the screen, the buttons float on top. */
+html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
+.stage { position: fixed; inset: 0; overflow: hidden; background: #5fc9d8; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; transition: opacity .16s; }
+#cv, #side { pointer-events: none; }
+#ink { z-index: 1; }                     /* the finger goes here */
+.stage canvas.hide { opacity: 0; }
+
+/* the floating heads-up display */
+.hud {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) calc(env(safe-area-inset-right, 0px) + 10px) 0 calc(env(safe-area-inset-left, 0px) + 10px);
+}
+.hudl, .hudr { display: flex; gap: 7px; align-items: center; pointer-events: auto; flex: 1; }
+.hudr { justify-content: flex-end; }
+.hbtn { width: 42px; height: 42px; border-radius: 21px; border: 0; background: rgba(255,255,255,.9); color: #1b2130; display: flex; align-items: center; justify-content: center; gap: 3px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.2); padding: 0; flex: none; font-weight: 800; font-size: 15px; }
+.hbtn svg { width: 22px; height: 22px; }
+.hbtn:active { transform: scale(.93); }
+.hbtn.on { color: #5a54f0; }
+.hbtn.shades { width: auto; padding: 0 11px 0 9px; }
+.hbtn.shades:disabled { opacity: .5; }
+.hbtn.shades.hide { display: none; }
+.hud .info { width: auto; min-height: 0; display: block; padding: 0 0 0 3px; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.28), 0 0 8px rgba(0,0,0,.2); }
+.hud .info .lbl { color: #fff; opacity: .95; font-size: 13px; font-weight: 900; letter-spacing: .8px; }
+.hud .info .ttl { font-size: 16px; font-weight: 800; }
+.hudc { flex: none; text-align: center; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.3); pointer-events: none; min-width: 150px; background: rgba(20,24,36,.32); border-radius: 18px; padding: 5px 12px 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.hudc .score { font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1; }
+.hudc small { display: block; font-size: 12px; font-weight: 800; opacity: .95; margin-top: 3px; letter-spacing: .3px; }
+.health { display: flex; gap: 3px; justify-content: center; margin: 5px auto 0; width: 190px; padding: 3px; border-radius: 8px; background: rgba(20,24,36,.45); }
+.health i { flex: 1; height: 9px; border-radius: 4px; background: linear-gradient(#ff7a6b, #e63b3b); }
+.health i.off { background: rgba(255,255,255,.18); }
+
+.callout {
+  position: absolute; left: 0; right: 0; top: 24%; text-align: center; pointer-events: none; opacity: 0; z-index: 2;
+  font-weight: 900; font-size: 42px; color: #fff; letter-spacing: -.5px; text-shadow: 0 3px 0 rgba(20,24,60,.55), 0 0 18px rgba(0,0,0,.35);
+}
+.callout small { display: block; font-size: 20px; color: #ffe08a; margin-top: 2px; }
+.callout.hr { color: #ffd23f; font-size: 50px; }
+.callout.show { animation: callout 1.5s ease-out forwards; }
+@keyframes callout { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.08); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-16px); } }
+.flickhint {
+  position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); transform: translateX(-50%); white-space: nowrap; pointer-events: none; display: none; z-index: 2;
+  background: rgba(20,24,36,.62); color: #fff; font-weight: 700; font-size: 14px; padding: 6px 13px; border-radius: 20px;
+}
+.flickhint.show { display: block; }
+.preview {
+  position: absolute; right: calc(env(safe-area-inset-right, 0px) + 10px); top: calc(env(safe-area-inset-top, 0px) + 58px); display: none; flex-direction: column; gap: 5px; pointer-events: none; z-index: 3;
+  background: rgba(20,24,36,.75); color: #fff; border-radius: 14px; padding: 8px 10px; font-weight: 700; font-size: 13px;
+}
+.preview.show { display: flex; }
+.preview span { display: flex; align-items: center; gap: 7px; }
+.preview i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(0,0,0,.18); display: inline-block; }
+.viewtoast { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); background: rgba(20,24,36,.72); color: #fff; font-weight: 800; font-size: 16px;
+  padding: 8px 16px; border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 3; white-space: nowrap; }
+.viewtoast.show { opacity: 1; }
+.building { position: absolute; inset: 0; display: none; place-items: center; font-weight: 800; font-size: 16px; color: #fff; pointer-events: none; z-index: 4; text-align: center; padding: 20px; }
+.building.show { display: grid; }
+
+/* the menu sheet */
+.menutop { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.menutop svg { width: 34px; height: 34px; border-radius: 10px; }
+.menutop h2 { margin: 0; }
+.menugrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.menugrid .tool { width: 100%; }
+.menugrid .tool.hide { visibility: hidden; }
+
+/* portrait: ask for the phone to be turned sideways */
+.rotate { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; text-align: center; background: linear-gradient(#5fc9d8, #b9f0e8); color: #1b2130; padding: 24px; }
+.rotate b { display: block; font-size: 22px; margin: 18px 0 6px; }
+.rotate span { color: #2f4a52; font-size: 16px; }
+.rotate .phone { width: 64px; height: 108px; border: 6px solid #1b2130; border-radius: 16px; margin: 0 auto; animation: turn 2.2s ease-in-out infinite; }
+@keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { .rotate { display: flex; } }
+
+/* sheets and cards on a short (sideways) screen */
+@media (max-height: 500px) {
+  .sheet { max-height: 96vh; padding-top: 16px; max-width: 600px; }
+  .sheet h2, .card h2 { font-size: 21px; }
+  .card { padding: 16px 18px 14px; max-height: 94vh; overflow-y: auto; }
+  .card p { margin: 4px 0 12px; font-size: 16px; }
+  .cardicon svg { width: 44px; height: 44px; }
+  .row { padding: 9px 2px; }
+  .hudc .score { font-size: 26px; }
+  .health { width: 160px; }
+}
+
+/* training: pitch picker */
+.chips { position: absolute; z-index: 3; left: calc(env(safe-area-inset-left, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); display: none; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.chips.show { display: flex; }
+.chips button { flex: none; height: 32px; border-radius: 16px; border: 0; background: rgba(255,255,255,.9); color: #1b2130; box-shadow: 0 2px 6px rgba(0,0,0,.15); font-weight: 700; font-size: 13px; padding: 0 12px; display: flex; align-items: center; gap: 6px; }
+.chips button i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset -1px -1px 0 rgba(0,0,0,.2); }
+.chips button.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+
+/* upgrades */
+.xpbar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; margin: 6px 0 4px; }
+.xpbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.skill { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.skill .nm { flex: 1; }
+.skill .nm b { display: block; font-size: 16px; }
+.skill .nm small { color: var(--muted); font-size: 12px; }
+.skill .pips { display: flex; gap: 2px; }
+.skill .pips i { width: 6px; height: 14px; border-radius: 2px; background: var(--surface-2); }
+.skill .pips i.on { background: var(--accent); }
+.skill .btn { width: auto; padding: 8px 14px; }
+.lvgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.lv { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); height: 52px; font-weight: 800; font-size: 16px; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.lv small { font-size: 11px; color: #e0a800; letter-spacing: -1px; }
+.lv.cur { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.lv:disabled { opacity: .35; }
+.lvnext { margin: 0 0 10px; color: var(--muted); }
+.stars { font-size: 26px; color: #ffc83d; letter-spacing: 2px; }
+.stars .off { color: var(--line-strong); }
+.cardicon svg { border-radius: 16px; }
+.modes button { font-size: 14px; padding-left: 2px; padding-right: 2px; }
+.modes button.locked { opacity: .5; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ms-logo" viewBox="0 0 100 100"><defs><linearGradient id="msbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2356"/><stop offset="1" stop-color="#4b3f9a"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#msbg)"/><circle cx="70" cy="30" r="16" fill="#fff3c4"/><circle cx="63" cy="25" r="16" fill="url(#msbg)"/>
+<path d="M18 30 l2 5 5 1 -4 3 1 5 -4-3 -4 3 1-5 -4-3 5-1z" fill="#ffe066"/><path d="M40 16 l1.4 3.2 3.4.5 -2.5 2.3.7 3.4-3-1.7-3 1.7.7-3.4-2.5-2.3 3.4-.5z" fill="#ffe066"/>
+<path d="M18 88 C 30 70, 48 58, 72 44" stroke="#fff" stroke-width="3" stroke-dasharray="3 5" fill="none" stroke-linecap="round"/>
+<circle cx="74" cy="43" r="8" fill="#fff" stroke="#d64545" stroke-width="1.6"/><path d="M70 38 q3 5 0 10 M78 38 q-3 5 0 10" stroke="#d64545" stroke-width="1.3" fill="none"/>
+<rect x="10" y="80" width="30" height="6" rx="3" transform="rotate(-35 25 83)" fill="#c98a4b"/></symbol>
+<symbol id="i-glasses" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9h20"/><path d="M3.5 9l1 5a3 3 0 0 0 3 2.5h1a3 3 0 0 0 3-2.8V9M12.5 9v3.7a3 3 0 0 0 3 2.8h1a3 3 0 0 0 3-2.5l1-5" fill="currentColor" fill-opacity=".25"/></g></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="13" height="10" rx="2" fill="currentColor" fill-opacity=".2"/><path d="M16 11l5-3v8l-5-3"/></g></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></g></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<!-- Played with the phone sideways (Glenn, 2026-09-28). The whole screen is the ballpark; the buttons float on top. -->
+<div class="stage" id="stage">
+  <canvas id="cv"></canvas>
+  <canvas id="side"></canvas>
+  <canvas id="ink"></canvas>
+  <div class="callout" id="callout"></div>
+  <div class="flickhint" id="flickHint">Flick up through the ball as it reaches the dotted line</div>
+  <div class="hud">
+    <div class="hudl">
+      <button class="hbtn" id="btnHome" aria-label="Back to all games"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <div class="info" id="info"></div>
+    </div>
+    <div class="hudc" id="scorebox"></div>
+    <div class="hudr">
+      <button class="hbtn shades" id="btnShades" aria-label="Show the next pitches"><svg viewBox="0 0 24 24"><use href="#i-glasses"/></svg><b id="shadesN">3</b></button>
+      <button class="hbtn" id="btnView" aria-label="Change the view"><svg viewBox="0 0 24 24"><use href="#i-cam"/></svg></button>
+      <button class="hbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="hbtn" id="btnMenu" aria-label="Menu"><svg viewBox="0 0 24 24"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <div class="preview" id="preview"></div>
+  <div class="viewtoast" id="viewToast"></div>
+  <div class="chips" id="chips"></div>
+  <div class="building" id="building">Loading&hellip;</div>
+</div>
+
+<!-- Menu: modes, level and upgrades, help, restart, records, settings -->
+<div class="overlay" id="ovMenu">
+  <div class="sheet" role="dialog" aria-label="Menu">
+    <div class="menutop">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#ms-logo"/></svg>
+      <h2>Moonshot</h2>
+    </div>
+    <div class="sheetbody">
+      <div class="modes" id="modes">
+        <button data-mode="minor">Minor</button>
+        <button data-mode="major" id="modeMajor">Major</button>
+        <button data-mode="moonstar">Moon-Star</button>
+        <button data-mode="training">Training</button>
+      </div>
+      <div class="menugrid">
+        <button class="tool" id="btnSkills"><svg viewBox="0 0 24 24"><use href="#i-bolt"/></svg><span id="skillsLabel">Level 1</span></button>
+        <button class="tool" id="btnSteps"><svg viewBox="0 0 24 24"><use href="#i-levels"/></svg><span>Steps</span></button>
+        <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+        <button class="tool" id="btnStats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg><span>Records</span></button>
+        <button class="tool" id="btnSettings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg><span>Settings</span></button>
+        <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+      </div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseMenu">Play</button></div>
+  </div>
+</div>
+
+<div class="rotate" id="rotate"><div><div class="phone"></div><b>Turn your phone sideways</b><span>Moonshot plays in landscape.</span></div></div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Cracks of the bat, the crowd, the machine.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Side view<small>Watch the pitch from the side, like the original. Off: from behind the plate, in 3D. The camera button switches too.</small></div>
+        <span class="switch"><input type="checkbox" id="setSide"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between steps and games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished steps and games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Moonshot</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- Level and upgrades -->
+<div class="overlay" id="ovSkills">
+  <div class="sheet" role="dialog" aria-label="Upgrades">
+    <h2>Level and upgrades</h2>
+    <div class="sheetbody" id="skillsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseSkills">Done</button></div>
+  </div>
+</div>
+
+<!-- Steps -->
+<div class="overlay" id="ovSteps">
+  <div class="sheet" role="dialog" aria-label="Steps">
+    <h2 id="stepsTitle">Steps</h2>
+    <div class="sheetbody" id="stepsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseSteps">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody">
+      <ol class="helplist">
+        <li>Hold your phone sideways. The machine pitches. <b>Flick your finger up through the ball</b> as it reaches the <b>dotted line</b>, like swinging a bat.</li>
+        <li><b>Timing</b> aims it: early pulls it to left field, late pushes it to right. <b>Flick faster</b> to hit harder. A <b>steep</b> flick lifts it higher; a flatter one hits a line drive. (From behind the plate, a flick just <b>under</b> the ball lifts it too.)</li>
+        <li>Every ball that goes <b>100 ft</b> or more scores its distance in points; a <b>home run</b> scores double. Balloons are 50 more.</li>
+        <li>Balls with faces do tricks: some curve, drop, stop in mid-air, wobble, or come three at once (only one is real; the fakes fade just before the line). Heavy grey balls don&rsquo;t go far. A <b>gold ball</b> multiplies the distance.</li>
+        <li><b>Minor</b> and <b>Major</b>: each step has more balls. A miss, a foul or a short hit costs one bar of health; lose all five and the step is over.</li>
+        <li><b>Moon-Star</b>: 9 balls for a record. Hit the moon or the stars for big bonuses. <b>Training</b>: pick a pitch and practice.</li>
+        <li>The <b>camera</b> button switches between the side view and the view from behind the plate. The <b>sunglasses</b> show the next pitches (a few uses per step). Points earn experience; each level up gives an upgrade: <b>Power</b>, <b>Contact</b> (a bigger sweet spot) or <b>Batting Eye</b> (more sunglasses).</li>
+      </ol>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Play ball!</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Moonshot engine (no DOM): pitches, bat contact, ball flight, scoring and modes.
+   Modeled on Flick Home Run! (Infinity Pocket, 2011). Units: metres and seconds.
+   x right (as the batter looks out), y up, z out toward the pitching machine. Home plate is at the origin. */
+var MS = (function () {
+  'use strict';
+  function mix32(x) {
+    x = x >>> 0;
+    x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var FT = 3.28084, G = 9.8, DRAG = 0.0042;
+  var RELEASE = [0, 1.55, 17.8];        // where the machine lets go
+  var ZONE = { near: -0.9, far: 2.4 };   // the ball can be hit while its z is in here (1.4.0: wider, about 0.1 s for a Straight)
+  var BALL_R = 0.085;                    // drawn a little big, like the original, so it's easy to follow
+
+  // ---------- the field ----------
+  // fence: 100 m down the lines (+-45 deg), 122 m to straight-away centre; 3.2 m high
+  function fenceAt(ang) { return 100 + 22 * Math.cos(Math.min(Math.PI / 2, Math.abs(ang) * 2)); }
+  var FENCE_H = 3.2;
+
+  // ---------- pitches ----------
+  // Our own names. Every pitch ends inside the hitting area; a few change speed or path on the way.
+  var PITCHES = {
+    straight: { name: 'Straight', speed: 27, face: 'plain', color: '#ffffff' },
+    fast: { name: 'Heater', speed: 36, face: 'fire', color: '#ff7a59' },
+    slow: { name: 'Floater', speed: 17, face: 'sleepy', color: '#bfe3ff' },
+    curve: { name: 'Hook', speed: 25, face: 'wink', color: '#7bd88f', curve: 1.1 },
+    drop: { name: 'Dropper', speed: 26, face: 'frown', color: '#b58cff', dropY: 0.7 },
+    stop: { name: 'Stopper', speed: 26, face: 'shock', color: '#ffe066', stop: 0.55 },
+    loopy: { name: 'Wobbler', speed: 22, face: 'dizzy', color: '#ff9ed1', loopy: 0.45 },
+    heavy: { name: 'Anvil', speed: 24, face: 'grumpy', color: '#8a8f9e', heavy: 0.6, size: 1.25 },
+    ninja: { name: 'Triplet', speed: 26, face: 'mask', color: '#3b3f73', ninja: true },
+    gold: { name: 'Gold', speed: 27, face: 'star', color: '#ffc83d', gold: true }
+  };
+  var PITCH_LIST = ['straight', 'fast', 'slow', 'curve', 'drop', 'stop', 'loopy', 'heavy', 'ninja', 'gold'];
+
+  // A pitch: { kind, T (seconds to the plate), target [x, y] at the plate, c (curve side), m (gold multiplier), fakes }
+  function makePitch(kind, R, speedMul) {
+    var p = PITCHES[kind], sp = p.speed * (speedMul || 1) * (0.94 + R() * 0.12);
+    var pitch = { kind: kind, T: RELEASE[2] / sp, target: [(R() - 0.5) * 0.3, 0.88 + R() * 0.3], c: R() < 0.5 ? -1 : 1 }; // 1.4.0: always about waist high
+    if (p.gold) pitch.m = 2 + Math.floor(R() * 4);
+    if (p.ninja) pitch.fakes = [[pitch.target[0] - 0.55, pitch.target[1] + 0.2], [pitch.target[0] + 0.55, pitch.target[1] - 0.1]];
+    if (R() < 0.5 && p.ninja) { var t = pitch.fakes[0]; pitch.fakes[0] = pitch.target; pitch.target = t; }
+    return pitch;
+  }
+  // time along the path (0..1 = release..plate), with the Stopper's pause
+  function progress(pitch, t) {
+    var p = PITCHES[pitch.kind], T = pitch.T;
+    if (p.stop) {
+      var u0 = 0.45, t0 = u0 * T, hold = p.stop;
+      if (t < t0) return t / T;
+      if (t < t0 + hold) return u0;
+      return (t - hold) / T;
+    }
+    return t / T;
+  }
+  function pitchDuration(pitch) { var p = PITCHES[pitch.kind]; return pitch.T + (p.stop || 0); }
+  // where the ball is at time t since release (after the plate it keeps going the same way)
+  function pitchPos(pitch, t, target) {
+    var p = PITCHES[pitch.kind], tg = target || pitch.target, u = progress(pitch, t);
+    var ext = u > 1 ? u - 1 : 0, uu = Math.min(1, u);
+    var x = RELEASE[0] + (tg[0] - RELEASE[0]) * uu, y = RELEASE[1] + (tg[1] - RELEASE[1]) * uu, z = RELEASE[2] * (1 - uu);
+    var arc = 4 * uu * (1 - uu);
+    if (p.curve) x += -pitch.c * p.curve * arc * (1 - uu * 0.3);
+    if (p.dropY) y += p.dropY * arc * (1 - uu);
+    if (p.loopy) { x += p.loopy * Math.sin(uu * Math.PI * 3) * (1 - uu) * pitch.c; y += p.loopy * 0.35 * Math.sin(uu * Math.PI * 4) * (1 - uu); }
+    if (ext) { // past the plate: carry on toward the backstop
+      var dx = (tg[0] - RELEASE[0]), dy = (tg[1] - RELEASE[1]) - (p.dropY ? p.dropY * 0 : 0);
+      x = tg[0] + dx * ext; y = Math.max(0.05, tg[1] + dy * ext); z = -RELEASE[2] * ext;
+    }
+    return [x, y, z];
+  }
+
+  // ---------- hitting ----------
+  // swing: { quality 0..1 (how close to the ball the stroke passed), off (-1..1, + means the stroke passed BELOW
+  //   the ball's centre, so it gets under the ball and lifts it), speed (stroke speed in screen heights per second), dirX, dirY (unit stroke direction on
+  //   screen, y down), z (ball's z at contact) }; skills: { power, contact, eye } levels 0..
+  function exitVelocity(pitch, swing, skills) {
+    var p = PITCHES[pitch.kind];
+    var sp = Math.max(0, Math.min(1.15, swing.speed / 2.2));
+    var v = (43 + 1.1 * (skills.power || 0)) * (0.5 + 0.5 * sp) * (0.62 + 0.38 * swing.quality) * (p.heavy || 1);
+    var up = Math.max(-0.4, Math.min(1, -swing.dirY));
+    var launch = 8 + 36 * up + 22 * swing.off; // under the ball = higher, over it = a grounder
+    launch = Math.max(-15, Math.min(62, launch));
+    // timing: meeting the ball early (still in front of the plate) pulls it to left field
+    var timing = Math.max(-1, Math.min(1, (swing.z - 0.15) / 1.2));
+    var spray = -timing * 38 + swing.dirX * 8;
+    return { v: v, launch: launch, spray: spray };
+  }
+  // fly the ball: returns { path: [[x,y,z]...] (every 1/30 s), feet, landed [x,z], hr, foul, balloons: [ids] }
+  function fly(hit, balloons) {
+    var la = hit.launch * Math.PI / 180, sa = hit.spray * Math.PI / 180;
+    var vx = hit.v * Math.cos(la) * Math.sin(sa), vy = hit.v * Math.sin(la), vz = hit.v * Math.cos(la) * Math.cos(sa);
+    var x = 0, y = 1.0, z = 0.3, dt = 1 / 240, t = 0, path = [[x, y, z]], popped = [], hr = false, crossed = false;
+    for (var k = 0; k < 240 * 12; k++) {
+      var sp = Math.sqrt(vx * vx + vy * vy + vz * vz);
+      vx -= DRAG * sp * vx * dt; vy -= (G + DRAG * sp * vy) * dt; vz -= DRAG * sp * vz * dt;
+      x += vx * dt; y += vy * dt; z += vz * dt; t += dt;
+      if (balloons) balloons.forEach(function (b) {
+        if (popped.indexOf(b.id) >= 0 || b.gone) return;
+        var dx = x - b.p[0], dy = y - b.p[1], dz = z - b.p[2];
+        if (dx * dx + dy * dy + dz * dz < b.r * b.r) popped.push(b.id);
+      });
+      var r = Math.sqrt(x * x + z * z), ang = Math.atan2(x, z);
+      if (!crossed && r >= fenceAt(ang)) {
+        crossed = true;
+        if (y > FENCE_H && Math.abs(ang) <= Math.PI / 4) hr = true;
+        else if (Math.abs(ang) <= Math.PI / 4) { // hit the wall: drops at the wall
+          vx *= -0.2; vz *= -0.2;
+        }
+      }
+      if (k % 8 === 0) path.push([x, y, z]);
+      if (y <= 0 && t > 0.05) { path.push([x, 0, z]); break; }
+    }
+    var dist = Math.sqrt(x * x + z * z), angle = Math.atan2(x, z);
+    return { path: path, feet: Math.round(dist * FT), landed: [x, z], hr: hr, foul: Math.abs(angle) > Math.PI / 4 || z < 0, balloons: popped, t: t };
+  }
+  // points for one ball (as the original: distance counts; home runs count more; balloons 50 each)
+  function scoreBall(res, pitch) {
+    if (!res || res.foul || res.feet < 100) return { pts: 0, out: true };
+    var mult = pitch && pitch.m ? pitch.m : 1, pts = res.feet * (res.hr ? 2 : 1) * mult + 50 * res.balloons.length;
+    return { pts: pts, out: false, mult: mult };
+  }
+
+  // ---------- modes ----------
+  // Minor and Major: numbered steps. Step k throws 3k balls (up to 30). Each ball short of 100 ft (a miss, a foul,
+  // a weak hit) costs one bar of health; lose all 5 and the step is over. Get through every ball to clear it.
+  var HEALTH = 5;
+  function stepBalls(k) { return Math.min(30, 3 * k); }
+  function stepPitches(mode, k, seed) {
+    var R = rng(mix32(seed || (Math.imul(k, 0x9E3779B1) ^ (mode === 'major' ? 0x3A10 : 0x1100)))), n = stepBalls(k), list = [];
+    var pool = mode === 'major' ? PITCH_LIST.slice() : ['straight', 'slow', 'fast', 'curve', 'drop', 'stop', 'loopy', 'heavy', 'ninja', 'gold'].slice(0, Math.min(10, 2 + Math.ceil(k * 0.6)));
+    var speedMul = mode === 'major' ? 1.12 + Math.min(0.25, k * 0.015) : 0.9 + Math.min(0.2, k * 0.015);
+    for (var i = 0; i < n; i++) {
+      var kind = i === 0 ? 'straight' : pool[Math.floor(R() * pool.length)];
+      if (kind === 'gold' && R() < 0.5) kind = 'straight';
+      list.push(makePitch(kind, R, speedMul));
+    }
+    return list;
+  }
+  // stars for a step: clear it; beat 45% of the best possible (every ball a 400 ft home run); beat 70%
+  function stepTargets(k) { var top = stepBalls(k) * 800; return [1, Math.round(top * 0.45 / 50) * 50, Math.round(top * 0.7 / 50) * 50]; }
+  // Moon-Star: 9 balls for a record. A moon and five stars hang in the sky over centre field.
+  function moonStarPitches(seed) {
+    var R = rng(mix32(seed)), list = [], kinds = ['straight', 'curve', 'fast', 'drop', 'straight', 'loopy', 'stop', 'fast', 'gold'];
+    kinds.forEach(function (k) { list.push(makePitch(k, R, 1)); });
+    return list;
+  }
+  function balloonsFor(mode, seed) {
+    var R = rng(mix32(seed ^ 0xBA11)), out = [], id = 0;
+    if (mode === 'moonstar') {
+      out.push({ id: id++, kind: 'moon', p: [0, 42, 150], r: 7, pts: 500 });
+      for (var s = 0; s < 5; s++) out.push({ id: id++, kind: 'star', p: [(s - 2) * 16 + (R() - 0.5) * 6, 26 + R() * 14, 128 + R() * 20], r: 3.2, pts: 150 });
+      return out;
+    }
+    for (var i = 0; i < 9; i++) {
+      var a = (R() - 0.5) * 1.3, d = 104 + R() * 24;
+      out.push({ id: id++, kind: 'balloon', p: [Math.sin(a) * d, 8 + R() * 18, Math.cos(a) * d], r: 1.9, pts: 50, c: i % 5 });
+    }
+    return out;
+  }
+
+  // ---------- experience and upgrades ----------
+  // Experience = points scored. Each level up gives one upgrade point for Power, Contact or Batting Eye.
+  function xpForLevel(lv) { return Math.round(1500 * lv + 350 * lv * lv); } // total experience to reach level lv+1
+  function levelFromXp(xp) { var lv = 0; while (xp >= xpForLevel(lv + 1) && lv < 99) lv++; return lv; }
+  var MAX_SKILL = 15;
+  function contactRadius(skills) { return 40 + 3 * (skills.contact || 0); } // px, on a 390 px wide screen
+  function previews(skills) { return 3 + (skills.eye || 0); }                 // sunglasses uses per step
+
+  return {
+    FT: FT, RELEASE: RELEASE, ZONE: ZONE, BALL_R: BALL_R, PITCHES: PITCHES, PITCH_LIST: PITCH_LIST, FENCE_H: FENCE_H, HEALTH: HEALTH, MAX_SKILL: MAX_SKILL,
+    mix32: mix32, rng: rng, fenceAt: fenceAt, makePitch: makePitch, pitchPos: pitchPos, pitchDuration: pitchDuration, progress: progress,
+    exitVelocity: exitVelocity, fly: fly, scoreBall: scoreBall, stepBalls: stepBalls, stepPitches: stepPitches, stepTargets: stepTargets,
+    moonStarPitches: moonStarPitches, balloonsFor: balloonsFor, xpForLevel: xpForLevel, levelFromXp: levelFromXp, contactRadius: contactRadius, previews: previews
+  };
+})();
+if (typeof module !== 'undefined') module.exports = MS;
+</script>
+<script>
+/* Moonshot renderer: the ballpark, the pitching machine and the ball, drawn with three.js (shared/three.module.min.js).
+   The camera sits just behind home plate looking out (you are the bat). After a hit it follows the ball. */
+var MSRender = (function () {
+  'use strict';
+  function create(THREE, canvas) {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 1, 0.05, 1200);
+    // The 3D view: from behind the plate. (The side view is a flat 2D picture like the original's, side.js; after a hit
+    // in either view this 3D view follows the ball.) Phones are held sideways (Glenn, 2026-09-28), so the view is wide:
+    // fov[0] for landscape, fov[1] for a tall screen.
+    var VIEWS = {
+      back: { pos: new THREE.Vector3(0, 1.28, -2.5), look: new THREE.Vector3(0, 1.35, 18), fov: [30, 40], ball: 1 }
+    };
+    var view = VIEWS.back, HOME_POS = view.pos.clone(), HOME_LOOK = view.look.clone();
+    camera.position.copy(HOME_POS); camera.lookAt(HOME_LOOK);
+    scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x4a6a3a, 1.25));
+    var sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-40, 80, -30); scene.add(sun);
+    var W = 1, H = 1, raf = 0, onFrame = null;
+
+    function canvasTex(w, h, draw, repeat) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+      var t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+      return t;
+    }
+    // ---------- sky ----------
+    var skies = {
+      day: ['#5aaaf2', '#bfe4ff', '#e9f6ff'],
+      dusk: ['#3b3f8f', '#ff8f6b', '#ffd49a'],
+      night: ['#070b1f', '#1a2150', '#2f3a7a']
+    };
+    function skyTex(k) { var s = skies[k]; return canvasTex(8, 256, function (x, w, h) { var g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, s[0]); g.addColorStop(0.55, s[1]); g.addColorStop(1, s[2]); x.fillStyle = g; x.fillRect(0, 0, w, h); }); }
+    var sky = new THREE.Mesh(new THREE.SphereGeometry(900, 24, 16), new THREE.MeshBasicMaterial({ map: skyTex('day'), side: THREE.BackSide, depthWrite: false }));
+    scene.add(sky);
+
+    // ---------- the field ----------
+    var grass = canvasTex(256, 256, function (x, w, h) {
+      for (var i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#4fae4a' : '#5cbd55'; x.fillRect(0, i * h / 8, w, h / 8); }
+      for (var k = 0; k < 900; k++) { x.fillStyle = 'rgba(20,70,20,.10)'; x.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
+    }, [18, 18]);
+    var ground = new THREE.Mesh(new THREE.CircleGeometry(170, 64), new THREE.MeshLambertMaterial({ map: grass }));
+    ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    var dirtMat = new THREE.MeshLambertMaterial({ color: 0xc9925a });
+    var infield = new THREE.Mesh(new THREE.PlaneGeometry(27.4, 27.4), dirtMat);
+    infield.rotation.x = -Math.PI / 2; infield.rotation.z = Math.PI / 4; infield.position.set(0, 0.01, 19.4 * 0.0 + 19.4); scene.add(infield);
+    var inGrass = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshLambertMaterial({ map: grass }));
+    inGrass.rotation.x = -Math.PI / 2; inGrass.rotation.z = Math.PI / 4; inGrass.position.set(0, 0.02, 19.4); scene.add(inGrass);
+    var mound = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.25, 32), dirtMat); mound.position.set(0, 0.12, 18.4); scene.add(mound);
+    var homeDirt = new THREE.Mesh(new THREE.CircleGeometry(3.6, 32), dirtMat); homeDirt.rotation.x = -Math.PI / 2; homeDirt.position.set(0, 0.015, 0); scene.add(homeDirt);
+    var plate = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 5), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+    plate.rotation.y = Math.PI / 5 + Math.PI; plate.position.set(0, 0.03, 0.15); scene.add(plate);
+    [-1, 1].forEach(function (s) { // foul lines
+      var ln = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 100), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      ln.rotation.x = -Math.PI / 2; ln.rotation.z = -s * Math.PI / 4; ln.position.set(s * Math.sin(Math.PI / 4) * 50, 0.03, Math.cos(Math.PI / 4) * 50); scene.add(ln);
+    });
+    for (var bI = 0; bI < 3; bI++) { // bases
+      var ang = (bI - 1) * Math.PI / 2, base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+      base.position.set(Math.sin(ang + (bI === 1 ? 0 : 0)) * 0, 0.05, 0); scene.add(base);
+      var bx = [19.4, 0, -19.4][bI], bz = [19.4, 38.8, 19.4][bI]; base.position.set(bx, 0.05, bz); base.rotation.y = Math.PI / 4;
+    }
+    // fence, warning track, distance signs, stands
+    var fenceGroup = new THREE.Group(); scene.add(fenceGroup);
+    var wallMat = new THREE.MeshLambertMaterial({ color: 0x1e5f3a }), padMat = new THREE.MeshLambertMaterial({ color: 0xf2c14e });
+    var standColors = [0x3a6fd8, 0xd8453a, 0x2ea86b, 0xf2c14e];
+    var crowd = canvasTex(256, 64, function (x, w, h) {
+      x.fillStyle = '#3d4a70'; x.fillRect(0, 0, w, h);
+      var cols = ['#ffd2a8', '#e0a57a', '#9b6a45', '#fff', '#ff6b6b', '#5fb8ff', '#ffe066', '#6bd98a'];
+      for (var i = 0; i < 700; i++) { x.fillStyle = cols[Math.floor(Math.random() * cols.length)]; x.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
+    }, [6, 2]);
+    var N = 36;
+    for (var i = 0; i <= N; i++) {
+      var a = -Math.PI / 4 + (Math.PI / 2) * i / N, r = MS.fenceAt(a);
+      if (i < N) {
+        var a2 = -Math.PI / 4 + (Math.PI / 2) * (i + 1) / N, r2 = MS.fenceAt(a2);
+        var p1 = new THREE.Vector3(Math.sin(a) * r, 0, Math.cos(a) * r), p2 = new THREE.Vector3(Math.sin(a2) * r2, 0, Math.cos(a2) * r2);
+        var len = p1.distanceTo(p2) + 0.2, mid = p1.clone().add(p2).multiplyScalar(0.5), yaw = Math.atan2(p2.x - p1.x, p2.z - p1.z);
+        var wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, MS.FENCE_H, len), wallMat); wall.position.set(mid.x, MS.FENCE_H / 2, mid.z); wall.rotation.y = yaw; fenceGroup.add(wall);
+        var pad = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, len), padMat); pad.position.set(mid.x, MS.FENCE_H + 0.12, mid.z); pad.rotation.y = yaw; fenceGroup.add(pad);
+        var track = new THREE.Mesh(new THREE.PlaneGeometry(4.5, len), dirtMat); track.rotation.x = -Math.PI / 2; track.rotation.z = -yaw;
+        var out = mid.clone().multiplyScalar((mid.length() - 2.4) / mid.length()); track.position.set(out.x, 0.02, out.z); fenceGroup.add(track);
+        for (var tier = 0; tier < 4; tier++) { // stands rise in tiers behind the wall
+          var d = 6 + tier * 5, sm = mid.clone().multiplyScalar((mid.length() + d) / mid.length());
+          var st = new THREE.Mesh(new THREE.BoxGeometry(5, 4 + tier * 4, len * (1 + d / r)), new THREE.MeshLambertMaterial({ color: standColors[(i + tier) % 4], map: crowd }));
+          st.position.set(sm.x, (4 + tier * 4) / 2, sm.z); st.rotation.y = yaw; fenceGroup.add(st);
+        }
+      }
+    }
+    // stands along the first-base side and behind the plate: the backdrop of the side view
+    (function () {
+      var u = new THREE.Vector3(1, 0, 1).normalize(), o = new THREE.Vector3(1, 0, -1).normalize(), yaw = Math.atan2(u.x, u.z);
+      var low = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.4, 60), wallMat); low.position.copy(u.clone().multiplyScalar(22).add(o.clone().multiplyScalar(11))); low.position.y = 0.7; low.rotation.y = yaw; fenceGroup.add(low);
+      var lowPad = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 60), padMat); lowPad.position.copy(low.position); lowPad.position.y = 1.45; lowPad.rotation.y = yaw; fenceGroup.add(lowPad);
+      for (var t = 0; t < 5; t++) {
+        var d = 14 + t * 4.2, h = 2.4 + t * 2.6, cm = u.clone().multiplyScalar(26).add(o.clone().multiplyScalar(d));
+        var st = new THREE.Mesh(new THREE.BoxGeometry(4.2, h, 64), new THREE.MeshLambertMaterial({ color: standColors[t % 4], map: crowd }));
+        st.position.set(cm.x, h / 2, cm.z); st.rotation.y = yaw; fenceGroup.add(st);
+      }
+      var roof = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 64), new THREE.MeshLambertMaterial({ color: 0xe8ecf4 }));
+      var rc = u.clone().multiplyScalar(26).add(o.clone().multiplyScalar(26)); roof.position.set(rc.x, 16.5, rc.z); roof.rotation.y = yaw; fenceGroup.add(roof);
+      // behind the plate
+      var back = new THREE.Mesh(new THREE.BoxGeometry(40, 3, 0.4), wallMat); back.position.set(0, 1.5, -18); fenceGroup.add(back);
+      for (var t2 = 0; t2 < 4; t2++) { var sb = new THREE.Mesh(new THREE.BoxGeometry(46, 3 + t2 * 3, 4), new THREE.MeshLambertMaterial({ color: standColors[(t2 + 2) % 4], map: crowd })); sb.position.set(0, (3 + t2 * 3) / 2, -22 - t2 * 4); fenceGroup.add(sb); }
+    })();
+    function signTex(txt) { return canvasTex(128, 64, function (x, w, h) { x.fillStyle = '#ffffff'; x.font = '900 44px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, w / 2, h / 2 + 2); }); }
+    [[-Math.PI / 4, '330'], [-Math.PI / 8, '375'], [0, '400'], [Math.PI / 8, '375'], [Math.PI / 4, '330']].forEach(function (s) {
+      var r = MS.fenceAt(s[0]) - 1.1, sg = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.8), new THREE.MeshBasicMaterial({ map: signTex(s[1]), transparent: true }));
+      sg.position.set(Math.sin(s[0]) * r, 1.6, Math.cos(s[0]) * r); sg.rotation.y = s[0] + Math.PI; scene.add(sg);
+    });
+    // light towers
+    [-1, 1].forEach(function (s) {
+      var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 42, 8), new THREE.MeshLambertMaterial({ color: 0x8a93a8 })); pole.position.set(s * 95, 21, 90); scene.add(pole);
+      var lamp = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 1.2), new THREE.MeshBasicMaterial({ color: 0xfffbe6 })); lamp.position.set(s * 95, 43, 90); lamp.rotation.y = -s * 0.6; scene.add(lamp);
+    });
+
+    // ---------- the pitching machine (our own: a friendly robot cannon) ----------
+    var machine = new THREE.Group(); machine.position.set(0, 0.25, 18.6); scene.add(machine);
+    var mBody = new THREE.MeshStandardMaterial({ color: 0x5a54f0, roughness: 0.45 }), mMetal = new THREE.MeshStandardMaterial({ color: 0xc9d0de, roughness: 0.35, metalness: 0.4 });
+    var legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.45, 0.9, 12), mMetal); legs.position.y = 0.45; machine.add(legs);
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.75, 0.9), mBody); body.position.y = 1.15; machine.add(body);
+    var barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 0.9, 16), mMetal); barrel.rotation.x = Math.PI / 2 - 0.1; barrel.position.set(0, 1.3, -0.55); machine.add(barrel);
+    var eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff }), pupil = new THREE.MeshBasicMaterial({ color: 0x1d2446 });
+    [-0.26, 0.26].forEach(function (x) {
+      var e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), eyeMat); e.position.set(x, 1.36, -0.46); machine.add(e);
+      var p = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), pupil); p.position.set(x, 1.36, -0.56); machine.add(p);
+    });
+    var antenna = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffc83d })); antenna.position.set(0, 1.75, 0); machine.add(antenna);
+    var aStick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6), mMetal); aStick.position.set(0, 1.62, 0); machine.add(aStick);
+
+    // ---------- the ball (a face on it tells the pitch, like the original's balls with faces) ----------
+    function faceTex(color, face) {
+      return canvasTex(128, 64, function (x, w, h) {
+        x.fillStyle = color; x.fillRect(0, 0, w, h);
+        x.strokeStyle = 'rgba(200,40,40,.8)'; x.lineWidth = 2.5; // seams
+        x.beginPath(); x.arc(-8, 32, 40, -1, 1); x.stroke(); x.beginPath(); x.arc(136, 32, 40, Math.PI - 1, Math.PI + 1); x.stroke();
+        var cx = 64, cy = 32; x.fillStyle = '#1d2446'; x.strokeStyle = '#1d2446'; x.lineWidth = 3; x.lineCap = 'round';
+        function eye(dx, closed) { if (closed) { x.beginPath(); x.moveTo(cx + dx - 5, cy - 4); x.lineTo(cx + dx + 5, cy - 4); x.stroke(); } else { x.beginPath(); x.arc(cx + dx, cy - 5, 3.5, 0, 7); x.fill(); } }
+        if (face === 'plain') { eye(-8); eye(8); x.beginPath(); x.arc(cx, cy + 3, 6, 0.2, Math.PI - 0.2); x.stroke(); }
+        else if (face === 'fire') { eye(-8); eye(8); x.beginPath(); x.moveTo(cx - 13, cy - 12); x.lineTo(cx - 3, cy - 9); x.moveTo(cx + 13, cy - 12); x.lineTo(cx + 3, cy - 9); x.stroke(); x.beginPath(); x.moveTo(cx - 6, cy + 7); x.lineTo(cx + 6, cy + 7); x.stroke(); }
+        else if (face === 'sleepy') { eye(-8, 1); eye(8, 1); x.beginPath(); x.arc(cx, cy + 6, 3, 0, 7); x.stroke(); }
+        else if (face === 'wink') { eye(-8); eye(8, 1); x.beginPath(); x.arc(cx, cy + 2, 7, 0.3, Math.PI - 0.3); x.stroke(); }
+        else if (face === 'frown') { eye(-8); eye(8); x.beginPath(); x.arc(cx, cy + 12, 6, Math.PI + 0.4, -0.4); x.stroke(); }
+        else if (face === 'shock') { eye(-8); eye(8); x.beginPath(); x.arc(cx, cy + 7, 4.5, 0, 7); x.stroke(); }
+        else if (face === 'dizzy') { [-8, 8].forEach(function (d) { x.beginPath(); x.moveTo(cx + d - 4, cy - 9); x.lineTo(cx + d + 4, cy - 1); x.moveTo(cx + d + 4, cy - 9); x.lineTo(cx + d - 4, cy - 1); x.stroke(); }); x.beginPath(); x.moveTo(cx - 7, cy + 7); x.quadraticCurveTo(cx - 3, cy + 3, cx, cy + 7); x.quadraticCurveTo(cx + 3, cy + 11, cx + 7, cy + 7); x.stroke(); }
+        else if (face === 'grumpy') { eye(-8); eye(8); x.beginPath(); x.moveTo(cx - 13, cy - 13); x.lineTo(cx - 3, cy - 9); x.moveTo(cx + 13, cy - 13); x.lineTo(cx + 3, cy - 9); x.moveTo(cx - 7, cy + 9); x.lineTo(cx + 7, cy + 9); x.stroke(); }
+        else if (face === 'mask') { x.fillRect(cx - 18, cy - 11, 36, 10); x.fillStyle = '#fff'; x.fillRect(cx - 12, cy - 8, 6, 4); x.fillRect(cx + 6, cy - 8, 6, 4); }
+        else if (face === 'star') { x.fillStyle = '#fff4c2'; x.beginPath(); for (var k = 0; k < 10; k++) { var rr = k % 2 ? 6 : 14, aa = -Math.PI / 2 + k * Math.PI / 5; x.lineTo(cx + Math.cos(aa) * rr, cy + Math.sin(aa) * rr); } x.fill(); }
+      });
+    }
+    var ballTex = {}, ballGeo = new THREE.SphereGeometry(MS.BALL_R, 24, 16);
+    function ballMat(kind) {
+      if (!ballTex[kind]) { var p = MS.PITCHES[kind]; ballTex[kind] = new THREE.MeshStandardMaterial({ map: faceTex(p.color, p.face), roughness: 0.45, emissive: kind === 'gold' ? 0x6a4a00 : 0x000000 }); }
+      return ballTex[kind];
+    }
+    var ball = new THREE.Mesh(ballGeo, ballMat('straight')); ball.visible = false; scene.add(ball);
+    // a soft glow that stays the same size on screen, so the ball can be followed far away
+    var glowTex = canvasTex(64, 64, function (x, w, h) { var g = x.createRadialGradient(32, 32, 2, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(0.35, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+    var glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, sizeAttenuation: false }));
+    glow.scale.set(0.045, 0.045, 1); ball.add(glow);
+    var fakes = [new THREE.Mesh(ballGeo, ballMat('ninja')), new THREE.Mesh(ballGeo, ballMat('ninja'))];
+    fakes.forEach(function (f) { f.visible = false; scene.add(f); });
+    var shadow = new THREE.Mesh(new THREE.CircleGeometry(0.09, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.visible = false; scene.add(shadow);
+    // multiplier badge above a gold ball
+    var multTex = {}, multSprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
+    multSprite.scale.set(0.5, 0.25, 1); multSprite.visible = false; scene.add(multSprite);
+    function setMult(m) {
+      if (!m) { multSprite.visible = false; return; }
+      if (!multTex[m]) multTex[m] = canvasTex(128, 64, function (x, w, h) { x.fillStyle = '#ffc83d'; x.beginPath(); x.roundRect ? x.roundRect(4, 4, w - 8, h - 8, 20) : x.rect(4, 4, w - 8, h - 8); x.fill(); x.fillStyle = '#5a3a00'; x.font = '900 40px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('×' + m, w / 2, h / 2 + 2); });
+      multSprite.material.map = multTex[m]; multSprite.material.needsUpdate = true; multSprite.visible = true;
+    }
+    // trail and landing ring
+    var trailGeo = new THREE.BufferGeometry(), trailPts = new Float32Array(3 * 400);
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPts, 3)); trailGeo.setDrawRange(0, 0);
+    var trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 })); scene.add(trail);
+    var ring = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.7, 32), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.9, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2; ring.visible = false; scene.add(ring);
+
+    // ---------- balloons, or the moon and stars ----------
+    var targets = [], BAL = [0xff5a5f, 0xffc53d, 0x3b82f6, 0x22c55e, 0xa855f7];
+    function starShape() { var s = new THREE.Shape(); for (var k = 0; k < 10; k++) { var r = k % 2 ? 0.45 : 1, a = Math.PI / 2 + k * Math.PI / 5; if (k) s.lineTo(Math.cos(a) * r, Math.sin(a) * r); else s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } return s; }
+    var starGeo = new THREE.ExtrudeGeometry(starShape(), { depth: 0.3, bevelEnabled: false });
+    function setTargets(list) {
+      targets.forEach(function (t) { scene.remove(t.obj); });
+      targets = list.map(function (b) {
+        var obj;
+        if (b.kind === 'moon') { obj = new THREE.Mesh(new THREE.SphereGeometry(b.r, 32, 24), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })); }
+        else if (b.kind === 'star') { obj = new THREE.Mesh(starGeo, new THREE.MeshBasicMaterial({ color: 0xffe066 })); obj.scale.setScalar(b.r); obj.rotation.y = Math.PI; }
+        else {
+          obj = new THREE.Group();
+          var bb = new THREE.Mesh(new THREE.SphereGeometry(b.r, 20, 16), new THREE.MeshStandardMaterial({ color: BAL[b.c || 0], roughness: 0.3 })); bb.scale.y = 1.18; obj.add(bb);
+          var str = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 5, 4), new THREE.MeshBasicMaterial({ color: 0xffffff })); str.position.y = -b.r - 2.5; obj.add(str);
+        }
+        obj.position.set(b.p[0], b.p[1], b.p[2]); scene.add(obj);
+        return { b: b, obj: obj, pop: 0 };
+      });
+    }
+    function popTarget(id) { targets.forEach(function (t) { if (t.b.id === id) t.pop = performance.now(); }); kick(); }
+    function setSky(k) { sky.material.map = skyTex(k); sky.material.needsUpdate = true; kick(); }
+
+    // ---------- the play ----------
+    // mode: 'idle' | 'pitch' {pitch, t0} | 'flight' {res, t0} ; camera moves back home between balls
+    var play = { mode: 'idle' }, cam = { pos: HOME_POS.clone(), look: HOME_LOOK.clone() }, V = new THREE.Vector3();
+    function pitchNow(pitch, t0) {
+      play = { mode: 'pitch', pitch: pitch, t0: t0 };
+      ball.userData.kind = pitch.kind; ball.material = ballMat(pitch.kind); ball.scale.setScalar((MS.PITCHES[pitch.kind].size || 1) * view.ball); ball.visible = true;
+      fakes.forEach(function (f) { f.scale.setScalar(view.ball); });
+      fakes.forEach(function (f, i) { f.visible = !!pitch.fakes; });
+      setMult(pitch.m); trailGeo.setDrawRange(0, 0); ring.visible = false;
+      kick();
+    }
+    function hitNow(res, t0) { ball.scale.setScalar(MS.PITCHES[ball.userData.kind || 'straight'].size || 1); play = { mode: 'flight', res: res, t0: t0 }; fakes.forEach(function (f) { f.visible = false; }); setMult(0); kick(); }
+    function idle() { play = { mode: 'idle' }; ball.visible = false; shadow.visible = false; fakes.forEach(function (f) { f.visible = false; }); setMult(0); kick(); }
+    function flightAt(res, t) { // position along the flight path at time t
+      var f = t * 30, i = Math.min(res.path.length - 1, Math.floor(f)), j = Math.min(res.path.length - 1, i + 1), k = f - Math.floor(f);
+      var a = res.path[i], b = res.path[j];
+      return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+    }
+    function update(now) {
+      var busy = false;
+      if (play.mode === 'pitch') {
+        var t = (now - play.t0) / 1000, p = MS.pitchPos(play.pitch, Math.max(0, t));
+        ball.position.set(p[0], p[1], p[2]); ball.rotation.x -= 0.25;
+        if (play.pitch.fakes) {
+          var u = MS.progress(play.pitch, t);
+          fakes.forEach(function (f, i) { var q = MS.pitchPos(play.pitch, Math.max(0, t), play.pitch.fakes[i]); f.position.set(q[0], q[1], q[2]); f.visible = u < 0.82; });
+        }
+        if (multSprite.visible) multSprite.position.set(p[0], p[1] + 0.22, p[2]);
+        shadow.visible = true; shadow.position.set(p[0], 0.03, p[2]);
+        busy = t < MS.pitchDuration(play.pitch) + 1;
+        cam.pos.lerp(HOME_POS, 0.2); cam.look.lerp(HOME_LOOK, 0.2);
+      } else if (play.mode === 'flight') {
+        var tf = (now - play.t0) / 1000, speed = 1.6, q2 = flightAt(play.res, tf * speed), n = Math.min(399, Math.floor(tf * speed * 30) + 1);
+        ball.position.set(q2[0], q2[1], q2[2]); ball.rotation.x -= 0.4;
+        shadow.visible = true; shadow.position.set(q2[0], 0.03, q2[2]); shadow.scale.setScalar(1 + q2[1] * 0.05);
+        for (var i = 0; i < n && i < play.res.path.length; i++) { trailPts[i * 3] = play.res.path[i][0]; trailPts[i * 3 + 1] = play.res.path[i][1]; trailPts[i * 3 + 2] = play.res.path[i][2]; }
+        trailPts[Math.min(n, play.res.path.length - 1) * 3] = q2[0]; trailPts[Math.min(n, play.res.path.length - 1) * 3 + 1] = q2[1]; trailPts[Math.min(n, play.res.path.length - 1) * 3 + 2] = q2[2];
+        trailGeo.setDrawRange(0, Math.min(n + 1, play.res.path.length)); trailGeo.attributes.position.needsUpdate = true;
+        var done = tf * speed >= play.res.path.length / 30;
+        if (done) { ring.visible = true; ring.position.set(play.res.landed[0], 0.05, play.res.landed[1]); }
+        // follow the ball from behind and above
+        var bx = q2[0], by = q2[1], bz = q2[2], back = 16 + Math.hypot(bx, bz) * 0.12;
+        var dirx = bx, dirz = Math.max(4, bz), dl = Math.hypot(dirx, dirz) || 1;
+        V.set(bx - dirx / dl * back, Math.max(4, by * 0.6 + 5), bz - dirz / dl * back);
+        cam.pos.lerp(V, 0.08); cam.look.lerp(V.set(bx, by * 0.8, bz), 0.15);
+        busy = true;
+      } else {
+        cam.pos.lerp(HOME_POS, 0.12); cam.look.lerp(HOME_LOOK, 0.12);
+        busy = cam.pos.distanceTo(HOME_POS) > 0.01;
+      }
+      targets.forEach(function (t) {
+        if (!t.pop) { if (t.b.kind === 'balloon') t.obj.position.y = t.b.p[1] + Math.sin(now / 900 + t.b.id) * 0.4; if (t.b.kind === 'star') t.obj.rotation.y += 0.01; return; }
+        var k = (now - t.pop) / 350;
+        if (k >= 1) { t.obj.visible = false; return; }
+        t.obj.scale.setScalar((t.b.kind === 'star' ? t.b.r : 1) * (1 + k * 0.8)); busy = true;
+      });
+      if (targets.length) busy = true; // balloons bob
+      camera.position.copy(cam.pos); camera.lookAt(cam.look);
+      return busy;
+    }
+    var paused = false; // the 2D side view is covering this one: don't spend the battery drawing it
+    function setPaused(p) { paused = !!p; if (!paused) kick(); }
+    function draw() {
+      raf = 0;
+      if (paused) return;
+      var busy = update(performance.now());
+      renderer.render(scene, camera);
+      if (onFrame) onFrame();
+      if (busy) kick();
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(draw); }
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H;
+      camera.fov = W / H < 1 ? view.fov[1] : view.fov[0]; // tall screens see a little more
+      camera.updateProjectionMatrix(); kick();
+    }
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+    canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); });
+    // screen position (px in the canvas) of a world point, as seen from home (where the ball is hit)
+    var homeCam = new THREE.PerspectiveCamera();
+    function project(p) {
+      var r = canvas.getBoundingClientRect();
+      if (Math.abs(r.width - W) > 0.5 || Math.abs(r.height - H) > 0.5) resize();
+      homeCam.copy(camera); homeCam.position.copy(HOME_POS); homeCam.lookAt(HOME_LOOK); homeCam.updateMatrixWorld(); homeCam.updateProjectionMatrix();
+      V.set(p[0], p[1], p[2]).project(homeCam);
+      return [(V.x + 1) / 2 * W, (1 - V.y) / 2 * H];
+    }
+    function setView(k) {
+      view = VIEWS[k] || VIEWS.back;
+      HOME_POS.copy(view.pos); HOME_LOOK.copy(view.look); cam.pos.copy(HOME_POS); cam.look.copy(HOME_LOOK);
+      resize();
+    }
+    resize();
+    return { pitch: pitchNow, setView: setView, hit: hitNow, idle: idle, setTargets: setTargets, popTarget: popTarget, setSky: setSky, project: project,
+      size: function () { return [W, H]; }, redraw: kick, setPaused: setPaused, onFrame: function (cb) { onFrame = cb; } };
+  }
+  return { create: create };
+})();
+</script>
+<script>
+/* Moonshot side view (2D canvas), like the original's: the pitching machine stands on the right, the ball flies
+   across the screen to the dotted hitting line on the left, in front of a town skyline, a fence and grass.
+   The ball is drawn big, as in the original. After a hit the 3D view takes over to follow the ball.
+   Our own art: skyline, fence, and the friendly robot pitching machine. */
+var MSSide = (function () {
+  'use strict';
+  var LINE_Z = 0.15; // the dotted line: a ball met here goes straight out to centre field
+  function create(canvas) {
+    var ctx = canvas.getContext('2d'), W = 1, H = 1, dpr = 1, sky = 'day', bgCache = null;
+    var L = {}; // layout: plateX, mouthX, groundY, sx (px per metre along the pitch), sy (px per metre up), r (ball radius)
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      L.plateX = W * 0.4; L.mouthX = W * 0.78; L.groundY = H * 0.86;
+      L.sx = (L.mouthX - L.plateX) / MS.RELEASE[2];
+      L.sy = H * 0.26;
+      L.r = Math.max(12, H * 0.06);
+      L.lineX = L.plateX + LINE_Z * L.sx;
+      bgCache = null;
+    }
+    // world (metres) -> screen (px). Sideways movement (curves, wobbles, the Triplet's two fakes) shows as up/down, as if seen from a little above.
+    function project(p) { return [L.plateX + p[2] * L.sx, L.groundY - (p[1] - 0.25 * p[0]) * L.sy]; } // a little of the sideways movement shows as height (1.4.0: less, so curves don't look like dips)
+
+    // ---------- the backdrop (drawn once per size and sky) ----------
+    var SKIES = {
+      day: { top: '#4fc0dc', bottom: '#c8f3ec', far: '#a9dcd6', near: ['#6db5ae', '#7cc2b9'], win: '#effcf8', cloud: '#ffffff', lit: 0.3 },
+      dusk: { top: '#ff8f6e', bottom: '#ffd9a6', far: '#e6a49a', near: ['#8e5877', '#9d6482'], win: '#ffe39a', cloud: '#fff0e2', lit: 0.5 },
+      night: { top: '#0d1340', bottom: '#2f3380', far: '#262c6a', near: ['#151a46', '#1b2152'], win: '#ffd76b', cloud: '#3a4290', lit: 0.55 }
+    };
+    function drawBackdrop() {
+      var c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
+      var x = c.getContext('2d'), s = SKIES[sky] || SKIES.day;
+      x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var g = x.createLinearGradient(0, 0, 0, L.groundY); g.addColorStop(0, s.top); g.addColorStop(1, s.bottom); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      if (sky === 'night') { x.fillStyle = 'rgba(255,255,255,.8)'; for (var st = 0; st < 70; st++) { var sxp = (st * 137.5) % W, syp = (st * 71.3) % (H * 0.5); x.fillRect(sxp, syp, 1.5, 1.5); } }
+      // clouds: puffs of one flat colour
+      x.fillStyle = s.cloud;
+      [[0.2, 0.36, 0.9], [0.66, 0.3, 1.1], [0.93, 0.42, 0.8]].forEach(function (cl) {
+        var cx = W * cl[0], cy = H * cl[1], k = H * 0.05 * cl[2];
+        [[0, 0, 2.3, 0.75], [-0.9, 0.05, 1, 0.9], [0.5, -0.45, 1.2, 1.1], [1.4, 0.1, 0.9, 0.7]].forEach(function (e) {
+          x.beginPath(); x.ellipse(cx + e[0] * k, cy + e[1] * k, e[2] * k, e[3] * k, 0, 0, Math.PI * 2); x.fill();
+        });
+      });
+      // a town skyline (our own blocky buildings): a pale far row, then a nearer row with windows
+      var base = L.groundY - H * 0.17, seed = 7;
+      function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      x.fillStyle = s.far;
+      for (var fx = -10; fx < W;) { var fw = W * (0.04 + rnd() * 0.06), fh2 = H * (0.2 + rnd() * 0.22); x.fillRect(fx, base - fh2, fw + 1, fh2 + 4); fx += fw; }
+      for (var bx = -5; bx < W;) {
+        var bw = W * (0.05 + rnd() * 0.08), bh = H * (0.1 + rnd() * 0.2), top = base - bh;
+        x.fillStyle = s.near[rnd() < 0.5 ? 0 : 1]; x.fillRect(bx, top, bw + 1, bh + 4);
+        if (rnd() < 0.3) x.fillRect(bx + bw * 0.3, top - H * 0.03, bw * 0.4, H * 0.03);
+        if (rnd() < 0.25) { x.beginPath(); x.moveTo(bx, top); x.lineTo(bx + bw / 2, top - H * 0.06); x.lineTo(bx + bw, top); x.fill(); }
+        x.fillStyle = s.win;
+        for (var wy = top + H * 0.035; wy < base - H * 0.03; wy += H * 0.06) for (var wx = bx + bw * 0.18; wx < bx + bw - bw * 0.25; wx += bw * 0.32) if (rnd() < s.lit) x.fillRect(wx, wy, bw * 0.13, H * 0.025);
+        bx += bw + (rnd() < 0.3 ? W * 0.02 : 0);
+      }
+      // grass behind the fence, the fence, grass in front
+      x.fillStyle = sky === 'night' ? '#1f5a36' : sky === 'dusk' ? '#5a9a48' : '#56b556'; x.fillRect(0, base, W, L.groundY - base + 4);
+      var fy = L.groundY - H * 0.16, fh = H * 0.16, pw = Math.max(8, H * 0.035), gap = pw * 0.9;
+      x.fillStyle = sky === 'night' ? '#b9bcc9' : '#e9e6d6'; x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1;
+      x.fillRect(0, fy + fh * 0.3, W, fh * 0.1); x.fillRect(0, fy + fh * 0.72, W, fh * 0.1);
+      for (var px = gap / 2; px < W; px += pw + gap) {
+        x.beginPath(); x.moveTo(px, fy + fh); x.lineTo(px, fy + pw * 0.6); x.lineTo(px + pw / 2, fy); x.lineTo(px + pw, fy + pw * 0.6); x.lineTo(px + pw, fy + fh); x.closePath(); x.fill(); x.stroke();
+      }
+      var gg = x.createLinearGradient(0, L.groundY - 6, 0, H); gg.addColorStop(0, sky === 'night' ? '#3b8a4a' : '#8bd64f'); gg.addColorStop(1, sky === 'night' ? '#256b36' : '#5db83a');
+      x.fillStyle = gg; x.fillRect(0, L.groundY - 4, W, H - L.groundY + 4);
+      x.strokeStyle = sky === 'night' ? '#4ea35d' : '#a6e66b'; x.lineWidth = 2;
+      for (var gx = 0; gx < W; gx += 6) { x.beginPath(); x.moveTo(gx, L.groundY + 2); x.lineTo(gx + 2, L.groundY - 5 - (gx * 7 % 5)); x.stroke(); }
+      // home plate
+      x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(L.plateX, L.groundY + 5, H * 0.05, H * 0.012, 0, 0, Math.PI * 2); x.fill();
+      machine(x);
+      return c;
+    }
+    // the pitching machine: our friendly robot cannon on a stand, barrel pointing left at the plate
+    function machine(x) {
+      var mx = L.mouthX, my = L.groundY - MS.RELEASE[1] * L.sy, u = H * 0.016;
+      x.save();
+      x.fillStyle = '#3a3f52'; x.strokeStyle = '#23263a'; x.lineWidth = u * 0.6;
+      // stand
+      x.beginPath(); x.moveTo(mx + u * 7, my + u * 6); x.lineTo(mx + u * 2, L.groundY); x.moveTo(mx + u * 9, my + u * 6); x.lineTo(mx + u * 14, L.groundY); x.moveTo(mx + u * 8, my + u * 6); x.lineTo(mx + u * 8, L.groundY); x.stroke();
+      x.fillRect(mx + u * 4, L.groundY - u * 12, u * 8, u * 1.2);
+      // body
+      x.fillStyle = '#5a54f0'; x.strokeStyle = '#3a33b8'; x.lineWidth = u * 0.7;
+      roundRect(x, mx + u * 2, my - u * 9, u * 13, u * 14, u * 3); x.fill(); x.stroke();
+      // eyes
+      x.fillStyle = '#fff'; x.beginPath(); x.arc(mx + u * 6, my - u * 4, u * 2, 0, Math.PI * 2); x.arc(mx + u * 11, my - u * 4, u * 2, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#1d2446'; x.beginPath(); x.arc(mx + u * 5.3, my - u * 4, u * 1, 0, Math.PI * 2); x.arc(mx + u * 10.3, my - u * 4, u * 1, 0, Math.PI * 2); x.fill();
+      // antenna
+      x.strokeStyle = '#c9d0de'; x.lineWidth = u * 0.6; x.beginPath(); x.moveTo(mx + u * 8.5, my - u * 9); x.lineTo(mx + u * 8.5, my - u * 13); x.stroke();
+      x.fillStyle = '#ff5a6e'; x.beginPath(); x.arc(mx + u * 8.5, my - u * 13.5, u * 1.3, 0, Math.PI * 2); x.fill();
+      // barrel (the ball comes out of its mouth)
+      x.fillStyle = '#c9d0de'; x.strokeStyle = '#8a93a8'; x.lineWidth = u * 0.6;
+      x.beginPath(); x.moveTo(mx + u * 3, my - u * 2); x.lineTo(mx - u * 2, my - u * 3.2); x.lineTo(mx - u * 2, my + u * 3.2); x.lineTo(mx + u * 3, my + u * 2); x.closePath(); x.fill(); x.stroke();
+      x.fillStyle = '#23263a'; x.beginPath(); x.ellipse(mx - u * 2, my, u * 1.1, u * 3, 0, 0, Math.PI * 2); x.fill();
+      x.restore();
+    }
+    function roundRect(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+
+    // ---------- the ball ----------
+    function face(x, kind, r) {
+      x.strokeStyle = 'rgba(30,30,40,.85)'; x.fillStyle = 'rgba(30,30,40,.85)'; x.lineWidth = Math.max(1.4, r * 0.11); x.lineCap = 'round';
+      var e = r * 0.32, ey = -r * 0.12;
+      function eyes(h) { x.beginPath(); x.arc(-e, ey, r * 0.1 * (h || 1), 0, Math.PI * 2); x.arc(e, ey, r * 0.1 * (h || 1), 0, Math.PI * 2); x.fill(); }
+      function mouth(a0, a1, y) { x.beginPath(); x.arc(0, y, r * 0.3, a0, a1); x.stroke(); }
+      switch (kind) {
+        case 'fire': eyes(); x.beginPath(); x.moveTo(-e - r * 0.15, ey - r * 0.2); x.lineTo(-e + r * 0.12, ey - r * 0.1); x.moveTo(e + r * 0.15, ey - r * 0.2); x.lineTo(e - r * 0.12, ey - r * 0.1); x.stroke(); mouth(0.2, Math.PI - 0.2, r * 0.12); break;
+        case 'sleepy': x.beginPath(); x.moveTo(-e - r * 0.12, ey); x.lineTo(-e + r * 0.12, ey); x.moveTo(e - r * 0.12, ey); x.lineTo(e + r * 0.12, ey); x.stroke(); x.beginPath(); x.arc(0, r * 0.35, r * 0.1, 0, Math.PI * 2); x.stroke(); break;
+        case 'wink': x.beginPath(); x.arc(-e, ey, r * 0.1, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(e - r * 0.12, ey); x.lineTo(e + r * 0.12, ey); x.stroke(); mouth(0.3, Math.PI - 0.3, r * 0.05); break;
+        case 'frown': eyes(); mouth(Math.PI + 0.4, -0.4, r * 0.5); break;
+        case 'shock': eyes(1.3); x.beginPath(); x.ellipse(0, r * 0.35, r * 0.12, r * 0.17, 0, 0, Math.PI * 2); x.stroke(); break;
+        case 'dizzy': x.beginPath(); x.arc(-e, ey, r * 0.13, 0, Math.PI * 1.6); x.moveTo(e + r * 0.13, ey); x.arc(e, ey, r * 0.13, 0, Math.PI * 1.6); x.stroke(); mouth(0.3, Math.PI - 0.3, r * 0.05); break;
+        case 'grumpy': eyes(); x.beginPath(); x.moveTo(-e - r * 0.15, ey - r * 0.15); x.lineTo(-e + r * 0.14, ey - r * 0.25); x.moveTo(e + r * 0.15, ey - r * 0.15); x.lineTo(e - r * 0.14, ey - r * 0.25); x.moveTo(-r * 0.22, r * 0.36); x.lineTo(r * 0.22, r * 0.36); x.stroke(); break;
+        case 'mask': x.fillStyle = 'rgba(20,20,40,.9)'; x.fillRect(-r * 0.75, ey - r * 0.15, r * 1.5, r * 0.3); x.fillStyle = '#fff'; x.beginPath(); x.arc(-e, ey, r * 0.08, 0, Math.PI * 2); x.arc(e, ey, r * 0.08, 0, Math.PI * 2); x.fill(); break;
+        case 'star': break;
+        default: eyes(); mouth(0.3, Math.PI - 0.3, r * 0.05);
+      }
+    }
+    function ball(x, p, kind, mult, fake) {
+      var s = project(p), d = MS.PITCHES[kind] || MS.PITCHES.straight, r = L.r * (d.size || 1);
+      // shadow on the ground
+      x.fillStyle = 'rgba(0,0,0,.18)'; x.beginPath(); x.ellipse(s[0], L.groundY + 2, r * 0.9, r * 0.22, 0, 0, Math.PI * 2); x.fill();
+      x.save(); x.translate(s[0], s[1]);
+      var g = x.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, d.color); g.addColorStop(1, shade(d.color));
+      x.fillStyle = g; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = Math.max(1, r * 0.08); x.stroke();
+      if (mult) { x.fillStyle = '#7a4f00'; x.font = '900 ' + Math.round(r * 0.8) + 'px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('×' + mult, 0, r * 0.05); }
+      else face(x, d.face, r);
+      x.restore();
+    }
+    function shade(hex) { var n = parseInt(hex.slice(1), 16), k = 0.62; return 'rgb(' + Math.round((n >> 16) * k) + ',' + Math.round(((n >> 8) & 255) * k) + ',' + Math.round((n & 255) * k) + ')'; }
+
+    // ---------- a frame ----------
+    // state: { pitch, t (s since release) } or null
+    function draw(state) {
+      if (!bgCache) bgCache = drawBackdrop();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bgCache, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // the dotted hitting line
+      ctx.fillStyle = 'rgba(255,255,255,.8)';
+      for (var y = H * 0.2; y < L.groundY - 4; y += H * 0.055) { ctx.beginPath(); ctx.arc(L.lineX, y, Math.max(2.5, H * 0.009), 0, Math.PI * 2); ctx.fill(); }
+      if (!state || !state.pitch) return;
+      var p = state.pitch, pos = MS.pitchPos(p, Math.max(0, state.t));
+      if (p.fakes && MS.progress(p, state.t) < 0.82) p.fakes.forEach(function (tg) { ball(ctx, MS.pitchPos(p, Math.max(0, state.t), tg), p.kind, 0, true); });
+      if (state.t >= 0) ball(ctx, pos, p.kind, p.m || 0);
+    }
+    function setSky(k) { sky = k; bgCache = null; }
+    resize();
+    return { resize: resize, project: project, draw: draw, setSky: setSky, size: function () { return [W, H]; }, radius: function () { return L.r; } };
+  }
+  return { create: create };
+})();
+</script>
+<script>
+/* Moonshot sounds: synthesized with Web Audio (no audio files). */
+var MSSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function knock(freq, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.07);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 3;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+    tone('sine', freq * 0.35, freq * 0.25, 0.09, gain * 0.5, delay);
+  }
+  function noise(len, freq, q, gain, delay, type) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), n = Math.floor(a.sampleRate * len);
+    var buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (type === 'swell' ? Math.sin(Math.PI * i / n) : Math.pow(1 - i / n, 2));
+    var s = a.createBufferSource(); s.buffer = buf;
+    var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(f); f.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    whirr: function () { if (on) { tone('sawtooth', 90, 180, 0.35, 0.06); noise(0.3, 600, 1, 0.15); } },
+    launch: function () { if (on) { knock(300, 0.8); tone('sine', 220, 90, 0.18, 0.2); } },
+    swish: function () { if (on) noise(0.14, 1400, 0.8, 0.35, 0, 'swell'); },
+    crack: function (k) { if (!on) return; knock(2200, 0.9 + k * 0.6); knock(900, 0.6 + k * 0.4, 0.004); tone('square', 1800, 900, 0.05, 0.1 * (1 + k)); },
+    crowd: function (big) { if (on) noise(big ? 2.4 : 1.2, 900, 0.5, big ? 0.55 : 0.25, 0.1, 'swell'); },
+    pop: function () { if (on) { knock(1600, 0.7); tone('sine', 900, 1400, 0.08, 0.15); } },
+    thud: function () { if (on) knock(200, 0.6); },
+    miss: function () { if (on) tone('triangle', 330, 220, 0.25, 0.2); },
+    hr: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, 0.25, 0.28, i * 0.09); }); },
+    over: function () { if (!on) return; [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.3, i * 0.2); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) knock(900, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Moonshot app: modes, the flick swing, pitches, results, saves, stats, upgrades and house ads. */
+(function () {
+  'use strict';
+  var S = MSSound, THREE = null, R3 = null, SV = null; // SV: the 2D side view (side.js)
+  var MAJOR_AT = 10;                  // clear Minor step 10 to open Major
+  var MODE_NAMES = { minor: 'Minor', major: 'Major', moonstar: 'Moon-Star', training: 'Training' };
+  var SKY = { minor: 'day', major: 'dusk', moonstar: 'night', training: 'day' };
+
+  // ================= storage =================
+  var store = Goobs.store('homerun');
+  var settings = { sound: false, adEvery: 3, view: 'side', view2: false }; // view2: the side view became the default (1.3.0)
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    if (!settings.view2) { settings.view = 'side'; settings.view2 = true; } // 1.3.0: everyone starts in the new side view once
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'minor', minor: 1, major: 1, stars: { minor: {}, major: {} }, best: { minor: {}, major: {} }, msBest: 0, xp: 0, pts: 0,
+    skills: { power: 0, contact: 0, eye: 0 }, train: 'straight', seenHelp: false, hitOnce: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { balls: 0, hits: 0, hrs: 0, longest: 0, balloons: 0, steps: 0, misses: 0, fouls: 0, moon: 0, stars: 0, games: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function portrait() { return window.matchMedia && matchMedia('(orientation: portrait)').matches; }
+  function locked() { return portrait() || isOpen('ovMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkills') || isOpen('ovSteps') || GoobsAds.isOpen(); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+  function level() { return MS.levelFromXp(meta.xp); }
+  function majorOpen() { return meta.minor > MAJOR_AT; }
+
+  // ================= a run (a step, a Moon-Star game, or training) =================
+  // run: { mode, step, seed, i (next ball), health, score, hrs, looks, popped: [target ids], done }
+  var run = null, pitches = [], targets = [], live = null, timers = [];
+  function later(fn, ms) { var id = setTimeout(function () { timers = timers.filter(function (x) { return x !== id; }); fn(); }, ms); timers.push(id); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function saveRun() { if (run && !run.done && run.mode !== 'training') store.set('run.' + run.mode, run); }
+  function start(mode, step, fresh) {
+    clearTimers(); live = null; flying = false;
+    if (run && !run.done) saveRun();
+    if (mode === 'major' && !majorOpen()) mode = 'minor';
+    var saved = !fresh && mode !== 'training' && store.get('run.' + mode, null);
+    if (saved && !saved.done && (mode === 'moonstar' || saved.step === step)) run = saved;
+    else {
+      run = { mode: mode, step: step || 0, seed: newSeed(), i: 0, health: MS.HEALTH, score: 0, hrs: 0, looks: MS.previews(meta.skills), popped: [], done: false, last: 0, bestHere: 0 };
+      if (mode === 'minor' || mode === 'major') run.seed = MS.mix32(step * 7919 + (mode === 'major' ? 17 : 3));
+    }
+    pitches = mode === 'minor' || mode === 'major' ? MS.stepPitches(mode, run.step) : mode === 'moonstar' ? MS.moonStarPitches(run.seed) : [];
+    targets = MS.balloonsFor(mode, run.seed).filter(function (t) { return run.popped.indexOf(t.id) < 0; });
+    meta.mode = mode; saveMeta();
+    R3.idle(); R3.setTargets(targets); R3.setSky(SKY[mode]); SV.setSky(SKY[mode]); showSide(true);
+    renderAll();
+    saveRun();
+    later(nextBall, 700);
+  }
+  function currentPitch() {
+    if (run.mode === 'training') return MS.makePitch(meta.train, MS.rng(newSeed()), 1);
+    return pitches[run.i];
+  }
+  function nextBall() {
+    if (!run || run.done) return;
+    if (run.mode !== 'training' && run.i >= pitches.length) { finishRun(true); return; }
+    if (locked()) { later(nextBall, 500); return; }
+    S.whirr();
+    later(throwBall, 650 + Math.random() * 600);
+  }
+  function throwBall() {
+    if (!run || run.done) return;
+    if (locked()) { later(throwBall, 400); return; }
+    var pitch = currentPitch(), t0 = performance.now();
+    live = { pitch: pitch, t0: t0, done: false, whiff: false };
+    S.launch(); R3.pitch(pitch, t0); kickSide();
+    later(function () { if (live && !live.done && live.pitch === pitch) resolveMiss(); }, (MS.pitchDuration(pitch) + 0.3) * 1000);
+  }
+
+  // ================= the side view (2D, like the original) =================
+  // It shows while the ball is pitched; after a hit the 3D view takes over to follow the ball, then it comes back.
+  var sideShown = false, sideRaf = 0, flying = false;
+  function sideOn() { return settings.view === 'side'; }
+  function showSide(on) {
+    on = !!on && sideOn();
+    sideShown = on;
+    $('side').classList.toggle('hide', !on);
+    R3.setPaused(on);
+    if (on) kickSide();
+  }
+  function kickSide() { if (sideShown && !sideRaf) sideRaf = requestAnimationFrame(sideFrame); }
+  function sideFrame() {
+    sideRaf = 0;
+    if (!sideShown) return;
+    var st = null;
+    if (live && !live.hit) {
+      var t = (performance.now() - live.t0) / 1000;
+      if (t < MS.pitchDuration(live.pitch) + 1.2) st = { pitch: live.pitch, t: t };
+    }
+    SV.draw(st);
+    if (st) kickSide();
+  }
+
+  // ================= the swing =================
+  var stroke = null, ink = [], inkRaf = 0;
+  function cvPos(e) { var r = $('ink').getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; }
+  function onDown(e) {
+    S.unlock();
+    if (locked()) return;
+    stroke = { id: e.pointerId, pts: [cvPos(e)] };
+    try { $('ink').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    addInk(stroke.pts[0]);
+  }
+  function onMove(e) {
+    if (!stroke || e.pointerId !== stroke.id) return;
+    var p = cvPos(e), pts = stroke.pts, a = pts[pts.length - 1];
+    pts.push(p); addInk(p);
+    if (live && !live.done && !live.whiff) checkContact(a, p);
+  }
+  function onUp(e) {
+    if (!stroke || e.pointerId !== stroke.id) return;
+    var sw = strokeInfo(stroke.pts);
+    stroke = null;
+    // a quick flick that ended before the ball got there is a swing and a miss
+    if (live && !live.done && !live.whiff && sw && sw.len > 30 && sw.speed > 0.9) {
+      var z = MS.pitchPos(live.pitch, (performance.now() - live.t0) / 1000)[2];
+      if (z > MS.ZONE.far) { live.whiff = true; S.swish(); }
+    }
+  }
+  // speed (stage heights per second) and direction over the last ~80 ms of a stroke
+  function strokeInfo(pts) {
+    if (pts.length < 2) return null;
+    var b = pts[pts.length - 1], a = pts[0];
+    for (var i = pts.length - 2; i >= 0; i--) { a = pts[i]; if (b.t - a.t > 80) break; }
+    var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy), dt = Math.max(8, b.t - a.t), sz = R3.size(), H = Math.max(sz[0], sz[1]); // long side, so sideways and upright feel the same
+    var tot = 0; for (var k = 1; k < pts.length; k++) tot += Math.hypot(pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y);
+    return { speed: len / dt * 1000 / H, dirX: len ? dx / len : 0, dirY: len ? dy / len : -1, len: tot };
+  }
+  function checkContact(A, B) {
+    var side = sideOn(), sz = R3.size(), sizeK = MS.PITCHES[live.pitch.kind].size || 1;
+    var Rpx = MS.contactRadius(meta.skills) * (Math.min(sz[0], sz[1]) / 390) * sizeK;
+    if (side) Rpx = Math.max(Rpx, SV.radius() * sizeK * 1.3);
+    // 1.4.0: a little forgiving on timing too: the ball is checked from 35 ms before to 35 ms after each bit of the stroke
+    for (var s = 0; s <= 8; s++) {
+      var t = A.t - 35 + (B.t - A.t + 70) * s / 8, tb = (t - live.t0) / 1000, bp = MS.pitchPos(live.pitch, tb);
+      if (bp[2] > MS.ZONE.far || bp[2] < MS.ZONE.near) continue;
+      var sc = side ? SV.project(bp) : R3.project(bp), dx = B.x - A.x, dy = B.y - A.y, L2 = dx * dx + dy * dy || 1;
+      var u = Math.max(0, Math.min(1, ((sc[0] - A.x) * dx + (sc[1] - A.y) * dy) / L2));
+      var cx = A.x + dx * u, cy = A.y + dy * u, d = Math.hypot(sc[0] - cx, sc[1] - cy);
+      if (d > Rpx) continue;
+      var info = strokeInfo(stroke.pts) || { speed: 0.5, dirX: 0, dirY: -1 };
+      var L = Math.sqrt(L2), nx = dy / L, ny = -dx / L; if (ny > 0) { nx = -nx; ny = -ny; } // the stroke's "up" side
+      var off = Math.max(-1, Math.min(1, ((sc[0] - A.x) * nx + (sc[1] - A.y) * ny) / Rpx));   // + = ball above the stroke
+      if (side) off = 0; // from the side an upward flick's offset is just timing; the flick's angle sets the height
+      onHit({ quality: 1 - d / Rpx, off: off, speed: info.speed, dirX: info.dirX, dirY: info.dirY, z: bp[2] });
+      return;
+    }
+  }
+  function addInk(p) { ink.push(p); if (!inkRaf) inkRaf = requestAnimationFrame(drawInk); }
+  function drawInk() {
+    inkRaf = 0;
+    var c = $('ink'), r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (c.width !== Math.round(r.width * dpr)) { c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); }
+    var x = c.getContext('2d'), now = performance.now();
+    x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, r.width, r.height);
+    ink = ink.filter(function (p) { return now - p.t < 220; });
+    x.lineCap = 'round'; x.lineJoin = 'round';
+    for (var i = 1; i < ink.length; i++) {
+      var k = 1 - (now - ink[i].t) / 220;
+      x.strokeStyle = 'rgba(255,255,255,' + (0.85 * k).toFixed(3) + ')'; x.lineWidth = 3 + 11 * k;
+      x.beginPath(); x.moveTo(ink[i - 1].x, ink[i - 1].y); x.lineTo(ink[i].x, ink[i].y); x.stroke();
+    }
+    if (ink.length) inkRaf = requestAnimationFrame(drawInk);
+  }
+
+  // ================= results =================
+  function onHit(swing) {
+    var pitch = live.pitch; live.done = true;
+    var ex = MS.exitVelocity(pitch, swing, meta.skills), res = MS.fly(ex, targets), now = performance.now();
+    live.hit = true; flying = true; showSide(false); R3.hit(res, now); S.crack(swing.quality);
+    if (!meta.hitOnce) { meta.hitOnce = true; saveMeta(); $('flickHint').classList.remove('show'); }
+    stats.balls++; stats.hits++;
+    var fl = res.t / 1.6;
+    // pop targets as the ball reaches them
+    res.balloons.forEach(function (id) {
+      var tg = targets.filter(function (t) { return t.id === id; })[0]; if (!tg) return;
+      var k = 0; while (k < res.path.length - 1 && res.path[k][2] < tg.p[2] - tg.r) k++;
+      later(function () { R3.popTarget(id); S.pop(); }, k / 30 / 1.6 * 1000);
+    });
+    if (res.hr) later(function () { S.crowd(true); }, fl * 700);
+    later(function () { resolveHit(pitch, res); }, fl * 1000 + 250);
+  }
+  function resolveHit(pitch, res) {
+    var out = res.foul || res.feet < 100, mult = pitch.m || 1, pts = 0, bonus = 0;
+    res.balloons.forEach(function (id) {
+      var tg = targets.filter(function (t) { return t.id === id; })[0]; if (!tg) return;
+      bonus += tg.pts; run.popped.push(id);
+      if (tg.kind === 'moon') stats.moon++; else if (tg.kind === 'star') stats.stars++; else stats.balloons++;
+    });
+    targets = targets.filter(function (t) { return run.popped.indexOf(t.id) < 0; });
+    if (!out) pts = res.feet * (res.hr ? 2 : 1) * mult;
+    pts += bonus;
+    if (res.hr) { stats.hrs++; run.hrs++; S.hr(); }
+    else if (!out) { S.thud(); S.crowd(false); } else { S.thud(); if (res.foul) stats.fouls++; }
+    if (!res.foul && res.feet > stats.longest) stats.longest = res.feet;
+    var big = res.hr ? 'HOME RUN!' : res.foul ? 'Foul' : res.feet < 100 ? 'Out' : fmt(res.feet) + ' ft';
+    var sub = [];
+    if (res.hr || (!res.foul && res.feet >= 100)) sub.push(res.hr ? fmt(res.feet) + ' ft' : '');
+    if (mult > 1 && !out) sub.push('×' + mult);
+    if (bonus) sub.push('+' + bonus + ' bonus');
+    if (pts) sub.push('+' + fmt(pts));
+    callout(big, sub.filter(Boolean).join(' · '), res.hr);
+    after(out, pts, res.feet);
+  }
+  function resolveMiss() {
+    if (locked()) { live = null; R3.idle(); kickSide(); later(nextBall, 500); return; } // turned upright or opened a sheet mid-pitch: that one doesn't count
+    live.done = true; stats.balls++; stats.misses++;
+    S.miss(); callout(live.whiff ? 'Swing and a miss' : 'Strike', '', false);
+    after(true, 0, 0);
+  }
+  function after(out, pts, feet) {
+    run.score += pts; run.last = feet;
+    if (feet > run.bestHere) run.bestHere = feet;
+    if (run.mode !== 'training') run.i++;
+    if (out && (run.mode === 'minor' || run.mode === 'major')) run.health--;
+    saveStats(); saveRun(); renderInfo();
+    later(function () {
+      R3.idle(); flying = false; showSide(true);
+      if ((run.mode === 'minor' || run.mode === 'major') && run.health <= 0) { finishRun(false); return; }
+      nextBall();
+    }, 900);
+  }
+  function callout(big, sub, hr) {
+    var c = $('callout');
+    c.innerHTML = big + (sub ? '<small>' + sub + '</small>' : '');
+    c.className = 'callout' + (hr ? ' hr' : ''); void c.offsetWidth; c.classList.add('show');
+  }
+
+  // ================= end of a step or game =================
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#ms-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function starsHtml(n) { var h = '<div class="stars">'; for (var i = 0; i < 3; i++) h += i < n ? '★' : '<span class="off">★</span>'; return h + '</div>'; }
+  function finishRun(cleared) {
+    run.done = true; clearTimers(); live = null;
+    store.del('run.' + run.mode);
+    var mode = run.mode, lvBefore = level(), html = '', btns = [];
+    meta.xp += run.score; meta.finished++;
+    var gained = level() - lvBefore; if (gained > 0) meta.pts += gained;
+    if (mode === 'minor' || mode === 'major') {
+      var k = run.step, tg = MS.stepTargets(k), stars = cleared ? 1 + (run.score >= tg[1] ? 1 : 0) + (run.score >= tg[2] ? 1 : 0) : 0;
+      if (cleared) {
+        S.win(); stats.steps++;
+        meta.stars[mode][k] = Math.max(meta.stars[mode][k] || 0, stars);
+        if (meta[mode] === k) meta[mode] = k + 1;
+      } else S.over();
+      if (run.score > (meta.best[mode][k] || 0)) meta.best[mode][k] = run.score;
+      html = (cleared ? starsHtml(stars) : '') + 'Score: <b>' + fmt(run.score) + '</b> · ' + run.hrs + ' home run' + (run.hrs === 1 ? '' : 's') +
+        (cleared ? '<br><small>' + fmt(tg[1]) + ' for ★★ · ' + fmt(tg[2]) + ' for ★★★</small>' : '<br>Out of health with ' + (pitches.length - run.i) + ' balls to go.');
+      if (cleared && mode === 'minor' && k === MAJOR_AT) html += '<br><b>Major is open!</b> Tougher pitches, bigger scores.';
+      if (cleared) btns.push({ label: 'Next: step ' + (k + 1), red: true, go: function () { between(function () { start(mode, k + 1, true); }); } });
+      btns.push({ label: cleared ? 'Play step ' + k + ' again' : 'Try again', red: !cleared, go: function () { between(function () { start(mode, k, true); }); } });
+    } else if (mode === 'moonstar') {
+      stats.games++;
+      var rec = run.score > meta.msBest;
+      if (rec) meta.msBest = run.score;
+      S.win();
+      html = 'Score: <b>' + fmt(run.score) + '</b>' + (rec ? '<br><span class="newbest">New record!</span>' : '<br>Record: ' + fmt(meta.msBest)) + '<br>' + run.hrs + ' home run' + (run.hrs === 1 ? '' : 's');
+      btns.push({ label: 'Play again', red: true, go: function () { between(function () { start('moonstar', 0, true); }); } });
+    }
+    if (gained > 0) {
+      html += '<br><b>Level up! Level ' + (level() + 1) + '.</b> You have ' + meta.pts + ' upgrade point' + (meta.pts === 1 ? '' : 's') + '.';
+      btns.unshift({ label: 'Choose an upgrade', red: true, go: function () { openSkills(function () { between(function () { start(mode, mode === 'moonstar' ? 0 : meta[mode] > run.step ? meta[mode] : run.step, true); }); }); } });
+      btns.forEach(function (b, i) { if (i > 0) b.red = false; });
+    }
+    saveMeta(); saveStats(); renderAll();
+    later(function () {
+      var title = mode === 'moonstar' ? 'Moon-Star done' : cleared ? 'Step ' + run.step + ' cleared!' : 'Step ' + run.step + ' over';
+      showCard(title, html, btns);
+    }, 700);
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next(); showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= sunglasses (see the next pitches) =================
+  function lookAhead() {
+    if (!run || run.mode === 'training' || run.looks <= 0 || run.done) return;
+    var next = pitches.slice(run.i, run.i + 3);
+    if (!next.length) return;
+    run.looks--; saveRun(); renderShades();
+    $('preview').innerHTML = next.map(function (p, i) { var d = MS.PITCHES[p.kind]; return '<span><i style="background:' + d.color + '"></i>' + (i ? '' : 'Next: ') + d.name + (p.m ? ' ×' + p.m : '') + '</span>'; }).join('');
+    $('preview').classList.add('show'); S.ding();
+    clearTimeout(lookAhead.t); lookAhead.t = setTimeout(function () { $('preview').classList.remove('show'); }, 2600);
+  }
+  function renderShades() {
+    var b = $('btnShades');
+    b.classList.toggle('hide', run.mode === 'training');
+    $('shadesN').textContent = run.looks; b.disabled = run.looks <= 0;
+  }
+
+  // ================= UI =================
+  // top left: mode, step and ball; top middle: score and the health bar
+  function renderInfo() {
+    var l, c, m = run.mode;
+    if (m === 'minor' || m === 'major') {
+      var pips = ''; for (var i = 0; i < MS.HEALTH; i++) pips += '<i class="' + (i < run.health ? '' : 'off') + '"></i>';
+      l = '<div class="lbl">' + MODE_NAMES[m].toUpperCase() + ' · STEP ' + run.step + '</div><div class="ttl">Ball ' + Math.min(run.i + 1, pitches.length) + ' of ' + pitches.length + '</div>';
+      var tg = MS.stepTargets(run.step), need = run.score >= tg[2] ? '★★★' : run.score >= tg[1] ? '★★★ at ' + fmt(tg[2]) : '★★ at ' + fmt(tg[1]);
+      c = '<div class="score">' + fmt(run.score) + '</div><div class="health" aria-label="Health ' + run.health + ' of ' + MS.HEALTH + '">' + pips + '</div><small>' + need + '</small>';
+    } else if (m === 'moonstar') {
+      l = '<div class="lbl">MOON-STAR</div><div class="ttl">Ball ' + Math.min(run.i + 1, 9) + ' of 9</div>';
+      c = '<div class="score">' + fmt(run.score) + '</div><small>Record ' + fmt(meta.msBest) + '</small>';
+    } else {
+      l = '<div class="lbl">TRAINING</div><div class="ttl">' + MS.PITCHES[meta.train].name + '</div>';
+      c = '<div class="score">' + (run.last ? fmt(run.last) + ' ft' : '–') + '</div><small>Longest ' + (run.bestHere ? fmt(run.bestHere) + ' ft' : '–') + '</small>';
+    }
+    $('info').innerHTML = l; $('scorebox').innerHTML = c;
+  }
+  function renderModes() {
+    Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === run.mode); });
+    $('modeMajor').classList.toggle('locked', !majorOpen());
+    $('modeMajor').textContent = majorOpen() ? 'Major' : 'Major 🔒';
+    $('chips').classList.toggle('show', run.mode === 'training');
+    $('btnSteps').classList.toggle('hide', run.mode !== 'minor' && run.mode !== 'major');
+    Array.prototype.forEach.call($('chips').children, function (b) { b.classList.toggle('on', b.dataset.kind === meta.train); });
+  }
+  function renderTools() { $('skillsLabel').textContent = 'Level ' + (level() + 1) + (meta.pts ? ' ·' + meta.pts : ''); }
+  function renderAll() { renderModes(); renderInfo(); renderShades(); renderTools(); }
+  function renderChips() {
+    $('chips').innerHTML = MS.PITCH_LIST.map(function (k) { var p = MS.PITCHES[k]; return '<button data-kind="' + k + '"><i style="background:' + p.color + '"></i>' + p.name + '</button>'; }).join('');
+  }
+  var afterSkills = null;
+  function openSkills(then) { afterSkills = then || null; renderSkills(); $('ovSkills').classList.add('show'); }
+  function renderSkills() {
+    var lv = level(), cur = MS.xpForLevel(lv), next = MS.xpForLevel(lv + 1), pct = Math.round(100 * (meta.xp - (lv ? cur : 0)) / (next - (lv ? cur : 0)));
+    var rows = [['power', 'Power', 'Hit it farther.'], ['contact', 'Contact', 'A bigger sweet spot on the bat.'], ['eye', 'Batting Eye', 'One more look with the sunglasses per step.']];
+    var h = '<p class="lvnext"><b>Level ' + (lv + 1) + '</b> · ' + fmt(meta.xp) + ' experience · next level at ' + fmt(next) + '</p><div class="xpbar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>' +
+      '<p class="lvnext">' + (meta.pts ? 'You have <b>' + meta.pts + '</b> upgrade point' + (meta.pts === 1 ? '' : 's') + ' to spend.' : 'Every level up gives one upgrade point. Points you score are your experience.') + '</p>';
+    rows.forEach(function (r) {
+      var v = meta.skills[r[0]], pips = '';
+      for (var i = 0; i < MS.MAX_SKILL; i++) pips += '<i class="' + (i < v ? 'on' : '') + '"></i>';
+      h += '<div class="skill"><div class="nm"><b>' + r[1] + ' ' + v + '</b><small>' + r[2] + '</small><div class="pips">' + pips + '</div></div>' +
+        '<button class="btn red" data-skill="' + r[0] + '"' + (meta.pts && v < MS.MAX_SKILL ? '' : ' disabled') + '>+1</button></div>';
+    });
+    $('skillsBody').innerHTML = h;
+  }
+  function renderSteps(mode) {
+    var cur = meta[mode], maxShown = cur + 4, h = '<p class="lvnext">Next up: <b>Step ' + cur + '</b> · ' + MS.stepBalls(cur) + ' balls</p><div class="lvgrid">';
+    for (var k = 1; k <= maxShown; k++) {
+      var st = meta.stars[mode][k] || 0;
+      h += '<button class="lv' + (k === cur ? ' cur' : '') + '" data-step="' + k + '"' + (k > cur ? ' disabled' : '') + '>' + k + '<small>' + (st ? '★★★'.slice(0, st) : '') + '</small></button>';
+    }
+    $('stepsTitle').textContent = MODE_NAMES[mode] + ' steps';
+    $('stepsBody').innerHTML = h + '</div>';
+    $('stepsBody').dataset.mode = mode;
+  }
+  function renderStats() {
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.longest) + '</b><span>Longest (ft)</span></div><div class="tile"><b>' + fmt(stats.hrs) + '</b><span>Home runs</span></div>' +
+      '<div class="tile"><b>' + fmt(meta.msBest) + '</b><span>Moon-Star record</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + (meta.minor - 1) + '</b><span>Minor steps</span></div><div class="tile"><b>' + (meta.major - 1) + '</b><span>Major steps</span></div>' +
+      '<div class="tile"><b>' + (level() + 1) + '</b><span>Level</span></div></div>' +
+      '<p class="version">' + fmt(stats.balls) + ' pitches · ' + fmt(stats.hits) + ' hits · ' + fmt(stats.balloons) + ' balloons · ' + stats.moon + ' moons · ' + stats.stars + ' stars</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncView() {
+    $('setSide').checked = sideOn();
+    $('btnView').classList.toggle('on', sideOn());
+    showSide(!flying);
+  }
+  function setViewTo(v, toast) {
+    settings.view = v; saveSettings(); syncView();
+    if (toast) { var t = $('viewToast'); t.textContent = v === 'side' ? 'Side view' : 'From behind the plate'; t.classList.add('show'); clearTimeout(setViewTo.t); setViewTo.t = setTimeout(function () { t.classList.remove('show'); }, 1100); }
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    try { R3 = MSRender.create(THREE, $('cv')); }
+    catch (e) { $('building').textContent = 'This phone couldn’t start the 3D view.'; $('building').classList.add('show'); return; }
+    SV = MSSide.create($('side'));
+    if (window.ResizeObserver) new ResizeObserver(function () { SV.resize(); kickSide(); }).observe($('side'));
+    window.addEventListener('resize', function () { SV.resize(); kickSide(); });
+    renderChips();
+    if (settings.view !== 'side') settings.view = 'back';
+    R3.setView('back'); syncView();
+    $('btnView').addEventListener('click', function () { setViewTo(sideOn() ? 'back' : 'side', true); });
+    $('setSide').addEventListener('change', function () { setViewTo(this.checked ? 'side' : 'back', false); });
+    var cv = $('ink');
+    cv.addEventListener('pointerdown', onDown);
+    cv.addEventListener('pointermove', onMove);
+    cv.addEventListener('pointerup', onUp);
+    cv.addEventListener('pointercancel', function () { stroke = null; });
+    document.addEventListener('touchmove', function (e) { if (stroke) e.preventDefault(); }, { passive: false });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { saveRun(); Goobs.home(); });
+    $('btnShades').addEventListener('click', lookAhead);
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var m = b.dataset.mode;
+      if (m === 'major' && !majorOpen()) { showCard('Major', 'Major opens when you clear Minor step ' + MAJOR_AT + '. Faster, trickier pitches, and every pitch type from the start.', [{ label: 'OK', red: true, go: function () {} }]); return; }
+      if ((m === 'minor' || m === 'major') && run.mode === m) { renderSteps(m); $('ovSteps').classList.add('show'); return; }
+      if (m === run.mode) return;
+      $('ovMenu').classList.remove('show');
+      start(m, m === 'minor' || m === 'major' ? meta[m] : 0);
+    });
+    $('stepsBody').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-step]'); if (!b) return;
+      $('ovSteps').classList.remove('show'); $('ovMenu').classList.remove('show'); start($('stepsBody').dataset.mode, +b.dataset.step);
+    });
+    $('chips').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      meta.train = b.dataset.kind; saveMeta(); renderModes(); renderInfo();
+    });
+    $('skillsBody').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-skill]'); if (!b || !meta.pts) return;
+      var k = b.dataset.skill; if (meta.skills[k] >= MS.MAX_SKILL) return;
+      meta.skills[k]++; meta.pts--; saveMeta(); S.ding(); renderSkills(); renderTools();
+      if (k === 'eye' && run && !run.done) { run.looks++; renderShades(); }
+    });
+    $('btnSkills').addEventListener('click', function () { openSkills(null); });
+    $('btnSteps').addEventListener('click', function () { if (run.mode === 'minor' || run.mode === 'major') { renderSteps(run.mode); $('ovSteps').classList.add('show'); } });
+    sheet('btnMenu', 'ovMenu', 'btnCloseMenu', function () { renderAll(); });
+    $('btnCloseSkills').addEventListener('click', function () { $('ovSkills').classList.remove('show'); if (afterSkills) { var f = afterSkills; afterSkills = null; f(); } });
+    $('ovSkills').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); if (afterSkills) { var f = afterSkills; afterSkills = null; f(); } } });
+    $('btnNew').addEventListener('click', function () {
+      $('ovMenu').classList.remove('show');
+      var go = function () { start(run.mode, run.step, true); };
+      if (run.mode === 'training' || (!run.i && !run.score)) { go(); return; }
+      showCard('Restart?', run.mode === 'moonstar' ? 'This game starts over.' : 'Step ' + run.step + ' starts over from the first ball.', [
+        { label: 'Restart', red: true, go: go }, { label: 'Keep playing', go: function () {} }]);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('btnHelp', 'ovHelp', 'btnCloseHelp');
+    sheet(null, 'ovSteps', 'btnCloseSteps');
+    $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) saveRun(); });
+    window.addEventListener('pagehide', saveRun);
+    syncSound(); syncAds();
+    if (!meta.hitOnce) $('flickHint').classList.add('show');
+    var m0 = meta.mode === 'major' && !majorOpen() ? 'minor' : meta.mode;
+    var sv = store.get('run.' + m0, null);
+    start(m0, m0 === 'minor' || m0 === 'major' ? (sv && !sv.done && sv.step <= meta[m0] ? sv.step : meta[m0]) : 0);
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    Goobs.markPlayed('homerun');
+    Goobs.initUpdates({ beforeReload: saveRun, onVersions: function (v) { $('version').textContent = 'Moonshot ' + (v.homerun || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+
+  // hook for automated tests
+  window.__ms = { get run() { return run; }, get live() { return live; }, meta: function () { return meta; }, stats: function () { return stats; }, start: start,
+    project: function (p) { return sideOn() ? SV.project(p) : R3.project(p); }, view: function () { return settings.view; }, hit: function (sw) { if (live && !live.done) onHit(sw); }, MS: MS, finish: finishRun };
+  window.MSApp = { start: function (T) { if (THREE) return; THREE = T; init(); }, started: function () { return !!THREE; } };
+})();
+</script>
+<script type="module">
+import * as THREE from '../../shared/three.module.min.js';
+MSApp.start(THREE);
+</script>
+<script>
+setTimeout(function () { if (!window.MSApp || !MSApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
+</script>
+</body>
+</html>

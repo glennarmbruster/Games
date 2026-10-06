@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Noodle</title>
+<style>
+/* Noodle styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+:root {
+  --nd-board: #e7f3ea; --nd-board-2: #dcecdf; --nd-wall: #5b6b8c; --nd-wall-top: #7485a8; --nd-edge: #cfe2d4;
+  --nd-snake: #22b573; --nd-snake-2: #0f8a55; --nd-food: #ff4d5e;
+}
+:root[data-theme="dark"] { --nd-board: #18221c; --nd-board-2: #1c2821; --nd-wall: #56617a; --nd-wall-top: #6c7894; --nd-edge: #26352b; }
+:root[data-theme="blue"] { --nd-board: #10283f; --nd-board-2: #132e47; --nd-wall: #4d6a92; --nd-wall-top: #6583ad; --nd-edge: #1b3a58; }
+
+.brand svg { border-radius: 10px; }
+.modes button { font-size: 14px; white-space: nowrap; }
+
+.info .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: #3a2a00; border-radius: 10px; padding: 3px 9px; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.info .chip.hide { visibility: hidden; }
+.info .mid .of { color: var(--muted); font-weight: 600; }
+
+.stagewrap { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.stage { position: relative; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); background: var(--nd-board); touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.stage.flash { animation: stflash .35s ease-out 2; }
+@keyframes stflash { 50% { box-shadow: 0 0 0 4px var(--bad), var(--shadow); } }
+
+/* start / pause panel inside the board */
+.ready {
+  position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  text-align: center; padding: 18px;
+}
+.ready.show { display: flex; }
+.ready h2 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.3px; }
+.ready p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.4; max-width: 280px; }
+.ready .pick { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 16px; padding: 6px 8px; box-shadow: var(--shadow-sm); }
+.ready .pick button { width: 42px; height: 42px; border-radius: 12px; border: 0; background: var(--surface-2); font-size: 20px; font-weight: 800; padding: 0; color: var(--ink); }
+.ready .pick button:disabled { opacity: .3; }
+.ready .pick div { min-width: 130px; }
+.ready .pick b { display: block; font-size: 19px; }
+.ready .pick small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.ready .go { min-height: 52px; width: 200px; flex: none; }
+.ready .or { font-size: 13px; }
+.ready.compact { gap: 7px; padding: 8px; }
+.ready.compact h2 { font-size: 20px; }
+.ready.compact > p:not(.or) { display: none; }
+.ready.compact .pick { padding: 3px 5px; gap: 4px; }
+.ready.compact .pick button { width: 34px; height: 34px; }
+.ready.compact .pick div { min-width: 84px; }
+.ready.compact .pick b { font-size: 16px; }
+.ready.compact .go { min-height: 42px; width: 150px; }
+
+/* on-screen arrows: an inverted T, like a keyboard's arrow keys */
+.dpad { display: none; width: 100%; max-width: 330px; flex: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: 50px 50px; gap: 6px; }
+.dpad.show { display: grid; }
+.dpad button {
+  border-radius: 14px; border: 1px solid var(--line); background: var(--surface);
+  box-shadow: var(--shadow-sm); font-size: 20px; color: var(--ink); padding: 0; touch-action: none;
+}
+.dpad button:active, .dpad button.held { background: var(--accent-soft); color: var(--accent); }
+.dpad [data-d="0"] { grid-column: 2; grid-row: 1; }
+.dpad [data-d="3"] { grid-column: 1; grid-row: 2; }
+.dpad [data-d="2"] { grid-column: 2; grid-row: 2; }
+.dpad [data-d="1"] { grid-column: 3; grid-row: 2; }
+
+.cardicon svg { border-radius: 16px; }
+.mazelist { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 10px; }
+
+/* full screen (Goobs.fullscreen, 2026-09-29): Pause sits in the top row as a round button (icon only) */
+html.gg-fs .top #btnPause span { display: none; }
+html.gg-fs .top #btnPause:disabled { opacity: .4; }
+/* tall phones: the board is limited by the width, so the arrows (when on) get the spare height */
+@media (min-height: 780px) { html.gg-fs .dpad { grid-template-rows: 60px 60px; max-width: 360px; } }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="nd-logo" viewBox="0 0 100 100"><defs><linearGradient id="ndg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2fd58a"/><stop offset="1" stop-color="#0f9d6a"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="#e9fbf2"/><path d="M22 74 H48 a12 12 0 0 0 0-24 H40 a12 12 0 0 1 0-24 H72" fill="none" stroke="url(#ndg)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="74" cy="22" r="3" fill="#123"/><circle cx="80" cy="74" r="8" fill="#ff4d5e"/><path d="M80 66 q3-5 7-5" stroke="#2f9d4a" stroke-width="3" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#nd-logo"/></svg>
+      <h1>Noodle</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="classic">Classic</button>
+    <button data-mode="nowalls">No walls</button>
+    <button data-mode="mazes">Mazes</button>
+    <button data-mode="time">Time</button>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="ready" id="ready"></div>
+    </div>
+  </div>
+
+  <div class="dpad" id="dpad">
+    <button data-d="0" aria-label="Up">&#9650;</button>
+    <button data-d="3" aria-label="Left">&#9664;</button>
+    <button data-d="1" aria-label="Right">&#9654;</button>
+    <button data-d="2" aria-label="Down">&#9660;</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnPause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg><span>Pause</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>On-screen arrows<small>Arrow buttons under the board. Swiping works either way.</small></div>
+        <span class="switch"><input type="checkbox" id="setPad"><span></span></span></label>
+      <label class="row"><div>Sound<small>Munches, chimes and bumps.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Noodle</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Noodle records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Noodle (Snake) game logic: grid, moves, food, bonus, mazes. No drawing here; runs in Node for tests. */
+var NDL = (function () {
+  'use strict';
+  var W = 16, H = 22;
+  // speed levels 1-9, like Nokia Snake II: time per step (ms)
+  var SPEED_MS = [0, 330, 270, 220, 180, 150, 125, 105, 88, 74];
+  var START_LEN = 5, BONUS_EVERY = 5, BONUS_STEPS = 26, MAZE_GOAL = 15, TIME_ATTACK_MS = 120000;
+  var DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // up, right, down, left
+
+  // ---------- mazes (a level series; each is cleared by eating MAZE_GOAL foods) ----------
+  function grid() { return new Uint8Array(W * H); }
+  function set(g, x, y) { if (x >= 0 && x < W && y >= 0 && y < H) g[y * W + x] = 1; }
+  function hl(g, y, x0, x1) { for (var x = x0; x <= x1; x++) set(g, x, y); }
+  function vl(g, x, y0, y1) { for (var y = y0; y <= y1; y++) set(g, x, y); }
+  function border(g, gap) {
+    hl(g, 0, 0, W - 1); hl(g, H - 1, 0, W - 1); vl(g, 0, 0, H - 1); vl(g, W - 1, 0, H - 1);
+    if (gap) { // doorways in the middle of each side (the snake wraps through them)
+      for (var x = 6; x <= 9; x++) { g[x] = 0; g[(H - 1) * W + x] = 0; }
+      for (var y = 9; y <= 12; y++) { g[y * W] = 0; g[y * W + W - 1] = 0; }
+    }
+  }
+  function clear(g, x, y) { g[y * W + x] = 0; }
+  // start: [x, y, dir] for the head; the body trails behind it
+  var MAZES = [
+    { name: 'Box', start: [7, 17, 1], build: function (g) { border(g); } },
+    { name: 'Doorways', start: [7, 17, 1], build: function (g) { border(g, true); } },
+    { name: 'Two bars', start: [7, 18, 1], build: function (g) { hl(g, 7, 3, 12); hl(g, 14, 3, 12); } },
+    { name: 'Tunnel', start: [7, 19, 1], build: function (g) { border(g); vl(g, 5, 4, 16); vl(g, 10, 4, 16); } },
+    { name: 'Mill', start: [8, 18, 1], build: function (g) { hl(g, 10, 2, 5); hl(g, 10, 10, 13); hl(g, 11, 2, 5); hl(g, 11, 10, 13); vl(g, 7, 3, 7); vl(g, 8, 3, 7); vl(g, 7, 14, 17); vl(g, 8, 14, 17); } },
+    { name: 'Rails', start: [7, 20, 1], build: function (g) { border(g); hl(g, 5, 0, 10); hl(g, 10, 5, 15); hl(g, 15, 0, 10); } },
+    { name: 'Rooms', start: [5, 16, 1], build: function (g) {
+      border(g); hl(g, 11, 0, 15); vl(g, 8, 0, 21);
+      [[3, 11], [4, 11], [11, 11], [12, 11], [8, 4], [8, 5], [8, 16], [8, 17]].forEach(function (p) { clear(g, p[0], p[1]); });
+    } },
+    { name: 'Pillars', start: [7, 19, 1], build: function (g) {
+      border(g);
+      for (var y = 3; y <= 15; y += 4) for (var x = 3; x <= 11; x += 4) { set(g, x, y); set(g, x + 1, y); set(g, x, y + 1); set(g, x + 1, y + 1); }
+    } },
+    { name: 'Zigzag', start: [7, 20, 1], build: function (g) { border(g); hl(g, 4, 0, 11); hl(g, 8, 4, 15); hl(g, 12, 0, 11); hl(g, 16, 4, 15); } },
+    { name: 'Spiral', start: [8, 20, 1], build: function (g) {
+      border(g); hl(g, 3, 3, 12); vl(g, 12, 3, 18); hl(g, 18, 3, 12); vl(g, 3, 7, 18); hl(g, 7, 3, 9); vl(g, 9, 7, 14); hl(g, 14, 6, 9);
+      clear(g, 3, 18); clear(g, 4, 18);
+    } },
+    { name: 'Apartment', start: [7, 8, 1], build: function (g) {
+      border(g); vl(g, 5, 0, 6); vl(g, 10, 0, 6); hl(g, 6, 0, 3); hl(g, 6, 12, 15); hl(g, 11, 4, 11); vl(g, 5, 15, 21); vl(g, 10, 15, 21); hl(g, 15, 0, 2); hl(g, 15, 13, 15);
+    } },
+    { name: 'Labyrinth', start: [1, 12, 0], build: function (g) {
+      border(g); vl(g, 3, 0, 16); vl(g, 6, 5, 21); vl(g, 9, 0, 16); vl(g, 12, 5, 21);
+    } }
+  ];
+  function mazeGrid(i) { var g = grid(); if (i != null && MAZES[i]) MAZES[i].build(g); return g; }
+
+  // ---------- game ----------
+  // mode: 'classic' (walls kill), 'nowalls' (wrap), 'mazes' (maze i, wrap where there's no wall), 'time' (2 minutes, wrap)
+  function create(mode, speed, maze) {
+    var walls = mode === 'classic' ? mazeGrid(0) : mode === 'mazes' ? mazeGrid(maze || 0) : grid();
+    var st0 = mode === 'mazes' ? MAZES[maze || 0].start : [7, 16, 1];
+    var body = [], d = DIRS[st0[2]];
+    for (var i = 0; i < START_LEN; i++) body.push([st0[0] - d[0] * i, st0[1] - d[1] * i]);
+    var s = {
+      mode: mode, speed: speed, maze: mode === 'mazes' ? (maze || 0) : -1, walls: Array.prototype.slice.call(walls),
+      body: body, dir: st0[2], queue: [], grow: 0, food: null, bonus: null, eaten: 0, sinceBonus: 0, skips: 0,
+      score: 0, steps: 0, alive: true, cleared: false, timeLeft: mode === 'time' ? TIME_ATTACK_MS : 0, bonusEaten: 0
+    };
+    placeFood(s, Math.random);
+    return s;
+  }
+  function wrapX(x) { return (x + W) % W; }
+  function wrapY(y) { return (y + H) % H; }
+  function occupied(s, x, y, skipTail) {
+    if (s.walls[y * W + x]) return true;
+    var n = s.body.length - (skipTail ? 1 : 0);
+    for (var i = 0; i < n; i++) if (s.body[i][0] === x && s.body[i][1] === y) return true;
+    return false;
+  }
+  function freeCells(s) {
+    var out = [];
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) if (!occupied(s, x, y)) out.push([x, y]);
+    return out;
+  }
+  function onBonus(s, x, y) { return s.bonus && y === s.bonus.y && (x === s.bonus.x || x === s.bonus.x + 1); }
+  function placeFood(s, rnd) {
+    var f = freeCells(s).filter(function (c) { return !onBonus(s, c[0], c[1]); });
+    s.food = null;
+    if (f.length) { var c = f[0 | (rnd() * f.length)]; s.food = { x: c[0], y: c[1] }; }
+  }
+  function placeBonus(s, rnd) {
+    // the bonus critter is two squares wide, like the original's bugs
+    var f = freeCells(s).filter(function (c) {
+      return c[0] < W - 1 && !occupied(s, c[0] + 1, c[1]) && !(s.food && s.food.y === c[1] && (s.food.x === c[0] || s.food.x === c[0] + 1));
+    });
+    if (!f.length) return;
+    var c = f[0 | (rnd() * f.length)];
+    s.bonus = { x: c[0], y: c[1], left: BONUS_STEPS, kind: 0 | (rnd() * 4) };
+  }
+  function bonusValue(s) {
+    // worth more the faster you get it, and more after one is missed (as in Snake II)
+    if (!s.bonus) return 0;
+    return Math.round(s.bonus.left * s.speed * (1 + 0.5 * Math.min(4, s.skips)) / 2) + 5 * s.speed;
+  }
+  // queue a turn (up to 2 ahead so quick swipes aren't lost); no turning back into yourself
+  function turn(s, d) {
+    var last = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
+    if (d === last || (d + 2) % 4 === last || s.queue.length >= 2) return false;
+    s.queue.push(d);
+    return true;
+  }
+  // one step. Returns an event object: { ate, bonus, died, cleared, tail (the cell left behind, or null) }
+  function step(s, rnd) {
+    rnd = rnd || Math.random;
+    var ev = { ate: false, bonus: 0, died: false, cleared: false, tail: null, missed: false };
+    if (!s.alive) return ev;
+    if (s.queue.length) s.dir = s.queue.shift();
+    var d = DIRS[s.dir], h = s.body[0], nx = h[0] + d[0], ny = h[1] + d[1];
+    if (nx < 0 || nx >= W || ny < 0 || ny >= H) {
+      if (s.mode === 'classic') { s.alive = false; ev.died = true; return ev; }
+      nx = wrapX(nx); ny = wrapY(ny);
+    }
+    var growing = s.grow > 0;
+    if (occupied(s, nx, ny, !growing)) { s.alive = false; ev.died = true; return ev; }
+    s.body.unshift([nx, ny]);
+    if (growing) s.grow--; else ev.tail = s.body.pop();
+    s.steps++;
+    if (s.food && s.food.x === nx && s.food.y === ny) {
+      ev.ate = true; s.eaten++; s.sinceBonus++; s.grow += 1; s.score += s.speed;
+      if (s.mode === 'mazes' && s.eaten >= MAZE_GOAL) { s.cleared = true; ev.cleared = true; s.food = null; return ev; }
+      placeFood(s, rnd);
+      if (s.sinceBonus >= BONUS_EVERY && !s.bonus) { s.sinceBonus = 0; placeBonus(s, rnd); }
+    }
+    if (s.bonus) {
+      if (onBonus(s, nx, ny)) { ev.bonus = bonusValue(s); s.score += ev.bonus; s.bonus = null; s.skips = 0; s.bonusEaten++; }
+      else if (--s.bonus.left <= 0) { s.bonus = null; s.skips++; ev.missed = true; }
+    }
+    if (!s.food && !s.cleared) placeFood(s, rnd);
+    return ev;
+  }
+  function interval(s) { return SPEED_MS[s.speed] || 150; }
+
+  return {
+    W: W, H: H, DIRS: DIRS, SPEED_MS: SPEED_MS, MAZES: MAZES, MAZE_GOAL: MAZE_GOAL, TIME_ATTACK_MS: TIME_ATTACK_MS,
+    BONUS_STEPS: BONUS_STEPS, BONUS_EVERY: BONUS_EVERY, START_LEN: START_LEN,
+    create: create, turn: turn, step: step, interval: interval, bonusValue: bonusValue, mazeGrid: mazeGrid, occupied: occupied
+  };
+})();
+if (typeof module !== 'undefined') module.exports = NDL;
+</script>
+<script>
+/* Noodle sounds: synthesized with Web Audio (no audio files). */
+var NDSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function knock(freq, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.07);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 3;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+    tone('sine', freq * 0.35, freq * 0.25, 0.09, gain * 0.5, delay);
+  }
+  function swish(delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.09);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len) * 0.6;
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(900, t); bp.frequency.linearRampToValueAtTime(2200, t + 0.09); bp.Q.value = 1.2;
+    var g = a.createGain(); g.gain.value = 0.35;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    turn: function () { if (on) knock(2600, 0.05); },
+    eat: function (n) { if (!on) return; var f = 520 + (n % 5) * 40; tone('square', f, f * 1.3, 0.06, 0.12); tone('sine', f * 2, 0, 0.05, 0.08, 0.03); },
+    bonusShow: function () { if (on) { tone('triangle', 880, 0, 0.1, 0.18); tone('triangle', 1175, 0, 0.12, 0.18, 0.09); } },
+    bonus: function () { if (!on) return; [784, 988, 1175, 1568].forEach(function (f, i) { tone('triangle', f, 0, 0.12, 0.22, i * 0.06); }); },
+    missed: function () { if (on) tone('sine', 660, 330, 0.25, 0.12); },
+    die: function () { if (!on) return; knock(240, 0.5); tone('sawtooth', 300, 60, 0.5, 0.2, 0.03); },
+    over: function () { if (!on) return; [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.3, i * 0.2); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    tick: function () { if (on) knock(3200, 0.06); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) knock(900, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = NDSound, W = NDL.W, H = NDL.H;
+  var MODE_NAMES = { classic: 'Classic', nowalls: 'No walls', mazes: 'Mazes', time: 'Time attack' };
+
+  // ================= storage =================
+  var store = Goobs.store('snake');
+  var settings = { sound: false, adEvery: 3, pad: false, speed: 5 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    settings.speed = Math.min(9, Math.max(1, settings.speed | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'classic', maze: 0, seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (!MODE_NAMES[meta.mode]) meta.mode = 'classic';
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['classic', 'nowalls', 'mazes', 'time'].forEach(function (m) {
+    var o = stats[m] || (stats[m] = {}), d = { games: 0, best: 0, bestLen: 0, food: 0, bonus: 0, ms: 0 };
+    for (var k in d) if (typeof o[k] !== 'number') o[k] = d[k];
+  });
+  if (!Array.isArray(stats.mazeBest)) stats.mazeBest = [];
+  if (typeof stats.mazesOpen !== 'number') stats.mazesOpen = 1; // how many mazes are open (the first is always open)
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function fmtTime(ms) { var s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function bestFor(mode, maze) { return mode === 'mazes' ? (stats.mazeBest[maze] || 0) : stats[mode].best; }
+
+  // ================= game state =================
+  // phase: 'ready' (start panel), 'run', 'paused', 'dying', 'over'
+  var s = null, phase = 'ready', lastEv = null, acc = 0, lastT = 0, playMs = 0, dyingAt = 0;
+  function newGame(mode, maze) {
+    s = NDL.create(mode, settings.speed, maze);
+    lastEv = null; acc = 0; playMs = 0;
+    phase = 'ready';
+    store.del('run');
+    renderAll();
+  }
+  function saveRun() {
+    if (s && (phase === 'run' || phase === 'paused') && s.alive && !s.cleared) store.set('run', { s: s, ms: playMs });
+    else store.del('run');
+  }
+  function resumeRun() {
+    var r = store.get('run', null);
+    if (!r || !r.s || !r.s.alive || r.s.mode !== meta.mode || !Array.isArray(r.s.body)) return false;
+    s = r.s; playMs = r.ms || 0; lastEv = null; acc = 0;
+    phase = 'paused';
+    renderAll();
+    return true;
+  }
+  function begin(firstDir) {
+    if (!s || phase !== 'ready') return;
+    s.speed = settings.speed;
+    phase = 'run'; lastT = performance.now(); acc = 0;
+    if (firstDir != null) NDL.turn(s, firstDir);
+    renderReady(); renderTools(); renderInfo();
+  }
+  function pause() { if (phase !== 'run') return; phase = 'paused'; saveRun(); renderReady(); renderTools(); }
+  function resume() { if (phase !== 'paused') return; phase = 'run'; lastT = performance.now(); acc = 0; renderReady(); renderTools(); }
+
+  // ================= loop =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!s) return;
+    var dt = Math.min(100, t - lastT); lastT = t;
+    if (phase === 'run' && !sheetOpen()) {
+      playMs += dt;
+      if (s.mode === 'time') {
+        s.timeLeft -= dt;
+        if (s.timeLeft <= 0) { s.timeLeft = 0; timeUp(); draw(1); return; }
+        renderClock();
+      }
+      acc += dt;
+      var iv = NDL.interval(s), guard = 0;
+      while (acc >= iv && phase === 'run' && guard++ < 3) { acc -= iv; tick(); }
+    }
+    if (phase === 'dying' && t - dyingAt > 900) { phase = 'over'; gameOver(); }
+    draw(phase === 'run' ? Math.min(1, acc / NDL.interval(s)) : 1);
+  }
+  function tick() {
+    var hadBonus = !!s.bonus;
+    var ev = NDL.step(s);
+    if (ev.died) { die(); return; }
+    lastEv = ev;
+    if (ev.ate) { S.eat(s.eaten); if (s.body.length > stats[s.mode].bestLen) { /* recorded at the end */ } }
+    if (ev.bonus) { S.bonus(); floatText('+' + ev.bonus); }
+    if (ev.missed) S.missed();
+    if (!hadBonus && s.bonus) S.bonusShow();
+    if (ev.ate || ev.bonus || ev.missed || s.bonus || hadBonus) renderInfo();
+    if (ev.cleared) mazeCleared();
+  }
+
+  // ================= drawing =================
+  var cv, cx, cell = 20, dpr = 1, colors = {};
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    ['--nd-board', '--nd-board-2', '--nd-wall', '--nd-wall-top', '--nd-snake', '--nd-snake-2', '--nd-food'].forEach(function (k) { colors[k] = cs.getPropertyValue(k).trim(); });
+  }
+  function fit() {
+    var wrap = $('stagewrap').getBoundingClientRect(), maxW = Math.min(wrap.width, 560), maxH = wrap.height;
+    cell = Math.max(8, Math.floor(Math.min(maxW / W, maxH / H)));
+    var st = $('stage');
+    st.style.width = (cell * W) + 'px'; st.style.height = (cell * H) + 'px';
+    $('ready').classList.toggle('compact', cell * H < 400 || cell * W < 260);
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.width = Math.round(cell * W * dpr); cv.height = Math.round(cell * H * dpr);
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    readColors();
+  }
+  function rrect(x, y, w, h, r) {
+    cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r);
+    cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath();
+  }
+  function wrapD(d, n) { return d > 1 ? d - n : d < -1 ? d + n : d; }
+  function draw(f) {
+    if (!cx || !s) return;
+    var c = cell, x, y;
+    cx.fillStyle = colors['--nd-board']; cx.fillRect(0, 0, W * c, H * c);
+    cx.fillStyle = colors['--nd-board-2'];
+    for (y = 0; y < H; y++) for (x = (y & 1); x < W; x += 2) cx.fillRect(x * c, y * c, c, c);
+    // walls
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) if (s.walls[y * W + x]) {
+      cx.fillStyle = colors['--nd-wall']; rrect(x * c + 0.5, y * c + 0.5, c - 1, c - 1, c * 0.22); cx.fill();
+      cx.fillStyle = colors['--nd-wall-top']; rrect(x * c + 0.5, y * c + 0.5, c - 1, c * 0.55, c * 0.22); cx.fill();
+    }
+    if (s.food) drawFood(s.food.x, s.food.y);
+    if (s.bonus) drawBonus(s.bonus);
+    drawSnake(f);
+  }
+  function drawFood(fx, fy) {
+    var c = cell, px = (fx + 0.5) * c, py = (fy + 0.55) * c, pulse = 1 + 0.06 * Math.sin(performance.now() / 180);
+    cx.fillStyle = colors['--nd-food'];
+    cx.beginPath(); cx.arc(px, py, c * 0.36 * pulse, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,.55)'; cx.beginPath(); cx.arc(px - c * 0.12, py - c * 0.12, c * 0.1, 0, Math.PI * 2); cx.fill();
+    cx.strokeStyle = '#2f9d4a'; cx.lineWidth = Math.max(1.5, c * 0.1); cx.lineCap = 'round';
+    cx.beginPath(); cx.moveTo(px, py - c * 0.3); cx.quadraticCurveTo(px + c * 0.1, py - c * 0.5, px + c * 0.28, py - c * 0.48); cx.stroke();
+  }
+  // bonus critters (two squares wide): beetle, fish, mouse, butterfly
+  function drawBonus(b) {
+    var c = cell, px = (b.x + 1) * c, py = (b.y + 0.5) * c, blink = b.left < 7 && Math.floor(performance.now() / 120) % 2;
+    if (blink) return;
+    cx.save(); cx.translate(px, py);
+    var k = b.kind;
+    if (k === 0) { // beetle
+      cx.fillStyle = '#ffb224'; cx.beginPath(); cx.ellipse(0, 0, c * 0.85, c * 0.42, 0, 0, Math.PI * 2); cx.fill();
+      cx.strokeStyle = '#6b4300'; cx.lineWidth = c * 0.07; cx.beginPath(); cx.moveTo(-c * 0.2, -c * 0.4); cx.lineTo(-c * 0.2, c * 0.4); cx.stroke();
+      cx.fillStyle = '#6b4300'; cx.beginPath(); cx.arc(-c * 0.62, 0, c * 0.2, 0, Math.PI * 2); cx.fill();
+      [[0.25, -0.15], [0.45, 0.15], [0.1, 0.2]].forEach(function (p) { cx.beginPath(); cx.arc(p[0] * c, p[1] * c, c * 0.08, 0, Math.PI * 2); cx.fill(); });
+    } else if (k === 1) { // fish
+      cx.fillStyle = '#2f9df5'; cx.beginPath(); cx.ellipse(-c * 0.1, 0, c * 0.62, c * 0.36, 0, 0, Math.PI * 2); cx.fill();
+      cx.beginPath(); cx.moveTo(c * 0.4, 0); cx.lineTo(c * 0.9, -c * 0.34); cx.lineTo(c * 0.9, c * 0.34); cx.closePath(); cx.fill();
+      cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(-c * 0.45, -c * 0.08, c * 0.1, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = '#123'; cx.beginPath(); cx.arc(-c * 0.47, -c * 0.08, c * 0.05, 0, Math.PI * 2); cx.fill();
+    } else if (k === 2) { // mouse
+      cx.fillStyle = '#9aa3b5'; cx.beginPath(); cx.ellipse(c * 0.05, c * 0.05, c * 0.6, c * 0.36, 0, 0, Math.PI * 2); cx.fill();
+      cx.beginPath(); cx.arc(-c * 0.45, -c * 0.28, c * 0.18, 0, Math.PI * 2); cx.fill();
+      cx.strokeStyle = '#ff8fb1'; cx.lineWidth = c * 0.07; cx.beginPath(); cx.moveTo(c * 0.62, c * 0.1); cx.quadraticCurveTo(c * 0.95, c * 0.0, c * 0.9, -c * 0.3); cx.stroke();
+      cx.fillStyle = '#123'; cx.beginPath(); cx.arc(-c * 0.55, 0, c * 0.05, 0, Math.PI * 2); cx.fill();
+    } else { // butterfly
+      cx.fillStyle = '#c77dff';
+      [[-0.4, -0.18], [0.4, -0.18]].forEach(function (p) { cx.beginPath(); cx.ellipse(p[0] * c, p[1] * c, c * 0.38, c * 0.28, 0, 0, Math.PI * 2); cx.fill(); });
+      cx.fillStyle = '#ff6fae';
+      [[-0.32, 0.22], [0.32, 0.22]].forEach(function (p) { cx.beginPath(); cx.ellipse(p[0] * c, p[1] * c, c * 0.26, c * 0.2, 0, 0, Math.PI * 2); cx.fill(); });
+      cx.fillStyle = '#3b2b55'; rrect(-c * 0.06, -c * 0.4, c * 0.12, c * 0.8, c * 0.06); cx.fill();
+    }
+    cx.restore();
+  }
+  function snakePoints(f) {
+    // body as one unbroken line (wrap-around edges unrolled), head and tail moved part way for smooth motion
+    var b = s.body, pts = [], px = b[0][0], py = b[0][1], i;
+    var dx = b.length > 1 ? wrapD(b[0][0] - b[1][0], W) : 1, dy = b.length > 1 ? wrapD(b[0][1] - b[1][1], H) : 0;
+    var moving = phase === 'run' || phase === 'dying';
+    var back = moving && lastEv ? 1 - f : 0;
+    if (phase === 'dying') back = 0;
+    pts.push([px - dx * back, py - dy * back]);
+    for (i = 1; i < b.length; i++) { px += wrapD(b[i][0] - b[i - 1][0], W); py += wrapD(b[i][1] - b[i - 1][1], H); pts.push([px, py]); }
+    if (back && lastEv && lastEv.tail) {
+      var t = lastEv.tail, lx = pts[pts.length - 1][0] + wrapD(t[0] - b[b.length - 1][0], W), ly = pts[pts.length - 1][1] + wrapD(t[1] - b[b.length - 1][1], H);
+      var ex = pts[pts.length - 1][0], ey = pts[pts.length - 1][1];
+      pts.push([ex + (lx - ex) * back, ey + (ly - ey) * back]);
+    }
+    return { pts: pts, dx: dx, dy: dy };
+  }
+  function drawSnake(f) {
+    var c = cell, sp = snakePoints(f), pts = sp.pts, wraps = s.mode !== 'classic';
+    var hidden = phase === 'dying' && Math.floor((performance.now() - dyingAt) / 150) % 2;
+    if (hidden) return;
+    var offs = wraps ? [-1, 0, 1] : [0];
+    offs.forEach(function (oy) { offs.forEach(function (ox) {
+      var X = ox * W * c, Y = oy * H * c;
+      cx.save(); cx.translate(X, Y);
+      cx.lineCap = 'round'; cx.lineJoin = 'round';
+      // body: a darker edge, then the body color, then a light stripe
+      cx.beginPath();
+      pts.forEach(function (p, i) { var x = (p[0] + 0.5) * c, y = (p[1] + 0.5) * c; if (i) cx.lineTo(x, y); else cx.moveTo(x, y); });
+      cx.strokeStyle = colors['--nd-snake-2']; cx.lineWidth = c * 0.8; cx.stroke();
+      cx.strokeStyle = colors['--nd-snake']; cx.lineWidth = c * 0.64; cx.stroke();
+      cx.strokeStyle = 'rgba(255,255,255,.22)'; cx.lineWidth = c * 0.18; cx.stroke();
+      // head
+      var hx = (pts[0][0] + 0.5) * c, hy = (pts[0][1] + 0.5) * c, dx = sp.dx, dy = sp.dy;
+      cx.fillStyle = colors['--nd-snake']; cx.beginPath(); cx.arc(hx, hy, c * 0.46, 0, Math.PI * 2); cx.fill();
+      var ex = -dy, ey = dx; // sideways
+      [1, -1].forEach(function (k) {
+        var x = hx + dx * c * 0.12 + ex * c * 0.2 * k, y = hy + dy * c * 0.12 + ey * c * 0.2 * k;
+        cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x, y, c * 0.14, 0, Math.PI * 2); cx.fill();
+        cx.fillStyle = '#16202e'; cx.beginPath(); cx.arc(x + dx * c * 0.05, y + dy * c * 0.05, c * 0.075, 0, Math.PI * 2); cx.fill();
+      });
+      if (!s.alive) { cx.strokeStyle = '#16202e'; cx.lineWidth = c * 0.06; }
+      cx.restore();
+    }); });
+  }
+
+  // ================= input: swipes anywhere, arrow keys, on-screen arrows =================
+  var sw = null;
+  function input(d) {
+    if (!s || sheetOpen()) return;
+    S.unlock();
+    if (phase === 'ready') { begin(d); return; }
+    if (phase === 'paused') { resume(); NDL.turn(s, d); return; }
+    if (phase === 'run' && NDL.turn(s, d)) S.turn();
+  }
+  function onDown(e) {
+    if (e.target.closest('button, .overlay, .top, .modes, .toolbar, .dpad')) return;
+    sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  }
+  function onMove(e) {
+    if (!sw || e.pointerId !== sw.id) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    input(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+    sw.x = e.clientX; sw.y = e.clientY; // keep swiping without lifting to turn again
+  }
+  function onUp(e) { if (sw && e.pointerId === sw.id) sw = null; }
+
+  // ================= info, panels, tools =================
+  function renderInfo() {
+    if (!s) return;
+    var best = Math.max(bestFor(s.mode, s.maze), s.score), right;
+    if (s.mode === 'mazes') right = '<div class="lbl">' + NDL.MAZES[s.maze].name + '</div><div class="mid">' + Math.min(s.eaten, NDL.MAZE_GOAL) + '<span class="of"> / ' + NDL.MAZE_GOAL + '</span></div>';
+    else if (s.mode === 'time') right = '<div class="lbl">Time</div><div class="mid" id="clock">' + fmtTime(s.timeLeft) + '</div>';
+    else right = '<div class="lbl">Best</div><div class="mid">' + fmt(best) + '</div>';
+    var chip = s.bonus ? '<span class="chip">&#9733; ' + s.bonus.left + '</span>' : '<span class="chip hide">&#9733; 0</span>';
+    $('info').innerHTML = '<div><div class="lbl">Score</div><div class="big">' + fmt(s.score) + '</div></div>' + chip + '<div class="right">' + right + '</div>';
+  }
+  function renderClock() { var el = $('clock'); if (el) el.textContent = fmtTime(s.timeLeft); }
+  function renderModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); }); }
+  function renderTools() {
+    var p = $('btnPause'), paused = phase === 'paused';
+    p.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    p.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-' + (paused ? 'play' : 'pause') + '"/></svg><span>' + (paused ? 'Resume' : 'Pause') + '</span>';
+    p.disabled = !(phase === 'run' || phase === 'paused');
+  }
+  var DESC = {
+    classic: 'The walls are solid. Eat, grow, and don’t bump into anything.',
+    nowalls: 'No walls: go off one edge and come back on the other.',
+    mazes: 'Eat ' + NDL.MAZE_GOAL + ' to clear this maze and open the next one.',
+    time: 'No walls. Score as much as you can in 2 minutes.'
+  };
+  function renderReady() {
+    var r = $('ready');
+    if (phase === 'paused') {
+      r.innerHTML = '<h2>Paused</h2><p>Score ' + fmt(s.score) + ' &middot; length ' + s.body.length + '</p><button class="btn red go" id="btnGo">Resume</button><p class="or">or swipe to keep going</p>';
+      r.classList.add('show');
+      $('btnGo').addEventListener('click', resume);
+      return;
+    }
+    if (phase !== 'ready') { r.classList.remove('show'); return; }
+    var h = '<h2>' + MODE_NAMES[s.mode] + '</h2><p>' + DESC[s.mode] + '</p>';
+    if (s.mode === 'mazes') {
+      h += '<div class="pick"><button id="mzPrev" aria-label="Previous maze"' + (s.maze <= 0 ? ' disabled' : '') + '>&#8249;</button><div><small>Maze ' + (s.maze + 1) + ' of ' + NDL.MAZES.length + '</small><b>' + NDL.MAZES[s.maze].name + '</b></div>' +
+        '<button id="mzNext" aria-label="Next maze"' + (s.maze + 1 >= Math.min(stats.mazesOpen, NDL.MAZES.length) ? ' disabled' : '') + '>&#8250;</button></div>';
+    }
+    h += '<div class="pick"><button id="spLess" aria-label="Slower"' + (settings.speed <= 1 ? ' disabled' : '') + '>&minus;</button><div><small>Speed</small><b>' + settings.speed + '</b></div>' +
+      '<button id="spMore" aria-label="Faster"' + (settings.speed >= 9 ? ' disabled' : '') + '>+</button></div>';
+    var best = bestFor(s.mode, s.maze);
+    h += '<button class="btn red go" id="btnGo">Start</button><p class="or">or just swipe' + (best ? ' &middot; best ' + fmt(best) : '') + '</p>';
+    r.innerHTML = h; r.classList.add('show');
+    $('btnGo').addEventListener('click', function () { begin(null); });
+    $('spLess').addEventListener('click', function () { setSpeed(-1); });
+    $('spMore').addEventListener('click', function () { setSpeed(1); });
+    if (s.mode === 'mazes') {
+      $('mzPrev').addEventListener('click', function () { pickMaze(-1); });
+      $('mzNext').addEventListener('click', function () { pickMaze(1); });
+    }
+  }
+  function setSpeed(d) { settings.speed = Math.min(9, Math.max(1, settings.speed + d)); saveSettings(); if (s) s.speed = settings.speed; renderReady(); }
+  function pickMaze(d) {
+    var m = Math.min(Math.min(stats.mazesOpen, NDL.MAZES.length) - 1, Math.max(0, s.maze + d));
+    if (m === s.maze) return;
+    meta.maze = m; saveMeta();
+    newGame('mazes', m);
+  }
+  function renderAll() { renderModes(); renderInfo(); renderTools(); renderReady(); draw(1); }
+  function floatText(txt) {
+    var f = document.createElement('div'), st = $('stage');
+    f.className = 'float'; f.textContent = txt;
+    f.style.cssText = 'position:absolute;left:50%;top:40%;transform:translateX(-50%);font-weight:900;font-size:26px;color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.25);pointer-events:none;animation:ndrise .9s ease-out forwards';
+    st.appendChild(f);
+    setTimeout(function () { f.remove(); }, 950);
+  }
+
+  // ================= end of a game =================
+  function record() {
+    var st = stats[s.mode];
+    st.games++; st.food += s.eaten; st.bonus += s.bonusEaten; st.ms += Math.round(playMs);
+    if (s.body.length > st.bestLen) st.bestLen = s.body.length;
+    var newBest = false;
+    if (s.mode === 'mazes') { if (s.score > (stats.mazeBest[s.maze] || 0)) { stats.mazeBest[s.maze] = s.score; newBest = true; } if (s.score > st.best) st.best = s.score; }
+    else if (s.score > st.best) { st.best = s.score; newBest = true; }
+    saveStats();
+    meta.finished++; saveMeta();
+    store.del('run');
+    return newBest;
+  }
+  function die() {
+    phase = 'dying'; dyingAt = performance.now();
+    S.die();
+    $('stage').classList.remove('flash'); void $('stage').offsetWidth; $('stage').classList.add('flash');
+    renderTools();
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#nd-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions');
+    box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function again() { between(function () { newGame(s.mode, s.maze); }); }
+  function gameOver() {
+    var nb = record(), best = bestFor(s.mode, s.maze);
+    S.over();
+    var html = 'Score: <b>' + fmt(s.score) + '</b> &middot; length ' + s.body.length + (nb && s.score ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(best));
+    if (s.mode === 'mazes') html = NDL.MAZES[s.maze].name + ': ' + Math.min(s.eaten, NDL.MAZE_GOAL) + ' of ' + NDL.MAZE_GOAL + ' eaten.<br>' + html;
+    showCard(s.mode === 'time' ? 'Out of the race' : 'Game over', html, [{ label: 'Play again', red: true, go: again }]);
+  }
+  function timeUp() {
+    phase = 'over';
+    var nb = record();
+    S.win();
+    showCard('Time’s up!', 'Score: <b>' + fmt(s.score) + '</b> &middot; ' + s.eaten + ' eaten' + (nb && s.score ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(stats.time.best)), [{ label: 'Play again', red: true, go: again }]);
+    renderTools();
+  }
+  function mazeCleared() {
+    phase = 'over';
+    var i = s.maze, nb = record(), last = i + 1 >= NDL.MAZES.length;
+    if (!last && stats.mazesOpen < i + 2) { stats.mazesOpen = i + 2; saveStats(); }
+    S.win();
+    var html = NDL.MAZES[i].name + ' cleared with <b>' + fmt(s.score) + '</b> points.' + (nb ? '<br><span class="newbest">New best!</span>' : '');
+    var b = [];
+    if (!last) b.push({ label: 'Next: ' + NDL.MAZES[i + 1].name, red: true, go: function () { meta.maze = i + 1; saveMeta(); between(function () { newGame('mazes', i + 1); }); } });
+    else html += '<br>That was the last maze. Every maze is open to replay.';
+    b.push({ label: 'Play this maze again', red: last, go: again });
+    showCard('Maze cleared!', html, b);
+    renderTools();
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next();
+      showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= sheets =================
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Noodle';
+    $('helpList').innerHTML = [
+      '<b>Swipe</b> anywhere to turn: up, down, left or right. You can keep your finger down and swipe again to turn again. You can’t turn straight back.',
+      'Eat the <b>berries</b>. Each one makes you one longer and scores as many points as your <b>speed</b> (1 to 9). Faster is harder but scores more.',
+      'After every 5 berries a <b>bonus critter</b> shows up for a short time (the gold counter). The sooner you catch it, the more it’s worth. It doesn’t make you longer. Miss one and the next is worth more.',
+      'Bump into yourself, or a wall, and the game is over.',
+      '<b>Classic</b>: solid walls all round. <b>No walls</b>: go off an edge and come back on the other side. <b>Mazes</b>: ' + NDL.MAZES.length + ' mazes in a row; eat ' + NDL.MAZE_GOAL + ' to clear one and open the next. <b>Time</b>: the best score in 2 minutes.',
+      'Pause any time. Turn on <b>on-screen arrows</b> in Settings if you’d rather tap than swipe.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var h = '';
+    ['classic', 'nowalls', 'time'].forEach(function (m) {
+      var st = stats[m];
+      h += '<div class="themelabel">' + MODE_NAMES[m] + '</div><div class="tiles"><div class="tile"><b>' + fmt(st.best) + '</b><span>Best</span></div>' +
+        '<div class="tile"><b>' + st.bestLen + '</b><span>Longest</span></div><div class="tile"><b>' + st.games + '</b><span>Games</span></div></div>';
+    });
+    var mz = stats.mazes, cleared = Math.min(NDL.MAZES.length, stats.mazesOpen - 1 + (stats.mazeBest[NDL.MAZES.length - 1] && stats.mazesOpen >= NDL.MAZES.length ? 1 : 0));
+    h += '<div class="themelabel">Mazes</div><div class="tiles"><div class="tile"><b>' + Math.min(stats.mazesOpen, NDL.MAZES.length) + '</b><span>Open</span></div>' +
+      '<div class="tile"><b>' + fmt(mz.best) + '</b><span>Best maze</span></div><div class="tile"><b>' + mz.games + '</b><span>Games</span></div></div>';
+    var food = 0, bonus = 0, ms = 0;
+    ['classic', 'nowalls', 'mazes', 'time'].forEach(function (m) { food += stats[m].food; bonus += stats[m].bonus; ms += stats[m].ms; });
+    h += '<p class="version">' + fmt(food) + ' berries &middot; ' + fmt(bonus) + ' critters &middot; ' + Math.round(ms / 60000) + ' min played' + (cleared ? '' : '') + '</p>';
+    $('statsBody').innerHTML = h;
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncAds() {
+    $('setAds').checked = Goobs.adsOn();
+    $('adEvery').textContent = settings.adEvery;
+    $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+  }
+  function syncPad() { $('setPad').checked = settings.pad; $('dpad').classList.toggle('show', settings.pad); requestAnimationFrame(fit); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { pause(); if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function switchMode(m) {
+    if (phase === 'run') pause();
+    if (phase === 'paused' && s && s.score > 0) {
+      showCard('Leave this game?', 'This game ends now with ' + fmt(s.score) + ' points.', [
+        { label: 'Leave it', red: true, go: function () { record(); meta.mode = m; saveMeta(); between(function () { newGame(m, meta.maze); }); } },
+        { label: 'Keep playing', go: function () {} }]);
+      return;
+    }
+    meta.mode = m; saveMeta();
+    newGame(m, Math.min(meta.maze, stats.mazesOpen - 1));
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    document.addEventListener('touchmove', function (e) { if (sw) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) {
+      var k = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key];
+      if (k !== undefined) { e.preventDefault(); input(k); }
+      else if (e.key === ' ' || e.key === 'p') { e.preventDefault(); if (phase === 'run') pause(); else if (phase === 'paused') resume(); else if (phase === 'ready') begin(null); }
+    });
+    Array.prototype.forEach.call($('dpad').children, function (b) {
+      b.addEventListener('pointerdown', function (e) { e.preventDefault(); b.classList.add('held'); input(+b.dataset.d); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { b.addEventListener(ev, function () { b.classList.remove('held'); }); });
+    });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { pause(); saveRun(); Goobs.home(); });
+    $('btnPause').addEventListener('click', function () { if (phase === 'run') pause(); else if (phase === 'paused') resume(); });
+    $('btnNew').addEventListener('click', function () {
+      if (phase === 'run') pause();
+      if ((phase === 'paused') && s.score > 0) {
+        showCard('Start over?', 'This game ends now with ' + fmt(s.score) + ' points.', [
+          { label: 'Start over', red: true, go: function () { record(); between(function () { newGame(s.mode, s.maze); }); } },
+          { label: 'Keep playing', go: function () {} }]);
+        return;
+      }
+      newGame(s.mode, s.maze);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn || btn.dataset.mode === meta.mode) return;
+      switchMode(btn.dataset.mode);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    // full screen (2026-09-29): Pause moves up to the top row as a round button; How to, Restart, Stats and Settings live
+    // in the Menu (the empty toolbar hides itself), so the board gets the toolbar's height. The game pauses while it is open.
+    var pb = $('btnPause'); pb.className = 'iconbtn'; pb.setAttribute('aria-label', 'Pause');
+    $('btnSound').parentNode.insertBefore(pb, $('btnSound'));
+    Goobs.fullscreen({
+      menu: ['btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { return s ? 'Best in this mode <b>' + fmt(Math.max(bestFor(s.mode, s.maze), s.score)) + '</b>' : ''; },
+      onOpen: function () { pause(); }
+    });
+    $('btnHelp').addEventListener('click', function () { pause(); openHelp(); });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setPad').addEventListener('change', function () { settings.pad = this.checked; saveSettings(); syncPad(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    // theme changes recolor the board
+    new MutationObserver(function () { readColors(); draw(1); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    if (window.ResizeObserver) new ResizeObserver(function () { fit(); draw(1); }).observe($('stagewrap'));
+    window.addEventListener('resize', function () { fit(); draw(1); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); saveRun(); } });
+    window.addEventListener('pagehide', function () { pause(); saveRun(); });
+    var style = document.createElement('style');
+    style.textContent = '@keyframes ndrise{0%{opacity:0;margin-top:10px}20%{opacity:1}100%{opacity:0;margin-top:-30px}}';
+    document.head.appendChild(style);
+    syncSound(); syncAds(); syncPad();
+    fit();
+    if (!resumeRun()) newGame(meta.mode, Math.min(meta.maze, stats.mazesOpen - 1));
+    if (!meta.seen) openHelp();
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+    Goobs.markPlayed('snake');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); saveRun(); },
+      onVersions: function (v) { $('version').textContent = 'Noodle ' + (v.snake || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__nd = { get s() { return s; }, get phase() { return phase; }, input: input, begin: begin, pause: pause, resume: resume, newGame: newGame, stats: function () { return stats; }, meta: function () { return meta; }, settings: settings, tick: tick };
+
+  init();
+})();
+</script>
+</body>
+</html>

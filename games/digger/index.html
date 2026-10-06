@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Tunnel Pop</title>
+<style>
+/* Tunnel Pop styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100%; min-height: 0; gap: 8px; }
+.brand svg { border-radius: 10px; }
+@media (max-width: 385px) { .brand h1 { font-size: 22px; } }
+
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 28px); margin: 0 -14px; display: flex; align-items: center; justify-content: center; }
+.screen { position: relative; background: #04050a; border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+.screen canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+.paused { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(4,5,10,.72); color: #f0f4ff; text-align: center; font-weight: 800; }
+.paused.show { display: flex; }
+.paused b { font-size: 26px; letter-spacing: 2px; }
+.paused span { font-size: 15px; opacity: .8; }
+
+/* controls: a joystick on the left, the pump button on the right, like the cabinet */
+.pad { width: 100%; max-width: 520px; flex: none; display: flex; align-items: center; gap: 10px; padding-bottom: 2px; }
+.pb { border: 0; padding: 0; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: grid; place-items: center; }
+.pb.dir { width: 84px; height: 76px; border-radius: 20px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.pb.dir svg { width: 38px; height: 38px; }
+.pb.dir.held { background: var(--accent-soft); color: var(--accent); transform: scale(.96); }
+.padmid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pb.small { width: 40px; height: 34px; border-radius: 12px; background: var(--surface-2); color: var(--muted); }
+.pb.small svg { width: 20px; height: 20px; }
+.pb.fire { width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff7a7a, #e0243a 60%, #a8101f); color: #fff;
+  font-weight: 900; font-size: 17px; letter-spacing: 1.5px; box-shadow: 0 6px 0 #7a0a16, 0 10px 18px -6px rgba(0,0,0,.45); }
+.pb.fire.held { transform: translateY(4px); box-shadow: 0 2px 0 #7a0a16, 0 4px 10px -4px rgba(0,0,0,.45); }
+@media (max-height: 700px) { .pb.dir { width: 76px; height: 62px; } .pb.fire { width: 80px; height: 80px; font-size: 15px; } }
+.cardicon svg { border-radius: 16px; }
+
+.dpad { width: 172px; height: 172px; flex: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.dpad svg { width: 100%; height: 100%; display: block; }
+.dpad .ring { fill: var(--surface); stroke: var(--line); stroke-width: 2; }
+.dpad .arr { fill: var(--muted); transition: fill .05s; }
+.dpad .arr.on { fill: var(--accent); }
+.dpad .knob { fill: #e0243a; stroke: #7a0a16; stroke-width: 3; transition: transform .05s; transform-origin: 60px 60px; }
+@media (max-height: 700px) { .dpad { width: 150px; height: 150px; } }
+
+/* full screen (Goobs.fullscreen, 2026-09-29): the screen reaches the page edges (the kit's gutters are 8px, not 14px), its
+   black fills the free band like a cabinet monitor, and the controls get a little more room on tall phones, where the
+   arcade screen is limited by the width anyway */
+html.gg-fs .stagewrap { width: calc(100% + 16px); margin: 0 -8px; background: #04050a; }
+html.gg-fs .screen { border-radius: 0; box-shadow: none; }
+html.gg-fs .pad { padding-bottom: 4px; }
+@media (min-height: 780px) { html.gg-fs .dpad { width: 184px; height: 184px; } html.gg-fs .pb.fire { width: 104px; height: 104px; } }
+html.gg-fs .padmid .pb.small { width: 50px; height: 46px; border-radius: 14px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="tp-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#14206b"/><rect y="34" width="100" height="22" fill="#ffc84a"/><rect y="56" width="100" height="22" fill="#f08c2c"/><rect y="78" width="100" height="22" fill="#d1502a"/>
+<path d="M0 64h58v-30h14v46h28" fill="none" stroke="#000" stroke-width="14"/><circle cx="30" cy="64" r="11" fill="#c05cff"/><rect x="21" y="59" width="18" height="6" rx="3" fill="#101018"/><circle cx="26" cy="62" r="2" fill="#7fe0ff"/><circle cx="34" cy="62" r="2" fill="#7fe0ff"/>
+<rect x="60" y="24" width="10" height="7" rx="3" fill="#3b7cff"/><rect x="60" y="31" width="10" height="9" fill="#e8413a"/><path d="M58 36 H40" stroke="#f4f4f4" stroke-width="2"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#tp-logo"/></svg>
+      <h1>Tunnel Pop</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="screen" id="screen">
+      <canvas id="cv" width="224" height="256"></canvas>
+      <div class="paused" id="paused"><b>Paused</b><span>Press Fire to carry on</span></div>
+    </div>
+  </div>
+
+  <div class="pad" id="pad">
+    <div class="dpad" id="dpad" aria-label="Joystick">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="58" class="ring"/>
+        <path class="arr" data-d="U" d="M60 14 L76 36 H44 Z"/><path class="arr" data-d="D" d="M60 106 L44 84 H76 Z"/>
+        <path class="arr" data-d="L" d="M14 60 L36 44 V76 Z"/><path class="arr" data-d="R" d="M106 60 L84 76 V44 Z"/>
+        <circle cx="60" cy="60" r="16" class="knob" id="knob"/>
+      </svg>
+    </div>
+    <div class="padmid">
+      <button class="pb small" id="bPause" aria-label="Pause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg></button>
+      <button class="pb small" id="bHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+    </div>
+    <button class="pb fire" id="bFire" aria-label="Pump">PUMP</button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>The digging tune, pumps and pops.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Tunnel Pop</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Tunnel Pop records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist">
+      <li>Use the <b>joystick</b> to dig through the dirt. You can only turn where the tunnels line up, like the arcade.</li>
+      <li>Tap <b>PUMP</b> to throw your air pump at a puffer or a scorcher, then tap it again (or hold it) to pump. Four pumps and it pops. Stop pumping and it shrinks back.</li>
+      <li>Dig under a <b>rock</b> and get out of the way: it wobbles, then drops and flattens anything below, you too. Crush several at once for big points.</li>
+      <li>Deeper layers score more: 200, 300, 400, 500. A scorcher popped from the side is worth double. Watch out for its fire, which goes right through dirt.</li>
+      <li>Enemies can float through the dirt as eyes to come after you. Drop two rocks and a bonus item shows up in the middle.</li>
+      <li>The last enemy runs for the surface. Extra lives at 10,000 and 40,000, then every 40,000.</li>
+    </ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Tunnel Pop pixel art: our own characters and items (palette letters), plus a 5x7 font. '.' = see-through. */
+var TPArt = (function () {
+  'use strict';
+  var PAL = {
+    k: '#101018', w: '#f4f4f4', g: '#9aa3ad', G: '#5b636e', r: '#e8413a', R: '#a3201d', o: '#ff9a2e', O: '#c96414', y: '#ffd83a', Y: '#d9a514',
+    b: '#3b7cff', B: '#1f4cb8', c: '#7fe0ff', p: '#c05cff', P: '#7a2cc0', n: '#8a5a2b', N: '#5c3a18', l: '#6bd84a', L: '#2f8f2a', m: '#ff7ab8', s: '#ffd0a0', t: '#c68a5a', v: '#6a3fb0', V: '#3f2270', q: '#e0e0e8'
+  };
+  function S(rows) { return { w: rows[0].length, h: rows.length, rows: rows }; }
+  var A = {};
+  // the miner (faces right); helmet with a lamp, overalls
+  A.miner = [S([
+    '....bbbbbb......',
+    '...bbbbbbbby....',
+    '..bbbbbbbbbyy...',
+    '..BBBBBBBBBB....',
+    '...ssssskss.....',
+    '...ssssskss.....',
+    '....sssssss.....',
+    '..rrrrrrrr......',
+    '.rrrrrrrrrrgg...',
+    '.rrrrrrrrr.gg...',
+    '..ssrrrrrr.gg...',
+    '...bbbbbbb......',
+    '...bbbbbbb......',
+    '...bbb.bbb......',
+    '..kkkk.kkkk.....',
+    '..kkkk..kkkk....']), S([
+    '....bbbbbb......',
+    '...bbbbbbbby....',
+    '..bbbbbbbbbyy...',
+    '..BBBBBBBBBB....',
+    '...ssssskss.....',
+    '...ssssskss.....',
+    '....sssssss.....',
+    '..rrrrrrrr......',
+    '.rrrrrrrrrrgg...',
+    '.rrrrrrrrr.gg...',
+    '..ssrrrrrr.gg...',
+    '...bbbbbbb......',
+    '...bbbbbbb......',
+    '....bbbbb.......',
+    '...kkkkkk.......',
+    '...kkkkkk.......'])];
+  // the puffer: a round walker with big goggles
+  A.puffer = [S([
+    '.....pppppp.....',
+    '...pppppppppp...',
+    '..pppppppppppp..',
+    '.ppkkkkpkkkkppp.',
+    '.pkccwkkkccwkpp.',
+    'ppkccckkkccckppp',
+    'ppkkkkpppkkkkppp',
+    'pppppppppppppppp',
+    'pppppppppppppppp',
+    'ppppPPPPPPPPpppp',
+    '.pppppppppppppp.',
+    '.pppppppppppppp.',
+    '..pppppppppppp..',
+    '...PPPP..PPPP...',
+    '..PPPPP..PPPPP..',
+    '................']), S([
+    '.....pppppp.....',
+    '...pppppppppp...',
+    '..pppppppppppp..',
+    '.ppkkkkpkkkkppp.',
+    '.pkccwkkkccwkpp.',
+    'ppkccckkkccckppp',
+    'ppkkkkpppkkkkppp',
+    'pppppppppppppppp',
+    'pppppppppppppppp',
+    'ppppPPPPPPPPpppp',
+    '.pppppppppppppp.',
+    '.pppppppppppppp.',
+    '..pppppppppppp..',
+    '....PPPPPPPP....',
+    '...PPPP..PPPP...',
+    '................'])];
+  // the scorcher: a squat green lizard that breathes fire (faces right)
+  A.scorcher = [S([
+    '................',
+    '..........llll..',
+    '.........llwkll.',
+    '.........llkkll.',
+    '....llllllllllll',
+    '..lllllllllllrrr',
+    '.lllyylllllllll.',
+    'llllyyyyllllll..',
+    'lLlllyyyyylll...',
+    'lLLlllyyyyll....',
+    '.lLLllllllll....',
+    '..lllllllll.....',
+    '..LLL...LLL.....',
+    '.LLLL...LLLL....',
+    '................',
+    '................']), S([
+    '................',
+    '..........llll..',
+    '.........llwkll.',
+    '.........llkkll.',
+    '....llllllllllll',
+    '..lllllllllllrrr',
+    '.lllyylllllllll.',
+    'llllyyyyllllll..',
+    'lLlllyyyyylll...',
+    'lLLlllyyyyll....',
+    '.lLLllllllll....',
+    '..lllllllll.....',
+    '...LLL.LLL......',
+    '..LLLL.LLLL.....',
+    '................',
+    '................'])];
+  A.rock = S([
+    '.....nnnnnn.....',
+    '...nnttttttnn...',
+    '..nttttttttttn..',
+    '.nttttnnttttttn.',
+    '.nttttttttnnttn.',
+    'nttnntttttttttnN',
+    'ntttttttnntttttN',
+    'nttttttttttttttN',
+    'ntttnnttttttnttN',
+    'nttttttttttttttN',
+    '.ntttttnnttttttN',
+    '.nttttttttttttN.',
+    '..nNtttttttttN..',
+    '...NNNNttNNNN...',
+    '.....NNNNNN.....',
+    '................']);
+  A.rockBits = S([
+    '................',
+    '................',
+    '................',
+    '................',
+    '..nn......nn....',
+    '.ntt..nn..ttn...',
+    '.ntn.ntt...nt...',
+    '.....ntn........',
+    '..nn......nnn...',
+    '.nttn..nn.nttn..',
+    '.nttn.nttn.ntn..',
+    '..NN..nttN..N...',
+    '.......NN.......',
+    '................',
+    '................',
+    '................']);
+  A.flame = [S([
+    '................',
+    '................',
+    '................',
+    '.....yy.........',
+    '...yyyyyy..y....',
+    '.yyyyooyyyyyy...',
+    'yyyoooooooyyyy..',
+    'yoooorrrooooyyy.',
+    'yoooorrrooooyyy.',
+    'yyyoooooooyyyy..',
+    '.yyyyooyyyyyy...',
+    '...yyyyyy..y....',
+    '.....yy.........',
+    '................',
+    '................',
+    '................']), S([
+    '................',
+    '................',
+    '................',
+    '...y......y.....',
+    '..yyyy..yyyy....',
+    '.yyooyyyyooyy...',
+    'yyoooooooooyyy..',
+    'yooorrrrroooyyy.',
+    'yooorrrrroooyyy.',
+    'yyoooooooooyyy..',
+    '.yyooyyyyooyy...',
+    '..yyyy..yyyy....',
+    '...y......y.....',
+    '................',
+    '................',
+    '................'])];
+  A.pop = S([
+    '...w...w....w...',
+    '.w...w....w.....',
+    '....wwww.w....w.',
+    '..w.w..ww...w...',
+    'w..w....w.w.....',
+    '...w.ww..w...w..',
+    '.w.w.w.w.w.w....',
+    '...ww..w..ww..w.',
+    'w...w.....w.....',
+    '..w..wwwww...w..',
+    '....w.....w.....',
+    '.w....w.w...w..w',
+    '...w.......w....',
+    'w....w..w.....w.',
+    '..w.....w..w....',
+    '.....w......w...']);
+  A.dead = [S([
+    '................',
+    '....bbbbbb......',
+    '...bbbbbbbby....',
+    '..BBBBBBBBBB....',
+    '...ssskskss.....',
+    '....sssssss.....',
+    '..rrrrrrrr......',
+    '.rrrrrrrrrr.....',
+    '.rrrrrrrrrr.....',
+    '..bbbbbbbb......',
+    '..bbbbbbbb......',
+    '.kkkk..kkkk.....',
+    '................',
+    '................',
+    '................',
+    '................']), S([
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '....bbbbbbbb....',
+    '..bbbbbbbbbbby..',
+    '.BBBBBBBBBBBBBB.',
+    '.ssssskkssskss..',
+    'rrrrrrrrrrrrrrr.',
+    'rrrrrrrrrrrrrrr.',
+    'bbbbbbbbbbbbbbbb',
+    'kkkkk......kkkkk',
+    '................',
+    '................',
+    '................'])];
+  // bonus items, 16 x 16
+  function item(rows) { var r = rows.slice(); while (r.length < 16) r.push('................'); return S(r); }
+  A.items = [
+    item(['................', '..........ll.l..', '.........lllll..', '........oolll...', '.......ooooo....', '......ooooo.....', '.....ooooo......', '....oOooo.......', '...ooooo........', '..oooOo.........', '..oooo..........', '.ooo............', '.oo.............', 'o...............']), // carrot
+    item(['......l..l......', '.......ll.......', '......llll......', '.....pwwwwp.....', '....pwwwwwwp....', '...pwwwwwwwwp...', '...pwwwwwwwwp...', '...wwwwwwwwww...', '....wwwwwwww....', '.....wwwwww.....', '.......ww.......', '.......w........']), // turnip
+    item(['....rrrrrrrr....', '..rrrwwrrrrrrr..', '.rrrrrrrrwwrrrr.', 'rrwwrrrrrrrrrwwr', 'rrrrrrrwwrrrrrrr', '.rrrrrrrrrrrrrr.', '.....wwwwww.....', '.....wwwwww.....', '.....wwwwww.....', '....wwwwwwww....', '....qqqqqqqq....']), // mushroom
+    item(['..........l.....', '.........lll....', '........LlL.....', '.......lLll.....', '......llLl......', '.....lLll.......', '....llLl........', '...lLll.........', '..llLl..........', '.lLll...........', '.lll............', 'll..............']), // cucumber
+    item(['.......ll.......', '......llll......', '......vvvv......', '.....vvvvvv.....', '....vvvvvvvv....', '....vvwvvvvv....', '...vvwvvvvvvv...', '...vvvvvvvvvv...', '...vvvvvvvvvv...', '....vvvvvvvv....', '.....VVVVVV.....']), // eggplant
+    item(['.......l........', '.......ll.......', '....rrrrrrrr....', '...rrwrrrrrrr...', '..rrwrrrrrrrrr..', '..rrrrrrrrrrrr..', '..rrrrrrrrrrrr..', '..rrrrrrrrrrrr..', '...rrrrrrrrrr...', '...rr.rrrr.rr...', '................']), // pepper
+    item(['......l.l.......', '....llllll......', '...rrlllrrr.....', '..rrrrrrrrrr....', '.rrwwrrrrrrrr...', '.rrwrrrrrrrrr...', '.rrrrrrrrrrrr...', '.rrrrrrrrrrrr...', '..rrrrrrrrrr....', '...rrrrrrrr.....']), // tomato
+    item(['.......w........', '.......w........', '......www.......', '.....wwwww......', '....wwwqwww.....', '...wwwqwwqww....', '...wwqwwwqww....', '...wwqwwwqww....', '....wwwwwww.....', '.....g.g.g......']), // garlic
+    item(['................', '..LLLLLLLLLLLL..', '.LlLlLlLlLlLlLL.', 'LlLlLlLlLlLlLlLL', 'LLlLlLlLlLlLlLLL', '.rrrrrrrrrrrrrr.', '.rrkrrrkrrrkrrr.', '..rrrrkrrrrrrr..', '...rrrrrrkrrr...', '....rrrrrrrr....']), // watermelon
+    item(['.......y........', '......yyy.......', '......yyy.......', 'yyyyyyyyyyyyyyy.', '.yyyyyyyyyyyyy..', '..yyyykyykyyy...', '...yyyyyyyyy....', '...yyyyyyyyy....', '..yyyy...yyyy...', '..yyy.....yyy...', '.yy.........yy..']), // star fruit
+    item(['....l..l..l.....', '.....l.l.l......', '......lll.......', '.....ooooo......', '....oyoyoyo.....', '....ooyoyoo.....', '....oyoyoyo.....', '....ooyoyoo.....', '....oyoyoyo.....', '.....ooooo......']) // pineapple
+  ];
+  A.flowerSmall = S(['.m.m.', 'mmymm', '.m.m.', '..l..', '.ll..', '..l..', '..l..']);
+  A.flowerBig = S(['.w..w..', 'wwwwwww', '.wwyww.', 'wwwwwww', '.w..w..', '...l...', '..ll...', '...ll..', '...l...', '...l...']);
+  A.life = S(['..bbbb..', '.bbbbby.', '.BBBBBB.', '..sksk..', '.rrrrrr.', '.rrrrrr.', '..b..b..', '.kk..kk.']);
+  var F = {
+    '0': ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'], '1': ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+    '2': ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#####'], '3': ['#####', '...#.', '..#..', '...#.', '....#', '#...#', '.###.'],
+    '4': ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'], '5': ['#####', '#....', '####.', '....#', '....#', '#...#', '.###.'],
+    '6': ['..##.', '.#...', '#....', '####.', '#...#', '#...#', '.###.'], '7': ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'],
+    '8': ['.###.', '#...#', '#...#', '.###.', '#...#', '#...#', '.###.'], '9': ['.###.', '#...#', '#...#', '.####', '....#', '...#.', '.##..'],
+    A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'], B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
+    C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'], D: ['###..', '#..#.', '#...#', '#...#', '#...#', '#..#.', '###..'],
+    E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'], F: ['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+    G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.####'], H: ['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    I: ['.###.', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'], J: ['..###', '...#.', '...#.', '...#.', '...#.', '#..#.', '.##..'],
+    K: ['#...#', '#..#.', '#.#..', '##...', '#.#..', '#..#.', '#...#'], L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'], N: ['#...#', '#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#'],
+    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], P: ['####.', '#...#', '#...#', '####.', '#....', '#....', '#....'],
+    Q: ['.###.', '#...#', '#...#', '#...#', '#.#.#', '#..#.', '.##.#'], R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+    S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'], T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+    U: ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], V: ['#...#', '#...#', '#...#', '#...#', '#...#', '.#.#.', '..#..'],
+    W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '#.#.#', '.#.#.'], X: ['#...#', '#...#', '.#.#.', '..#..', '.#.#.', '#...#', '#...#'],
+    Y: ['#...#', '#...#', '.#.#.', '..#..', '..#..', '..#..', '..#..'], Z: ['#####', '....#', '...#.', '..#..', '.#...', '#....', '#####'],
+    '-': ['.....', '.....', '.....', '#####', '.....', '.....', '.....'], '=': ['.....', '.....', '#####', '.....', '#####', '.....', '.....'],
+    '?': ['.###.', '#...#', '....#', '...#.', '..#..', '.....', '..#..'], '!': ['..#..', '..#..', '..#..', '..#..', '..#..', '.....', '..#..'],
+    '*': ['.....', '#.#.#', '.###.', '#####', '.###.', '#.#.#', '.....'], '.': ['.....', '.....', '.....', '.....', '.....', '.....', '..#..'],
+    ':': ['.....', '..#..', '.....', '.....', '.....', '..#..', '.....'], '<': ['...#.', '..#..', '.#...', '#....', '.#...', '..#..', '...#.'],
+    '>': ['.#...', '..#..', '...#.', '....#', '...#.', '..#..', '.#...'], "'": ['..#..', '..#..', '.#...', '.....', '.....', '.....', '.....'],
+    ' ': ['.....', '.....', '.....', '.....', '.....', '.....', '.....']
+  };
+  return { PAL: PAL, sprites: A, font: F };
+})();
+if (typeof module !== 'undefined') module.exports = TPArt;
+</script>
+<script>
+/* Tunnel Pop game logic (no DOM). Modeled on the 1982 arcade digging game.
+   The arcade's 224 x 288 portrait screen at a fixed 60 ticks a second. The field is 14 x 12 blocks of dirt
+   (16 px) in 4 colored layers under a surface row. You dig tunnels; puffers (round, goggled) and scorchers
+   (fire-breathing lizards) walk the tunnels and now and then float through the dirt as eyes to chase you.
+   Throw the air pump to hook one, pump 4 times to pop it (it shrinks back if you stop). Dig under a rock and
+   it wobbles, then drops, crushing whatever is below. Points rise with depth; a scorcher popped from the side
+   is worth double. After two rocks fall, a bonus item shows in the middle. The last enemy runs for the surface.
+   Extra lives at 10,000 and 40,000, then every 40,000. Our characters, art and sounds; the rules follow the arcade. */
+var TP = (function () {
+  'use strict';
+  var W = 224, H = 288, TOP = 32, COLS = 14, ROWS = 12, FLOOR = TOP + ROWS * 16; // surface row y = 32; dirt rows y 48..239
+  var DW = 56, DH = 48; // dirt in 4 px cells
+  var START_X = 96, START_Y = TOP + 6 * 16;
+  var POP_PTS = [200, 300, 400, 500], CRUSH_PTS = [0, 1000, 2500, 4000, 6000, 8000, 10000, 12000, 15000];
+  var ITEM_PTS = [400, 600, 800, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
+  var ITEM_NAMES = ['carrot', 'turnip', 'mushroom', 'cucumber', 'eggplant', 'pepper', 'tomato', 'garlic', 'watermelon', 'star fruit', 'pineapple'];
+  var DIRS = { L: [-1, 0], R: [1, 0], U: [0, -1], D: [0, 1] }, OPP = { L: 'R', R: 'L', U: 'D', D: 'U' };
+
+  function rng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function rand(st) { st.rs = (Math.imul(st.rs >>> 0, 1664525) + 1013904223) >>> 0; return st.rs / 4294967296; }
+  function itemFor(round) { var i = round <= 3 ? round - 1 : round <= 17 ? 3 + Math.floor((round - 4) / 2) : 10; return Math.min(10, i); }
+  function layerOf(y) { var r = Math.floor((y + 8 - TOP) / 16); return r <= 3 ? 1 : r <= 6 ? 2 : r <= 9 ? 3 : 4; }
+
+  // ---------- dirt ----------
+  function cellIdx(i, j) { return j * DW + i; }
+  function boxClear(st, x, y) { // is the 16 x 16 box at (x, y) free of dirt?
+    if (x < 0 || x > W - 16 || y < TOP || y > FLOOR - 16) return false;
+    var i0 = Math.floor(x / 4), i1 = Math.ceil((x + 16) / 4), j0 = Math.floor((y - 48) / 4), j1 = Math.ceil((y + 16 - 48) / 4);
+    for (var j = Math.max(0, j0); j < Math.min(DH, j1); j++) for (var i = i0; i < i1; i++) if (st.dirt[cellIdx(i, j)]) return false;
+    return true;
+  }
+  function dirtAt(st, px, py) { if (py < 48 || py >= FLOOR || px < 0 || px >= W) return false; return !!st.dirt[cellIdx(Math.floor(px / 4), Math.floor((py - 48) / 4))]; }
+  function dig(st, x, y) {
+    var n = 0, i0 = Math.floor(x / 4), i1 = Math.ceil((x + 16) / 4), j0 = Math.floor((y - 48) / 4), j1 = Math.ceil((y + 16 - 48) / 4);
+    for (var j = Math.max(0, j0); j < Math.min(DH, j1); j++) for (var i = i0; i < i1; i++) { var k = cellIdx(i, j); if (st.dirt[k]) { st.dirt[k] = 0; n++; } }
+    return n;
+  }
+  function clearBlock(st, c, r) { dig(st, c * 16, TOP + r * 16); }
+  function aligned(e) { return e.x % 16 === 0 && (e.y - TOP) % 16 === 0; }
+  function overlap(a, b, d) { return Math.abs(a.x - b.x) < d && Math.abs(a.y - b.y) < d; }
+  function rockAt(st, x, y, skip) {
+    for (var i = 0; i < st.rocks.length; i++) { var r = st.rocks[i]; if (r === skip || (r.state !== 'still' && r.state !== 'wobble' && r.state !== 'wait')) continue; if (Math.abs(r.x - x) < 16 && Math.abs(r.y - y) < 16) return r; }
+    return null;
+  }
+
+  // ---------- a game ----------
+  function create(seed) {
+    var st = { seed: (seed == null ? Math.floor(Math.random() * 1e9) : seed) >>> 0, rs: 12345, t: 0, score: 0, lives: 3, round: 0, nextExtra: 10000, phase: 'ready', phaseT: 0, over: false, pops: [] };
+    newRound(st);
+    return st;
+  }
+  function enemyCount(round) { return round <= 2 ? 4 : round <= 4 ? 5 : round <= 6 ? 6 : round <= 9 ? 7 : 8; }
+  function scorcherCount(round) { return round <= 2 ? 1 : round <= 6 ? 2 : 3; }
+  function newRound(st) {
+    st.round++;
+    var R = rng(st.seed + st.round * 7919);
+    st.dirt = []; for (var k = 0; k < DW * DH; k++) st.dirt.push(1);
+    st.dug = []; for (var b = 0; b < COLS * 13; b++) st.dug.push(0);
+    for (var r0 = 1; r0 <= 6; r0++) clearBlock(st, 6, r0); // the starting shaft
+    clearBlock(st, 5, 6); clearBlock(st, 7, 6);
+    var taken = {}; function mark(c, r) { for (var dc = -1; dc <= 1; dc++) for (var dr = -1; dr <= 1; dr++) taken[(c + dc) + ',' + (r + dr)] = 1; }
+    for (var r1 = 0; r1 <= 7; r1++) for (var c1 = 4; c1 <= 8; c1++) taken[c1 + ',' + r1] = 1;
+    // enemy pockets: short tunnels, each with an enemy in it
+    st.enemies = [];
+    var n = enemyCount(st.round), nf = scorcherCount(st.round), tries = 0;
+    while (st.enemies.length < n && tries++ < 500) {
+      var horiz = R() < 0.6, len = 3 + (R() < 0.4 ? 1 : 0);
+      var c = Math.floor(R() * (COLS - (horiz ? len : 0))), r = 2 + Math.floor(R() * (ROWS - 1 - (horiz ? 0 : len)));
+      var cells = [];
+      for (var q = 0; q < len; q++) cells.push(horiz ? [c + q, r] : [c, r + q]);
+      if (cells.some(function (p) { return p[0] < 0 || p[0] >= COLS || p[1] < 2 || p[1] > ROWS || taken[p[0] + ',' + p[1]]; })) continue;
+      cells.forEach(function (p) { clearBlock(st, p[0], p[1]); mark(p[0], p[1]); });
+      var pick = cells[Math.floor(R() * cells.length)], kind = st.enemies.length < nf ? 'scorcher' : 'puffer';
+      st.enemies.push({ kind: kind, x: pick[0] * 16, y: TOP + pick[1] * 16, sx: pick[0] * 16, sy: TOP + pick[1] * 16, dir: horiz ? 'L' : 'U', state: 'walk', acc: 0, anim: 0,
+        ghostT: 240 + Math.floor(R() * 360), inflate: 0, lastPump: 0, fireT: 0, fireCool: 180 + Math.floor(R() * 240), flame: 0, moved: 0 });
+    }
+    // rocks: in solid dirt with dirt under them, away from the pockets and the shaft
+    st.rocks = [];
+    var nr = st.round <= 4 ? 3 : 4; tries = 0;
+    while (st.rocks.length < nr && tries++ < 500) {
+      var rc = Math.floor(R() * COLS), rr = 1 + Math.floor(R() * 9);
+      if (taken[rc + ',' + rr] || taken[rc + ',' + (rr + 1)] || taken[rc + ',' + (rr + 2)]) continue;
+      if (st.rocks.some(function (o) { return Math.abs(o.x / 16 - rc) <= 1 && Math.abs((o.y - TOP) / 16 - rr) <= 2; })) continue;
+      st.rocks.push({ x: rc * 16, y: TOP + rr * 16, state: 'still', t: 0, carried: [], player: false });
+    }
+    st.rocksDropped = 0; st.item = { on: false, t: 0, done: false, k: itemFor(st.round) };
+    st.total = st.enemies.length; st.killed = 0; st.roundT = 0; st.fleeing = false;
+    resetPositions(st);
+    st.phase = 'ready'; st.phaseT = 0;
+  }
+  function resetPositions(st) {
+    st.player = { x: START_X, y: START_Y, dir: 'R', moving: false, anim: 0, acc: 0, stepT: 0 };
+    st.hook = { on: false, len: 0, dir: 'R', state: 'off', target: -1, pumpHold: 0 };
+    st.enemies.forEach(function (e, i) {
+      if (e.state === 'gone') return;
+      e.x = e.sx; e.y = e.sy; e.state = 'walk'; e.inflate = 0; e.acc = 0; e.flame = 0; e.fireT = 0; e.ghostT = 240 + ((i * 97 + st.round * 31) % 360);
+    });
+  }
+
+  // ---------- speeds ----------
+  function enemySpeed(st, e) {
+    var base = Math.min(0.95, 0.52 + 0.035 * (st.round - 1)) * (1 + 0.06 * st.killed) * (st.roundT > 3600 ? 1.12 : 1);
+    if (e.state === 'ghost') return base * 0.7;
+    if (e.state === 'flee') return 1.25;
+    return base;
+  }
+  var PLAYER_SPEED = 0.9;
+
+  // ---------- one tick ----------
+  // input: { dir: 'L'|'R'|'U'|'D'|null, pump: pressed this tick, pumpHeld }
+  function tick(st, input) {
+    var ev = [];
+    st.t++;
+    st.pops = st.pops.filter(function (p) { return --p.t > 0; });
+    if (st.phase === 'over') return ev;
+    if (st.phase === 'ready') { if (++st.phaseT >= 120) { st.phase = 'play'; st.phaseT = 0; } return ev; }
+    if (st.phase === 'dying') { dying(st, ev); return ev; }
+    if (st.phase === 'clear') { if (++st.phaseT >= 100) { newRound(st); ev.push('round'); } return ev; }
+    st.roundT++;
+    player(st, input, ev);
+    if (st.phase !== 'play') return ev;
+    hook(st, input, ev);
+    for (var i = 0; i < st.enemies.length; i++) enemy(st, st.enemies[i], i, ev);
+    rocks(st, ev);
+    item(st, ev);
+    if (st.phase !== 'play') return ev;
+    // the last one runs for it
+    var live = st.enemies.filter(function (e) { return e.state !== 'gone' && e.state !== 'crushed' && e.state !== 'pop'; });
+    if (live.length === 1 && st.total > 1 && !st.fleeing && live[0].state !== 'inflated') {
+      st.fleeing = true; var f = live[0]; f.state = 'flee'; f.acc = 0; f.fdir = f.x + 8 < W / 2 ? 'L' : 'R'; ev.push('flee');
+    }
+    if (!st.enemies.some(function (e) { return e.state !== 'gone'; })) { st.phase = 'clear'; st.phaseT = 0; ev.push('clear'); }
+    return ev;
+  }
+  function addScore(st, n, ev) {
+    st.score += n;
+    while (st.score >= st.nextExtra) { st.lives++; ev.push('extra'); st.nextExtra = st.nextExtra === 10000 ? 40000 : st.nextExtra + 40000; }
+  }
+  function popup(st, x, y, text) { st.pops.push({ x: x, y: y, text: String(text), t: 70 }); }
+
+  // ---------- the digger ----------
+  function player(st, input, ev) {
+    var p = st.player, want = input.dir;
+    if (st.hook.state === 'out') { p.moving = false; return; }
+    if (st.hook.state === 'hold' && want) { releaseHook(st); }
+    if (st.hook.state === 'hold') { p.moving = false; return; }
+    if (!want) { p.moving = false; return; }
+    var go = want;
+    if (want !== p.dir && want !== OPP[p.dir]) { // a turn: only on the grid; until then keep going the same way
+      var ok = (want === 'U' || want === 'D') ? p.x % 16 === 0 : (p.y - TOP) % 16 === 0;
+      if (!ok) go = p.dir;
+    }
+    p.dir = go; p.acc += PLAYER_SPEED; p.moving = false;
+    while (p.acc >= 1) {
+      p.acc -= 1;
+      var d = DIRS[go], nx = p.x + d[0], ny = p.y + d[1];
+      if (nx < 0 || nx > W - 16 || ny < TOP || ny > FLOOR - 16) break;
+      if (rockAt(st, nx, ny)) break;
+      p.x = nx; p.y = ny; p.moving = true;
+      var dugNow = dig(st, p.x, p.y);
+      if (aligned(p)) {
+        var bi = ((p.y - TOP) / 16) * COLS + p.x / 16;
+        if (!st.dug[bi] && p.y > TOP) { st.dug[bi] = 1; if (dugNow || p.digging) addScore(st, 10, ev); }
+        p.digging = false;
+      } else if (dugNow) p.digging = true;
+    }
+    if (p.moving) { p.anim++; if (++p.stepT >= 8) { p.stepT = 0; ev.push(p.digging ? 'dig' : 'walk'); } }
+  }
+
+  // ---------- the air pump ----------
+  function hook(st, input, ev) {
+    var h = st.hook, p = st.player;
+    if (input.pump) {
+      if (h.state === 'hold') pump(st, ev);
+      else if (h.state === 'off') { h.state = 'out'; h.len = 0; h.dir = p.dir; ev.push('throw'); }
+    } else if (input.pumpHeld && h.state === 'hold') { if (++h.pumpHold >= 18) { h.pumpHold = 0; pump(st, ev); } }
+    if (!input.pumpHeld) h.pumpHold = 0;
+    if (h.state === 'out') {
+      h.len += 4;
+      var tip = hookTip(st);
+      // hits an enemy?
+      for (var i = 0; i < st.enemies.length; i++) {
+        var e = st.enemies[i];
+        if (!(e.state === 'walk' || e.state === 'charge' || e.state === 'fire' || e.state === 'inflated' || (e.state === 'flee' && !e.inDirt))) continue;
+        if (tip[0] >= e.x + 1 && tip[0] <= e.x + 15 && tip[1] >= e.y + 1 && tip[1] <= e.y + 15) {
+          h.state = 'hold'; h.target = i; h.pumpHold = 0;
+          if (e.state === 'flee') st.fleeing = false;
+          e.state = 'inflated'; e.flame = 0; e.inflate = Math.max(1, e.inflate + 1); e.lastPump = st.t; ev.push('hook');
+          if (e.inflate >= 4) popEnemy(st, e, ev);
+          return;
+        }
+      }
+      if (dirtAt(st, tip[0], tip[1]) || tip[0] < 0 || tip[0] >= W || tip[1] < TOP || tip[1] >= FLOOR || h.len >= 44) h.state = 'back';
+    } else if (h.state === 'back') { h.len -= 8; if (h.len <= 0) { h.len = 0; h.state = 'off'; } }
+    else if (h.state === 'hold') { var t = st.enemies[h.target]; if (!t || t.state !== 'inflated') { h.state = 'back'; } }
+  }
+  function hookTip(st) { var p = st.player, h = st.hook, d = DIRS[h.dir]; return [p.x + 8 + d[0] * (6 + h.len), p.y + 8 + d[1] * (6 + h.len)]; }
+  function releaseHook(st) { st.hook.state = 'back'; st.hook.target = -1; }
+  function pump(st, ev) {
+    var e = st.enemies[st.hook.target];
+    if (!e || e.state !== 'inflated') return;
+    e.inflate++; e.lastPump = st.t; ev.push('pump');
+    if (e.inflate >= 4) popEnemy(st, e, ev);
+  }
+  function popEnemy(st, e, ev) {
+    var pts = POP_PTS[layerOf(e.y) - 1];
+    if (e.kind === 'scorcher' && (st.hook.dir === 'L' || st.hook.dir === 'R')) pts *= 2;
+    e.state = 'pop'; e.t = 0; st.killed++; st.hook.state = 'back'; st.hook.target = -1;
+    addScore(st, pts, ev); popup(st, e.x, e.y + 4, pts); ev.push('pop');
+  }
+
+  // ---------- enemies ----------
+  function canWalk(st, e, x, y) { return boxClear(st, x, y) && !rockAt(st, x, y); }
+  function enemy(st, e, idx, ev) {
+    var p = st.player;
+    if (e.state === 'gone' || e.state === 'crushed') return;
+    if (e.state === 'pop') { if (++e.t >= 24) e.state = 'gone'; return; }
+    if (e.state === 'inflated') {
+      if (st.t - e.lastPump > 50 && (st.t - e.lastPump) % 30 === 0) { e.inflate--; if (e.inflate <= 0) { e.inflate = 0; e.state = 'walk'; e.stun = 40; if (st.hook.target === idx) releaseHook(st); } }
+      return;
+    }
+    if (e.stun > 0) { e.stun--; return; }
+    e.anim++;
+    // touching the digger
+    if ((e.state === 'walk' || e.state === 'charge' || e.state === 'fire' || e.state === 'flee') && !e.inDirt && overlap(e, p, 11)) { killPlayer(st, ev); return; }
+    if (e.state === 'charge') { if (++e.fireT >= 40) { e.state = 'fire'; e.fireT = 0; ev.push('fire'); } return; }
+    if (e.state === 'fire') {
+      e.fireT++; e.flame = e.fireT < 8 ? 16 : e.fireT < 16 ? 32 : 48;
+      var fx0 = e.dir === 'R' ? e.x + 16 : e.x - e.flame, fx1 = fx0 + e.flame;
+      if (p.x + 13 > fx0 && p.x + 3 < fx1 && Math.abs(p.y - e.y) < 10) { killPlayer(st, ev); return; }
+      if (e.fireT >= 60) { e.state = 'walk'; e.flame = 0; e.fireCool = 200 + ((st.t * 13 + idx * 57) % 240); }
+      return;
+    }
+    e.acc += enemySpeed(st, e);
+    while (e.acc >= 1) {
+      e.acc -= 1;
+      if (e.state === 'flee') { flee(st, e); if (e.state === 'gone') { ev.push('escape'); return; } continue; }
+      if (e.state === 'ghost') { ghost(st, e); continue; }
+      walk(st, e, idx);
+    }
+    // scorchers breathe fire now and then, more when you're in line with them
+    if (e.kind === 'scorcher' && e.state === 'walk' && aligned(e) && (e.dir === 'L' || e.dir === 'R')) {
+      if (e.fireCool > 0) e.fireCool--;
+      else {
+        var inLine = Math.abs(p.y - e.y) < 16 && (e.dir === 'R' ? p.x > e.x : p.x < e.x) && Math.abs(p.x - e.x) < 96;
+        if (rand(st) < (inLine ? 0.6 : 0.05)) { e.state = 'charge'; e.fireT = 0; }
+      }
+    }
+    // go ghost now and then
+    if (e.state === 'walk') { if (--e.ghostT <= 0 && !st.fleeing) { e.state = 'ghost'; e.moved = 0; ev.push('ghost'); } }
+  }
+  function walk(st, e, idx) {
+    var p = st.player;
+    if (aligned(e)) {
+      var opts = ['L', 'R', 'U', 'D'].filter(function (d) { var v = DIRS[d]; return canWalk(st, e, e.x + v[0], e.y + v[1]); });
+      if (!opts.length) { e.ghostT = Math.min(e.ghostT, 30); return; }
+      var fwd = opts.filter(function (d) { return d !== OPP[e.dir]; });
+      if (!fwd.length) fwd = opts;
+      var chase = rand(st) * 100 < 55 + Math.min(35, st.round * 3);
+      if (chase) fwd.sort(function (a, b) { return distAfter(e, a, p) - distAfter(e, b, p); });
+      else if (fwd.length > 1) fwd = [fwd[Math.floor(rand(st) * fwd.length)]];
+      e.dir = fwd[0];
+    }
+    var v = DIRS[e.dir];
+    if (canWalk(st, e, e.x + v[0], e.y + v[1])) { e.x += v[0]; e.y += v[1]; }
+    else e.dir = OPP[e.dir];
+  }
+  function distAfter(e, d, p) { var v = DIRS[d]; return Math.abs(e.x + v[0] * 16 - p.x) + Math.abs(e.y + v[1] * 16 - p.y); }
+  function ghost(st, e) {
+    var p = st.player, dx = p.x - e.x, dy = p.y - e.y;
+    if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) e.x += dx > 0 ? 1 : -1; else if (dy !== 0) e.y += dy > 0 ? 1 : -1;
+    e.moved++;
+    if (e.moved > 24 && aligned(e) && canWalk(st, e, e.x, e.y)) { e.state = 'walk'; e.ghostT = 300 + ((st.t * 7) % 300) - Math.min(200, st.round * 10) - (st.roundT > 3600 ? 120 : 0); }
+  }
+  function flee(st, e) {
+    if (e.y > TOP) { e.y -= 1; e.x += e.x % 16 ? (e.x % 16 < 8 ? -1 : 1) : 0; e.inDirt = !boxClear(st, e.x, e.y); return; }
+    e.inDirt = false; e.dir = e.fdir;
+    e.x += e.fdir === 'L' ? -1 : 1;
+    if (e.x <= -16 || e.x >= W) e.state = 'gone';
+  }
+
+  // ---------- rocks ----------
+  function rocks(st, ev) {
+    var p = st.player;
+    st.rocks.forEach(function (r) {
+      if (r.state === 'gone') return;
+      if (r.state === 'still' || r.state === 'wait') {
+        if (r.y + 16 < FLOOR && boxClear(st, r.x, r.y + 16)) {
+          var under = Math.abs(p.x - r.x) < 16 && p.y >= r.y + 16 && p.y < r.y + 32;
+          r.state = under ? 'wait' : 'wobble'; r.t = 0;
+          if (!under) ev.push('wobble');
+        }
+        return;
+      }
+      if (r.state === 'wobble') { if (++r.t >= 45) { r.state = 'fall'; r.t = 0; } return; }
+      if (r.state === 'fall') {
+        for (var s = 0; s < 2; s++) {
+          r.y += 1;
+          // crush what's under it
+          st.enemies.forEach(function (e) {
+            if ((e.state === 'walk' || e.state === 'inflated' || e.state === 'charge' || e.state === 'fire' || (e.state === 'flee' && !e.inDirt)) && Math.abs(e.x - r.x) < 13 && e.y - r.y >= 0 && e.y - r.y < 14) {
+              e.state = 'crushed'; r.carried.push(e); st.killed++; if (st.hook.target === st.enemies.indexOf(e)) releaseHook(st);
+            }
+          });
+          if (!r.player && st.phase === 'play' && Math.abs(p.x - r.x) < 13 && p.y - r.y >= 0 && p.y - r.y < 14) { r.player = true; killPlayer(st, ev, 'crush'); }
+          r.carried.forEach(function (e) { e.y = r.y + 10; });
+          if (r.player) p.y = Math.min(FLOOR - 16, r.y + 10);
+          if ((r.y - TOP) % 16 === 0 && (r.y + 16 >= FLOOR || !boxClear(st, r.x, r.y + 16))) {
+            r.state = 'land'; r.t = 0; ev.push('thud');
+            var n = r.carried.length;
+            if (n) { var pts = CRUSH_PTS[Math.min(8, n)]; addScore(st, pts, ev); popup(st, r.x, r.y + 4, pts); ev.push('crush'); }
+            r.carried.forEach(function (e) { e.state = 'gone'; });
+            break;
+          }
+        }
+        return;
+      }
+      if (r.state === 'land') { if (++r.t >= 36) { r.state = 'gone'; st.rocksDropped++; if (st.rocksDropped === 2 && !st.item.done) { st.item.on = true; st.item.t = 600; ev.push('item'); } } }
+    });
+  }
+  function item(st, ev) {
+    var it = st.item;
+    if (!it.on) return;
+    if (--it.t <= 0) { it.on = false; it.done = true; return; }
+    if (overlap(st.player, { x: START_X, y: START_Y }, 12)) {
+      it.on = false; it.done = true; var pts = ITEM_PTS[it.k]; addScore(st, pts, ev); popup(st, START_X, START_Y + 4, pts); ev.push('bonus');
+    }
+  }
+
+  // ---------- losing a life ----------
+  function killPlayer(st, ev, how) {
+    if (st.phase !== 'play') return;
+    st.phase = 'dying'; st.phaseT = 0; st.how = how || 'hit'; st.hook.state = 'off'; st.hook.target = -1;
+    ev.push('die');
+  }
+  function dying(st, ev) {
+    st.phaseT++;
+    // falling rocks keep falling while the digger goes down
+    if (st.phaseT < 100) rocks(st, []);
+    if (st.phaseT === 130) {
+      st.lives--;
+      if (st.lives <= 0) { st.lives = 0; st.phase = 'over'; st.over = true; ev.push('over'); return; }
+      st.rocks.forEach(function (r) { if (r.state === 'fall' || r.state === 'land') { r.state = 'gone'; r.carried.forEach(function (e) { e.state = 'gone'; }); st.rocksDropped++; } r.player = false; if (r.state === 'wait') r.state = 'still'; });
+      st.item.on = false; st.fleeing = false;
+      resetPositions(st);
+      st.phase = 'ready'; st.phaseT = 40;
+      if (!st.enemies.some(function (e) { return e.state !== 'gone'; })) { st.phase = 'clear'; st.phaseT = 0; }
+    }
+  }
+
+  return {
+    W: W, H: H, TOP: TOP, FLOOR: FLOOR, COLS: COLS, ROWS: ROWS, DW: DW, DH: DH, START_X: START_X, START_Y: START_Y,
+    ITEM_PTS: ITEM_PTS, ITEM_NAMES: ITEM_NAMES, POP_PTS: POP_PTS, CRUSH_PTS: CRUSH_PTS,
+    create: create, tick: tick, layerOf: layerOf, itemFor: itemFor, hookTip: hookTip, boxClear: boxClear
+  };
+})();
+if (typeof module !== 'undefined') module.exports = TP;
+</script>
+<script>
+/* Tunnel Pop drawing: the 224 x 288 arcade screen plotted pixel by pixel, then scaled up by whole device pixels. */
+var TPDraw = (function () {
+  'use strict';
+  var A = TPArt.sprites, FONT = TPArt.font, PAL = TPArt.PAL, W = TP.W, H = TP.H;
+  var native = null, nctx = null, img = null, px = null, COL = {};
+  function rgb(hex) { var n = parseInt(hex.slice(1), 16); return (255 << 24) | ((n & 255) << 16) | (((n >> 8) & 255) << 8) | (n >> 16); }
+  for (var k in PAL) COL[k] = rgb(PAL[k]);
+  var BLACK = rgb('#000000'), SKY = rgb('#14206b'), SKY2 = rgb('#1d2f8f'), WHITE = rgb('#f4f4f4'), RED = rgb('#ff4a3a'), YEL = rgb('#ffd83a'), CYAN = rgb('#7fe0ff');
+  var LAYERS = [['#ffc84a', '#e0a02a'], ['#f08c2c', '#c86a18'], ['#d1502a', '#a8381a'], ['#9c3218', '#72200e']].map(function (p) { return [rgb(p[0]), rgb(p[1])]; });
+  function init() {
+    native = document.createElement('canvas'); native.width = W; native.height = H;
+    nctx = native.getContext('2d'); img = nctx.createImageData(W, H); px = new Uint32Array(img.data.buffer);
+  }
+  function dot(x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < W && y < H) px[y * W + x] = c; }
+  function rect(x, y, w, h, c) { for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) dot(x + i, y + j, c); }
+  // sprite with options: flip (mirror left-right), rot (0, 1 = quarter turn clockwise, 3 = counter-clockwise), scale, tint
+  function spr(s, x, y, o) {
+    o = o || {};
+    var sc = o.scale || 1, w = s.w, h = s.h, ow = Math.round(w * sc), oh = Math.round(h * sc);
+    for (var j = 0; j < oh; j++) for (var i = 0; i < ow; i++) {
+      var u = Math.floor(i / sc), v = Math.floor(j / sc), su = u, sv = v;
+      if (o.rot === 1) { su = v; sv = h - 1 - u; } else if (o.rot === 3) { su = w - 1 - v; sv = u; }
+      if (o.flip) su = w - 1 - su;
+      var ch = s.rows[sv] && s.rows[sv].charAt(su);
+      if (!ch || ch === '.') continue;
+      dot(x + i, y + j, o.tint != null ? o.tint : COL[ch]);
+    }
+  }
+  function text(str, x, y, c) {
+    str = String(str).toUpperCase();
+    for (var k = 0; k < str.length; k++) { var g = FONT[str[k]] || FONT[' ']; for (var j = 0; j < 7; j++) for (var i = 0; i < 5; i++) if (g[j].charCodeAt(i) === 35) dot(x + k * 8 + i, y + j, c); }
+  }
+  function center(str, y, c) { text(str, Math.floor((W - String(str).length * 8) / 2) + 1, y, c); }
+  function right(str, x, y, c) { text(str, x - String(str).length * 8, y, c); }
+
+  function header(score, hi) {
+    text('1UP', 16, 1, RED); right(String(score || 0), 64, 9, WHITE);
+    center('HI-SCORE', 1, RED); center(String(hi || 0), 9, WHITE);
+  }
+  function sky(round) {
+    rect(0, 16, W, 32, SKY);
+    rect(0, 44, W, 4, SKY2);
+    // flowers on the surface: a big one for every 10 rounds, a small one for each other round
+    if (!round) return;
+    var big = Math.floor(round / 10), small = round % 10, x = W - 12;
+    for (var s = 0; s < small && x > 120; s++) { spr(A.flowerSmall, x, 41); x -= 8; }
+    for (var b = 0; b < big && x > 120; b++) { x -= 2; spr(A.flowerBig, x - 2, 38); x -= 10; }
+  }
+  function dirt(st) {
+    for (var y = 48; y < TP.FLOOR; y++) {
+      var layer = LAYERS[Math.min(3, Math.floor((y - 48) / 48))], j = (y - 48) >> 2;
+      for (var x = 0; x < W; x++) {
+        var on = st ? st.dirt[j * TP.DW + (x >> 2)] : 1;
+        if (!on) { px[y * W + x] = BLACK; continue; }
+        var h = ((x * 7 + y * 13) ^ (x * y)) & 31;
+        px[y * W + x] = h === 0 || (h === 7 && (x + y) % 3 === 0) ? layer[1] : layer[0];
+      }
+    }
+  }
+  function footer(st, round) {
+    var lives = st ? st.lives - (st.phase === 'dying' || st.phase === 'over' ? 0 : 1) : 2;
+    for (var k = 0; k < Math.min(8, lives); k++) spr(A.life, 8 + k * 11, 250);
+    right('ROUND ' + (round || 1), W - 8, 272, WHITE);
+  }
+  function minerOpts(dir) { return dir === 'L' ? { flip: true } : dir === 'U' ? { rot: 3 } : dir === 'D' ? { rot: 1 } : {}; }
+
+  function game(st, hi, blink) {
+    px.fill(BLACK);
+    header(st.score, Math.max(hi, st.score));
+    sky(st.round);
+    dirt(st);
+    // bonus item
+    if (st.item.on && (st.item.t > 120 || blink)) spr(A.items[st.item.k], TP.START_X, TP.START_Y);
+    // rocks
+    st.rocks.forEach(function (r) {
+      if (r.state === 'gone') return;
+      if (r.state === 'land' && r.t > 12) { spr(A.rockBits, r.x, r.y); return; }
+      var jig = r.state === 'wobble' ? ((r.t >> 2) % 2 ? 1 : -1) : 0;
+      spr(A.rock, r.x + jig, r.y);
+    });
+    // enemies
+    st.enemies.forEach(function (e) {
+      if (e.state === 'gone') return;
+      var base = e.kind === 'puffer' ? A.puffer : A.scorcher, f = (e.anim >> 3) % 2, flip = e.dir === 'L';
+      if (e.state === 'ghost' || (e.state === 'flee' && e.inDirt)) { eyes(e, st); return; }
+      if (e.state === 'pop') { spr(A.pop, e.x - 4, e.y - 4, { scale: 1.5 }); return; }
+      if (e.state === 'crushed') { spr(base[0], e.x, e.y + 6, { flip: flip, scale: 1 }); return; }
+      if (e.state === 'inflated') { var sc = 1 + e.inflate * 0.22, sz = Math.round(16 * sc), off = Math.floor((sz - 16) / 2); spr(base[0], e.x - off, e.y - off, { flip: flip, scale: sc }); return; }
+      var tint = e.state === 'charge' && (e.fireT >> 2) % 2 ? YEL : null;
+      spr(base[f], e.x, e.y, { flip: e.kind === 'scorcher' ? flip : false, tint: tint });
+      if (e.state === 'fire' && e.flame) {
+        var fl = A.flame[(e.fireT >> 2) % 2];
+        for (var q = 0; q < e.flame; q += 16) spr(fl, e.dir === 'R' ? e.x + 16 + q : e.x - 16 - q, e.y, { flip: e.dir === 'L' });
+      }
+    });
+    // the digger and the pump
+    var p = st.player;
+    if (st.phase === 'dying') {
+      var dk = st.phaseT < 50 ? 0 : 1;
+      if (st.how === 'crush') spr(A.dead[1], p.x, p.y);
+      else if (st.phaseT < 100 || blink) spr(A.dead[dk], p.x, p.y, { flip: p.dir === 'L' });
+    } else if (st.phase !== 'clear' || blink) {
+      if (st.hook.state !== 'off') hookLine(st);
+      spr(A.miner[p.moving ? (p.anim >> 3) % 2 : 0], p.x, p.y, minerOpts(p.dir));
+    }
+    // points
+    st.pops.forEach(function (o) { text(o.text, Math.max(0, Math.min(W - o.text.length * 8, o.x + 8 - o.text.length * 4)), o.y, WHITE); });
+    footer(st, st.round);
+    if (st.phase === 'ready') { center('ROUND ' + st.round, 120, WHITE); if (blink || st.phaseT > 60) center('READY!', 136, YEL); }
+    if (st.phase === 'over') center('GAME OVER', 136, RED);
+  }
+  function eyes(e, st) {
+    var on = (st.t >> 3) % 2;
+    if (!on && e.state === 'ghost') return;
+    var lx = st.player.x > e.x ? 1 : 0;
+    [[3, 5], [9, 5]].forEach(function (o) { rect(e.x + o[0], e.y + o[1], 4, 4, WHITE); rect(e.x + o[0] + lx * 2, e.y + o[1] + 1, 2, 2, BLACK); });
+  }
+  function hookLine(st) {
+    var p = st.player, h = st.hook, tip = TP.hookTip(st), sx = p.x + 8, sy = p.y + 8;
+    var dx = Math.sign(tip[0] - sx), dy = Math.sign(tip[1] - sy), n = Math.max(Math.abs(tip[0] - sx), Math.abs(tip[1] - sy));
+    for (var i = 6; i <= n; i++) dot(sx + dx * i, sy + dy * i, WHITE);
+    rect(tip[0] - 1, tip[1] - 1, 3, 3, CYAN);
+    if (h.state === 'hold' && (st.t >> 2) % 2) dot(tip[0], tip[1], WHITE);
+  }
+
+  // ---------- title and high scores ----------
+  function title(hi, table, blink) {
+    px.fill(BLACK);
+    header(0, hi);
+    sky(0);
+    dirt(null);
+    rect(24, 60, W - 48, 172, BLACK);
+    center('TUNNEL POP', 72, YEL);
+    spr(A.miner[0], 40, 94); text('DIG AND PUMP', 64, 99, WHITE);
+    spr(A.puffer[0], 40, 116); text('PUFFER', 64, 121, WHITE);
+    spr(A.scorcher[0], 40, 138); text('SCORCHER', 64, 143, WHITE);
+    center('- BEST DIGGERS -', 166, CYAN);
+    (table || []).slice(0, 5).forEach(function (r, i) {
+      var y = 180 + i * 10;
+      text((i + 1) + '.', 36, y, i === 0 ? YEL : WHITE); right(String(r.score), 132, y, WHITE); text(r.name, 148, y, i === 0 ? YEL : WHITE);
+    });
+    if (blink) center('PRESS PUMP', 256, WHITE);
+    right('ROUND 1', W - 8, 272, WHITE);
+  }
+  function initials(score, name, pos, blink) {
+    px.fill(BLACK);
+    header(score, 0);
+    center('GREAT DIGGING!', 72, YEL);
+    center('SCORE ' + score, 92, WHITE);
+    center('ENTER YOUR INITIALS', 120, CYAN);
+    for (var i = 0; i < 3; i++) {
+      var x = 88 + i * 18;
+      if (i !== pos || blink) text(name[i], x + 1, 144, WHITE);
+      rect(x, 154, 7, 1, i === pos ? YEL : WHITE);
+    }
+    center('UP DOWN = LETTER', 184, WHITE);
+    center('LEFT RIGHT = MOVE', 196, WHITE);
+    center('PUMP = DONE', 208, WHITE);
+  }
+  function present(cv) {
+    nctx.putImageData(img, 0, 0);
+    var c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+    c.drawImage(native, 0, 0, cv.width, cv.height);
+  }
+  return { init: init, game: game, title: title, initials: initials, present: present };
+})();
+</script>
+<script>
+/* Tunnel Pop sounds: synthesized with Web Audio. While the digger moves, our own little tune plays note by note
+   (like the arcade, the music only runs while you walk). */
+var TPSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, step = 0;
+  // our own walking tune (MIDI note numbers), one note per step
+  var TUNE = [72, 76, 79, 76, 74, 77, 81, 77, 76, 79, 83, 79, 77, 74, 72, 74];
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.45; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur, f0, f1, gain) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime, len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    var g = a.createGain(); g.gain.value = gain; s.connect(f); f.connect(g); g.connect(master); s.start(t);
+  }
+  function play(e) {
+    if (!on) return;
+    switch (e) {
+      case 'walk': case 'dig': tone('square', hz(TUNE[step % TUNE.length]), 0, 0.1, 0.06); if (step % 2 === 0) tone('triangle', hz(TUNE[step % TUNE.length] - 24), 0, 0.12, 0.12); step++; break;
+      case 'throw': tone('square', 900, 1800, 0.08, 0.06); break;
+      case 'hook': tone('square', 600, 0, 0.05, 0.08); break;
+      case 'pump': tone('sawtooth', 220, 440, 0.12, 0.1); break;
+      case 'pop': noise(0.25, 4000, 300, 0.4); tone('square', 880, 220, 0.2, 0.08); break;
+      case 'wobble': tone('triangle', 140, 120, 0.3, 0.12); break;
+      case 'thud': noise(0.3, 600, 60, 0.6); break;
+      case 'crush': [523, 659, 784, 1047].forEach(function (f, i) { tone('square', f, 0, 0.1, 0.07, i * 0.07); }); break;
+      case 'fire': noise(0.6, 1800, 400, 0.3); break;
+      case 'die': [659, 622, 587, 554, 523, 494, 466, 440].forEach(function (f, i) { tone('square', f, 0, 0.12, 0.08, i * 0.12); }); break;
+      case 'extra': case 'bonus': [784, 988, 1175, 1568].forEach(function (f, i) { tone('square', f, 0, 0.1, 0.07, i * 0.08); }); break;
+      case 'item': tone('triangle', 1319, 0, 0.3, 0.2); break;
+      case 'flee': [440, 523, 440, 523].forEach(function (f, i) { tone('square', f, 0, 0.1, 0.06, i * 0.1); }); break;
+      case 'clear': [523, 659, 784, 659, 784, 1047].forEach(function (f, i) { tone('square', f, 0, 0.14, 0.07, i * 0.13); }); break;
+      case 'over': [392, 349, 330, 262].forEach(function (f, i) { tone('square', f, 0, 0.3, 0.08, i * 0.25); }); break;
+      case 'ghost': tone('sine', 300, 150, 0.2, 0.05); break;
+    }
+  }
+  return { setEnabled: function (v) { on = !!v; if (on) ctx(); }, unlock: function () { if (on) ctx(); }, play: play, stopAll: function () {} };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = TPSound, TICK = 1000 / 60;
+
+  // ================= storage =================
+  var store = Goobs.store('digger');
+  var settings = { sound: false, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { table: [{ name: 'DIG', score: 5000, round: 3 }, { name: 'POP', score: 4000, round: 2 }, { name: 'ROX', score: 3000, round: 2 }, { name: 'ZAP', score: 2000, round: 1 }, { name: 'MOE', score: 1000, round: 1 }],
+    lastName: 'AAA', seenHelp: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { games: 0, best: 0, bestRound: 0, popped: 0, crushed: 0, items: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+  function hiScore() { return Math.max(meta.table[0] ? meta.table[0].score : 0, stats.best); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+
+  // ================= state =================
+  // mode: 'title' | 'game' | 'initials'
+  var st = null, mode = 'title', paused = false, acc = 0, lastT = 0, blinkT = 0, overShown = false;
+  var input = { dir: null, pump: false, pumpHeld: false }, entry = null;
+  function newGame() { st = TP.create(); mode = 'game'; paused = false; overShown = false; acc = 0; store.del('run'); }
+  function saveRun() { if (mode === 'game' && st && !st.over) store.set('run', st); else store.del('run'); }
+  function resumeRun() {
+    var r = store.get('run', null);
+    if (!r || r.over || !Array.isArray(r.dirt) || r.dirt.length !== TP.DW * TP.DH) return false;
+    st = r; mode = 'game'; paused = true; overShown = false;
+    return true;
+  }
+  function pause() { if (mode !== 'game' || !st || st.over || paused) return; paused = true; saveRun(); showPaused(); }
+  function unpause() { if (!paused) return; paused = false; showPaused(); lastT = performance.now(); acc = 0; }
+  function showPaused() { $('paused').classList.toggle('show', paused); }
+
+  // ================= loop (fixed 60 ticks a second) =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(250, t - lastT); lastT = t;
+    blinkT += dt;
+    var blink = Math.floor(blinkT / 300) % 2 === 0;
+    if (mode === 'game' && st) {
+      if (!paused && !sheetOpen() && !document.hidden) {
+        acc += dt;
+        var n = 0;
+        while (acc >= TICK && n < 6) {
+          var ev = TP.tick(st, input);
+          input.pump = false;
+          for (var k = 0; k < ev.length; k++) onEvent(ev[k]);
+          acc -= TICK; n++;
+        }
+        if (n >= 6) acc = 0;
+      } else acc = 0;
+      TPDraw.game(st, hiScore(), blink);
+      if (st.over && !overShown) { overShown = true; setTimeout(gameOver, 2000); }
+    } else if (mode === 'initials') TPDraw.initials(entry.score, entry.name, entry.pos, blink);
+    else TPDraw.title(hiScore(), meta.table, blink);
+    TPDraw.present($('cv'));
+  }
+  function onEvent(e) {
+    S.play(e);
+    if (e === 'pop') stats.popped++;
+    else if (e === 'crush') stats.crushed++;
+    else if (e === 'bonus') stats.items++;
+  }
+
+  // ================= game over, high score table =================
+  function gameOver() {
+    meta.finished++;
+    stats.games++; stats.best = Math.max(stats.best, st.score); stats.bestRound = Math.max(stats.bestRound, st.round); saveStats(); saveMeta();
+    store.del('run');
+    var rank = meta.table.findIndex(function (r) { return st.score > r.score; });
+    if (rank < 0 && meta.table.length < 5) rank = meta.table.length;
+    if (rank >= 0 && st.score > 0) { entry = { score: st.score, round: st.round, name: meta.lastName.split(''), pos: 0, rank: rank }; mode = 'initials'; return; }
+    endCard(false);
+  }
+  function saveInitials() {
+    var name = entry.name.join('');
+    meta.lastName = name;
+    meta.table.splice(entry.rank, 0, { name: name, score: entry.score, round: entry.round });
+    meta.table = meta.table.slice(0, 5); saveMeta();
+    mode = 'title';
+    endCard(true);
+  }
+  function endCard(ranked) {
+    showCard(ranked ? 'You made the table!' : 'Game over', 'Score <b>' + fmt(st.score) + '</b> · round ' + st.round + '<br>High score ' + fmt(hiScore()), [
+      { label: 'Play again', red: true, go: function () { between(newGame); } },
+      { label: 'Title screen', go: function () { mode = 'title'; st = null; } }]);
+  }
+  var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ .';
+  function entryKey(d) {
+    if (!entry) return;
+    var i = LETTERS.indexOf(entry.name[entry.pos]);
+    if (d === 'U') entry.name[entry.pos] = LETTERS[(i + 1) % LETTERS.length];
+    else if (d === 'D') entry.name[entry.pos] = LETTERS[(i + LETTERS.length - 1) % LETTERS.length];
+    else if (d === 'R') { if (entry.pos < 2) entry.pos++; }
+    else if (d === 'L') { if (entry.pos > 0) entry.pos--; }
+    S.play('hook');
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#tp-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () {}, onStep: function () {} }, done); }
+  // house ads only between games, never during one
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); showAd(next); return;
+    }
+    next();
+  }
+
+  // ================= screen size: as big as the space allows =================
+  // Whole device pixels per arcade pixel keep it crisp, but rounding down costs up to 13% of the width on a phone (373 of
+  // 390 points on an iPhone 15 at 3x, 336 of 375 on an SE at 2x). When it would cost more than 3%, use the exact fit: at
+  // 2x and 3x the uneven pixels (5 or 6 device pixels each) can't be seen (full screen, 2026-09-29).
+  function fit() {
+    var wrap = $('stagewrap'), cv = $('cv'), dpr = window.devicePixelRatio || 1;
+    var aw = wrap.clientWidth, ah = wrap.clientHeight;
+    if (!aw || !ah) return;
+    var exact = Math.min(aw * dpr / TP.W, ah * dpr / TP.H), s = Math.floor(exact);
+    if (s < exact * 0.97) s = exact;
+    if (s < 1) s = 1;
+    var w = Math.floor(TP.W * s), h = Math.floor(TP.H * s);
+    cv.width = w; cv.height = h;
+    cv.style.width = (w / dpr) + 'px'; cv.style.height = (h / dpr) + 'px';
+  }
+
+  // ================= joystick and pump =================
+  var repeatT = 0;
+  function setDir(d) {
+    var prev = input.dir;
+    input.dir = d;
+    var arrs = document.querySelectorAll('#dpad .arr');
+    for (var i = 0; i < arrs.length; i++) arrs[i].classList.toggle('on', arrs[i].dataset.d === d);
+    var off = { L: [-9, 0], R: [9, 0], U: [0, -9], D: [0, 9] }[d] || [0, 0];
+    $('knob').style.transform = 'translate(' + off[0] + 'px,' + off[1] + 'px)';
+    if (mode === 'initials' && d && d !== prev) { entryKey(d); clearInterval(repeatT); if (d === 'U' || d === 'D') repeatT = setInterval(function () { entryKey(d); }, 180); }
+    if (!d) clearInterval(repeatT);
+  }
+  function stick() {
+    var el = $('dpad'), id = null;
+    function dirFrom(e) {
+      var r = el.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.07) return null;
+      return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : (dy > 0 ? 'D' : 'U');
+    }
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); id = e.pointerId; try { el.setPointerCapture(id); } catch (err) { /* ignore */ } S.unlock(); setDir(dirFrom(e)); });
+    el.addEventListener('pointermove', function (e) { if (e.pointerId === id) setDir(dirFrom(e)); });
+    function up(e) { if (e.pointerId === id) { id = null; setDir(null); } }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  }
+  function pumpDown() {
+    if (sheetOpen()) return;
+    if (mode === 'title') { between(newGame); return; }
+    if (mode === 'initials') { saveInitials(); return; }
+    if (paused) { unpause(); return; }
+    if (st && st.over) return;
+    input.pump = true; input.pumpHeld = true;
+  }
+  function holdButton(id, onDown, onUp) {
+    var el = $(id), ids = {};
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); ids[e.pointerId] = 1; try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } el.classList.add('held'); S.unlock(); onDown(); });
+    function up(e) { delete ids[e.pointerId]; if (!Object.keys(ids).length) { el.classList.remove('held'); if (onUp) onUp(); } }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  // ================= sheets =================
+  function renderStats() {
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + fmt(hiScore()) + '</b><span>High score</span></div><div class="tile"><b>' + stats.bestRound + '</b><span>Best round</span></div>' +
+      '<div class="tile"><b>' + stats.games + '</b><span>Games</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.popped) + '</b><span>Popped</span></div><div class="tile"><b>' + fmt(stats.crushed) + '</b><span>Rock drops</span></div>' +
+      '<div class="tile"><b>' + fmt(stats.items) + '</b><span>Bonus items</span></div></div>' +
+      '<div class="reslbl" style="font-weight:800;font-size:13px;color:var(--muted);margin:8px 0 4px">BEST DIGGERS</div>' +
+      meta.table.map(function (r, i) { return '<div class="row"><div>' + (i + 1) + '. <b>' + r.name + '</b><small>round ' + r.round + '</small></div><b>' + fmt(r.score) + '</b></div>'; }).join('');
+  }
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    $(btn).addEventListener('click', function () { if (onOpen) onOpen(); pause(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+
+  function init() {
+    TPDraw.init();
+    Goobs.themePicker($('themes'));
+    stick();
+    holdButton('bFire', pumpDown, function () { input.pumpHeld = false; });
+    $('bPause').addEventListener('click', function () { if (paused) unpause(); else pause(); });
+    $('screen').addEventListener('click', function () { if (paused) unpause(); else if (mode === 'title') between(newGame); });
+    var keyDir = { ArrowLeft: 'L', ArrowRight: 'R', ArrowUp: 'U', ArrowDown: 'D' };
+    document.addEventListener('keydown', function (e) {
+      if (sheetOpen()) return;
+      if (keyDir[e.key]) { if (!e.repeat) setDir(keyDir[e.key]); e.preventDefault(); }
+      else if (e.key === ' ' && !e.repeat) { pumpDown(); e.preventDefault(); }
+      else if (e.key === 'p') { if (paused) unpause(); else pause(); }
+    });
+    document.addEventListener('keyup', function (e) { if (keyDir[e.key] && input.dir === keyDir[e.key]) setDir(null); if (e.key === ' ') input.pumpHeld = false; });
+    $('btnHome').addEventListener('click', function () { pause(); saveRun(); Goobs.home(); });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('bHelp', 'ovHelp', 'btnCloseHelp');
+    // full screen (2026-09-29): Stats, Settings and How to play live in the Menu; the game pauses while it is open
+    Goobs.fullscreen({
+      menu: ['bHelp', 'btnStats', 'btnSettings'],
+      info: function () { return 'High score <b>' + fmt(hiScore()) + '</b> &middot; best round <b>' + stats.bestRound + '</b>'; },
+      onOpen: function () { pause(); }
+    });
+    $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); saveRun(); } });
+    window.addEventListener('pagehide', function () { pause(); saveRun(); });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('stagewrap'));
+    window.addEventListener('resize', fit);
+    syncSound(); syncAds(); fit();
+    resumeRun(); showPaused();
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    Goobs.markPlayed('digger');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); saveRun(); },
+      onVersions: function (v) { $('version').textContent = 'Tunnel Pop ' + (v.digger || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  // hook for automated tests
+  window.__tp = { get st() { return st; }, get mode() { return mode; }, get paused() { return paused; }, input: input, newGame: newGame, meta: meta, pump: pumpDown, setDir: setDir, get entry() { return entry; } };
+  init();
+})();
+</script>
+</body>
+</html>

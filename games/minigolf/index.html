@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Seaside Putt can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__spReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eef4f0;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Seaside Putt didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('minigolf.round'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__spReady) fail('It took too long to start.'); }, 6000);
+})();
+</script>
+<title>Seaside Putt</title>
+<style>
+/* Seaside Putt styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand h1 { font-size: 22px; }
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; align-items: stretch; justify-content: center; }
+.stage { position: relative; flex: 1; border-radius: 18px; overflow: hidden; touch-action: none; margin: 0 10px; background: #2fb4e0; box-shadow: var(--shadow); }
+[data-theme="dark"] .stage, [data-theme="blue"] .stage { background: #135a86; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.toast { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.82); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+.cardicon svg { border-radius: 16px; }
+.pdot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(0,0,0,.35); vertical-align: -1px; margin-right: 5px; }
+/* scorecard */
+.sc { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; margin: 4px 0 2px; }
+.sc th, .sc td { padding: 3px 2px; text-align: center; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
+.sc th { font-size: 11px; color: var(--muted); font-weight: 800; }
+.sc td:first-child, .sc th:first-child { text-align: left; padding-left: 4px; }
+.sc td:nth-child(2), .sc th:nth-child(2) { text-align: left; }
+.sc tr.now td { background: rgba(255,210,30,.22); }
+.sc tr.tot td { font-weight: 900; border-bottom: 0; font-size: 14px; }
+.sc .ace { color: #e8354a; font-weight: 900; }
+.sc .under { color: #1f9d55; font-weight: 800; }
+.sc .over { color: #b35c00; }
+.scwrap { max-height: 52vh; overflow: auto; text-align: left; -webkit-overflow-scrolling: touch; }
+.holegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.holegrid button { font: inherit; border: 0; border-radius: 12px; padding: 9px 4px; background: var(--surface-2); color: inherit; text-align: center; line-height: 1.15; }
+.holegrid button b { display: block; font-size: 18px; }
+.holegrid button small { display: block; font-size: 11px; color: var(--muted); }
+.holegrid button[disabled] { opacity: .35; }
+.besthole { font-size: 11px; font-weight: 800; color: #1f9d55; }
+
+/* Full screen (1.1.0, Glenn: "every game full screen"): the sea fills the whole screen and the course is fitted below
+   the floating top row (hole and stroke pills, sound, Menu); all the buttons are in the Menu. --sp-sb reads the home
+   bar inset for app.js. */
+:root { --sp-sb: env(safe-area-inset-bottom, 0px); }
+html.gg-fs-over, html.gg-fs-over body { background: #2fb4e0; }
+html.gg-fs-over .stagewrap { position: fixed; inset: 0; z-index: 0; width: auto; margin: 0; }
+html.gg-fs-over .stage { margin: 0; border-radius: 0; box-shadow: none; }
+html.gg-fs-over .toast { top: calc(env(safe-area-inset-top, 0px) + 58px); }
+html.gg-fs-over .top .info { flex: 1 1 auto; width: auto; min-width: 0; min-height: 44px; gap: 6px; justify-content: flex-start; padding: 0; }
+html.gg-fs-over .top .info > div { background: rgba(255,255,255,.9); color: #1b1f33; border-radius: 16px; box-shadow: 0 3px 10px rgba(0,0,0,.18); height: 44px; box-sizing: border-box;
+  padding: 3px 11px; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+html.gg-fs-over .top .info > div:first-child { align-items: center; flex: none; }
+html.gg-fs-over .top .info .lbl { font-size: 10px; color: #5b6280; letter-spacing: .3px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.gg-fs-over .top .info .big { font-size: 21px; color: #1b1f33; }
+html.gg-fs-over .top .info .mid { font-size: 15px; color: #1b1f33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.gg-fs-over .top .info .right { text-align: left; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="sp-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#2fb4e0"/>
+<path d="M0 78c12-6 22-6 34 0s22 6 34 0 22-6 32-1V100H0z" fill="#1d8fd0" opacity=".6"/>
+<rect x="14" y="16" width="72" height="62" rx="16" fill="#e8b36a"/><rect x="19" y="21" width="62" height="52" rx="12" fill="#4cc25a"/>
+<path d="M19 38h62M19 55h62" stroke="#5fd06b" stroke-width="8" opacity=".6"/>
+<ellipse cx="60" cy="40" rx="7" ry="5" fill="#1a2a1a"/><path d="M60 40V14" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M61 14l17 6-17 6z" fill="#ff4d5e"/>
+<circle cx="36" cy="60" r="7" fill="#fff" stroke="#1f2a44" stroke-width="2"/><circle cx="34" cy="58" r="2" fill="#e8eef8"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></g></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4l12 4-12 4" fill="currentColor" fill-opacity=".3"/><ellipse cx="11" cy="20" rx="6" ry="1.6"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#sp-logo"/></svg>
+      <h1>Seaside Putt</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New round</span></button>
+    <button class="tool" id="btnHoles"><svg viewBox="0 0 24 24"><use href="#i-flag"/></svg><span>Practice</span></button>
+    <button class="tool red" id="btnCard"><svg viewBox="0 0 24 24"><use href="#i-card"/></svg><span>Scorecard</span></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <div class="row"><div>Players<small>Take turns on one phone. Starts with the next round.</small></div>
+        <div class="stepper"><button id="plLess" aria-label="Fewer players">&minus;</button><b id="players">1</b><button id="plMore" aria-label="More players">+</button></div></div>
+      <label class="row"><div>Aim guide<small>A dotted line shows where the ball starts rolling.</small></div>
+        <span class="switch"><input type="checkbox" id="setGuide"><span></span></span></label>
+      <label class="row"><div>Sound<small>Putts, splashes and cheers.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between holes, never during one. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished holes.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Seaside Putt</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Seaside Putt records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Scorecard -->
+<div class="overlay" id="ovCard">
+  <div class="sheet" role="dialog" aria-label="Scorecard">
+    <h2 id="cardTitle">Scorecard</h2>
+    <div class="sheetbody"><div class="scwrap" id="cardBody"></div></div>
+    <div class="actions"><button class="btn red" id="btnCloseCard">Done</button></div>
+  </div>
+</div>
+
+<!-- Practice -->
+<div class="overlay" id="ovHoles">
+  <div class="sheet" role="dialog" aria-label="Practice a hole">
+    <h2>Practice a hole</h2>
+    <div class="sheetbody"><p style="margin:0 0 10px;color:var(--muted);font-size:14px">Play any hole you have reached, as often as you like. Your round waits right where you left it.</p><div class="holegrid" id="holeGrid"></div></div>
+    <div class="actions"><button class="btn red" id="btnCloseHoles">Close</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Seaside Putt: the 18 holes and the ball physics (no DOM; runs in Node for the tests).
+   Units: each hole fits in 100 × 170, y down; the ball is 1.7 in radius, the cup 2.8. Physics at 120 steps a second:
+   rolling friction (much more in sand), slopes that push, walls and posts that bounce, bumpers that kick, windmill
+   blades and sliding blocks that move (and push with their speed), tunnels that teleport, water that costs a stroke
+   and puts the ball back where it was. A ball slow enough over the cup drops in; a fast one skips over it. */
+var MG = (function () {
+  'use strict';
+  var R = 1.7, CUP = 2.8, DT = 1 / 120, MAXV = 150, FR = 22, SANDFR = 95, SINKV = 58;
+  // ---------------- hole building helpers ----------------
+  function rect(x0, y0, x1, y1) { return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]; }
+  function H(o) { // fill in defaults and turn outlines and walls into segments
+    var h = { par: o.par, name: o.name, tee: o.tee, cup: o.cup, outline: o.outline, walls: [], posts: o.posts || [], bumpers: o.bumpers || [], sand: o.sand || [], water: o.water || [], slopes: o.slopes || [], mills: o.mills || [], movers: o.movers || [], portals: o.portals || [], deco: o.deco || [] };
+    var pts = o.outline; for (var i = 0; i < pts.length; i++) { var a = pts[i], b = pts[(i + 1) % pts.length]; h.walls.push({ x1: a[0], y1: a[1], x2: b[0], y2: b[1], outer: true }); }
+    (o.walls || []).forEach(function (w) { h.walls.push({ x1: w[0], y1: w[1], x2: w[2], y2: w[3] }); });
+    h.mills.forEach(function (m) { // the mill house: two solid halves with a tunnel between; the blades sweep across its front
+      [[m.x - m.gap / 2 - m.hw, m.y - 4, m.x - m.gap / 2, m.y + 4], [m.x + m.gap / 2, m.y - 4, m.x + m.gap / 2 + m.hw, m.y + 4]].forEach(function (b) { var p = rect(b[0], b[1], b[2], b[3]); for (var i = 0; i < 4; i++) h.walls.push({ x1: p[i][0], y1: p[i][1], x2: p[(i + 1) % 4][0], y2: p[(i + 1) % 4][1], mill: true }); }); });
+    (o.blocks || []).forEach(function (b) { var p = rect(b[0], b[1], b[2], b[3]); for (var i = 0; i < 4; i++) h.walls.push({ x1: p[i][0], y1: p[i][1], x2: p[(i + 1) % 4][0], y2: p[(i + 1) % 4][1], block: true }); h.deco.push({ t: 'block', r: b }); });
+    return h;
+  }
+  var HOLES = [
+    H({ name: 'First Putt', par: 2, tee: [50, 150], cup: [50, 32], outline: rect(34, 18, 66, 162) }),
+    H({ name: 'Dogleg', par: 3, tee: [32, 150], cup: [74, 36], outline: [[20, 162], [20, 22], [88, 22], [88, 54], [46, 54], [46, 162]] }),
+    H({ name: 'Buoys', par: 2, tee: [50, 152], cup: [50, 30], outline: rect(26, 16, 74, 164), bumpers: [[40, 92, 4], [60, 92, 4], [50, 66, 4], [50, 118, 3.4]] }),
+    H({ name: 'Beach Trap', par: 3, tee: [50, 152], cup: [50, 30], outline: rect(28, 16, 72, 164), sand: [rect(28, 80, 72, 102), [[38, 40], [62, 40], [58, 48], [42, 48]]], posts: [[50, 62, 2.2]] }),
+    H({ name: 'The Pond', par: 3, tee: [50, 154], cup: [50, 28], outline: rect(22, 14, 78, 166), water: [rect(34, 64, 66, 112)] }),
+    H({ name: 'Windmill', par: 3, tee: [50, 152], cup: [50, 30], outline: rect(32, 16, 68, 164), mills: [{ x: 50, y: 90, len: 15, speed: 1.7, blades: 4, gap: 12, hw: 12 }] }),
+    H({ name: 'Zig Zag', par: 3, tee: [30, 152], cup: [70, 30], outline: [[18, 164], [44, 164], [44, 104], [82, 104], [82, 16], [56, 16], [56, 78], [18, 78]], posts: [[50, 91, 2.2]] }),
+    H({ name: 'Sea Wall', par: 3, tee: [50, 152], cup: [72, 30], outline: rect(24, 16, 80, 164), walls: [[24, 70, 62, 70]], slopes: [{ poly: rect(24, 72, 80, 130), fx: 14, fy: 0 }] }),
+    H({ name: 'Island Green', par: 3, tee: [50, 156], cup: [50, 36], outline: rect(16, 14, 84, 166), water: [rect(16, 52, 42, 120), rect(58, 52, 84, 120), rect(16, 14, 84, 22), rect(16, 22, 30, 52), rect(70, 22, 84, 52)], sand: [rect(42, 118, 58, 126)] }),
+    H({ name: 'Sliding Door', par: 3, tee: [50, 152], cup: [50, 30], outline: rect(28, 16, 72, 164), walls: [[28, 88, 42, 88], [58, 88, 72, 88]], movers: [{ x: 30, y: 84, w: 12, h: 8, dx: 30, dy: 0, speed: 0.7 }] }),
+    H({ name: 'Sea Tunnel', par: 2, tee: [50, 152], cup: [50, 32], outline: rect(28, 16, 72, 164), walls: [[28, 96, 72, 96]], portals: [{ a: [50, 112], b: [50, 76], r: 3.2 }] }),
+    H({ name: 'Horseshoe', par: 4, tee: [26, 152], cup: [74, 150], outline: [[14, 164], [14, 20], [86, 20], [86, 164], [62, 164], [62, 60], [38, 60], [38, 164]], bumpers: [[50, 34, 3.4]] }),
+    H({ name: 'Pin Garden', par: 3, tee: [50, 154], cup: [50, 28], outline: rect(22, 14, 78, 166), posts: (function () { var p = []; for (var r = 0; r < 5; r++) for (var c = 0; c < (r % 2 ? 4 : 5); c++) p.push([30 + c * 10 + (r % 2 ? 5 : 0), 56 + r * 14, 1.8]); return p; })() }),
+    H({ name: 'The Bowl', par: 2, tee: [50, 152], cup: [50, 80], outline: [[36, 164], [64, 164], [64, 128], [84, 108], [84, 52], [64, 32], [36, 32], [16, 52], [16, 108], [36, 128]], slopes: [{ bowl: [50, 80, 30], k: 26 }] }),
+    H({ name: 'Twin Mills', par: 3, tee: [50, 156], cup: [50, 24], outline: rect(30, 12, 70, 168),
+      mills: [{ x: 50, y: 118, len: 15, speed: 1.4, blades: 4, gap: 12, hw: 14 }, { x: 50, y: 66, len: 15, speed: -1.9, blades: 3, gap: 12, hw: 14 }] }),
+    H({ name: 'Dune Bend', par: 4, tee: [72, 154], cup: [28, 30], outline: [[58, 166], [58, 100], [18, 100], [18, 16], [46, 16], [46, 72], [86, 72], [86, 166]], sand: [rect(46, 72, 60, 100)], water: [rect(18, 56, 30, 74)] }),
+    H({ name: 'Rebound Alley', par: 4, tee: [24, 154], cup: [76, 26], outline: rect(14, 14, 86, 166), blocks: [[14, 118, 64, 128], [36, 72, 86, 82], [14, 36, 58, 46]], bumpers: [[80, 100, 3], [20, 60, 3], [36, 150, 3]] }),
+    H({ name: 'Lighthouse', par: 3, tee: [50, 158], cup: [50, 26], outline: rect(18, 12, 82, 168), blocks: [[40, 40, 60, 60]], slopes: [{ poly: rect(18, 96, 82, 132), fx: 0, fy: -10 }], movers: [{ x: 20, y: 76, w: 14, h: 7, dx: 46, dy: 0, speed: 0.55 }], water: [rect(18, 12, 30, 40), rect(70, 12, 82, 40)], deco: [{ t: 'lighthouse', x: 50, y: 50 }] })
+  ];
+  // ---------------- geometry ----------------
+  function inPoly(p, poly) { var c = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+  function closest(px, py, x1, y1, x2, y2) { var dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy, t = L2 ? ((px - x1) * dx + (py - y1) * dy) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t; return [x1 + dx * t, y1 + dy * t]; }
+  function bounce(b, nx, ny, e, svx, svy) { var rvx = b.vx - (svx || 0), rvy = b.vy - (svy || 0), vn = rvx * nx + rvy * ny; if (vn >= 0) return 0; rvx -= (1 + e) * vn * nx; rvy -= (1 + e) * vn * ny; b.vx = rvx + (svx || 0); b.vy = rvy + (svy || 0); return -vn; }
+  function hitSeg(b, x1, y1, x2, y2, e, svx, svy) {
+    var c = closest(b.x, b.y, x1, y1, x2, y2), dx = b.x - c[0], dy = b.y - c[1], d = Math.sqrt(dx * dx + dy * dy);
+    if (d >= R || d === 0) return 0; var nx = dx / d, ny = dy / d; b.x = c[0] + nx * R; b.y = c[1] + ny * R; return bounce(b, nx, ny, e, svx, svy);
+  }
+  function hitCircle(b, cx, cy, r, e) { var dx = b.x - cx, dy = b.y - cy, d = Math.sqrt(dx * dx + dy * dy); if (d >= R + r || d === 0) return 0; var nx = dx / d, ny = dy / d; b.x = cx + nx * (R + r); b.y = cy + ny * (R + r); var imp = bounce(b, nx, ny, e); return imp ? { imp: imp, nx: nx, ny: ny } : 0; }
+  // moving parts at time t
+  function millBlades(m, t) { var out = []; for (var i = 0; i < m.blades; i++) out.push(t * m.speed + i * Math.PI * 2 / m.blades); return out; } // blade angles (pi/2 = pointing down)
+  function millDoor(m, t) { // a blade pointing down covers the tunnel mouth
+    var a = millBlades(m, t); for (var i = 0; i < a.length; i++) { var d = Math.atan2(Math.sin(a[i] - Math.PI / 2), Math.cos(a[i] - Math.PI / 2)); if (Math.abs(d) < 0.32) return { y: m.y + 5.2, x1: m.x - m.gap / 2 - 1, x2: m.x + m.gap / 2 + 1, svx: -m.speed * m.len * 0.7 }; }
+    return null;
+  }
+  function moverPos(m, t) { var k = (1 - Math.cos(t * m.speed * Math.PI)) / 2; return { x: m.x + m.dx * k, y: m.y + m.dy * k, vx: m.dx * Math.sin(t * m.speed * Math.PI) * m.speed * Math.PI / 2, vy: m.dy * Math.sin(t * m.speed * Math.PI) * m.speed * Math.PI / 2 }; }
+  function slopeAt(h, x, y) {
+    var ax = 0, ay = 0;
+    h.slopes.forEach(function (s) {
+      if (s.bowl) { var dx = s.bowl[0] - x, dy = s.bowl[1] - y, d = Math.hypot(dx, dy); if (d < s.bowl[2] && d > 0.5) { var k = s.k * Math.min(1, d / 8); ax += dx / d * k; ay += dy / d * k; } }
+      else if (inPoly([x, y], s.poly)) { ax += s.fx; ay += s.fy; }
+    });
+    return [ax, ay];
+  }
+  function inSand(h, x, y) { return h.sand.some(function (p) { return inPoly([x, y], p); }); }
+  function inWater(h, x, y) { return h.water.some(function (p) { return inPoly([x, y], p); }); }
+
+  // ---------------- play ----------------
+  function newRound() { return { hole: 0, cards: [], strokes: 0, t: 0 }; }
+  function ball(h) { return { x: h.tee[0], y: h.tee[1], vx: 0, vy: 0, moving: false, sunk: false, lastX: h.tee[0], lastY: h.tee[1], still: 0, portalCool: 0 }; }
+  function shoot(b, ang, power) { // power 0..1
+    var v = MAXV * Math.max(0.03, Math.min(1, power)); b.lastX = b.x; b.lastY = b.y; b.vx = Math.cos(ang) * v; b.vy = Math.sin(ang) * v; b.moving = true; b.still = 0;
+  }
+  // a ball at rest wakes up when a sliding block or a mill blade comes into it
+  function pushed(h, b, t) {
+    for (var i = 0; i < h.movers.length; i++) { var m = h.movers[i], p = moverPos(m, t); if (b.x > p.x - R && b.x < p.x + m.w + R && b.y > p.y - R && b.y < p.y + m.h + R) { b.moving = true; b.still = 0; return true; } }
+    for (var j = 0; j < h.mills.length; j++) { var d = millDoor(h.mills[j], t); if (d && b.x > d.x1 - R && b.x < d.x2 + R && Math.abs(b.y - d.y) < R + 0.6) { b.moving = true; b.still = 0; return true; } }
+    return false;
+  }
+  // one physics step; returns a list of events
+  function step(h, b, t) {
+    var ev = [];
+    if (b.sunk) return ev;
+    if (!b.moving && !pushed(h, b, t)) return ev;
+    var ox = b.x, oy = b.y, sl = slopeAt(h, b.x, b.y);
+    b.vx += sl[0] * DT; b.vy += sl[1] * DT;
+    var sp = Math.hypot(b.vx, b.vy), fr = (inSand(h, b.x, b.y) ? SANDFR : FR) * DT + sp * 0.004;
+    if (sp > fr) { b.vx *= (sp - fr) / sp; b.vy *= (sp - fr) / sp; } else { b.vx = 0; b.vy = 0; }
+    b.x += b.vx * DT; b.y += b.vy * DT;
+    // moving parts first (they push), then the fixed walls have the last word so nothing pushes the ball out
+    h.mills.forEach(function (m) { var d = millDoor(m, t); if (d) { var imp = hitSeg(b, d.x1, d.y, d.x2, d.y, 0.5, d.svx, 0) || hitSeg(b, d.x1, d.y - 1.2, d.x2, d.y - 1.2, 0.5, d.svx, 0); if (imp > 8) ev.push({ t: 'mill', v: imp }); } });
+    h.movers.forEach(function (m) { var p = moverPos(m, t), x0 = p.x, y0 = p.y, x1 = p.x + m.w, y1 = p.y + m.h; [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]].forEach(function (s) { var imp = hitSeg(b, s[0], s[1], s[2], s[3], 0.6, p.vx, p.vy); if (imp > 10) ev.push({ t: 'wall', v: imp }); });
+      // squeezed against a wall: pop out the side the block isn't moving toward
+      if (b.x > x0 - R * 0.5 && b.x < x1 + R * 0.5 && b.y > y0 - R * 0.5 && b.y < y1 + R * 0.5) { if (m.dy === 0) { b.y = b.y < (y0 + y1) / 2 ? y0 - R : y1 + R; b.vy = b.y < y0 ? -Math.abs(b.vy) - 5 : Math.abs(b.vy) + 5; } else { b.x = b.x < (x0 + x1) / 2 ? x0 - R : x1 + R; b.vx = b.x < x0 ? -Math.abs(b.vx) - 5 : Math.abs(b.vx) + 5; } } });
+    h.walls.forEach(function (w) { var imp = hitSeg(b, w.x1, w.y1, w.x2, w.y2, 0.7); if (imp > 20) ev.push({ t: 'wall', v: imp }); });
+    h.posts.forEach(function (p) { var r = hitCircle(b, p[0], p[1], p[2], 0.7); if (r && r.imp > 20) ev.push({ t: 'wall', v: r.imp }); });
+    h.bumpers.forEach(function (p) { var r = hitCircle(b, p[0], p[1], p[2], 0.9); if (r) { var add = 30; b.vx += r.nx * add; b.vy += r.ny * add; ev.push({ t: 'bumper', x: p[0], y: p[1] }); } });
+    if (!inPoly([b.x, b.y], h.outline)) { b.x = ox; b.y = oy; b.vx = -b.vx * 0.5; b.vy = -b.vy * 0.5; }
+    // tunnels
+    if (b.portalCool > 0) b.portalCool -= DT;
+    h.portals.forEach(function (p) { if (b.portalCool <= 0 && Math.hypot(b.x - p.a[0], b.y - p.a[1]) < p.r) { b.x = p.b[0]; b.y = p.b[1]; b.portalCool = 0.6; ev.push({ t: 'portal' }); } });
+    // water
+    if (inWater(h, b.x, b.y)) { ev.push({ t: 'water', x: b.x, y: b.y }); b.x = b.lastX; b.y = b.lastY; b.vx = 0; b.vy = 0; b.moving = false; return ev; }
+    // the cup
+    var dc = Math.hypot(b.x - h.cup[0], b.y - h.cup[1]);
+    sp = Math.hypot(b.vx, b.vy);
+    if (dc < CUP) {
+      if (sp < SINKV || dc < CUP * 0.35 && sp < SINKV * 1.25) { b.sunk = true; b.moving = false; b.x = h.cup[0]; b.y = h.cup[1]; ev.push({ t: 'sunk' }); return ev; }
+      // lip: pulls it a little toward the middle
+      var px = (h.cup[0] - b.x) / dc, py = (h.cup[1] - b.y) / dc; b.vx += px * 60 * DT; b.vy += py * 60 * DT; if (!b.lip) { b.lip = true; ev.push({ t: 'lip' }); }
+    } else b.lip = false;
+    // stop
+    sp = Math.hypot(b.vx, b.vy); var slope = Math.hypot(sl[0], sl[1]);
+    if (sp < 0.8 && slope < 0.01) { b.vx = 0; b.vy = 0; b.moving = false; ev.push({ t: 'stop' }); }
+    else if (sp < 3) { b.still += DT; if (b.still > 2.5) { b.vx = 0; b.vy = 0; b.moving = false; ev.push({ t: 'stop' }); } } else b.still = 0;
+    return ev;
+  }
+  // simulate a whole shot (for the tests and the computer golfer); returns { b, water, sunk, t }
+  function simulate(h, from, ang, power, t0) {
+    var b = { x: from[0], y: from[1], vx: 0, vy: 0, moving: false, sunk: false, still: 0, portalCool: 0 }; shoot(b, ang, power);
+    var t = t0 || 0, water = false;
+    for (var i = 0; i < 120 * 30 && b.moving; i++) { t += DT; var ev = step(h, b, t); if (ev.some(function (e) { return e.t === 'water'; })) water = true; }
+    return { b: b, water: water, sunk: b.sunk, t: t };
+  }
+  return { HOLES: HOLES, R: R, CUP: CUP, DT: DT, MAXV: MAXV, newRound: newRound, ball: ball, shoot: shoot, step: step, simulate: simulate, millBlades: millBlades, millDoor: millDoor, moverPos: moverPos, slopeAt: slopeAt, inPoly: inPoly, inWater: inWater, inSand: inSand };
+})();
+if (typeof module !== 'undefined') module.exports = MG;
+</script>
+<script>
+/* Seaside Putt art: everything drawn with canvas paths in hole units (100 × 170). The app sets the transform.
+   Static parts (sea, green, sand, water, walls, houses, cup) are drawn once per hole into a cache; moving parts
+   (blades, sliding blocks, bumpers, flag, ball, lighthouse beam) are drawn every frame. */
+var SPArt = (function () {
+  'use strict';
+  var WOOD = '#e8b36a', WOOD_D = '#b77a3a', GREEN = '#4cc25a', GREEN_L = '#5acd67', SAND = '#f1d88e', WATER = '#35a4e6';
+  function path(x, pts) { x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) x.lineTo(pts[i][0], pts[i][1]); x.closePath(); }
+  function rr(x, X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
+  function rnd(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // the sea around the course (screen pixels)
+  function sea(x, W, H, dark) {
+    var g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, dark ? '#16628f' : '#46c4ea'); g.addColorStop(1, dark ? '#0d3f66' : '#1f96d6'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = dark ? 'rgba(160,220,255,.16)' : 'rgba(255,255,255,.28)'; x.lineWidth = 2; x.lineCap = 'round';
+    var r = rnd(7); for (var i = 0; i < 46; i++) { var px = r() * W, py = r() * H, w = 10 + r() * 16; x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + w / 4, py - 4, px + w / 2, py); x.quadraticCurveTo(px + w * 3 / 4, py + 4, px + w, py); x.stroke(); }
+  }
+
+  // the whole still part of a hole (hole units)
+  function hole(x, h, MG) {
+    x.lineJoin = 'round'; x.lineCap = 'round';
+    // shadow, wooden rail, green
+    x.save(); x.translate(1.4, 2.4); path(x, h.outline); x.lineWidth = 5; x.strokeStyle = 'rgba(0,30,60,.28)'; x.stroke(); x.fillStyle = 'rgba(0,30,60,.28)'; x.fill(); x.restore();
+    path(x, h.outline); x.lineWidth = 5.4; x.strokeStyle = WOOD_D; x.stroke();
+    path(x, h.outline); x.lineWidth = 4.2; x.strokeStyle = WOOD; x.stroke();
+    path(x, h.outline); x.fillStyle = GREEN; x.fill();
+    x.save(); path(x, h.outline); x.clip();
+    x.fillStyle = GREEN_L; for (var y = 0; y < 170; y += 16) x.fillRect(0, y, 100, 8);
+    // slopes: a darker shade with chevrons pointing downhill
+    h.slopes.forEach(function (s) {
+      if (s.bowl) { for (var k = 5; k >= 1; k--) { x.beginPath(); x.arc(s.bowl[0], s.bowl[1], s.bowl[2] * k / 5, 0, 7); x.fillStyle = 'rgba(20,90,30,' + (0.05 + (5 - k) * 0.025) + ')'; x.fill(); } return; }
+      path(x, s.poly); x.fillStyle = 'rgba(20,90,30,.16)'; x.fill();
+      var xs = s.poly.map(function (p) { return p[0]; }), ys = s.poly.map(function (p) { return p[1]; }), x0 = Math.min.apply(0, xs), x1 = Math.max.apply(0, xs), y0 = Math.min.apply(0, ys), y1 = Math.max.apply(0, ys);
+      var a = Math.atan2(s.fy, s.fx); x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 1.1;
+      for (var cx = x0 + 7; cx < x1; cx += 12) for (var cy = y0 + 7; cy < y1; cy += 12) { x.save(); x.translate(cx, cy); x.rotate(a); x.beginPath(); x.moveTo(-1.8, -2.6); x.lineTo(1.2, 0); x.lineTo(-1.8, 2.6); x.stroke(); x.restore(); }
+    });
+    // sliding block tracks
+    h.movers.forEach(function (m) { rr(x, m.x - 0.5, m.y + m.h / 2 - 1.2, m.w + m.dx + 1, 2.4, 1.2); x.fillStyle = 'rgba(0,40,20,.25)'; x.fill(); });
+    // sand
+    h.sand.forEach(function (p, i) {
+      path(x, p); x.fillStyle = SAND; x.fill(); x.lineWidth = 0.8; x.strokeStyle = '#d9b865'; x.stroke();
+      x.save(); path(x, p); x.clip(); var r = rnd(i + 3); x.fillStyle = 'rgba(160,120,40,.35)'; for (var k = 0; k < 160; k++) { x.beginPath(); x.arc(r() * 100, r() * 170, 0.28, 0, 7); x.fill(); } x.restore();
+    });
+    // water
+    h.water.forEach(function (p, i) {
+      path(x, p); x.fillStyle = WATER; x.fill();
+      x.save(); path(x, p); x.clip(); x.lineWidth = 2.4; x.strokeStyle = '#7fd3ff'; path(x, p); x.stroke();
+      var r = rnd(i + 11); x.strokeStyle = 'rgba(255,255,255,.5)'; x.lineWidth = 0.7; for (var k = 0; k < 40; k++) { var px = r() * 100, py = r() * 170; x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + 1.5, py - 1, px + 3, py); x.quadraticCurveTo(px + 4.5, py + 1, px + 6, py); x.stroke(); }
+      x.restore();
+    });
+    // tee mat
+    rr(x, h.tee[0] - 5, h.tee[1] - 3.2, 10, 6.4, 1.6); x.fillStyle = '#2f9a3f'; x.fill(); x.fillStyle = 'rgba(255,255,255,.7)'; x.beginPath(); x.arc(h.tee[0] - 3.4, h.tee[1], 0.6, 0, 7); x.arc(h.tee[0] + 3.4, h.tee[1], 0.6, 0, 7); x.fill();
+    // tunnels
+    h.portals.forEach(function (p) {
+      x.setLineDash([1.2, 1.8]); x.strokeStyle = 'rgba(255,255,255,.45)'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(p.a[0], p.a[1]); x.lineTo(p.b[0], p.b[1]); x.stroke(); x.setLineDash([]);
+      [[p.a, '#7a3cff', '#1a0d40'], [p.b, '#20c9a0', '#0c3a30']].forEach(function (q) { x.beginPath(); x.arc(q[0][0], q[0][1], p.r + 1.2, 0, 7); x.fillStyle = q[1]; x.fill(); x.beginPath(); x.arc(q[0][0], q[0][1], p.r - 0.2, 0, 7); x.fillStyle = q[2]; x.fill(); });
+    });
+    // the cup
+    x.beginPath(); x.arc(h.cup[0], h.cup[1], MG.CUP + 0.8, 0, 7); x.fillStyle = 'rgba(255,255,255,.85)'; x.fill();
+    x.beginPath(); x.arc(h.cup[0], h.cup[1], MG.CUP, 0, 7); x.fillStyle = '#16211a'; x.fill();
+    x.beginPath(); x.arc(h.cup[0], h.cup[1] + 0.7, MG.CUP - 0.7, 0, 7); x.fillStyle = '#0a110c'; x.fill();
+    x.restore();
+    // inside walls (not the rail)
+    h.walls.forEach(function (w) { if (w.outer || w.block || w.mill) return; x.beginPath(); x.moveTo(w.x1, w.y1); x.lineTo(w.x2, w.y2); x.lineWidth = 2.6; x.strokeStyle = WOOD_D; x.stroke(); x.lineWidth = 1.8; x.strokeStyle = WOOD; x.stroke(); });
+    // blocks (rocks under the lighthouse, planks elsewhere)
+    var light = h.deco.filter(function (d) { return d.t === 'lighthouse'; })[0];
+    h.deco.forEach(function (d) {
+      if (d.t !== 'block') return; var b = d.r, w = b[2] - b[0], hh = b[3] - b[1];
+      if (light) { rr(x, b[0], b[1], w, hh, 5); x.fillStyle = '#8a8f9a'; x.fill(); x.lineWidth = 0.8; x.strokeStyle = '#5d626d'; x.stroke(); var r = rnd(5); x.fillStyle = '#a6abb5'; for (var k = 0; k < 9; k++) { x.beginPath(); x.arc(b[0] + 3 + r() * (w - 6), b[1] + 3 + r() * (hh - 6), 1 + r() * 1.6, 0, 7); x.fill(); } return; }
+      x.save(); x.translate(0.6, 1); rr(x, b[0], b[1], w, hh, 1.4); x.fillStyle = 'rgba(0,30,20,.3)'; x.fill(); x.restore();
+      rr(x, b[0], b[1], w, hh, 1.4); x.fillStyle = WOOD; x.fill(); x.lineWidth = 0.7; x.strokeStyle = WOOD_D; x.stroke();
+      x.strokeStyle = 'rgba(140,80,30,.35)'; x.lineWidth = 0.5; for (var yy = b[1] + 2.5; yy < b[3] - 0.5; yy += 2.5) { x.beginPath(); x.moveTo(b[0] + 0.8, yy); x.lineTo(b[2] - 0.8, yy); x.stroke(); }
+    });
+    // posts
+    h.posts.forEach(function (p) { x.beginPath(); x.arc(p[0] + 0.4, p[1] + 0.7, p[2], 0, 7); x.fillStyle = 'rgba(0,30,20,.3)'; x.fill(); x.beginPath(); x.arc(p[0], p[1], p[2], 0, 7); x.fillStyle = '#9b6232'; x.fill(); x.beginPath(); x.arc(p[0] - p[2] * 0.25, p[1] - p[2] * 0.25, p[2] * 0.5, 0, 7); x.fillStyle = '#c98b50'; x.fill(); });
+    // mill houses
+    h.mills.forEach(function (m) {
+      var X0 = m.x - m.gap / 2 - m.hw, X1 = m.x + m.gap / 2 + m.hw;
+      x.fillStyle = 'rgba(0,30,20,.3)'; x.fillRect(X0 + 0.6, m.y - 4 + 1, X1 - X0, 8);
+      x.fillStyle = 'rgba(0,40,10,.35)'; x.fillRect(m.x - m.gap / 2, m.y - 4, m.gap, 8); // the tunnel's shade
+      [[X0, m.x - m.gap / 2], [m.x + m.gap / 2, X1]].forEach(function (s) {
+        rr(x, s[0], m.y - 4, s[1] - s[0], 8, 1); x.fillStyle = '#e8505b'; x.fill(); x.lineWidth = 0.6; x.strokeStyle = '#a3303a'; x.stroke();
+        x.strokeStyle = 'rgba(120,20,30,.4)'; x.lineWidth = 0.5; for (var xx = s[0] + 2; xx < s[1] - 0.5; xx += 2) { x.beginPath(); x.moveTo(xx, m.y - 3.6); x.lineTo(xx, m.y + 3.6); x.stroke(); }
+        x.fillStyle = '#fff4e0'; x.fillRect(s[0] + 0.6, m.y - 0.35, s[1] - s[0] - 1.2, 0.7);
+      });
+    });
+  }
+
+  // ---------- moving parts ----------
+  function blades(x, m, t, MG) {
+    var a = MG.millBlades(m, t);
+    a.forEach(function (ang) {
+      x.save(); x.translate(m.x, m.y); x.rotate(ang);
+      x.fillStyle = 'rgba(0,20,10,.25)'; x.fillRect(2.2, -1.2, m.len - 1, 3.4);
+      x.fillStyle = '#fffaf0'; x.fillRect(2, -1.6, m.len - 2, 3.2); x.strokeStyle = '#8a5a2b'; x.lineWidth = 0.5; x.strokeRect(2, -1.6, m.len - 2, 3.2);
+      x.beginPath(); for (var k = 4; k < m.len; k += 2.6) { x.moveTo(k, -1.6); x.lineTo(k, 1.6); } x.moveTo(2, 0); x.lineTo(m.len, 0); x.stroke();
+      x.restore();
+    });
+    x.beginPath(); x.arc(m.x, m.y, 2.4, 0, 7); x.fillStyle = '#5b3a1e'; x.fill(); x.beginPath(); x.arc(m.x - 0.5, m.y - 0.5, 1, 0, 7); x.fillStyle = '#a57744'; x.fill();
+  }
+  function mover(x, m, p) {
+    x.save(); x.translate(0.5, 0.9); rr(x, p.x, p.y, m.w, m.h, 1.4); x.fillStyle = 'rgba(0,30,20,.3)'; x.fill(); x.restore();
+    rr(x, p.x, p.y, m.w, m.h, 1.4); x.fillStyle = '#ffb020'; x.fill();
+    x.save(); rr(x, p.x, p.y, m.w, m.h, 1.4); x.clip(); x.fillStyle = '#2b2b38'; for (var k = -m.h; k < m.w; k += 4) { x.beginPath(); x.moveTo(p.x + k, p.y + m.h); x.lineTo(p.x + k + 2, p.y + m.h); x.lineTo(p.x + k + 2 + m.h, p.y); x.lineTo(p.x + k + m.h, p.y); x.fill(); } x.restore();
+    rr(x, p.x, p.y, m.w, m.h, 1.4); x.lineWidth = 0.7; x.strokeStyle = '#8a5a00'; x.stroke();
+  }
+  function bumper(x, p, flash) {
+    var r = p[2] * (1 + flash * 0.18);
+    x.beginPath(); x.arc(p[0] + 0.4, p[1] + 0.8, r, 0, 7); x.fillStyle = 'rgba(0,30,20,.3)'; x.fill();
+    for (var k = 0; k < 8; k++) { x.beginPath(); x.moveTo(p[0], p[1]); x.arc(p[0], p[1], r, k * Math.PI / 4, (k + 1) * Math.PI / 4); x.closePath(); x.fillStyle = k % 2 ? '#fff' : (flash > 0.2 ? '#ffd21e' : '#ff4d5e'); x.fill(); }
+    x.beginPath(); x.arc(p[0], p[1], r * 0.45, 0, 7); x.fillStyle = '#2b3a55'; x.fill();
+    x.beginPath(); x.arc(p[0] - r * 0.12, p[1] - r * 0.12, r * 0.16, 0, 7); x.fillStyle = '#fff'; x.fill();
+  }
+  function lighthouse(x, d, t) {
+    // beam first (sweeps round), then the tower seen from above
+    var a = t * 0.9; x.save(); x.translate(d.x, d.y); x.rotate(a);
+    var g = x.createLinearGradient(0, 0, 40, 0); g.addColorStop(0, 'rgba(255,240,150,.55)'); g.addColorStop(1, 'rgba(255,240,150,0)');
+    x.beginPath(); x.moveTo(0, 0); x.lineTo(40, -7); x.lineTo(40, 7); x.closePath(); x.fillStyle = g; x.fill(); x.restore();
+    [[8.4, '#e8354a'], [6.6, '#fff'], [4.8, '#e8354a'], [3.2, '#2b3a55']].forEach(function (c) { x.beginPath(); x.arc(d.x, d.y, c[0], 0, 7); x.fillStyle = c[1]; x.fill(); });
+    x.beginPath(); x.arc(d.x, d.y, 2, 0, 7); x.fillStyle = '#ffe36a'; x.fill();
+  }
+  function flag(x, cup, t, alpha) {
+    x.save(); x.globalAlpha = alpha;
+        x.strokeStyle = '#fff'; x.lineWidth = 0.8; x.beginPath(); x.moveTo(cup[0], cup[1]); x.lineTo(cup[0], cup[1] - 15); x.stroke();
+    var w = Math.sin(t * 4) * 0.8; x.beginPath(); x.moveTo(cup[0] + 0.3, cup[1] - 15); x.quadraticCurveTo(cup[0] + 4, cup[1] - 14.4 + w, cup[0] + 8, cup[1] - 13 + w * 1.4); x.quadraticCurveTo(cup[0] + 4, cup[1] - 11 + w, cup[0] + 0.3, cup[1] - 10.4); x.closePath();
+    x.fillStyle = '#ff4d5e'; x.fill(); x.restore();
+  }
+  function ball(x, bx, by, R, color, scale, shadow) {
+    var r = R * 1.12 * scale;
+    if (shadow) { x.beginPath(); x.arc(bx + 0.5, by + 0.8, r, 0, 7); x.fillStyle = 'rgba(0,20,10,.35)'; x.fill(); }
+    x.beginPath(); x.arc(bx, by, r, 0, 7); x.fillStyle = color; x.fill(); x.lineWidth = 0.45; x.strokeStyle = 'rgba(20,30,50,.75)'; x.stroke();
+    x.beginPath(); x.arc(bx - r * 0.32, by - r * 0.32, r * 0.35, 0, 7); x.fillStyle = 'rgba(255,255,255,.85)'; x.fill();
+  }
+  return { sea: sea, hole: hole, blades: blades, mover: mover, bumper: bumper, lighthouse: lighthouse, flag: flag, ball: ball, rr: rr };
+})();
+</script>
+<script>
+/* Seaside Putt sounds: synthesized with Web Audio (no audio files). */
+var SPSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, lastClack = 0;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; try { ac = new AC(); } catch (e) { return null; } master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination); }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay, type) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.max(1, Math.floor(a.sampleRate * dur)), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.5);
+    var s = a.createBufferSource(); s.buffer = buf; var bp = a.createBiquadFilter(); bp.type = type || 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); }, unlock: function () { if (on) ctx(); },
+    putt: function (p) { noise(2400, 2, 0.05, 0.4 + p * 0.5); tone('sine', 900, 500, 0.06, 0.12 + p * 0.1); },
+    clack: function (v) { var n = Date.now(); if (n - lastClack < 60) return; lastClack = n; var g = Math.min(1, v / 90); noise(1800, 4, 0.05, 0.15 + g * 0.5); tone('triangle', 520, 380, 0.05, 0.03 + g * 0.08); },
+    boing: function () { tone('sine', 300, 760, 0.18, 0.2); tone('square', 600, 1200, 0.08, 0.04); },
+    thunk: function () { noise(400, 2, 0.1, 0.6); tone('triangle', 160, 90, 0.12, 0.12); },
+    whoosh: function () { noise(700, 0.7, 0.35, 0.35); tone('sine', 220, 880, 0.3, 0.06); },
+    splash: function () { noise(900, 0.6, 0.45, 0.7); noise(3000, 1, 0.25, 0.3, 0.05); tone('sine', 500, 140, 0.25, 0.08); },
+    lip: function () { tone('triangle', 1600, 1100, 0.05, 0.07); noise(3000, 5, 0.04, 0.25, 0.03); },
+    cup: function () { [0, 0.07, 0.13, 0.18].forEach(function (d, i) { noise(2600 - i * 300, 5, 0.05, 0.5 - i * 0.08, d); }); tone('sine', 220, 110, 0.18, 0.2, 0.2); },
+    sand: function () { noise(5000, 0.5, 0.2, 0.12, 0, 'highpass'); },
+    cheer: function (big) { if (!on) return; var f = big ? [523, 659, 784, 1047, 1319, 1568] : [659, 784, 1047]; f.forEach(function (x, i) { tone('triangle', x, 0, i === f.length - 1 ? 0.6 : 0.16, 0.22, i * 0.09); }); if (big) noise(4000, 0.8, 0.8, 0.18, 0.5); },
+    aww: function () { tone('triangle', 392, 330, 0.3, 0.12); tone('triangle', 330, 262, 0.45, 0.12, 0.28); },
+    ding: function () { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); }, sign: function () { noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Seaside Putt app: drag back to aim and putt, the 18-hole round (1-4 players taking turns on one phone), scorecard,
+   practice holes, saves, stats and house ads between holes. */
+(function () {
+  'use strict';
+  var S = SPSound, HOLES = MG.HOLES, MAXS = 8;
+  var PCOL = ['#ffffff', '#ff7ac8', '#ffd21e', '#5ad1ff'], PNAME = ['White', 'Pink', 'Gold', 'Blue'];
+
+  // ================= storage =================
+  var store = Goobs.store('minigolf');
+  var settings = { sound: false, adEvery: 6, players: 1, guide: true };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(18, Math.max(1, settings.adEvery | 0)); settings.players = Math.min(4, Math.max(1, settings.players | 0)); })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { seen: false, finished: 0, lastAdAt: 0, reached: 0, best: 0, hole: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['rounds', 'holes', 'strokes', 'aces', 'splashes', 'birdies', 'roundStrokes'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  if (!Array.isArray(stats.bestHole) || stats.bestHole.length !== HOLES.length) stats.bestHole = HOLES.map(function () { return 0; });
+  function saveStats() { store.set('stats', stats); }
+
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovCard') || isOpen('ovHoles') || GoobsAds.isOpen(); }
+  function fmt(n) { return (n || 0).toLocaleString(); }
+  function sum(a) { return a.reduce(function (s, v) { return s + (v || 0); }, 0); }
+  function parThrough(n) { var p = 0; for (var i = 0; i < n; i++) p += HOLES[i].par; return p; }
+  function vs(d) { return d === 0 ? 'E' : (d > 0 ? '+' : '−') + Math.abs(d); }
+
+  // ================= game state =================
+  // round: { n players, hole, p (whose turn), cards[p][hole], over }; cur: the ball being played right now
+  var round = null, mode = 'round', prac = null, cur = null, t = 0, acc = 0, lock = false;
+  var fx = { parts: [], rings: [], trail: [], flash: {}, banner: null, sink: 0, big: null };
+  function hIdx() { return mode === 'prac' ? prac.hole : round.hole; }
+  function hole() { return HOLES[hIdx()]; }
+  function player() { return mode === 'prac' ? 0 : round.p; }
+  function newRound() {
+    round = { n: settings.players, hole: 0, p: 0, cards: [], over: false };
+    for (var i = 0; i < round.n; i++) round.cards.push([]);
+    mode = 'round'; prac = null; startTurn(); save();
+  }
+  function startTurn(rest) {
+    var h = hole(); cache = null;
+    cur = { b: MG.ball(h), strokes: 0, done: false };
+    if (rest) { cur.b.x = rest.x; cur.b.y = rest.y; cur.strokes = rest.strokes; }
+    cur.rest = { x: cur.b.x, y: cur.b.y, strokes: cur.strokes };
+    fx.trail = []; fx.sink = 0; fx.big = null; lock = false; aim = null;
+    fx.banner = { t: 0, text: (mode === 'prac' ? 'Practice · ' : 'Hole ' + (hIdx() + 1) + ' · ') + h.name + ' · Par ' + h.par, sub: mode === 'round' && round.n > 1 ? PNAME[round.p] + ' ball’s turn' : '' };
+    if (mode === 'round') { meta.hole = round.hole; if (round.hole > meta.reached) meta.reached = round.hole; saveMeta(); }
+    renderInfo();
+  }
+  function save() {
+    if (!round) return;
+    var r = { n: round.n, hole: round.hole, p: round.p, cards: round.cards, over: round.over };
+    if (mode === 'round' && cur && !cur.done) r.rest = cur.rest;
+    if (mode === 'prac' && round.rest0) r.rest = round.rest0;
+    store.set('round', r);
+  }
+  function load() {
+    var r = store.get('round', null);
+    if (!r || !Array.isArray(r.cards) || !r.n || r.over || r.hole >= HOLES.length) return false;
+    round = { n: r.n, hole: r.hole, p: r.p || 0, cards: r.cards, over: false }; mode = 'round';
+    var rest = r.rest && typeof r.rest.x === 'number' && MG.inPoly([r.rest.x, r.rest.y], HOLES[r.hole].outline) ? r.rest : null;
+    startTurn(rest); return true;
+  }
+
+  // ================= shooting and the ball =================
+  function shoot(ang, pw) {
+    if (!cur || cur.done || cur.b.moving || lock || sheetOpen()) return false;
+    S.unlock(); cur.rest = { x: cur.b.x, y: cur.b.y, strokes: cur.strokes };
+    cur.strokes++; stats.strokes++; MG.shoot(cur.b, ang, pw); S.putt(pw); fx.trail = []; fx.inSand = false; renderInfo(); return true;
+  }
+  function onEvents(ev) {
+    var b = cur.b, h = hole();
+    ev.forEach(function (e) {
+      if (e.t === 'wall') S.clack(e.v);
+      else if (e.t === 'bumper') { S.boing(); fx.flash[e.x + ',' + e.y] = 1; }
+      else if (e.t === 'mill') S.thunk();
+      else if (e.t === 'portal') { S.whoosh(); h.portals.forEach(function (p) { fx.rings.push({ x: p.a[0], y: p.a[1], t: 0, c: '#b58cff' }); fx.rings.push({ x: p.b[0], y: p.b[1], t: 0, c: '#5af0c8' }); }); fx.trail = []; }
+      else if (e.t === 'water') {
+        S.splash(); cur.strokes++; stats.splashes++; saveStats();
+        for (var i = 0; i < 26; i++) { var a = Math.random() * 6.28, v = 8 + Math.random() * 22; fx.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 10, t: 0, life: 0.7, c: i % 2 ? '#bfe9ff' : '#ffffff', r: 0.5 + Math.random() * 0.7, g: 40 }); }
+        fx.rings.push({ x: e.x, y: e.y, t: 0, c: '#ffffff' }); fx.rings.push({ x: b.x, y: b.y, t: -0.3, c: '#ffd21e' });
+        toast('Splash! +1 stroke'); fx.trail = []; onStop();
+      }
+      else if (e.t === 'lip') S.lip();
+      else if (e.t === 'sunk') { S.cup(); fx.sink = 0.001; finishTurn(cur.strokes, false); }
+      else if (e.t === 'stop') onStop();
+    });
+    if (b.moving) { var sd = MG.inSand(h, b.x, b.y); if (sd && !fx.inSand) S.sand(); fx.inSand = sd; }
+  }
+  function onStop() {
+    if (!cur || cur.done) return;
+    cur.rest = { x: cur.b.x, y: cur.b.y, strokes: cur.strokes };
+    if (cur.strokes >= MAXS) { toast('Picked up at ' + MAXS + ' strokes'); S.aww(); finishTurn(MAXS, true); return; }
+    renderInfo(); save();
+  }
+  function scoreName(s, par) {
+    if (s === 1) return 'Hole in one!';
+    var d = s - par; return d <= -3 ? 'Albatross!' : d === -2 ? 'Eagle!' : d === -1 ? 'Birdie!' : d === 0 ? 'Par' : d === 1 ? 'Bogey' : d === 2 ? 'Double bogey' : vs(d);
+  }
+  function finishTurn(score, picked) {
+    if (cur.done) return; cur.done = true; lock = true;
+    var h = hole(), i = hIdx(); score = Math.min(MAXS, score);
+    stats.holes++; if (score === 1) stats.aces++; if (score < h.par) stats.birdies++;
+    if (!stats.bestHole[i] || score < stats.bestHole[i]) stats.bestHole[i] = score; saveStats();
+    var name = picked ? 'Picked up' : scoreName(score, h.par), good = !picked && score < h.par;
+    fx.big = { t: 0, text: name, sub: score + (score === 1 ? ' stroke' : ' strokes') + ' · par ' + h.par, color: score === 1 ? '#ffd21e' : good ? '#7af07a' : '#ffffff' };
+    if (!picked && score <= h.par) { S.cheer(score === 1 || score <= h.par - 2); confetti(score === 1 ? 140 : good ? 70 : 0); }
+    if (mode === 'round') { round.cards[round.p][round.hole] = score; save(); }
+    setTimeout(function () { afterTurn(score, picked); }, score === 1 ? 2200 : 1500);
+  }
+  function confetti(n) { var cols = ['#ffd21e', '#ff5a5a', '#3a8cff', '#5ad15a', '#ff7ac8']; for (var i = 0; i < n; i++) fx.parts.push({ x: Math.random() * 100, y: -5 - Math.random() * 40, vx: (Math.random() - 0.5) * 12, vy: 20 + Math.random() * 30, t: 0, life: 3.2, c: cols[i % 5], r: 0.8 + Math.random() * 0.8, g: 6, conf: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8 }); }
+  function afterTurn(score, picked) {
+    if (mode === 'prac') {
+      var i = prac.hole, h = HOLES[i];
+      showCard(scoreName(score, h.par) === 'Par' ? 'Par!' : picked ? 'Picked up' : scoreName(score, h.par), h.name + ': <b>' + score + '</b> ' + (score === 1 ? 'stroke' : 'strokes') + ' (par ' + h.par + '). Best: <b>' + stats.bestHole[i] + '</b>.', [
+        { label: 'Play it again', red: true, go: function () { startTurn(); } },
+        { label: 'Back to the round', go: backToRound }]);
+      return;
+    }
+    if (round.p + 1 < round.n) { round.p++; save(); startTurn(); return; }
+    // everyone has played this hole
+    meta.finished++; saveMeta();
+    var hi = round.hole, h2 = HOLES[hi], last = hi === HOLES.length - 1;
+    if (last) { roundOver(); return; }
+    var lines = round.cards.map(function (c, p) { var tot = sum(c), d = tot - parThrough(hi + 1); return (round.n > 1 ? '<span class="pdot" style="background:' + PCOL[p] + '"></span>' + PNAME[p] + ': ' : '') + '<b>' + c[hi] + '</b> here · ' + tot + ' total (' + vs(d) + ')'; });
+    round.hole++; round.p = 0; save();
+    showCard('Hole ' + (hi + 1) + ' done', h2.name + ', par ' + h2.par + '<br>' + lines.join('<br>'), [
+      { label: 'Next hole', red: true, go: function () { between(function () { startTurn(); }); } },
+      { label: 'Scorecard', go: function () { openCard(function () { showNextAgain(); }); } }]);
+    function showNextAgain() { showCard('Hole ' + (hi + 2) + ' is next', HOLES[hi + 1].name + ', par ' + HOLES[hi + 1].par, [{ label: 'Next hole', red: true, go: function () { between(function () { startTurn(); }); } }]); }
+  }
+  function roundOver() {
+    round.over = true; stats.rounds++;
+    var par = parThrough(HOLES.length), tots = round.cards.map(sum), bestNow = Math.min.apply(0, tots), newBest = !meta.best || bestNow < meta.best;
+    stats.roundStrokes += tots[0];
+    if (newBest) meta.best = bestNow; saveMeta(); saveStats(); store.del('round');
+    var html;
+    if (round.n === 1) html = 'You shot <b>' + tots[0] + '</b> (' + vs(tots[0] - par) + ') on the par ' + par + ' course.' + (newBest ? '<div class="newbest">New best round!</div>' : '<br>Best round: <b>' + meta.best + '</b>');
+    else {
+      var order = tots.map(function (v, p) { return p; }).sort(function (a, b) { return tots[a] - tots[b]; }), tie = tots[order[0]] === tots[order[1]];
+      html = (tie ? 'A tie at the top!' : '<b>' + PNAME[order[0]] + '</b> wins!') + '<br>' + order.map(function (p) { return '<span class="pdot" style="background:' + PCOL[p] + '"></span>' + PNAME[p] + ': <b>' + tots[p] + '</b> (' + vs(tots[p] - par) + ')'; }).join('<br>') + (newBest ? '<div class="newbest">New best round!</div>' : '');
+    }
+    S.cheer(true); confetti(160);
+    showCard('Round complete', html, [
+      { label: 'New round', red: true, go: function () { between(newRound); } },
+      { label: 'Scorecard', go: function () { openCard(function () { showCard('Round complete', html, [{ label: 'New round', red: true, go: function () { between(newRound); } }]); }); } }]);
+  }
+  function startPractice(i) {
+    if (!round) newRound();
+    if (mode === 'round') round.rest0 = cur && !cur.done ? cur.rest : null;
+    mode = 'prac'; prac = { hole: i }; startTurn(); save();
+  }
+  function backToRound() {
+    mode = 'round'; prac = null;
+    if (!round || round.over) { newRound(); return; }
+    var rest = round.rest0; round.rest0 = null; startTurn(rest); save();
+  }
+
+  // ================= layout and input =================
+  var cv, cx, W = 300, H = 500, DPR = 1, s = 3, ox = 0, oy = 0, cache = null, aim = null;
+  // Full screen (1.1.0): the sea fills the whole screen and the top row floats on it, so the course is fitted into the
+  // box below the top row (MT) and above the home bar (MB)
+  var MT = 0, MB = 0;
+  function fit() {
+    var r = $('stage').getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1); W = Math.max(100, r.width); H = Math.max(100, r.height);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    var tr = document.querySelector('.top').getBoundingClientRect(), sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp-sb')) || 0;
+    MT = Math.max(0, tr.bottom - r.top + 4); MB = sb + 6;
+    var fh = Math.max(100, H - MT - MB);
+    s = Math.min((W - 8) / 84, fh / 166); ox = W / 2 - 50 * s; oy = MT + fh / 2 - 89 * s; cache = null;
+  }
+  function toUnits(px, py) { return [(px - ox) / s, (py - oy) / s]; }
+  function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  function dmax() { return Math.min(W, H) * 0.42; }
+  function onDown(e) {
+    if (!cur || cur.done || cur.b.moving || lock || sheetOpen()) return;
+    S.unlock(); var p = pos(e); aim = { x0: p[0], y0: p[1], x: p[0], y: p[1], id: e.pointerId }; e.preventDefault();
+  }
+  function onMove(e) { if (!aim || e.pointerId !== aim.id) return; var p = pos(e); aim.x = p[0]; aim.y = p[1]; }
+  function aimVec() { if (!aim) return null; var dx = aim.x0 - aim.x, dy = aim.y0 - aim.y, d = Math.hypot(dx, dy); if (d < 12) return { d: d, ok: false }; return { d: d, ok: true, ang: Math.atan2(dy, dx), pw: Math.min(1, (d - 8) / dmax()) }; }
+  function onUp(e) {
+    if (!aim || e.pointerId !== aim.id) return; var v = aimVec(); aim = null;
+    if (!v || !v.ok) { if (v && v.d < 12) toast('Drag back from anywhere, then let go'); return; }
+    if (cur.b.moving) return; shoot(v.ang, Math.max(0.03, v.pw));
+  }
+
+  // ================= drawing =================
+  var dark = false;
+  function staticLayer() {
+    var c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; var x = c.getContext('2d');
+    x.setTransform(DPR, 0, 0, DPR, 0, 0); SPArt.sea(x, W, H, dark);
+    x.setTransform(DPR * s, 0, 0, DPR * s, DPR * ox, DPR * oy); SPArt.hole(x, hole(), MG); return c;
+  }
+  function guideLen(h, bx, by, ang) {
+    var dx = Math.cos(ang), dy = Math.sin(ang), step = 0.6;
+    for (var d = 2; d < 70; d += step) { var x = bx + dx * d, y = by + dy * d;
+      if (!MG.inPoly([x, y], h.outline)) return d - step;
+      for (var i = 0; i < h.walls.length; i++) { var w = h.walls[i]; if (w.outer) continue; var wx = w.x2 - w.x1, wy = w.y2 - w.y1, L = wx * wx + wy * wy, tt = L ? Math.max(0, Math.min(1, ((x - w.x1) * wx + (y - w.y1) * wy) / L)) : 0; if (Math.hypot(x - w.x1 - wx * tt, y - w.y1 - wy * tt) < 1) return d; }
+      for (var j = 0; j < h.posts.length + h.bumpers.length; j++) { var q = j < h.posts.length ? h.posts[j] : h.bumpers[j - h.posts.length]; if (Math.hypot(x - q[0], y - q[1]) < q[2] + 0.5) return d; }
+    }
+    return 70;
+  }
+  function draw(dt) {
+    var th = document.documentElement.getAttribute('data-theme'), dk = th === 'dark' || th === 'blue'; if (dk !== dark) { dark = dk; cache = null; }
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    if (!cur) { cx.clearRect(0, 0, cv.width, cv.height); return; }
+    if (!cache) cache = staticLayer();
+    cx.drawImage(cache, 0, 0);
+    var h = hole(), b = cur.b;
+    cx.setTransform(DPR * s, 0, 0, DPR * s, DPR * ox, DPR * oy); cx.lineCap = 'round'; cx.lineJoin = 'round';
+    // moving parts
+    h.movers.forEach(function (m) { SPArt.mover(cx, m, MG.moverPos(m, t)); });
+    h.bumpers.forEach(function (p) { var k = p[0] + ',' + p[1], f = fx.flash[k] || 0; SPArt.bumper(cx, p, f); if (f) fx.flash[k] = Math.max(0, f - dt * 4); });
+    // trail
+    if (fx.trail.length > 1) { cx.beginPath(); fx.trail.forEach(function (q, i) { if (i) cx.lineTo(q[0], q[1]); else cx.moveTo(q[0], q[1]); }); cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = MG.R * 1.1; cx.stroke(); }
+    // ball (drops into the cup when sunk)
+    var col = PCOL[player()];
+    if (fx.sink > 0) { fx.sink += dt; var k2 = Math.max(0, 1 - fx.sink / 0.35); if (k2 > 0) SPArt.ball(cx, h.cup[0], h.cup[1], MG.R, col, 0.35 + 0.65 * k2, false); }
+    else SPArt.ball(cx, b.x, b.y, MG.R, col, 1, true);
+    h.mills.forEach(function (m) { SPArt.blades(cx, m, t, MG); });
+    h.deco.forEach(function (d) { if (d.t === 'lighthouse') SPArt.lighthouse(cx, d, t); });
+    var near = Math.hypot(b.x - h.cup[0], b.y - (h.cup[1] - 8)) < 12 && !fx.sink; SPArt.flag(cx, h.cup, t, near ? 0.35 : 1);
+    // aim
+    var v = aimVec();
+    if (v && v.ok && !b.moving && !cur.done) {
+      var pw = v.pw, L = 6 + pw * 30, ca = Math.cos(v.ang), sa = Math.sin(v.ang), c2 = pw < 0.45 ? '#7af07a' : pw < 0.8 ? '#ffd21e' : '#ff5a5a';
+      if (settings.guide) { var gl = guideLen(h, b.x, b.y, v.ang); cx.setLineDash([0.1, 2.2]); cx.lineWidth = 0.9; cx.strokeStyle = 'rgba(255,255,255,.8)'; cx.beginPath(); cx.moveTo(b.x + ca * 3, b.y + sa * 3); cx.lineTo(b.x + ca * gl, b.y + sa * gl); cx.stroke(); cx.setLineDash([]); }
+      cx.lineWidth = 2.4; cx.strokeStyle = 'rgba(20,30,50,.5)'; cx.beginPath(); cx.moveTo(b.x + ca * 3, b.y + sa * 3); cx.lineTo(b.x + ca * L, b.y + sa * L); cx.stroke();
+      cx.lineWidth = 1.5; cx.strokeStyle = c2; cx.stroke();
+      cx.save(); cx.translate(b.x + ca * (L + 1.5), b.y + sa * (L + 1.5)); cx.rotate(v.ang); cx.beginPath(); cx.moveTo(2.4, 0); cx.lineTo(-1.6, -2.2); cx.lineTo(-1.6, 2.2); cx.closePath(); cx.fillStyle = c2; cx.fill(); cx.lineWidth = 0.5; cx.strokeStyle = 'rgba(20,30,50,.6)'; cx.stroke(); cx.restore();
+      cx.beginPath(); cx.arc(b.x, b.y, 4.2, -Math.PI / 2, -Math.PI / 2 + pw * Math.PI * 2); cx.lineWidth = 1.1; cx.strokeStyle = c2; cx.stroke();
+    } else if (!b.moving && !cur.done && !lock && !sheetOpen()) {
+      var pulse = 0.5 + 0.5 * Math.sin(t * 4); cx.beginPath(); cx.arc(b.x, b.y, 3.2 + pulse * 1.2, 0, 7); cx.lineWidth = 0.5; cx.strokeStyle = 'rgba(255,255,255,' + (0.35 + 0.4 * pulse) + ')'; cx.stroke();
+    }
+    // rings and particles
+    fx.rings = fx.rings.filter(function (r) { r.t += dt; return r.t < 0.6; });
+    fx.rings.forEach(function (r) { if (r.t < 0) return; cx.beginPath(); cx.arc(r.x, r.y, 2 + r.t * 14, 0, 7); cx.lineWidth = 0.8; cx.strokeStyle = r.c; cx.globalAlpha = 1 - r.t / 0.6; cx.stroke(); cx.globalAlpha = 1; });
+    fx.parts = fx.parts.filter(function (p) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; if (p.rot !== undefined) p.rot += p.vr * dt; return p.t < p.life; });
+    fx.parts.forEach(function (p) { cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c; if (p.conf) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); } else { cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill(); } });
+    cx.globalAlpha = 1;
+    // banners (screen pixels)
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (fx.banner) { var bn = fx.banner; bn.t += dt; var a = bn.t < 0.3 ? bn.t / 0.3 : bn.t > 2.4 ? Math.max(0, 1 - (bn.t - 2.4) / 0.5) : 1; if (bn.t > 2.9) fx.banner = null; else pill(bn.text, bn.sub, Math.max(H * 0.3, MT + 8), a, '#ffffff'); }
+    if (fx.big) { var bg = fx.big; bg.t += dt; var sc = Math.min(1, bg.t / 0.25), pop = sc < 1 ? 0.6 + 0.4 * sc + Math.sin(sc * Math.PI) * 0.15 : 1; bigText(bg.text, bg.sub, pop, Math.min(1, bg.t / 0.15), bg.color); }
+  }
+  function pill(text, sub, y, a, col) {
+    cx.save(); cx.globalAlpha = a; cx.font = '800 15px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center';
+    var w = Math.max(cx.measureText(text).width, sub ? (cx.font = '700 13px -apple-system, system-ui, sans-serif', cx.measureText(sub).width) : 0) + 28, hh = sub ? 48 : 32;
+    SPArt.rr(cx, W / 2 - w / 2, y, w, hh, 14); cx.fillStyle = 'rgba(16,28,48,.78)'; cx.fill();
+    cx.fillStyle = col; cx.font = '800 15px -apple-system, system-ui, sans-serif'; cx.fillText(text, W / 2, y + 21);
+    if (sub) { cx.font = '700 13px -apple-system, system-ui, sans-serif'; cx.fillStyle = 'rgba(255,255,255,.8)'; cx.fillText(sub, W / 2, y + 39); }
+    cx.restore();
+  }
+  function bigText(text, sub, sc, a, col) {
+    cx.save(); cx.globalAlpha = a; cx.translate(W / 2, H * 0.42); cx.scale(sc, sc); cx.textAlign = 'center';
+    var fs = Math.min(46, W / (text.length * 0.62)); cx.font = '900 ' + fs + 'px -apple-system, system-ui, sans-serif';
+    cx.lineWidth = 7; cx.strokeStyle = 'rgba(16,28,48,.85)'; cx.strokeText(text, 0, 0); cx.fillStyle = col; cx.fillText(text, 0, 0);
+    cx.font = '800 16px -apple-system, system-ui, sans-serif'; cx.lineWidth = 5; cx.strokeText(sub, 0, 28); cx.fillStyle = '#fff'; cx.fillText(sub, 0, 28);
+    cx.restore();
+  }
+  var last = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60; last = now;
+    if (!sheetOpen() || (cur && cur.b.moving)) {
+      acc += dt;
+      while (acc >= MG.DT) {
+        acc -= MG.DT; t += MG.DT;
+        if (cur && !cur.done) { var was = cur.b.moving, ev = MG.step(hole(), cur.b, t); if (ev.length) onEvents(ev); if (cur.b.moving && !was && !ev.length) { aim = null; } if (cur.b.moving && (Math.round(t / MG.DT) % 3 === 0)) { fx.trail.push([cur.b.x, cur.b.y]); if (fx.trail.length > 22) fx.trail.shift(); } else if (!cur.b.moving && fx.trail.length) fx.trail.shift(); }
+      }
+    }
+    draw(dt);
+  }
+
+  // ================= info, cards, sheets =================
+  function renderInfo() {
+    if (!cur) return; var h = hole(), i = hIdx(), p = player();
+    var tot = '';
+    if (mode === 'round') { var c = round.cards[p], played = 0, strokes = 0; for (var k = 0; k < round.hole; k++) if (c[k]) { played += HOLES[k].par; strokes += c[k]; } tot = (round.hole ? ' · ' + vs(strokes - played) : ''); }
+    var who = mode === 'round' && round.n > 1 ? '<span class="pdot" style="background:' + PCOL[p] + '"></span>' : '';
+    $('info').innerHTML = '<div><div class="lbl">' + (mode === 'prac' ? 'Practice' : 'Hole') + '</div><div class="big">' + (i + 1) + '</div></div>' +
+      '<div class="right"><div class="lbl">' + h.name + ' · Par ' + h.par + '</div><div class="mid">' + who + 'Stroke ' + cur.strokes + tot + '</div></div>';
+  }
+  var toastT = 0;
+  function toast(tx) { var el = $('toast'); el.textContent = tx; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2000); }
+  function showCard(title, html, buttons) {
+    fx.big = null;
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#sp-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (bt) { var el = document.createElement('button'); el.className = 'btn' + (bt.red ? ' red' : ''); el.textContent = bt.label; el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); bt.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
+  function between(next) { if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; } next(); }
+  var cardDone = null;
+  function openCard(done2) {
+    cardDone = done2 || null;
+    var r = round, n = r ? r.n : 1, rows = '', totPar = 0, tots = [];
+    for (var p = 0; p < n; p++) tots.push(0);
+    var head = '<tr><th>#</th><th>Hole</th><th>Par</th>' + (r ? r.cards.map(function (c, p2) { return '<th>' + (n > 1 ? '<span class="pdot" style="background:' + PCOL[p2] + '"></span>' : 'You') + '</th>'; }).join('') : '') + '</tr>';
+    HOLES.forEach(function (h, i) {
+      var cells = '';
+      if (r) r.cards.forEach(function (c, p2) { var v = c[i]; if (v) { tots[p2] += v; } cells += '<td class="' + (v === 1 ? 'ace' : v && v < h.par ? 'under' : v > h.par ? 'over' : '') + '">' + (v || '') + '</td>'; });
+      if (r && r.cards[0][i]) totPar += h.par;
+      rows += '<tr' + (r && !r.over && i === r.hole && mode === 'round' ? ' class="now"' : '') + '><td>' + (i + 1) + '</td><td>' + h.name + '</td><td>' + h.par + '</td>' + cells + '</tr>';
+    });
+    var foot = '<tr class="tot"><td></td><td>Total</td><td>' + parThrough(HOLES.length) + '</td>' + tots.map(function (v) { return '<td>' + (v || '') + '</td>'; }).join('') + '</tr>';
+    if (r && totPar) foot += '<tr class="tot"><td></td><td>vs par</td><td></td>' + tots.map(function (v) { return '<td>' + vs(v - totPar) + '</td>'; }).join('') + '</tr>';
+    $('cardTitle').textContent = r && r.over ? 'Final scorecard' : 'Scorecard';
+    $('cardBody').innerHTML = '<table class="sc">' + head + rows + foot + '</table>';
+    $('ovCard').classList.add('show');
+  }
+  function closeCard() { $('ovCard').classList.remove('show'); var d = cardDone; cardDone = null; if (d) d(); }
+  function openHoles() {
+    var reach = Math.max(meta.reached, stats.rounds ? HOLES.length - 1 : 0);
+    $('holeGrid').innerHTML = HOLES.map(function (h, i) { var bst = stats.bestHole[i]; return '<button data-h="' + i + '"' + (i > reach ? ' disabled' : '') + '><b>' + (i + 1) + '</b>' + h.name + '<small>Par ' + h.par + (bst ? ' · <span class="besthole">best ' + bst + '</span>' : '') + '</small></button>'; }).join('');
+    $('ovHoles').classList.add('show');
+  }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Drag back</b> from anywhere on the screen, like pulling a slingshot. The arrow shows the way the ball will go; drag farther for a harder putt. <b>Let go</b> to putt.',
+      'Drag back only a little for a short tap. Let go near where you started to cancel.',
+      'Sink the ball in the cup in as few strokes as you can. <b>Par</b> is a good score. Too fast and the ball skips over the cup.',
+      '<b>Water</b> costs a stroke and puts the ball back where you hit it. <b>Sand</b> slows the ball. Shaded arrows are <b>slopes</b> that push the ball.',
+      'Time your putts past <b>windmills</b> and <b>sliding blocks</b>. <b>Buoys</b> kick the ball away. A purple <b>tunnel</b> pops the ball out of the green one.',
+      'After ' + MAXS + ' strokes the ball is picked up. <b>Players</b> in Settings lets up to 4 people take turns on one phone. <b>Practice</b> replays any hole you have reached.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var avg = stats.rounds ? (stats.roundStrokes / stats.rounds).toFixed(1) : '–';
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + (meta.best || '–') + '</b><span>Best round</span></div><div class="tile"><b>' + fmt(stats.rounds) + '</b><span>Rounds</span></div><div class="tile"><b>' + avg + '</b><span>Average</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.aces) + '</b><span>Holes in one</span></div><div class="tile"><b>' + fmt(stats.birdies) + '</b><span>Under par</span></div><div class="tile"><b>' + fmt(stats.splashes) + '</b><span>Splashes</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.holes) + '</b><span>Holes played</span></div><div class="tile"><b>' + fmt(stats.strokes) + '</b><span>Putts</span></div><div class="tile"><b>' + parThrough(HOLES.length) + '</b><span>Course par</span></div></div>';
+  }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function syncPlayers() { $('players').textContent = settings.players; $('setGuide').checked = settings.guide; }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    cv.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove, { passive: true }); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', function () { aim = null; });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('btnNew').addEventListener('click', function () {
+      if (mode === 'round' && round && (round.hole > 0 || (cur && cur.strokes))) showCard('Start a new round?', 'This round’s scores are cleared.', [{ label: 'New round', red: true, go: function () { store.del('round'); newRound(); } }, { label: 'Keep playing', go: function () {} }]);
+      else newRound();
+    });
+    $('btnCard').addEventListener('click', function () { openCard(); });
+    $('btnCloseCard').addEventListener('click', closeCard); $('ovCard').addEventListener('click', function (e) { if (e.target === this) closeCard(); });
+    $('btnHoles').addEventListener('click', function () { if (cur && cur.b.moving) return; openHoles(); });
+    $('btnCloseHoles').addEventListener('click', function () { $('ovHoles').classList.remove('show'); }); $('ovHoles').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('holeGrid').addEventListener('click', function (e) { var bt = e.target.closest('button[data-h]'); if (!bt || bt.disabled) return; $('ovHoles').classList.remove('show'); startPractice(+bt.getAttribute('data-h')); });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp); $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('info').addEventListener('click', openHelp);
+    $('btnHelp').addEventListener('click', openHelp);
+    // Full screen (1.1.0): the sea and course fill the screen, the hole and stroke counters ride in the floating top row,
+    // Scorecard, Practice, New round, How to, Stats and Settings are in the Menu (the ball keeps rolling, aiming waits)
+    Goobs.fullscreen({ overlay: true, menu: ['btnCard', 'btnHoles', 'btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { return cur ? (mode === 'prac' ? 'Practice · ' : 'Round · ') + 'hole <b>' + (hIdx() + 1) + '</b> of ' + HOLES.length + ' · ' + hole().name : ''; } });
+    document.querySelector('.top').insertBefore($('info'), document.querySelector('.top .topbtns'));
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setGuide').addEventListener('change', function () { settings.guide = this.checked; saveSettings(); });
+    $('plLess').addEventListener('click', function () { settings.players = Math.max(1, settings.players - 1); saveSettings(); syncPlayers(); if (round && round.n !== settings.players) toast('Starts with the next round'); });
+    $('plMore').addEventListener('click', function () { settings.players = Math.min(4, settings.players + 1); saveSettings(); syncPlayers(); if (round && round.n !== settings.players) toast('Starts with the next round'); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(18, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('stagewrap'));
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); syncPlayers(); fit();
+    if (!load()) newRound();
+    fit();
+    if (!meta.seen) openHelp();
+    requestAnimationFrame(frame);
+    window.__spReady = true;
+    Goobs.markPlayed('minigolf');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Seaside Putt ' + (v.minigolf || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  window.__sp = { get round() { return round; }, get cur() { return cur; }, get mode() { return mode; }, get t() { return t; }, shoot: shoot, newRound: newRound, startPractice: startPractice, backToRound: backToRound, MG: MG,
+    jump: function (i) { round.hole = i; round.p = 0; startTurn(); save(); } };
+  init();
+})();
+</script>
+</body>
+</html>

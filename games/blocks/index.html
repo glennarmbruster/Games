@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Tumbledown</title>
+<style>
+/* Tumbledown styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+:root {
+  --td-well: #1d2140; --td-well-2: #232849; --td-grid: rgba(255,255,255,.045); --td-edge: #2d335c; --td-strip: #262b52; --td-label: #aab1d6;
+}
+:root[data-theme="dark"] { --td-well: #12141f; --td-well-2: #171a28; --td-edge: #262a3d; --td-strip: #1a1d2c; }
+:root[data-theme="blue"] { --td-well: #0c1d33; --td-well-2: #10243d; --td-edge: #1d3a5c; --td-strip: #12283f; }
+
+.brand svg { border-radius: 10px; }
+.brand h1 { font-size: 23px; }
+.modes button { font-size: 15px; }
+.info .mid .of { color: var(--muted); font-weight: 600; }
+
+.stagewrap { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.stage { position: relative; border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); background: var(--td-well); touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+
+/* start / pause panel over the board */
+.ready {
+  position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(20,22,44,.72); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff;
+  text-align: center; padding: 18px;
+}
+.ready.show { display: flex; }
+.ready h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.3px; }
+.ready p { margin: 0; color: #d6daf2; font-size: 15px; line-height: 1.4; max-width: 270px; }
+.ready .pick { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.12); border-radius: 16px; padding: 6px 8px; }
+.ready .pick button { width: 42px; height: 42px; border-radius: 12px; border: 0; background: rgba(255,255,255,.16); color: #fff; font-size: 20px; font-weight: 800; padding: 0; }
+.ready .pick button:disabled { opacity: .3; }
+.ready .pick div { min-width: 110px; }
+.ready .pick b { display: block; font-size: 20px; }
+.ready .pick small { display: block; font-size: 12px; color: #c3c8e6; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.ready .go { min-height: 52px; width: 200px; flex: none; }
+.ready .or { font-size: 13px; color: #c3c8e6; }
+.ready .gest { display: grid; grid-template-columns: auto auto; gap: 3px 12px; font-size: 13px; color: #d6daf2; text-align: left; }
+.ready .gest b { color: #fff; }
+.ready.compact { gap: 8px; padding: 10px; }
+.ready.compact h2 { font-size: 22px; }
+.ready.compact .gest { display: none; }
+.ready.compact > p { font-size: 14px; }
+.ready.compact .pick { padding: 4px 6px; gap: 6px; }
+.ready.compact .pick button { width: 36px; height: 36px; }
+.ready.compact .pick div { min-width: 90px; }
+.ready.compact .go { min-height: 44px; width: 170px; }
+
+/* on-screen buttons */
+.pad { display: none; width: 100%; max-width: 420px; flex: none; grid-template-columns: 1fr 1fr .25fr 1fr 1fr; grid-template-rows: 50px 50px; gap: 6px; }
+.pad.show { display: grid; }
+.pad button {
+  border-radius: 14px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-sm);
+  font-size: 19px; font-weight: 800; color: var(--ink); padding: 0; touch-action: none; display: flex; align-items: center; justify-content: center;
+  -webkit-user-select: none; user-select: none;
+}
+.pad button svg { width: 24px; height: 24px; }
+.pad button:active, .pad button.held { background: var(--accent-soft); color: var(--accent); }
+.pad [data-b="left"] { grid-column: 1; grid-row: 1; }
+.pad [data-b="right"] { grid-column: 2; grid-row: 1; }
+.pad [data-b="soft"] { grid-column: 1; grid-row: 2; }
+.pad [data-b="hard"] { grid-column: 2; grid-row: 2; }
+.pad [data-b="ccw"] { grid-column: 4; grid-row: 1; }
+.pad [data-b="cw"] { grid-column: 5; grid-row: 1; }
+.pad [data-b="hold"] { grid-column: 4 / span 2; grid-row: 2; font-size: 15px; letter-spacing: 1px; }
+
+.pop {
+  position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; font-weight: 900; color: #fff; line-height: 1.15;
+  text-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 12px rgba(0,0,0,.3); animation: tdpop 1.3s ease-out forwards; z-index: 2;
+}
+.pop small { display: block; font-size: .55em; color: #ffe08a; }
+@keyframes tdpop { 0% { opacity: 0; transform: scale(.7); } 12% { opacity: 1; transform: scale(1.08); } 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-24px); } }
+.cardicon svg { border-radius: 16px; }
+@media (max-width: 385px) { .modes button { font-size: 14px; } .brand h1 { font-size: 21px; } }
+
+/* full screen (Goobs.fullscreen, 2026-09-29): Pause sits in the top row as a round button (icon only) */
+html.gg-fs .top #btnPause span { display: none; }
+html.gg-fs .top #btnPause:disabled { opacity: .4; }
+/* the score row lives in the top row (full screen only): the back button shows just its chevron */
+html.gg-fs .top .brand h1 { display: none; }
+html.gg-fs .top .homebtn { min-width: 30px; height: 44px; flex: none; }
+html.gg-fs .top .info { flex: 1 1 auto; width: auto; min-width: 0; min-height: 0; gap: 6px; padding: 0 2px 0 0; }
+html.gg-fs .top .info > div { white-space: nowrap; }
+html.gg-fs .top .info .lbl { font-size: 10px; letter-spacing: .3px; }
+html.gg-fs .top .info .big { font-size: 20px; letter-spacing: -.6px; }
+html.gg-fs .top .info .mid { font-size: 15px; letter-spacing: -.3px; }
+html.gg-fs .top .info .of { font-size: 12px; }
+/* no room for a Pause button next to the score: the Menu button pauses the game (the board then shows Resume) */
+html.gg-fs .top #btnPause { display: none; }
+
+/* Full screen, take two (1.2.0, Glenn: "not full screen yet"): the kit's overlay mode (html.gg-fs-over). The well's color
+   covers the whole phone, edge to edge behind the status bar and the home bar; the back button, the counters (one pill)
+   and Sound / Menu float on it; the hold / next strip and the well take all the space under that row. */
+html.gg-fs-over, html.gg-fs-over body { background: var(--td-well); }
+html.gg-fs-over .app { background: var(--td-well); }
+html.gg-fs-over .stagewrap { position: fixed; z-index: 1;
+  top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  left: calc(env(safe-area-inset-left, 0px) + 6px); right: calc(env(safe-area-inset-right, 0px) + 6px); }
+html.gg-fs-over .stage { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+html.gg-fs-over .ready { border-radius: 12px; }
+/* the counters: one white pill between the back button and the round buttons */
+html.gg-fs-over .top .info { height: 44px; padding: 0 11px; border-radius: 22px; gap: 6px; color: #1b1f33; justify-content: space-between; overflow: hidden; }
+html.gg-fs-over .top .info .lbl, html.gg-fs-over .top .info .of { color: #6b7080; }
+html.gg-fs-over .top .info .big { font-size: 18px; letter-spacing: -.5px; }
+html.gg-fs-over .top .info .mid { font-size: 15px; }
+html.gg-fs-over .top .info .of { font-size: 11px; }
+html.gg-fs-over .top .homebtn { min-width: 44px; }
+/* the on-screen buttons (Settings) sit at the bottom; the well makes room for them */
+html.gg-fs-over .pad { position: fixed; z-index: 2; left: 50%; transform: translateX(-50%); width: calc(100% - 20px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+html.gg-fs-over .pad button { background: rgba(255,255,255,.9); color: #1b1f33; border: 0; }
+html.gg-fs-over .app.padon .stagewrap { bottom: calc(env(safe-area-inset-bottom, 0px) + 118px); }
+/* the Marathon / Sprint / Ultra tabs live in the Menu sheet */
+.ggmenu .modes { margin: 4px 0 2px; }
+@media (max-width: 385px) {
+  html.gg-fs-over .top .info { padding: 0 8px; gap: 4px; }
+  html.gg-fs-over .top .info .big { font-size: 17px; }
+  html.gg-fs-over .top .info .mid { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="td-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#1d2140"/>
+<g stroke="rgba(0,0,0,.18)" stroke-width="1.5"><rect x="18" y="62" width="16" height="16" rx="4" fill="#ff5d7a"/><rect x="34" y="62" width="16" height="16" rx="4" fill="#ff5d7a"/><rect x="50" y="62" width="16" height="16" rx="4" fill="#ff5d7a"/><rect x="66" y="62" width="16" height="16" rx="4" fill="#ff5d7a"/>
+<rect x="18" y="46" width="16" height="16" rx="4" fill="#3ad6a6"/><rect x="18" y="30" width="16" height="16" rx="4" fill="#3ad6a6"/><rect x="34" y="46" width="16" height="16" rx="4" fill="#3ad6a6"/>
+<rect x="58" y="14" width="16" height="16" rx="4" fill="#ffc53d"/><rect x="42" y="30" width="16" height="16" rx="4" fill="#ffc53d"/><rect x="58" y="30" width="16" height="16" rx="4" fill="#ffc53d"/><rect x="74" y="30" width="16" height="16" rx="4" fill="#ffc53d" opacity="0"/></g>
+<g fill="rgba(255,255,255,.35)"><rect x="21" y="65" width="10" height="3" rx="1.5"/><rect x="37" y="65" width="10" height="3" rx="1.5"/><rect x="53" y="65" width="10" height="3" rx="1.5"/><rect x="69" y="65" width="10" height="3" rx="1.5"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-ccw" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4"/><path d="M4 3.5v5h5"/></g></symbol>
+<symbol id="i-cw" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.3-5.4"/><path d="M20 3.5v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#td-logo"/></svg>
+      <h1>Tumbledown</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="marathon">Marathon</button>
+    <button data-mode="sprint">Sprint</button>
+    <button data-mode="ultra">Ultra</button>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="ready" id="ready"></div>
+    </div>
+  </div>
+
+  <!-- on-screen buttons (Settings); swiping on the board works either way -->
+  <div class="pad" id="pad">
+    <button data-b="left" aria-label="Left">&#9664;</button>
+    <button data-b="right" aria-label="Right">&#9654;</button>
+    <button data-b="soft" aria-label="Soft drop">&#9660;</button>
+    <button data-b="hard" aria-label="Hard drop"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5l6 6 6-6M6 11l6 6 6-6"/><path d="M5 21h14"/></g></svg></button>
+    <button data-b="ccw" aria-label="Turn left"><svg viewBox="0 0 24 24"><use href="#i-ccw"/></svg></button>
+    <button data-b="cw" aria-label="Turn right"><svg viewBox="0 0 24 24"><use href="#i-cw"/></svg></button>
+    <button data-b="hold" aria-label="Hold">HOLD</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnPause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg><span>Pause</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>On-screen buttons<small>Move, turn, drop and hold buttons under the board. Swiping on the board works either way.</small></div>
+        <span class="switch"><input type="checkbox" id="setPad"><span></span></span></label>
+      <label class="row"><div>Ghost piece<small>A see-through outline shows where the piece will land.</small></div>
+        <span class="switch"><input type="checkbox" id="setGhost"><span></span></span></label>
+      <label class="row"><div>Sound<small>Clicks, thuds and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Tumbledown</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Tumbledown records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Tumbledown logic: the falling-block rules (modern standard rules: 7-piece bag, standard rotation with wall kicks,
+   hold, ghost, lock delay, T-spins, back-to-back, combos, all clears). One call to tick() = one frame at 60 Hz.
+   Runs in the browser and in Node (tools/bot.js). Our own names: a four-line clear is a "Quad". */
+var TD = (function () {
+  'use strict';
+  var W = 10, H = 22, HIDDEN = 2;            // rows 0-1 are above the visible field
+  var KINDS = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+  var SHAPES = {
+    I: ['....', '####', '....', '....'],
+    O: ['.##.', '.##.', '....', '....'],
+    T: ['.#.', '###', '...'],
+    S: ['.##', '##.', '...'],
+    Z: ['##.', '.##', '...'],
+    J: ['#..', '###', '...'],
+    L: ['..#', '###', '...']
+  };
+  // cells for each kind and rotation (0 spawn, 1 right, 2 reverse, 3 left): [[x, y], ...] inside the box
+  var CELLS = {};
+  KINDS.forEach(function (k) {
+    var m = SHAPES[k].map(function (r) { return r.split(''); }), n = m.length, rots = [];
+    for (var r = 0; r < 4; r++) {
+      var cells = [];
+      for (var y = 0; y < m.length; y++) for (var x = 0; x < m[y].length; x++) if (m[y][x] === '#') cells.push([x, y]);
+      rots.push(cells);
+      if (k !== 'O') { var nm = []; for (var yy = 0; yy < n; yy++) { nm.push([]); for (var xx = 0; xx < n; xx++) nm[yy].push(m[n - 1 - xx][yy]); } m = nm; }
+    }
+    CELLS[k] = rots;
+  });
+  // wall kicks (x right, y UP as usually written; flipped when used because our rows go down)
+  var KICK = {
+    '01': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]], '10': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
+    '12': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]], '21': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
+    '23': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]], '32': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],
+    '30': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]], '03': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
+  };
+  var KICK_I = {
+    '01': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]], '10': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],
+    '12': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]], '21': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]],
+    '23': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]], '32': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],
+    '30': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]], '03': [[0, 0], [-1, 0], [2, 0], [-1, -2], [2, 1]]
+  };
+  var LOCK_DELAY = 30, MOVE_RESETS = 15, CLEAR_DELAY = 20, ENTRY_DELAY = 6, SOFT_MUL = 20;
+  var MODES = { marathon: { goal: 150 }, sprint: { goal: 40 }, ultra: { time: 120 * 60 } };
+
+  // ---------- random (seeded, so a saved game carries on the same way) ----------
+  function rnd(s) { var t = (s.seed = (s.seed + 0x6D2B79F5) | 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+  function refill(s) {
+    while (s.queue.length < 7) {
+      var bag = KINDS.slice();
+      for (var i = bag.length - 1; i > 0; i--) { var j = Math.floor(rnd(s) * (i + 1)), t = bag[i]; bag[i] = bag[j]; bag[j] = t; }
+      s.queue = s.queue.concat(bag);
+    }
+  }
+
+  // ---------- speed ----------
+  // rows per frame; the standard curve: seconds per row = (0.8 - (level - 1) * 0.007) ^ (level - 1)
+  function gravity(level) { var L = Math.min(20, Math.max(1, level)); return 1 / (60 * Math.pow(0.8 - (L - 1) * 0.007, L - 1)); }
+
+  // ---------- state ----------
+  function create(mode, startLevel, seed) {
+    var s = {
+      mode: mode, W: W, H: H, board: new Array(W * H).fill(0), seed: (seed >>> 0) || 1, queue: [], cur: null, hold: null, held: false,
+      score: 0, lines: 0, level: mode === 'marathon' ? Math.min(15, Math.max(1, startLevel || 1)) : 1, startLevel: mode === 'marathon' ? Math.min(15, Math.max(1, startLevel || 1)) : 1,
+      frames: 0, timeLeft: mode === 'ultra' ? MODES.ultra.time : 0, combo: -1, b2b: false, over: false, won: false, endless: false,
+      clearing: null, entry: 0, fall: 0, lockT: 0, resets: 0, lowest: 0, lastRot: false, kick5: false,
+      count: { pieces: 0, quads: 0, tspins: 0, allClears: 0, maxCombo: 0, singles: 0, doubles: 0, triples: 0 },
+      ev: []
+    };
+    refill(s); spawn(s);
+    return s;
+  }
+  function kindAt(s, x, y) { return x < 0 || x >= W || y >= H ? 9 : y < 0 ? 0 : s.board[y * W + x]; }
+  function fits(s, k, r, px, py) {
+    var c = CELLS[k][r];
+    for (var i = 0; i < 4; i++) if (kindAt(s, px + c[i][0], py + c[i][1])) return false;
+    return true;
+  }
+  function spawn(s, kind) {
+    var k = kind || s.queue.shift(); refill(s);
+    var p = { k: k, r: 0, x: 3, y: k === 'I' ? -1 : 0 };
+    s.cur = p; s.fall = 0; s.lockT = 0; s.resets = 0; s.lastRot = false; s.kick5 = false;
+    if (!fits(s, k, 0, p.x, p.y)) { gameOver(s, 'blocked'); return; }
+    if (fits(s, k, 0, p.x, p.y + 1)) p.y++;          // shows up at the top of the field straight away
+    s.lowest = p.y;
+    s.count.pieces++;
+  }
+  function gameOver(s, why) { s.over = true; s.why = why; s.ev.push({ t: 'over', why: why }); }
+  function onFloor(s) { var p = s.cur; return !fits(s, p.k, p.r, p.x, p.y + 1); }
+  // a move or turn while resting on the stack restarts the lock timer (up to 15 times per piece)
+  function touched(s) {
+    if (onFloor(s)) { if (s.resets < MOVE_RESETS) { s.lockT = 0; s.resets++; } }
+  }
+  function busy(s) { return s.over || s.clearing || s.entry > 0 || !s.cur; }
+
+  function move(s, dx) {
+    if (busy(s)) return false;
+    var p = s.cur;
+    if (!fits(s, p.k, p.r, p.x + dx, p.y)) return false;
+    p.x += dx; s.lastRot = false; touched(s);
+    return true;
+  }
+  function rotate(s, dir) {
+    if (busy(s)) return false;
+    var p = s.cur; if (p.k === 'O') return false;
+    var to = (p.r + (dir > 0 ? 1 : 3)) % 4, tab = (p.k === 'I' ? KICK_I : KICK)['' + p.r + to];
+    for (var i = 0; i < tab.length; i++) {
+      var nx = p.x + tab[i][0], ny = p.y - tab[i][1];
+      if (fits(s, p.k, to, nx, ny)) {
+        p.x = nx; p.y = ny; p.r = to; s.lastRot = true; s.kick5 = i === 4;
+        if (p.y > s.lowest) { s.lowest = p.y; s.resets = 0; }
+        touched(s);
+        return true;
+      }
+    }
+    return false;
+  }
+  function softDrop(s) {
+    if (busy(s)) return false;
+    var p = s.cur;
+    if (!fits(s, p.k, p.r, p.x, p.y + 1)) return false;
+    p.y++; s.score += 1; s.lastRot = false; s.fall = 0;
+    if (p.y > s.lowest) { s.lowest = p.y; s.resets = 0; s.lockT = 0; }
+    return true;
+  }
+  function hardDrop(s) {
+    if (busy(s)) return 0;
+    var p = s.cur, n = 0;
+    while (fits(s, p.k, p.r, p.x, p.y + 1)) { p.y++; n++; }
+    if (n) s.lastRot = false;
+    s.score += 2 * n;
+    s.ev.push({ t: 'hard', n: n });
+    lock(s);
+    return n;
+  }
+  function hold(s) {
+    if (busy(s) || s.held) return false;
+    var k = s.cur.k;
+    if (s.hold) { var h = s.hold; s.hold = k; spawn(s, h); }
+    else { s.hold = k; spawn(s); }
+    s.count.pieces--; s.held = true;
+    s.ev.push({ t: 'hold' });
+    return true;
+  }
+  function ghostY(s) { var p = s.cur, y = p.y; while (fits(s, p.k, p.r, p.x, y + 1)) y++; return y; }
+
+  // T-spin check (three corners of the T's box filled; "mini" if the two corners it points at aren't both filled)
+  function tspin(s) {
+    var p = s.cur;
+    if (p.k !== 'T' || !s.lastRot) return 0;
+    var cs = [[0, 0], [2, 0], [2, 2], [0, 2]], filled = cs.map(function (c) { return kindAt(s, p.x + c[0], p.y + c[1]) ? 1 : 0; });
+    if (filled[0] + filled[1] + filled[2] + filled[3] < 3) return 0;
+    var front = [[0, 1], [1, 2], [2, 3], [3, 0]][p.r]; // the corners on the side the T points to
+    return (filled[front[0]] && filled[front[1]]) || s.kick5 ? 2 : 1; // 2 = T-spin, 1 = mini
+  }
+  var BASE = { 0: 0, 1: 100, 2: 300, 3: 500, 4: 800 }, TS = { 0: 400, 1: 800, 2: 1200, 3: 1600 }, TSM = { 0: 100, 1: 200, 2: 400 };
+  var AC = { 1: 800, 2: 1200, 3: 1800, 4: 2000 };
+  function lock(s) {
+    var p = s.cur, c = CELLS[p.k][p.r], above = true, ts = tspin(s), code = KINDS.indexOf(p.k) + 1;
+    for (var i = 0; i < 4; i++) { var y = p.y + c[i][1]; s.board[y * W + p.x + c[i][0]] = code; if (y >= HIDDEN) above = false; }
+    s.cur = null; s.held = false;
+    s.ev.push({ t: 'lock', k: p.k });
+    // full rows
+    var rows = [];
+    for (var yy = 0; yy < H; yy++) { var full = true; for (var x = 0; x < W; x++) if (!s.board[yy * W + x]) { full = false; break; } if (full) rows.push(yy); }
+    var n = rows.length, lv = s.level, pts = 0, difficult = n === 4 || (ts && n > 0), label = [];
+    if (ts === 2) { pts = TS[n]; label.push('T-Spin' + (n ? ' ' + ['', 'Single', 'Double', 'Triple'][n] : '')); s.count.tspins++; }
+    else if (ts === 1) { pts = TSM[Math.min(2, n)]; label.push('Mini T-Spin' + (n ? ' ' + ['', 'Single', 'Double'][Math.min(2, n)] : '')); s.count.tspins++; }
+    else { pts = BASE[n]; if (n) label.push(['', 'Single', 'Double', 'Triple', 'Quad!'][n]); }
+    if (n === 1) s.count.singles++; else if (n === 2) s.count.doubles++; else if (n === 3) s.count.triples++; else if (n === 4) s.count.quads++;
+    var b2b = false;
+    if (n > 0) {
+      if (difficult) { if (s.b2b) { pts = Math.floor(pts * 1.5); b2b = true; label.unshift('Back-to-Back'); } s.b2b = true; }
+      else s.b2b = false;
+    }
+    pts *= lv;
+    if (n > 0) { s.combo++; if (s.combo > 0) { pts += 50 * s.combo * lv; label.push('Combo ' + s.combo); } if (s.combo > s.count.maxCombo) s.count.maxCombo = s.combo; }
+    else s.combo = -1;
+    // all clear: nothing left once these rows go
+    var allClear = false;
+    if (n) {
+      allClear = true;
+      for (var q = 0; q < W * H && allClear; q++) if (s.board[q] && rows.indexOf(Math.floor(q / W)) < 0) allClear = false;
+      if (allClear) { pts += (n === 4 && b2b ? 3200 : AC[n]) * lv; label.push('All Clear!'); s.count.allClears++; }
+    }
+    s.score += pts;
+    if (label.length) s.ev.push({ t: 'clear', n: n, pts: pts, label: label, ts: ts, b2b: b2b, combo: s.combo, allClear: allClear });
+    if (n) { s.clearing = { rows: rows, t: 0 }; }
+    else if (above) { gameOver(s, 'top'); return; }
+    else s.entry = ENTRY_DELAY;
+  }
+  function collapse(s) {
+    var rows = s.clearing.rows, nb = [], y, x;
+    for (y = 0; y < H; y++) if (rows.indexOf(y) < 0) nb.push(s.board.slice(y * W, y * W + W));
+    while (nb.length < H) nb.unshift(new Array(W).fill(0));
+    s.board = [].concat.apply([], nb);
+    s.lines += rows.length; s.clearing = null;
+    // levels: 10 lines each (Marathon); Sprint and Ultra stay at level 1
+    if (s.mode === 'marathon') {
+      var lv = s.startLevel + Math.floor(s.lines / 10);
+      if (!s.endless) lv = Math.min(15, lv);
+      if (lv > s.level) { s.level = lv; s.ev.push({ t: 'level', level: lv }); }
+      if (!s.endless && !s.won && s.lines >= MODES.marathon.goal) { s.won = true; s.ev.push({ t: 'won' }); return; }
+    }
+    if (s.mode === 'sprint' && s.lines >= MODES.sprint.goal) { s.won = true; s.lines = Math.max(s.lines, 40); s.ev.push({ t: 'won' }); return; }
+    s.entry = ENTRY_DELAY;
+  }
+  function keepGoing(s) { s.endless = true; s.won = false; s.entry = ENTRY_DELAY; } // Marathon past 150 lines
+
+  // one frame. soft: the soft drop is held (the piece falls 20 times faster)
+  function tick(s, soft) {
+    if (s.over || s.won) return;
+    s.frames++;
+    if (s.mode === 'ultra') { s.timeLeft--; if (s.timeLeft <= 0) { s.timeLeft = 0; s.won = true; s.ev.push({ t: 'time' }); return; } }
+    if (s.clearing) { if (++s.clearing.t >= CLEAR_DELAY) collapse(s); return; }
+    if (s.entry > 0) { if (--s.entry === 0) spawn(s); return; }
+    if (!s.cur) { spawn(s); return; }
+    var g = gravity(s.level);
+    if (soft) g = Math.max(g * SOFT_MUL, 0.5);
+    s.fall += Math.min(20, g);
+    while (s.fall >= 1) {
+      s.fall -= 1;
+      var p = s.cur;
+      if (fits(s, p.k, p.r, p.x, p.y + 1)) {
+        p.y++; s.lastRot = false; if (soft) s.score += 1;
+        if (p.y > s.lowest) { s.lowest = p.y; s.resets = 0; s.lockT = 0; }
+      } else { s.fall = 0; break; }
+    }
+    if (onFloor(s)) {
+      if (++s.lockT >= LOCK_DELAY || s.resets >= MOVE_RESETS && s.lockT >= LOCK_DELAY) lock(s);
+    } else s.lockT = 0;
+  }
+  function takeEvents(s) { var e = s.ev; s.ev = []; return e; }
+  function stackHeight(s) { for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) if (s.board[y * W + x]) return H - y; return 0; }
+
+  return {
+    W: W, H: H, HIDDEN: HIDDEN, KINDS: KINDS, CELLS: CELLS, MODES: MODES, LOCK_DELAY: LOCK_DELAY, CLEAR_DELAY: CLEAR_DELAY,
+    create: create, tick: tick, move: move, rotate: rotate, softDrop: softDrop, hardDrop: hardDrop, hold: hold, ghostY: ghostY,
+    fits: fits, gravity: gravity, takeEvents: takeEvents, keepGoing: keepGoing, stackHeight: stackHeight, busy: busy
+  };
+})();
+if (typeof module !== 'undefined') module.exports = TD;
+</script>
+<script>
+/* Tumbledown sounds: synthesized with Web Audio (no audio files). */
+var TDSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    move: function () { if (on) noise(3000, 4, 0.03, 0.12); },
+    turn: function () { if (on) { noise(2200, 3, 0.04, 0.14); tone('sine', 880, 1100, 0.04, 0.05); } },
+    land: function () { if (on) { noise(420, 1.5, 0.09, 0.45); tone('sine', 150, 90, 0.08, 0.2); } },
+    hard: function () { if (on) { noise(300, 1.2, 0.12, 0.7); tone('sine', 120, 60, 0.12, 0.3); } },
+    hold: function () { if (on) { tone('triangle', 660, 0, 0.06, 0.15); tone('triangle', 990, 0, 0.08, 0.12, 0.05); } },
+    clear: function (n) {
+      if (!on) return;
+      var notes = [[523], [523, 659], [523, 659, 784], [523, 659, 784, 1047]][Math.min(4, n) - 1] || [523];
+      notes.forEach(function (f, i) { tone('triangle', f, 0, 0.16, 0.25, i * 0.06); });
+      noise(5000, 0.8, 0.25, 0.12);
+    },
+    big: function () { if (!on) return; [784, 988, 1175, 1568, 1976].forEach(function (f, i) { tone('square', f, 0, 0.12, 0.08, i * 0.05); tone('triangle', f, 0, 0.18, 0.18, i * 0.05); }); },
+    level: function () { if (!on) return; [659, 784, 988, 1319].forEach(function (f, i) { tone('triangle', f, 0, 0.18, 0.22, i * 0.08); }); },
+    tick: function () { if (on) noise(3200, 5, 0.03, 0.12); },
+    over: function () { if (!on) return; [392, 349, 311, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.32, 0.28, i * 0.2); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Tumbledown app: the board, touch and button controls, the frame loop, modes, saves, stats and house ads. */
+(function () {
+  'use strict';
+  var S = TDSound, W = TD.W, H = TD.H, HID = TD.HIDDEN, VIS = H - HID;
+  var MODE_NAMES = { marathon: 'Marathon', sprint: 'Sprint', ultra: 'Ultra' };
+  var STEP = 1000 / 60, DAS = 10, ARR = 2;          // frames: button auto-repeat after 10, then every 2
+  // our own colors for the seven pieces (in TD.KINDS order: I O T S Z J L), and 8 = grey
+  var COLORS = ['#ff5d7a', '#3ad6a6', '#ffc53d', '#4db5ff', '#ff8a3d', '#a78bfa', '#9be15d', '#8b90a8'];
+
+  // ================= storage =================
+  var store = Goobs.store('blocks');
+  var settings = { sound: false, adEvery: 3, pad: false, ghost: true, level: 1 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    settings.level = Math.min(15, Math.max(1, settings.level | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'marathon', seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (!MODE_NAMES[meta.mode]) meta.mode = 'marathon';
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  (function () {
+    var d = { marathon: { games: 0, best: 0, bestLevel: 0, bestLines: 0, done: 0 }, sprint: { games: 0, best: 0, done: 0 }, ultra: { games: 0, best: 0, bestLines: 0 },
+      all: { lines: 0, pieces: 0, quads: 0, tspins: 0, allClears: 0, maxCombo: 0, ms: 0 } };
+    for (var m in d) { var o = stats[m] || (stats[m] = {}); for (var k in d[m]) if (typeof o[k] !== 'number') o[k] = d[m][k]; }
+  })();
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function clock(frames, cs) { var ms = frames * STEP, m = Math.floor(ms / 60000), sec = (ms % 60000) / 1000; return m + ':' + (sec < 10 ? '0' : '') + (cs ? sec.toFixed(2) : Math.floor(sec)); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+
+  // ================= game state =================
+  // phase: 'ready' (start panel), 'run', 'paused', 'falling' (the end: the stack tumbles down), 'over'
+  var s = null, phase = 'ready', acc = 0, lastT = 0;
+  function newGame(mode) {
+    s = TD.create(mode, settings.level, newSeed());
+    TD.takeEvents(s);
+    phase = 'ready'; acc = 0; tumble = null;
+    store.del('run');
+    renderAll();
+  }
+  function saveRun() {
+    if (s && (phase === 'run' || phase === 'paused') && !s.over && !s.won) store.set('run', s);
+    else store.del('run');
+  }
+  function resumeRun() {
+    var r = store.get('run', null);
+    if (!r || r.mode !== meta.mode || !Array.isArray(r.board) || r.board.length !== W * H || r.over || r.won) return false;
+    s = r; s.ev = []; phase = 'paused'; acc = 0;
+    renderAll();
+    return true;
+  }
+  function begin() {
+    if (!s || phase !== 'ready') return;
+    phase = 'run'; lastT = performance.now(); acc = 0;
+    S.unlock();
+    renderReady(); renderTools(); renderInfo();
+  }
+  function pause() { if (phase !== 'run') return; phase = 'paused'; held = {}; saveRun(); renderReady(); renderTools(); }
+  function resume() { if (phase !== 'paused') return; phase = 'run'; lastT = performance.now(); acc = 0; renderReady(); renderTools(); }
+
+  // ================= loop (fixed 60 Hz steps) =================
+  var held = {}, softHeld = false;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!s) return;
+    var dt = Math.min(100, t - lastT); lastT = t;
+    if (phase === 'run' && !sheetOpen()) {
+      acc += dt;
+      var guard = 0;
+      while (acc >= STEP && guard++ < 6) { acc -= STEP; step(); if (phase !== 'run') break; }
+      if (s.mode !== 'marathon' && (s.frames % 6 === 0)) renderInfo();
+    }
+    if (phase === 'falling') { tumbleStep(dt); if (tumble.t > 1300) { phase = 'over'; endCard(); } }
+    draw();
+  }
+  function step() {
+    // buttons and keys held down: auto-repeat moves
+    ['left', 'right'].forEach(function (b) {
+      var h = held[b]; if (!h) return;
+      h.f++;
+      if (h.f >= DAS && (h.f - DAS) % ARR === 0) { if (TD.move(s, b === 'left' ? -1 : 1)) S.move(); }
+    });
+    TD.tick(s, softHeld || !!held.soft);
+    events();
+  }
+  function events() {
+    TD.takeEvents(s).forEach(function (e) {
+      if (e.t === 'lock') { flash = { t: performance.now() }; }
+      else if (e.t === 'hard') { S.hard(); shake = performance.now(); }
+      else if (e.t === 'hold') S.hold();
+      else if (e.t === 'clear') {
+        if (e.n) S.clear(e.n); else S.turn();
+        var big = e.n === 4 || e.ts || e.allClear || e.b2b;
+        if (big) S.big();
+        var lbl = e.label.filter(function (x) { return !/^(Single|Double|Triple)$/.test(x); });
+        if (lbl.length && (big || e.combo > 0)) pop(lbl.join('<br>'), e.pts ? '+' + fmt(e.pts) : '', big ? 1.2 : 1);
+        renderInfo();
+      }
+      else if (e.t === 'level') { S.level(); pop('Level ' + e.level, '', 1); renderInfo(); }
+      else if (e.t === 'over') { startTumble(); }
+      else if (e.t === 'won' || e.t === 'time') { phase = 'over'; renderInfo(); endCard(); }
+    });
+    if (!flash && s.cur === null) { /* nothing */ }
+  }
+  var flash = null, shake = 0;
+
+  // ================= drawing =================
+  var cv, cx, cell = 24, dpr = 1, colors = {}, L = {}, sprites = {};
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    ['--td-well', '--td-well-2', '--td-grid', '--td-edge', '--td-strip', '--td-label'].forEach(function (k) { colors[k] = cs.getPropertyValue(k).trim(); });
+  }
+  function fit() {
+    // full screen (1.2.0): #stagewrap is the whole free space under the floating top row (above the buttons when they're on)
+    var wrap = $('stagewrap').getBoundingClientRect(), maxW = Math.min(wrap.width, 460), maxH = wrap.height;
+    // the stage: a strip (hold and next pieces) over the 10 x 20 well, or, when that makes the well bigger
+    // (shorter screens), hold on the left and next on the right of the well
+    var top = Math.floor(Math.min(maxW / W, maxH / (VIS + 2.25))), side = Math.floor(Math.min(maxW / (W + 6.4), maxH / VIS));
+    L.side = side > top;
+    cell = Math.max(10, L.side ? side : top);
+    L.bw = cell * W; L.bh = cell * VIS;
+    if (L.side) {
+      L.col = Math.round(cell * 3.2); L.strip = 0; L.gap = 0;
+      L.bx = L.col; L.by = 0; L.w = L.bw + 2 * L.col; L.h = L.bh;
+    } else {
+      // 1.2.0: a slimmer strip (2 cells + a quarter-cell gap, was 2.3 + 0.3) gives the well one more pixel per cell
+      L.strip = Math.round(cell * 2); L.gap = Math.round(cell * 0.25);
+      L.bx = 0; L.by = L.strip + L.gap; L.w = L.bw; L.h = L.by + L.bh;
+    }
+    var st = $('stage');
+    st.style.width = L.w + 'px'; st.style.height = L.h + 'px';
+    $('ready').classList.toggle('compact', L.h < 470);
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.width = Math.round(L.w * dpr); cv.height = Math.round(L.h * dpr);
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    readColors(); sprites = {};
+  }
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function shade(hex, k) { var n = parseInt(hex.slice(1), 16), f = function (v) { return Math.max(0, Math.min(255, Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)))); }; return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; }
+  // one block, drawn once per size and color then copied
+  function sprite(ci, size) {
+    var key = ci + ':' + size; if (sprites[key]) return sprites[key];
+    var c = document.createElement('canvas'), px = Math.max(2, Math.round(size * dpr)); c.width = c.height = px;
+    var x = c.getContext('2d'), col = COLORS[ci], r = px * 0.2, p = Math.max(1, px * 0.05);
+    rr(x, p, p, px - 2 * p, px - 2 * p, r); x.fillStyle = shade(col, -0.25); x.fill();
+    var g = x.createLinearGradient(0, 0, 0, px); g.addColorStop(0, shade(col, 0.25)); g.addColorStop(1, col);
+    rr(x, p, p, px - 2 * p, px - 2 * p - px * 0.1, r); x.fillStyle = g; x.fill();
+    rr(x, px * 0.22, px * 0.14, px * 0.56, px * 0.13, px * 0.065); x.fillStyle = 'rgba(255,255,255,.45)'; x.fill();
+    sprites[key] = c; return c;
+  }
+  function block(ci, x, y, size, alpha) {
+    if (alpha != null) cx.globalAlpha = alpha;
+    cx.drawImage(sprite(ci, size), x, y, size, size);
+    if (alpha != null) cx.globalAlpha = 1;
+  }
+  function mini(k, cxm, cym, size) { // a piece centered at (cxm, cym)
+    var cs = TD.CELLS[k][0], minx = 9, maxx = -9, miny = 9, maxy = -9;
+    cs.forEach(function (c) { minx = Math.min(minx, c[0]); maxx = Math.max(maxx, c[0]); miny = Math.min(miny, c[1]); maxy = Math.max(maxy, c[1]); });
+    var w = (maxx - minx + 1) * size, h = (maxy - miny + 1) * size, ci = TD.KINDS.indexOf(k);
+    cs.forEach(function (c) { block(ci, cxm - w / 2 + (c[0] - minx) * size, cym - h / 2 + (c[1] - miny) * size, size); });
+  }
+  function draw() {
+    if (!cx || !s) return;
+    var now = performance.now(), c = cell;
+    cx.clearRect(0, 0, L.w, L.h);
+    var q = s.queue;
+    cx.font = '800 ' + Math.max(9, Math.round(c * 0.38)) + 'px -apple-system, system-ui, sans-serif'; cx.textBaseline = 'top'; cx.textAlign = 'left';
+    if (L.side) {
+      // hold on the left, next on the right
+      var cw = L.col - c * 0.25;
+      cx.fillStyle = colors['--td-strip']; rr(cx, 0, 0, cw, c * 3.2, 10); cx.fill(); rr(cx, L.w - cw, 0, cw, c * 9.4, 10); cx.fill();
+      cx.fillStyle = colors['--td-label']; cx.fillText('HOLD', c * 0.3, c * 0.25); cx.fillText('NEXT', L.w - cw + c * 0.3, c * 0.25);
+      if (s.hold) { cx.globalAlpha = s.held ? 0.35 : 1; mini(s.hold, cw / 2, c * 1.95, c * 0.6); cx.globalAlpha = 1; }
+      mini(q[0], L.w - cw / 2, c * 1.95, c * 0.6);
+      for (var j = 1; j < 5; j++) mini(q[j], L.w - cw / 2, c * 3.55 + (j - 1) * c * 1.5, c * 0.42);
+    } else {
+      // strip: hold on the left, next pieces on the right
+      cx.fillStyle = colors['--td-strip']; rr(cx, 0, 0, L.w, L.strip, 12); cx.fill();
+      var hw = c * 2.6;
+      cx.fillStyle = colors['--td-label']; cx.fillText('HOLD', c * 0.3, c * 0.18);
+      if (s.hold) { cx.globalAlpha = s.held ? 0.35 : 1; mini(s.hold, hw / 2 + c * 0.1, L.strip * 0.6, c * 0.52); cx.globalAlpha = 1; }
+      cx.fillStyle = 'rgba(255,255,255,.08)'; cx.fillRect(hw, c * 0.3, 1, L.strip - c * 0.6);
+      cx.fillStyle = colors['--td-label']; cx.fillText('NEXT', hw + c * 0.3, c * 0.18);
+      var nx = hw + c * 0.1;
+      mini(q[0], nx + c * 1.2, L.strip * 0.6, c * 0.52);
+      for (var i = 1; i < 5; i++) { var bx = nx + c * 2.4 + (i - 1) * c * 1.52; if (bx + c * 1.4 > L.w) break; mini(q[i], bx + c * 0.7, L.strip * 0.62, c * 0.34); }
+    }
+    // the well
+    var ox = L.bx, oy = L.by, jolt = now - shake < 120 ? Math.round(2 * (1 - (now - shake) / 120)) : 0;
+    cx.save();
+    rr(cx, ox, oy, L.bw, L.bh, 12); cx.clip();
+    cx.fillStyle = colors['--td-well']; cx.fillRect(ox, oy, L.bw, L.bh);
+    cx.fillStyle = colors['--td-well-2']; for (var gx = 1; gx < W; gx += 2) cx.fillRect(ox + gx * c, oy, c, L.bh);
+    cx.translate(0, jolt);
+    var danger = TD.stackHeight(s) >= VIS - 3 && phase === 'run';
+    // settled blocks
+    var clr = s.clearing, k = clr ? clr.t / TD.CLEAR_DELAY : 0;
+    if (!tumble) {
+      for (var y = HID; y < H; y++) {
+        var gone = clr && clr.rows.indexOf(y) >= 0;
+        for (var x = 0; x < W; x++) {
+          var v = s.board[y * W + x]; if (!v) continue;
+          var px = ox + x * c, py = oy + (y - HID) * c;
+          if (gone) {
+            var sh = 1 - k, sz = c * sh; if (sz < 1) continue;
+            block(v - 1, px + (c - sz) / 2, py + (c - sz) / 2, sz);
+            cx.fillStyle = 'rgba(255,255,255,' + (0.8 * (1 - k)).toFixed(3) + ')'; cx.fillRect(px, py, c, c);
+          } else block(v - 1, px, py, c, phase === 'over' && s.over ? 0.5 : null);
+        }
+      }
+    } else drawTumble(ox, oy);
+    // the falling piece and its ghost
+    if (s.cur && !s.over && phase !== 'ready' || (s.cur && phase === 'ready')) {
+      var p = s.cur, cs = TD.CELLS[p.k][p.r], ci = TD.KINDS.indexOf(p.k);
+      if (settings.ghost && phase !== 'ready') {
+        var gy = TD.ghostY(s);
+        if (gy !== p.y) cs.forEach(function (cc) {
+          var yy = gy + cc[1]; if (yy < HID) return;
+          var gpx = ox + (p.x + cc[0]) * c, gpy = oy + (yy - HID) * c;
+          rr(cx, gpx + 2, gpy + 2, c - 4, c - 4, c * 0.2); cx.fillStyle = hexA(COLORS[ci], 0.16); cx.fill();
+          cx.lineWidth = Math.max(1.5, c * 0.07); cx.strokeStyle = hexA(COLORS[ci], 0.7); cx.stroke();
+        });
+      }
+      var lockFade = s.lockT > 0 ? 1 - 0.35 * (s.lockT / TD.LOCK_DELAY) : 1;
+      var fallOff = phase === 'run' ? Math.min(0.95, s.fall) : 0; // smooth fall between rows
+      if (!TD.fits(s, p.k, p.r, p.x, p.y + 1)) fallOff = 0;
+      cs.forEach(function (cc) {
+        var yy = p.y + cc[1] + fallOff; if (yy < HID - 0.95) return;
+        block(ci, ox + (p.x + cc[0]) * c, oy + (yy - HID) * c, c, lockFade);
+      });
+    }
+    // a quick glow where a piece just landed
+    cx.restore();
+    // edge
+    cx.lineWidth = danger ? 3 : 2; cx.strokeStyle = danger ? 'rgba(255,80,90,' + (0.55 + 0.35 * Math.sin(now / 160)).toFixed(2) + ')' : colors['--td-edge'];
+    rr(cx, ox + 1, oy + 1, L.bw - 2, L.bh - 2, 11); cx.stroke();
+  }
+  function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  // ---------- the end: the stack tumbles out of the well ----------
+  var tumble = null;
+  function startTumble() {
+    phase = 'falling'; S.over();
+    var bits = [], seed = 7;
+    function r() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (var y = HID; y < H; y++) for (var x = 0; x < W; x++) { var v = s.board[y * W + x]; if (v) bits.push({ x: x * cell, y: (y - HID) * cell, vx: (r() - 0.5) * 0.25, vy: -r() * 0.35, d: (H - y) * 22 + r() * 120, v: v, a: (r() - 0.5) * 0.01, rot: 0 }); }
+    if (s.cur) TD.CELLS[s.cur.k][s.cur.r].forEach(function (cc) { bits.push({ x: (s.cur.x + cc[0]) * cell, y: (s.cur.y + cc[1] - HID) * cell, vx: (r() - 0.5) * 0.3, vy: -0.3, d: 0, v: TD.KINDS.indexOf(s.cur.k) + 1, a: 0.01, rot: 0 }); });
+    tumble = { t: 0, bits: bits };
+    renderTools();
+  }
+  function tumbleStep(dt) {
+    tumble.t += dt;
+    tumble.bits.forEach(function (b) {
+      if (tumble.t < b.d) return;
+      b.vy += 0.0025 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.a * dt;
+    });
+  }
+  function drawTumble(ox, oy) {
+    tumble.bits.forEach(function (b) {
+      cx.save(); cx.translate(ox + b.x + cell / 2, oy + b.y + cell / 2); cx.rotate(b.rot);
+      block(b.v - 1, -cell / 2, -cell / 2, cell); cx.restore();
+    });
+  }
+
+  // ================= input =================
+  function act(a) {
+    if (!s || sheetOpen()) return;
+    S.unlock();
+    if (phase === 'ready') { begin(); return; }
+    if (phase === 'paused') { resume(); return; }
+    if (phase !== 'run') return;
+    if (a === 'left' || a === 'right') { if (TD.move(s, a === 'left' ? -1 : 1)) S.move(); }
+    else if (a === 'cw' || a === 'ccw') { if (TD.rotate(s, a === 'cw' ? 1 : -1)) S.turn(); }
+    else if (a === 'soft') { TD.softDrop(s); }
+    else if (a === 'hard') { TD.hardDrop(s); }
+    else if (a === 'hold') { TD.hold(s); }
+    events();
+  }
+  // gestures on the board: drag to move (the piece follows your finger), drag down to drop faster,
+  // flick down to drop at once, flick up to hold, tap to turn (tap the hold box to hold)
+  var g = null;
+  function localPos(e) { var r = $('stage').getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function onDown(e) {
+    if (e.target.closest('button, .overlay, .top, .modes, .toolbar, .pad')) return;
+    if (!e.target.closest('#stagewrap')) return;
+    var lp = localPos(e);
+    g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ax: e.clientX, ay: e.clientY, t0: performance.now(), mode: null, far: 0, hist: [{ x: e.clientX, y: e.clientY, t: performance.now() }], lx: lp.x, ly: lp.y, soft: 0 };
+  }
+  function onMove(e) {
+    if (!g || e.pointerId !== g.id) return;
+    var now = performance.now();
+    g.hist.push({ x: e.clientX, y: e.clientY, t: now }); if (g.hist.length > 12) g.hist.shift();
+    g.far = Math.max(g.far, Math.hypot(e.clientX - g.x0, e.clientY - g.y0));
+    if (phase !== 'run' || sheetOpen()) return;
+    var dx = e.clientX - g.ax, dy = e.clientY - g.ay, stepX = cell * 0.85;
+    if (!g.mode && Math.max(Math.abs(dx), Math.abs(dy)) > 10) g.mode = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    if (g.mode === 'h' && dy > cell * 1.6 && Math.abs(dx) < stepX) { g.mode = 'v'; g.ax = e.clientX; }
+    if (g.mode === 'v' && Math.abs(dx) > stepX * 1.6 && dy < cell * 0.5) { g.mode = 'h'; g.ay = e.clientY; }
+    if (g.mode === 'h') {
+      while (Math.abs(e.clientX - g.ax) >= stepX) {
+        var d = e.clientX > g.ax ? 1 : -1;
+        g.ax += d * stepX;
+        if (TD.move(s, d)) S.move();
+      }
+      g.ay = e.clientY;
+    } else if (g.mode === 'v') {
+      while (e.clientY - g.ay >= cell) { g.ay += cell; if (TD.softDrop(s)) g.soft++; }
+      if (e.clientY < g.ay) g.ay = e.clientY;
+    }
+    events();
+  }
+  function onUp(e) {
+    if (!g || e.pointerId !== g.id) return;
+    var gg = g; g = null;
+    if (sheetOpen()) return;
+    var now = performance.now(), h = gg.hist, a = h[0];
+    for (var i = h.length - 1; i >= 0; i--) { a = h[i]; if (now - h[i].t > 90) break; }
+    var dt = Math.max(16, now - a.t), vy = (e.clientY - a.y) / dt, dyAll = e.clientY - gg.y0, dxAll = e.clientX - gg.x0;
+    if (phase === 'ready' || phase === 'paused') { if (gg.far < 12) act('tap'); return; }
+    if (phase !== 'run') return;
+    if (vy > 0.8 && dyAll > 28 && Math.abs(dyAll) > Math.abs(dxAll)) { act('hard'); return; }
+    if (vy < -0.7 && dyAll < -28 && Math.abs(dyAll) > Math.abs(dxAll)) { act('hold'); return; }
+    if (gg.far < 12 && now - gg.t0 < 400) {
+      if (L.side ? gg.lx < L.col && gg.ly < cell * 3.4 : gg.ly < L.strip && gg.lx < cell * 2.8) act('hold'); else act('cw');
+    }
+  }
+
+  // ================= info, panels, tools =================
+  // 1.2.0: the counters share one pill with the round buttons in the top row, so a score of a million or more shows as
+  // 1.23M there (the full score is on the cards and in Stats)
+  function short(n) { return n >= 1e6 ? (Math.floor(n / 1e4) / 100).toFixed(2) + 'M' : fmt(n); }
+  function renderInfo() {
+    if (!s) return;
+    var m = s.mode, h;
+    if (m === 'marathon') {
+      h = '<div><div class="lbl">Score</div><div class="big">' + short(s.score) + '</div></div>' +
+        '<div style="text-align:center"><div class="lbl">Level</div><div class="mid">' + s.level + '</div></div>' +
+        '<div class="right"><div class="lbl">Lines</div><div class="mid">' + s.lines + (s.endless ? '' : '<span class="of">/150</span>') + '</div></div>';
+    } else if (m === 'sprint') {
+      h = '<div><div class="lbl">Time</div><div class="big">' + clock(s.frames, true) + '</div></div>' +
+        '<div style="text-align:center"><div class="lbl">Lines</div><div class="mid">' + Math.min(40, s.lines) + '<span class="of"> / 40</span></div></div>' +
+        '<div class="right"><div class="lbl">Best</div><div class="mid">' + (stats.sprint.best ? clock(stats.sprint.best, true) : '–') + '</div></div>';
+    } else {
+      h = '<div><div class="lbl">Score</div><div class="big">' + short(s.score) + '</div></div>' +
+        '<div style="text-align:center"><div class="lbl">Time</div><div class="mid">' + clock(s.timeLeft + 59, false) + '</div></div>' +
+        '<div class="right"><div class="lbl">Best</div><div class="mid">' + (stats.ultra.best ? fmt(stats.ultra.best) : '–') + '</div></div>';
+    }
+    $('info').innerHTML = h;
+  }
+  function renderModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); }); }
+  function renderTools() {
+    var p = $('btnPause'), paused = phase === 'paused';
+    p.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    p.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-' + (paused ? 'play' : 'pause') + '"/></svg><span>' + (paused ? 'Resume' : 'Pause') + '</span>';
+    p.disabled = !(phase === 'run' || phase === 'paused');
+  }
+  var DESC = {
+    marathon: 'Clear 150 lines. Every 10 lines is a level, and each level falls faster.',
+    sprint: 'Clear 40 lines as fast as you can.',
+    ultra: 'Score as much as you can in 2 minutes.'
+  };
+  var GEST = '<div class="gest"><b>Tap</b><span>turn</span><b>Drag</b><span>move (the piece follows)</span><b>Drag down</b><span>drop faster</span><b>Flick down</b><span>drop at once</span><b>Flick up</b><span>hold for later</span></div>';
+  function renderReady() {
+    var r = $('ready');
+    if (phase === 'paused') {
+      r.innerHTML = '<h2>Paused</h2><p>' + MODE_NAMES[s.mode] + ' &middot; ' + (s.mode === 'sprint' ? clock(s.frames, true) + ' &middot; ' + s.lines + ' lines' : fmt(s.score) + ' points') + '</p><button class="btn red go" id="btnGo">Resume</button><p class="or">or tap the board</p>';
+      r.classList.add('show');
+      $('btnGo').addEventListener('click', resume);
+      return;
+    }
+    if (phase !== 'ready') { r.classList.remove('show'); return; }
+    var h = '<h2>' + MODE_NAMES[s.mode] + '</h2><p>' + DESC[s.mode] + '</p>';
+    if (s.mode === 'marathon') h += '<div class="pick"><button id="lvLess" aria-label="Lower"' + (settings.level <= 1 ? ' disabled' : '') + '>&minus;</button><div><small>Start at level</small><b>' + settings.level + '</b></div>' +
+      '<button id="lvMore" aria-label="Higher"' + (settings.level >= 15 ? ' disabled' : '') + '>+</button></div>';
+    h += GEST + '<button class="btn red go" id="btnGo">Start</button>';
+    r.innerHTML = h; r.classList.add('show');
+    $('btnGo').addEventListener('click', begin);
+    if (s.mode === 'marathon') {
+      $('lvLess').addEventListener('click', function () { setLevel(-1); });
+      $('lvMore').addEventListener('click', function () { setLevel(1); });
+    }
+  }
+  function setLevel(d) { settings.level = Math.min(15, Math.max(1, settings.level + d)); saveSettings(); s = TD.create('marathon', settings.level, newSeed()); TD.takeEvents(s); renderReady(); renderInfo(); }
+  function renderAll() { renderModes(); renderInfo(); renderTools(); renderReady(); draw(); }
+  function pop(html, sub, scale) {
+    var f = document.createElement('div'), st = $('stage');
+    f.className = 'pop'; f.innerHTML = html + (sub ? '<small>' + sub + '</small>' : '');
+    var busyPops = st.querySelectorAll('.pop').length, fs = Math.round(Math.max(22, cell * 1.15) * (scale || 1));
+    f.style.top = (L.by + L.bh * 0.26 + busyPops * fs * 1.6) + 'px'; f.style.fontSize = fs + 'px';
+    st.appendChild(f);
+    setTimeout(function () { f.remove(); }, 1350);
+  }
+
+  // ================= end of a game =================
+  function record() {
+    var m = stats[s.mode], a = stats.all, nb = false;
+    m.games++;
+    a.lines += s.lines; a.pieces += s.count.pieces; a.quads += s.count.quads; a.tspins += s.count.tspins; a.allClears += s.count.allClears;
+    if (s.count.maxCombo > a.maxCombo) a.maxCombo = s.count.maxCombo;
+    a.ms += Math.round(s.frames * STEP);
+    if (s.mode === 'marathon') {
+      if (s.score > m.best) { m.best = s.score; nb = true; }
+      if (s.level > m.bestLevel) m.bestLevel = s.level;
+      if (s.lines > m.bestLines) m.bestLines = s.lines;
+      if (s.won || s.endless) m.done++;
+    } else if (s.mode === 'sprint') {
+      if (s.won) { m.done++; if (!m.best || s.frames < m.best) { m.best = s.frames; nb = true; } }
+    } else {
+      if (s.score > m.best) { m.best = s.score; nb = true; }
+      if (s.lines > m.bestLines) m.bestLines = s.lines;
+    }
+    saveStats();
+    meta.finished++; saveMeta();
+    store.del('run');
+    return nb;
+  }
+  function endCard() {
+    var m = s.mode, html, title, btns = [{ label: 'Play again', red: true, go: again }];
+    // a finished Marathon can carry on (endless), so it's recorded when you choose
+    var deferred = m === 'marathon' && s.won, nb = deferred ? s.score > stats.marathon.best : record();
+    var tail = '<br><small>' + s.count.quads + ' quad' + (s.count.quads === 1 ? '' : 's') + ' &middot; ' + s.count.tspins + ' T-spin' + (s.count.tspins === 1 ? '' : 's') + (s.count.maxCombo > 1 ? ' &middot; best combo ' + s.count.maxCombo : '') + '</small>';
+    if (m === 'marathon') {
+      if (s.won) {
+        S.win(); title = 'Marathon complete!';
+        html = '150 lines! Score <b>' + fmt(s.score) + '</b>' + (nb ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(stats.marathon.best)) + tail;
+        btns = [{ label: 'Keep going (endless)', red: true, go: function () { TD.keepGoing(s); phase = 'run'; lastT = performance.now(); acc = 0; renderInfo(); renderTools(); } },
+          { label: 'Play again', go: function () { record(); again(); } }];
+      } else {
+        title = 'Game over';
+        html = 'Score <b>' + fmt(s.score) + '</b> &middot; level ' + s.level + ' &middot; ' + s.lines + ' lines' + (nb ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(stats.marathon.best)) + tail;
+      }
+    } else if (m === 'sprint') {
+      if (s.won) { S.win(); title = '40 lines!'; html = 'Time <b>' + clock(s.frames, true) + '</b>' + (nb ? '<br><span class="newbest">New best time!</span>' : '<br>Best: ' + clock(stats.sprint.best, true)) + tail; }
+      else { title = 'Topped out'; html = s.lines + ' of 40 lines in ' + clock(s.frames, true) + '.' + (stats.sprint.best ? '<br>Best: ' + clock(stats.sprint.best, true) : '') + tail; }
+    } else {
+      if (s.won) { S.win(); title = 'Time’s up!'; } else title = 'Topped out';
+      html = 'Score <b>' + fmt(s.score) + '</b> &middot; ' + s.lines + ' lines' + (nb ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(stats.ultra.best)) + tail;
+    }
+    showCard(title, html, btns);
+    renderTools();
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#td-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function again() { between(function () { newGame(s.mode); }); }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next(); showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= sheets =================
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Tumbledown';
+    $('helpList').innerHTML = [
+      'Pieces of four blocks fall into the well. <b>Fill a whole row</b> across and it clears. Don’t let the stack reach the top.',
+      'On the board: <b>tap</b> to turn the piece, <b>drag</b> sideways to move it (it follows your finger), <b>drag down</b> to drop it faster, <b>flick down</b> to drop it at once, <b>flick up</b> to put it on <b>hold</b> (tap the hold box works too). Prefer buttons? Turn on <b>on-screen buttons</b> in Settings.',
+      'The <b>ghost</b> outline shows where the piece will land. The strip at the top shows the <b>next</b> pieces and the one on <b>hold</b>; you can hold once per piece.',
+      'A piece that lands still has a moment to slide or turn before it locks.',
+      '<b>Points</b> (times the level): 1 line 100, 2 lines 300, 3 lines 500, 4 lines (a <b>Quad</b>) 800. A <b>T-spin</b> (turning the T into a tight slot) scores more: 800, 1,200, 1,600. Quads and T-spins in a row are <b>back-to-back</b>: half as much again. Clearing lines with piece after piece is a <b>combo</b> (+50 each). Clear the whole well for an <b>all clear</b> bonus. Dropping scores 1 point a row, flicking down 2.',
+      '<b>Marathon</b>: 150 lines, 15 levels, faster each level (pick a starting level). <b>Sprint</b>: 40 lines against the clock. <b>Ultra</b>: the best score in 2 minutes. Switch modes at the top of the <b>Menu</b>.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var m = stats.marathon, sp = stats.sprint, u = stats.ultra, a = stats.all;
+    $('statsBody').innerHTML =
+      '<div class="themelabel">Marathon</div><div class="tiles"><div class="tile"><b>' + fmt(m.best) + '</b><span>Best score</span></div><div class="tile"><b>' + (m.bestLevel || '–') + '</b><span>Top level</span></div><div class="tile"><b>' + m.done + '</b><span>Finished</span></div></div>' +
+      '<div class="themelabel">Sprint and Ultra</div><div class="tiles"><div class="tile"><b>' + (sp.best ? clock(sp.best, true) : '–') + '</b><span>Best 40 lines</span></div><div class="tile"><b>' + fmt(u.best) + '</b><span>Best Ultra</span></div><div class="tile"><b>' + (m.games + sp.games + u.games) + '</b><span>Games</span></div></div>' +
+      '<div class="themelabel">All games</div><div class="tiles"><div class="tile"><b>' + fmt(a.lines) + '</b><span>Lines</span></div><div class="tile"><b>' + fmt(a.quads) + '</b><span>Quads</span></div><div class="tile"><b>' + fmt(a.tspins) + '</b><span>T-spins</span></div></div>' +
+      '<p class="version">' + fmt(a.pieces) + ' pieces &middot; ' + a.allClears + ' all clears &middot; best combo ' + a.maxCombo + ' &middot; ' + Math.round(a.ms / 60000) + ' min played</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function syncPad() { $('setPad').checked = settings.pad; $('pad').classList.toggle('show', settings.pad); $('app').classList.toggle('padon', settings.pad); $('setGhost').checked = settings.ghost; requestAnimationFrame(function () { fit(); draw(); }); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { pause(); if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function inGame() { return (phase === 'run' || phase === 'paused') && s && (s.score > 0 || s.lines > 0 || s.frames > 600); }
+  function switchMode(m) {
+    if (phase === 'run') pause();
+    if (inGame()) {
+      showCard('Leave this game?', 'This game ends now' + (s.score ? ' with ' + fmt(s.score) + ' points' : '') + '.', [
+        { label: 'Leave it', red: true, go: function () { record(); meta.mode = m; saveMeta(); between(function () { newGame(m); }); } },
+        { label: 'Keep playing', go: function () {} }]);
+      return;
+    }
+    meta.mode = m; saveMeta(); newGame(m);
+  }
+  var KEYS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'soft', ArrowUp: 'cw', x: 'cw', X: 'cw', z: 'ccw', Z: 'ccw', ' ': 'hard', c: 'hold', C: 'hold', Shift: 'hold' };
+  function press(b) {
+    if (b === 'soft') { held.soft = { f: 0 }; act('soft'); return; }
+    if (b === 'left' || b === 'right') { held[b] = { f: 0 }; delete held[b === 'left' ? 'right' : 'left']; }
+    act(b);
+  }
+  function release(b) { delete held[b]; }
+  function init() {
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', function () { g = null; });
+    document.addEventListener('touchmove', function (e) { if (g) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { if (phase === 'run') pause(); else if (phase === 'paused') resume(); return; }
+      var b = KEYS[e.key]; if (!b) return;
+      e.preventDefault(); if (e.repeat) return;
+      if (phase === 'ready' || phase === 'paused') { act('tap'); return; }
+      press(b);
+    });
+    document.addEventListener('keyup', function (e) { var b = KEYS[e.key]; if (b) release(b); });
+    Array.prototype.forEach.call($('pad').children, function (btn) {
+      var b = btn.dataset.b;
+      btn.addEventListener('pointerdown', function (e) { e.preventDefault(); btn.classList.add('held'); press(b); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { btn.addEventListener(ev, function () { btn.classList.remove('held'); release(b); }); });
+    });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { pause(); saveRun(); Goobs.home(); });
+    $('btnPause').addEventListener('click', function () { if (phase === 'run') pause(); else if (phase === 'paused') resume(); });
+    $('btnNew').addEventListener('click', function () {
+      if (phase === 'run') pause();
+      if (inGame()) {
+        showCard('Start over?', 'This game ends now' + (s.score ? ' with ' + fmt(s.score) + ' points' : '') + '.', [
+          { label: 'Start over', red: true, go: function () { record(); between(function () { newGame(s.mode); }); } },
+          { label: 'Keep playing', go: function () {} }]);
+        return;
+      }
+      newGame(s.mode);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn || btn.dataset.mode === meta.mode) return;
+      $('ggMenu').classList.remove('show'); // the tabs live in the Menu sheet (1.2.0): close it first
+      switchMode(btn.dataset.mode);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    // full screen (2026-09-29): How to, Restart, Stats and Settings live in the Menu (the empty toolbar hides itself), so the
+    // well gets the toolbar's height. The game pauses while the Menu is open, so the Menu button is the pause button here:
+    // the Pause button moves to the top row but stays hidden there (style.css), the score row needs the room.
+    var pb = $('btnPause'); pb.className = 'iconbtn'; pb.setAttribute('aria-label', 'Pause');
+    $('btnSound').parentNode.insertBefore(pb, $('btnSound'));
+    // the score row moves up into the top row in place of the name (the Menu shows the name): the well is limited by the
+    // height on every phone, so those 50 points make the blocks bigger (30 -> 32 points on an iPhone 15, 22 -> 24 on an SE)
+    $('btnHome').parentNode.insertBefore($('info'), $('btnSound').parentNode);
+    // 1.2.0 (Glenn: "not full screen yet"): overlay mode. The well's color covers the whole screen, edge to edge; back,
+    // the counters pill, Sound and Menu float on it. The Marathon / Sprint / Ultra tabs move into the Menu sheet.
+    var FS = Goobs.fullscreen({
+      overlay: true,
+      menu: ['btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      onOpen: function () { pause(); },
+      info: function () { return s ? MODE_NAMES[s.mode] + (s.mode === 'marathon' ? ' &middot; level <b>' + s.level + '</b>' : '') : ''; }
+    });
+    FS.list.parentNode.insertBefore($('modes'), FS.list);
+    $('info').classList.add('ggpill');
+    $('btnHelp').addEventListener('click', function () { pause(); openHelp(); });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setPad').addEventListener('change', function () { settings.pad = this.checked; saveSettings(); syncPad(); });
+    $('setGhost').addEventListener('change', function () { settings.ghost = this.checked; saveSettings(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    new MutationObserver(function () { readColors(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    if (window.ResizeObserver) new ResizeObserver(function () { fit(); draw(); }).observe($('stagewrap'));
+    window.addEventListener('resize', function () { fit(); draw(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); saveRun(); } });
+    window.addEventListener('pagehide', function () { pause(); saveRun(); });
+    syncSound(); syncAds(); syncPad();
+    fit();
+    if (!resumeRun()) newGame(meta.mode);
+    if (!meta.seen) openHelp();
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+    Goobs.markPlayed('blocks');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); saveRun(); },
+      onVersions: function (v) { $('version').textContent = 'Tumbledown ' + (v.blocks || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__td = { get s() { return s; }, get phase() { return phase; }, act: act, begin: begin, pause: pause, newGame: newGame, stats: function () { return stats; }, settings: settings, TD: TD, layout: function () { return { cell: cell, L: L }; } };
+
+  init();
+})();
+</script>
+</body>
+</html>

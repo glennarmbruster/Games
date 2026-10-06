@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Splash Sort can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__ssReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eaf3ff;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Splash Sort didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('sort.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__ssReady) fail('It took too long to start.'); }, 6000);
+})();
+</script>
+<title>Splash Sort</title>
+<style>
+/* Splash Sort styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand h1 { font-size: 22px; }
+/* 1.2.0 full screen (Glenn: "not full screen - close but the playing board isn't"): the water-area backdrop fills the whole
+   phone, edge to edge behind the status bar and home bar; the top row (kit overlay), the pills and Restart / Undo / Tube
+   float on it, and the tubes are laid out in the free space between them (app.js fit()). */
+html.gg-fs-over, html.gg-fs-over body { background: #a9d2ff; }
+html.gg-fs-over[data-theme="dark"], html.gg-fs-over[data-theme="dark"] body, html.gg-fs-over[data-theme="blue"], html.gg-fs-over[data-theme="blue"] body { background: #1b2a4c; }
+.stagewrap { position: fixed; inset: 0; z-index: 0; }
+.stage { position: absolute; inset: 0; overflow: hidden; touch-action: none;
+  background: radial-gradient(120% 90% at 50% 0%, #cfe9ff 0%, #a9d2ff 45%, #7fa8f0 100%); }
+[data-theme="dark"] .stage, [data-theme="blue"] .stage { background: radial-gradient(120% 90% at 50% 0%, #2a3f6a 0%, #1b2a4c 55%, #121b33 100%); }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.toast { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 76px); transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.82); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+/* the top row: back, pills (level, moves left), sound, Menu */
+.pills { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; gap: 6px; }
+.pills .ggpill { font-size: 17px; padding: 4px 13px 5px; line-height: 18px; min-width: 0; overflow: hidden; text-align: center; }
+.pills button.ggpill { font-family: inherit; cursor: pointer; }
+.pills .ggpill small { display: block; font-size: 10px; line-height: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; opacity: .6; }
+.pills .ggpill i { font-style: normal; font-size: 13px; opacity: .6; }
+.pills .ggpill.warn { background: #ffb020; color: #3a2400; }
+.pills .ggpill.out { background: #ef3b4f; color: #fff; }
+/* Restart / Undo / Tube float at the bottom, clear of the home bar */
+html.gg-fs-over .toolbar { position: fixed; z-index: 5; left: calc(env(safe-area-inset-left, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); width: auto; }
+html.gg-fs-over .toolbar .tool { box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.92); color: #1b2130; border-color: transparent; }
+.tool { position: relative; }
+.tool .cnt { position: absolute; top: 4px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--gold); color: #3a2a00; font-style: normal; font-weight: 800; font-size: 12px; line-height: 20px; }
+.tool.red .cnt { background: #ffffff; color: var(--accent); }
+/* Water / Balls tabs live at the top of the Menu sheet */
+.ggmenu .modes { margin: 4px 0 2px; }
+.cardicon svg { border-radius: 16px; }
+.lvbig { font-size: 30px; }
+.card .btn small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ss-logo" viewBox="0 0 100 100"><defs><linearGradient id="ssbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ec8ff"/><stop offset="1" stop-color="#3a6ef0"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#ssbg)"/>
+<g stroke="#ffffff" stroke-width="3.2" fill="rgba(255,255,255,.22)"><path d="M18 22v52a9 9 0 0 0 18 0V22z"/><path d="M41 22v52a9 9 0 0 0 18 0V22z"/><path d="M64 22v52a9 9 0 0 0 18 0V22z"/></g>
+<path d="M19.6 62h14.8v12a7.4 7.4 0 0 1-14.8 0z" fill="#ff4d6a"/><path d="M19.6 48h14.8v14H19.6z" fill="#ffd21e"/><path d="M19.6 36h14.8v12H19.6z" fill="#ff4d6a"/>
+<path d="M42.6 62h14.8v12a7.4 7.4 0 0 1-14.8 0z" fill="#ffd21e"/><path d="M42.6 48h14.8v14H42.6z" fill="#3ad07a"/>
+<path d="M65.6 62h14.8v12a7.4 7.4 0 0 1-14.8 0z" fill="#3ad07a"/><path d="M65.6 48h14.8v14H65.6z" fill="#3ad07a"/><path d="M65.6 36h14.8v12H65.6z" fill="#3ad07a"/><path d="M65.6 24h14.8v12H65.6z" fill="#3ad07a"/>
+<rect x="16" y="16" width="22" height="6" rx="2" fill="#ffffff"/><rect x="39" y="16" width="22" height="6" rx="2" fill="#ffffff"/><rect x="62" y="12" width="22" height="9" rx="3" fill="#b8793a"/></symbol>
+<symbol id="i-plus-tube" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v14a3 3 0 0 0 6 0V3"/><path d="M5.5 3h9M18 8v6M15 11h6"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#ss-logo"/></svg>
+      <h1>Splash Sort</h1>
+    </button>
+    <!-- 1.2.0: level and moves left float as pills in the top row (the old info row is gone) -->
+    <div class="pills"><button class="ggpill" id="pillLevel" aria-label="How to play">Level 1</button><div class="ggpill" id="pillMoves"></div></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <!-- moved into the Menu sheet at start (1.2.0) -->
+  <div class="modes" id="modes">
+    <button data-mode="water">Water</button>
+    <button data-mode="balls">Balls</button>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnRestart"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span><i class="cnt" id="undoCnt">5</i></button>
+    <!-- moved into the Menu sheet at start (full screen); before that How to play only opened from the level row -->
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to play</span></button>
+    <button class="tool red" id="btnTube"><svg viewBox="0 0 24 24"><use href="#i-plus-tube"/></svg><span>Tube</span><i class="cnt" id="tubeCnt">1</i></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Color symbols<small>A small shape on each color, so colors are easy to tell apart (bright sun, color blindness).</small></div>
+        <span class="switch"><input type="checkbox" id="setSymbols"><span></span></span></label>
+      <label class="row"><div>Sound<small>Pours, clinks and pops.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Splash Sort</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Splash Sort records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Splash Sort rules (no DOM; runs in Node for the level tools and tests).
+   A level is a row of tubes, each holding up to `cap` units of colour (4, 6 or 8 since 1.2.0; a level uses one capacity,
+   and it is simply how many units of each colour the level has), listed bottom → top.
+   Water: a pour moves the whole top run of one colour, as much as fits. Balls: a move takes one ball.
+   You may only pour onto the same colour or into an empty tube. Solved = every tube empty or full of one colour.
+   Level strings: tubes joined by '.', colours as letters a-l, bottom first ("abca.bcab.cabc.."). */
+var SS = (function () {
+  'use strict';
+  var CAP = 4; // the capacity of the early levels (kept for old callers); a game's own capacity is g.cap
+  function top(t) { return t.length ? t[t.length - 1] : -1; }
+  function runLen(t) { var n = 0, c = top(t); for (var i = t.length - 1; i >= 0 && t[i] === c; i--) n++; return n; }
+  function done(t, cap) { return t.length === cap && runLen(t) === cap; }
+  function parse(str) { return str.split('.').map(function (s) { return s.split('').map(function (ch) { return ch.charCodeAt(0) - 97; }); }); }
+  function serial(tubes) { return tubes.map(function (t) { return t.map(function (c) { return String.fromCharCode(97 + c); }).join(''); }).join('.'); }
+  function colours(tubes) { var m = 0; tubes.forEach(function (t) { t.forEach(function (c) { if (c + 1 > m) m = c + 1; }); }); return m; }
+  // a level's tube capacity = units of each colour (every colour fills exactly one tube)
+  function capOf(str) { var ts = typeof str === 'string' ? parse(str) : str, u = 0; ts.forEach(function (t) { u += t.length; }); return Math.max(1, Math.round(u / Math.max(1, colours(ts)))); }
+  // the move limit (1.2.0): the solver's move count plus a little slack, "realistic - maybe a little optimistic"
+  function limitFor(solverMoves) { return solverMoves + Math.max(3, Math.ceil(solverMoves * 0.2)); }
+  // moves given back by one "Continue" (watch an ad): a quarter of the limit, at least 8
+  function bonusFor(limit) { return Math.max(8, Math.ceil(limit * 0.25)); }
+
+  function create(str, opts) {
+    opts = opts || {};
+    var tubes = parse(str);
+    // limit: moves allowed (0 = no limit); a move on the board counts one, an undo gives it back (moves used = hist.length);
+    // conts: "Continue" ads used on this level (each adds bonusFor(limit) moves, at most 2)
+    return { start: str, tubes: tubes, cap: capOf(tubes), balls: !!opts.balls, moves: 0, hist: [], undos: opts.undos == null ? 5 : opts.undos, extra: opts.extra == null ? 1 : opts.extra, added: 0,
+      limit: opts.limit || 0, base: opts.limit || 0, conts: 0 };
+  }
+  // how many units a move a → b would carry (0 = not allowed)
+  function canMove(g, a, b) {
+    if (a === b || a < 0 || b < 0 || a >= g.tubes.length || b >= g.tubes.length) return 0;
+    var A = g.tubes[a], B = g.tubes[b];
+    if (!A.length || B.length >= g.cap) return 0;
+    if (B.length && top(B) !== top(A)) return 0;
+    return g.balls ? 1 : Math.min(runLen(A), g.cap - B.length);
+  }
+  function move(g, a, b) {
+    var n = canMove(g, a, b); if (!n) return null;
+    var A = g.tubes[a], B = g.tubes[b], c = top(A);
+    for (var i = 0; i < n; i++) B.push(A.pop());
+    g.moves++; g.hist.push([a, b, n]);
+    return { a: a, b: b, n: n, c: c, filled: done(B, g.cap), won: solved(g) };
+  }
+  function undo(g) {
+    if (!g.hist.length || g.undos <= 0) return null;
+    var h = g.hist.pop(), A = g.tubes[h[0]], B = g.tubes[h[1]];
+    for (var i = 0; i < h[2]; i++) A.push(B.pop());
+    g.undos--; g.moves++;
+    return { a: h[1], b: h[0], n: h[2], c: top(A) };
+  }
+  function addTube(g) { if (g.extra <= 0) return false; g.extra--; g.added++; g.tubes.push([]); return true; }
+  // restart: the level as it started, with its own move limit (a fresh try: the two Continues are available again)
+  function restart(g) { var r = create(g.start, { balls: g.balls, limit: g.base }); for (var k in r) g[k] = r[k]; return g; }
+  function used(g) { return g.hist.length; }
+  function movesLeft(g) { return g.limit ? g.limit - g.hist.length : Infinity; }
+  function outOfMoves(g) { return !!g.limit && g.hist.length >= g.limit && !solved(g); }
+  function addMoves(g) { var b = bonusFor(g.base || g.limit); g.limit += b; g.conts++; return b; }
+  function solved(g) { return g.tubes.every(function (t) { return !t.length || done(t, g.cap); }); }
+  // moves that actually change something (not a finished tube, not a one-colour tube into an empty one)
+  function usefulMoves(g) {
+    var out = [];
+    for (var a = 0; a < g.tubes.length; a++) {
+      var A = g.tubes[a]; if (!A.length || done(A, g.cap)) continue;
+      var uniform = runLen(A) === A.length;
+      for (var b = 0; b < g.tubes.length; b++) { if (!canMove(g, a, b)) continue; if (uniform && !g.tubes[b].length) continue; out.push([a, b]); }
+    }
+    return out;
+  }
+
+  // ---------------- solver (water rules; a water-solvable level is also ball-solvable) ----------------
+  // depth-first with a visited set; returns { moves: [[a,b],...], nodes } or { moves: null, nodes }
+  function solve(str, limit, rnd) {
+    limit = limit || 200000;
+    var start = parse(str), cap = capOf(start), seen = new Set(), nodes = 0;
+    function key(ts) { return ts.map(function (t) { return t.join(','); }).sort().join('|'); }
+    function isSolved(ts) { return ts.every(function (t) { return !t.length || (t.length === cap && runLen(t) === cap); }); }
+    function options(ts) {
+      var out = [], emptyUsed = false;
+      for (var a = 0; a < ts.length; a++) {
+        var A = ts[a]; if (!A.length || (A.length === cap && runLen(A) === cap)) continue;
+        var rl = runLen(A), uniform = rl === A.length, c = top(A);
+        emptyUsed = false;
+        for (var b = 0; b < ts.length; b++) {
+          if (a === b) continue; var B = ts[b];
+          if (B.length >= cap) continue;
+          if (!B.length) { if (uniform || emptyUsed) continue; emptyUsed = true; out.push([a, b, 1 + (rnd ? rnd() * 2.2 : 0)]); continue; }
+          if (top(B) !== c) continue;
+          var n = Math.min(rl, cap - B.length);
+          // prefer moves that complete a run or empty the source's top run
+          out.push([a, b, (n === rl ? 3 : 2) + (B.length + n === cap && runLen(B) + n === cap ? 2 : 0) + (rnd ? rnd() * 2.2 : 0)]);
+        }
+      }
+      out.sort(function (x, y) { return y[2] - x[2]; });
+      return out;
+    }
+    var path = [], stack = [{ ts: start, opts: null, i: 0 }];
+    seen.add(key(start));
+    while (stack.length) {
+      var fr = stack[stack.length - 1];
+      if (!fr.opts) { if (isSolved(fr.ts)) return { moves: path.slice(), nodes: nodes }; fr.opts = options(fr.ts); }
+      if (fr.i >= fr.opts.length) { stack.pop(); path.pop(); continue; }
+      var o = fr.opts[fr.i++], ts = fr.ts.map(function (t) { return t.slice(); }), A = ts[o[0]], B = ts[o[1]];
+      var n = Math.min(runLen(A), cap - B.length); for (var k = 0; k < n; k++) B.push(A.pop());
+      var kk = key(ts); if (seen.has(kk)) continue; seen.add(kk);
+      if (++nodes > limit) return { moves: null, nodes: nodes, gaveUp: true };
+      path.push([o[0], o[1]]); stack.push({ ts: ts, opts: null, i: 0 });
+    }
+    return { moves: null, nodes: nodes };
+  }
+
+  // ---------------- level recipe and generator ----------------
+  // 1.2.0 curve (Glenn: "I'm only on level 7 - I assume I'll get to a whole lot more tubes soon (also hoping some of the
+  // tubes hold 6 or even 8 'servings' instead of the current 4)"): more colours sooner (8 tubes by level 6, 10 by 12,
+  // 12 by 21, 14 from 51), and from level 12 some levels have tubes that hold 6, from 25 some that hold 8.
+  // A 6- or 8-tube level has a colour or two fewer (the tubes are taller, so more rows would not fit), still 2 spare tubes.
+  function baseColours(n) { return n <= 1 ? 2 : n <= 2 ? 3 : n <= 3 ? 4 : n <= 5 ? 5 : n <= 8 ? 6 : n <= 11 ? 7 : n <= 15 ? 8 : n <= 20 ? 9 : n <= 30 ? 10 : n <= 50 ? 11 : 12; }
+  function capFor(n) {
+    var k = n % 10;
+    if (n < 12 || k === 0) return 4;                       // early levels and every tenth (a breather) hold 4
+    if (n < 25) return n % 3 === 0 ? 6 : 4;                // 12, 15, 18, 21, 24
+    if (n < 50) return k === 8 ? 8 : (k === 3 || k === 6 || k === 9) ? 6 : 4;
+    return (k === 4 || k === 8) ? 8 : (k === 2 || k === 5 || k === 7) ? 6 : 4; // 50% hold 4, 30% hold 6, 20% hold 8
+  }
+  function recipe(n) {
+    var cap = capFor(n), b = baseColours(n);
+    return { cap: cap, nc: cap === 8 ? Math.max(4, b - 2) : cap === 6 ? Math.max(3, b - 1) : b, empties: n <= 1 ? 1 : 2 };
+  }
+  function coloursFor(n) { return recipe(n).nc; }
+  function emptiesFor(n) { return recipe(n).empties; }
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  // a well-mixed random fill: no tube starts finished, few same-colour neighbours
+  function generate(nc, empties, r, cap) {
+    cap = cap || CAP;
+    for (var tries = 0; tries < 500; tries++) {
+      var units = []; for (var c = 0; c < nc; c++) for (var k = 0; k < cap; k++) units.push(c);
+      for (var i = units.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = units[i]; units[i] = units[j]; units[j] = t; }
+      var tubes = [], pairs = 0, bad = false;
+      for (var q = 0; q < nc; q++) { var tb = units.slice(q * cap, q * cap + cap); tubes.push(tb); for (var m = 1; m < cap; m++) if (tb[m] === tb[m - 1]) pairs++; if (runLen(tb) === cap) bad = true; }
+      if (bad || pairs > Math.max(1, Math.floor(nc * cap / 12))) continue;
+      for (var e = 0; e < empties; e++) tubes.push([]);
+      return serial(tubes);
+    }
+    return null;
+  }
+  // ball moves for a water solution replayed one ball at a time (a water solution is always a ball solution)
+  function ballMoves(str, sol) {
+    var ts = parse(str), cap = capOf(ts), n = 0;
+    sol.forEach(function (m) { var A = ts[m[0]], B = ts[m[1]], k = Math.min(runLen(A), cap - B.length); n += k; for (var i = 0; i < k; i++) B.push(A.pop()); });
+    return n;
+  }
+  // a short solution: the plain depth-first one and a few with shuffled preferences, keep the shortest
+  function shortSolve(str, tries, limit, seed) {
+    var best = solve(str, limit), r = rng(seed || 7);
+    if (!best.moves) return null;
+    for (var i = 0; i < (tries || 0); i++) { var s2 = solve(str, limit, r); if (s2.moves && s2.moves.length < best.moves.length) best = s2; }
+    return best.moves;
+  }
+  // a level entry: [level string, water moves, ball moves] (the solver's counts; the move limit is limitFor(count))
+  function entry(str, sol) { return [str, sol.length, ballMoves(str, sol)]; }
+  // levels past the shipped list are made on the device the same way (the late curve, checked solvable)
+  function levelBeyond(n) {
+    var r = rng(n * 2654435761), rc = recipe(Math.max(51, n));
+    for (var i = 0; i < 40; i++) { var s = generate(rc.nc, 2, r, rc.cap), sol = s && shortSolve(s, 2, 60000, n); if (sol) return entry(s, sol); }
+    for (;;) { var s3 = generate(rc.nc, 3, r, rc.cap), sol3 = s3 && solve(s3, 400000).moves; if (sol3) return entry(s3, sol3); }
+  }
+  return { CAP: CAP, top: top, runLen: runLen, done: done, parse: parse, serial: serial, colours: colours, capOf: capOf, limitFor: limitFor, bonusFor: bonusFor,
+    create: create, canMove: canMove, move: move, undo: undo, addTube: addTube, restart: restart, used: used, movesLeft: movesLeft, outOfMoves: outOfMoves, addMoves: addMoves,
+    solved: solved, usefulMoves: usefulMoves, solve: solve, shortSolve: shortSolve, ballMoves: ballMoves, entry: entry, recipe: recipe, capFor: capFor, baseColours: baseColours,
+    coloursFor: coloursFor, emptiesFor: emptiesFor, rng: rng, generate: generate, levelBeyond: levelBeyond };
+})();
+if (typeof module !== 'undefined') module.exports = SS;
+</script>
+<script>
+window.SS_LEVELS = [["baab.baba.",6,10],["cbba.abcb.acac..",9,14],["cadc.dbda.cabb.adcb..",12,20],["dbab.becd.adce.ebcd.aeca..",18,29],["baca.dbce.deab.ebcd.edca..",18,25],["afbc.eddb.feac.fdcb.dacf.eaeb..",19,30],["ccdd.bfab.feca.baef.ecdb.aefd..",18,25],["ecfa.bbef.dada.bcfe.cdef.bcad..",20,31],["fcad.acde.gbcg.bceg.efdf.fega.abbd..",23,37],["eged.baad.cdbc.fcdc.bage.gfgb.ffae..",23,30],["cagf.eggb.cdae.deff.dgba.bcad.fbce..",22,34],["adfagd.fccgad.edcbcf.gebfab.bcdgag.gfdeeb.ebafce..",41,84],["agda.gbhe.cehf.hcfd.dega.cbff.bedh.gabc..",28,41],["dbhb.egac.hcbh.efcf.cgeh.gafd.afeb.adgd..",28,41],["caggfa.feface.babacc.ebcdbg.fgfdbe.fcdgea.beddgd..",41,86],["hahc.bbac.dfga.iebf.cidh.gegg.fiai.hddf.ecbe..",29,46],["aaga.ffha.fdei.gcgb.cdgh.biec.ceed.dbhi.fhib..",31,44],["fbcfdc.gahbhd.faheed.hadacf.gggbea.cbhgca.edfbdb.fehceg..",44,77],["biid.fibe.afah.acef.aehc.gdfh.hggd.eccb.idbg..",28,40],["bicc.eidb.face.ibgg.dahg.hdbh.afhi.deef.acgf..",28,43],["becgcf.bhhgah.ieaiah.ffhcbf.acfeic.didgdi.eabbhb.idgdgd.eecfag..",50,104],["fjhd.ifhb.facb.bcdi.icah.gbcg.hdgj.gjea.eije.fade..",37,52],["ebhi.hgij.jjjg.fcda.dbfc.ghce.iabi.bheg.cfae.dfad..",34,53],["aigeaf.ehacbc.igfbfc.idihec.bcfdfg.dadeda.cbhbig.afhhig.gdebhe..",52,111],["aegd.fbhi.dfaj.bhfe.cajj.hcgh.jegc.ddea.ifci.ibbg..",31,47],["iicbag.digheh.fiedec.gdhidh.ggdhge.ecffcd.afbafb.ahbbfb.iceaca..",49,101],["abdh.befd.gcde.ahgg.ijfc.iajf.bcbe.ihid.gjfh.eajc..",36,60],["ecfahhfh.gdgbfbfg.fcdfhdec.abacdgcg.ahceedfb.bdfaebad.ggcabdgh.ecahehbe..",61,145],["chhega.ibeacf.didfgc.ighcdb.aeihhe.iccgef.figagf.hbddbf.babead..",49,91],["ceja.cfcd.agfe.agjj.hgbb.higc.ifji.iaed.febh.ddhb..",33,54],["hckb.hfbc.efke.gadg.djai.keki.cgaj.cejj.ibhd.digh.ffba..",39,56],["ibhd.gjib.hdag.cjag.jfkf.hife.beaf.gkkh.kcce.ijbc.aedd..",35,55],["hfccgg.djejfb.biccdd.dgheia.eijahd.bbjafa.ghedjc.fgfiba.jgefie.bihcah..",54,109],["dhjf.ihek.ccfk.diei.gika.chef.cbbj.gjkg.aehb.fdad.agjb..",40,58],["iijc.igbk.ddbc.eafg.hefe.fagd.gahj.djch.iekb.jhkb.akfc..",35,56],["difjae.jcjjbd.dfabgc.dbbefh.hihiee.ifihcf.gghdcj.abebdg.facgeg.jhcaia..",54,110],["fkki.abhc.gefj.jaeg.jdad.hhfk.idei.fcbc.kdcj.ebah.ibgg..",36,56],["bfibahfe.hcgddaad.bfehceae.efiiachb.dieffbgc.hfeaicig.gdhghcac.ahgbbgfg.cdibedid..",67,177],["hafich.aicgjd.abbjjd.jbhbej.gchdde.gfgcbc.daegfe.efahbi.jgfiie.idahfc..",57,117],["gefg.ikdb.jjef.deka.bajf.ccgj.kfic.gikd.haad.bhbh.iehc..",35,50],["fekd.fjki.ghbi.caba.hibh.gdde.aced.igjf.gahj.ckkc.bjfe..",36,56],["gked.hkbi.jhdj.jaha.ciac.iebe.jeih.bckg.addk.ffcf.bfgg..",34,51],["ghbiac.ahcgbc.idbhad.ecaeic.fjgfje.gaibfj.hjgcfe.behadi.efhdjd.idbgfj..",57,103],["eifj.ecaa.bkke.ceha.fhfc.kdig.jfji.gbhc.dbgj.hdki.gadb..",36,55],["ijei.igeb.akjc.fdkf.jifh.gccd.jakd.gbhd.ebhk.aghb.efca..",39,62],["eaccjd.hgihbb.gjcdah.fihjid.ceeaei.fjbaib.fgbdcf.gghdea.fihjef.bcagdj..",57,116],["hjec.cadk.aeeh.kiig.gjgj.aiki.fcfa.dbkh.debg.fbjd.bhfc..",37,57],["chfhiide.bghichga.dahdgbgg.feaibdah.dbccgbcf.ebhahaid.aiceeaig.ebdfdife.gfccefbf..",65,167],["cfcjij.hgfhbg.gbihfd.iebfje.ijgejc.cedidj.daahca.bbdghh.aafgei.cfbead..",56,107],["chai.fbjd.ggfc.fkdk.kdgh.fjhe.eiad.kbbh.bjce.iaie.acgj..",37,60],["lbek.cffa.lghh.djba.chka.lfgb.jeik.dicg.fkej.jdcb.hadi.elgi..",42,61],["bcehdg.cfgdek.ahcfjf.ahiece.kbkgdi.cbhafg.hjafki.dieabi.bafdje.dckgij.jbhkgj..",63,112],["jcjk.dfbd.gflg.acbh.hghd.aeki.efal.badl.fkkj.eech.giib.ljci..",42,64],["ghfiajce.bibfijbg.bdhajcjf.adagjadf.dieghgge.hddihhfa.cjgefdad.iebejgbc.fbijcchh.ebifcaec..",77,197],["cjekif.bibhae.eieikc.kkchac.dfagha.acffai.kdfhbb.hhgbge.djgjie.jdggjb.cfdkdj..",61,122],["kjha.lhkk.bfje.lfde.cigi.gicd.alge.hldb.kbdc.cffg.jhea.ajbi..",41,61],["fhjhae.kabcba.hgedkc.jgdacc.kfjege.hbakjk.kcdhid.iaiegi.bfdbfe.jbcgfi.ihjdgf..",63,119],["bgjgajab.ebhiicgg.edcfhedi.iibeahaj.dgijfcaf.hdhbgeab.dibdjfch.fcbjgfec.jacjfigh.eddfcaeh..",79,188],["bafi.dhgk.gjdl.echi.adia.egeb.ikhf.jafj.bhlk.begj.kccl.fdcl..",40,61],["iglb.cgij.kclj.hagi.lejc.acge.iebb.elkk.hfdf.hfjd.bahd.fdka..",40,66],["dhhc.eedf.gbkf.kcfa.lial.jbih.dgjf.diic.bjak.ecla.kejg.bhgl..",40,61],["hfhffe.bcbegj.ageice.fakhej.jdjfag.aghhfk.kciidd.bckejc.dcabik.iddkbg.jhigab..",60,127],["belf.gflj.lejf.hakk.hgji.dkba.ddga.ihcc.keic.dhjg.bfcb.liea..",38,58],["gdfjcgfc.aegefade.ahefibjg.abiijiab.gfiecjeb.hhfccgjb.fjiddgic.djhebjci.dabhhddf.hcabhaeg..",77,189],["ihebch.gedgga.ekacig.cicfdf.jkgdjh.hjbaak.fdjbbd.fcjkgf.dkikcb.iebeha.ehfaji..",62,137],["djjc.baei.dlkf.eidg.jcgj.ehad.fibl.glbh.akbc.hhkf.lfke.igca..",37,60],["ckdadh.biehjf.jgdahg.fcgeii.hdbkjf.jacjba.bgjbeg.cdgbai.kehefe.dckhfk.kfiaic..",63,116],["ahdbgfde.fjgbgcfi.gejfagci.jiibdfhi.aaedafha.ieicjbeh.icbhgdcj.bcfjcege.ajhbdafe.gdbdchjh..",77,189],["bcca.ikdg.hkkb.eaga.gfec.djjf.lldh.kefl.ibed.jiji.aghl.hfbc..",37,52],["hlel.gagk.iagj.hcej.ieib.fkjc.fhfh.cejd.aagk.ckfb.bdil.dldb..",45,69],["klgi.ajkb.cdie.cabf.dkgc.llfj.hdej.edgh.aekf.calb.hiib.hfgj..",43,62],["kcacdh.ckbjid.dkhadg.ggfidj.gbheei.ckfefa.cgeica.ffhhfj.abgbjk.bjaheb.kjiied..",60,110],["clba.gkgl.bagl.hdkd.ihch.dfka.igjb.fiaj.jekb.hlfc.eijf.dcee..",44,69],["hegefahe.gifahhbe.biecgjgg.afcbbcda.fdbehcbj.fjdjaeii.gbigdcdf.aajcdajj.hjidfghd.icefcbhi..",78,205],["khckid.gffkhd.bhiija.cjgdgc.khcbbf.kcagjd.bahkec.ebigdj.fejiee.fafdeh.jagiab..",64,128],["idie.cfdd.eeak.fcih.bclk.eblj.fljb.bghj.ahag.alck.ifgh.kdgj..",42,65],["ikkeif.gfcdhj.fgedea.jfgkjh.ijbcaj.gaedkh.cbdcij.beackh.hkfahg.cgdfei.aibbbd..",64,136],["ijhagaji.cbgdfdea.eejjhdbi.agjibbcj.ffcbjfhc.gacfbigb.dfiejece.dadhegai.adifghhc.dfhbhceg..",75,190],["ibji.edgb.abcb.cigh.ghkd.eljf.afal.dkhc.kjkf.ehac.egdi.jllf..",42,72],["kddi.adbh.jhia.gafl.klgi.heel.fjce.flhj.kabf.kcjb.cggd.iecb..",40,53],["flhi.fjia.kcga.djib.kgee.glbe.jdae.clkb.lhjk.gcba.hdff.dhic..",40,64],["ebbgjc.kfjdki.fhbcak.kbagci.cdhjgd.hjbhda.gdhjfe.kikeda.ebgjih.faccei.gieaff..",65,125],["cgbd.lkfk.fdhe.lkjb.aehc.ijcl.kchj.ieaf.gbba.glii.jdde.gafh..",39,60],["fiacjcaf.gjheijbi.idfjebcg.gdhdcifb.egibjhjd.acehhgeb.iheebaha.dagffgjd.faicedjd.abfcgcbh..",80,209],["kjecae.hhdcjb.acihfj.bgeead.fckbbj.ggfiif.akckhd.jfkeib.kagdbi.cghfed.ihadgj..",58,105],["aeja.ldgg.licd.lhfd.kbbf.efbi.fghi.eake.ccjj.kdjb.lach.hkig..",39,62],["iaeccc.ehgide.icaaka.dihiba.khbfha.bfcbij.fkdfef.gkfdhj.bgedhg.gjkbjj.degkcj..",58,118],["ieabadcd.hjbefhig.gifjaiha.gebhdghc.ejigfifc.fcijdjjd.gfaaeabc.cbgbhjfd.ghbcihdf.aceejbde..",79,193],["ekli.fece.balf.fgkc.hhdc.ibbj.adkj.jkdg.djlb.ifge.hgil.acha..",42,64],["iche.afbl.klil.dfcj.abfg.aeic.cibg.jjlf.khdg.kdag.kehj.dbhe..",44,63],["cgbc.kdba.egea.ibhj.elbd.fakc.fkkh.ihga.ldlg.fjch.flji.deij..",43,61],["fdageh.jbecjf.gjbkdb.badkgb.bhkfhe.gdaaih.gakeic.djigke.ficcfa.khcfje.hjciid..",64,122],["klhf.eajb.hlbf.ahih.idjb.aeda.flcc.jgjc.dgek.dkbk.fiic.lgeg..",40,64],["agjdcejf.igcjedii.hgifebgj.jfdjegde.heagcefa.ibccgbeb.hhcdabad.cifchjgb.djfbabih.adfhiahf..",82,221],["bfkfkb.egkbai.eakgjf.ihiach.jabagc.ddhehj.iabbhi.djjkcg.kdgdee.dfgfcj.cceifh..",59,124],["ebcf.diea.ebjh.cchl.hfdf.kgkb.jbjd.ilgk.fial.caal.hggj.dkie..",41,62],["gdggbd.gihfjj.hhijfk.aeacef.eihigk.bdbech.baiicj.jckbjf.hkfdac.cedbkg.aafdke..",57,111],["dehdhjab.gfjfjdfh.cbcbffei.ihhaface.gaegiehi.jigeecba.bjgcbbaj.gcafgifj.hgechdcj.aidddbid..",73,196],["eebl.hbck.adli.jjdk.diic.ahla.ejgf.bkfc.khba.hdfc.ifgg.egjl..",39,61],["jkhi.gegk.alce.dakj.iblh.hhga.abjl.bcff.eifl.ficc.kgeb.djdd..",38,61],["hdbl.abgf.dibb.ijak.ijgj.alef.dhfg.egca.ejkl.fkhc.lcik.cdeh..",41,68],["cjhdig.gbghji.dhagke.ckkaib.cjdcid.hafjef.ceefij.bkifkj.gdhecg.fdaaha.bbkbfe..",62,126],["clfj.daeb.cahe.cgbb.igbg.idjk.lgil.hfle.hjea.idcf.fkah.dkkj..",42,65],["edeiddaf.jgiiabgf.edbgjajh.gdbhcbaf.hifejcci.cgcifeaf.dgghafda.hbjibiec.jfdbhehc.gbajchje..",75,201],["iicjde.cihefc.cicbgk.ibdjjf.fadhab.gekkdh.ecbkbk.agfjad.gbjehg.adkfha.gijfhe..",68,136],["jblh.hbcl.ebdf.egif.lkjd.icbd.jgld.iaha.ekjf.akga.kcig.hfce..",46,72],["hagidg.dfejif.ecidka.cjbdkb.gedkif.fchjak.dakfee.cjjjcb.bbgehf.chabai.gghkhi..",58,109],["fjafhbdg.diibhfbc.dgihdjjd.jdadjccd.iiefebha.fbgghcbe.ihgbjghc.acgfeief.jeaafcij.gaheaebc..",78,179],["dcek.hekj.kidi.igld.bfbc.bjej.bgfa.ljcc.eglf.liah.ahfd.ahgk..",42,63],["llke.ilgd.hfae.iifd.chdf.abje.fgka.bkij.ghbl.jcac.egkb.cjhd..",39,57],["ifbb.agcl.akab.llie.edib.hjej.jdfd.ckhh.gieh.gklf.dfjg.acck..",37,57],["hajgag.fjeied.gihkff.jckcee.djbick.behekd.ffhjad.bdccbg.jbkgdh.ifchab.aaikgi..",61,102],["aiid.hfhk.cjhe.fdga.ajjl.ackk.fbig.bibe.bheg.ljdg.fdck.cell..",38,57],["icjdgeeb.fiaidhhg.abgabeid.hijcdjea.fjhgaffi.djecachb.gaigdhfd.ebbcbegh.ejcgidhf.abjfcfcj..",80,209],["beghdh.jjehje.gdkffd.ghbdgb.akijbb.eahcdf.ifhaci.icgfee.gackia.kakjci.dfjkbc..",60,134],["jicg.fjia.jill.djec.kkhl.ekga.fefg.dhkd.fabh.gbcc.blae.dbhi..",41,69],["fbkake.cgcgfg.kffdkk.gihajb.cebkic.gddaee.chidfd.dhjjhc.bhihga.ieijef.jabjab..",61,115],["dciaeeag.bfjeagac.afiechfi.fdjbeehb.hhbdfhdg.djidcabg.cfiabgfh.jidhefgb.gcgjehac.bjjdiicj..",77,191],["hfdk.jghk.cbdb.eddk.lacj.egil.gahk.ieji.hfal.jafe.cbbg.iclf..",44,70],["dhbc.glla.cbal.bekd.hjid.ikhl.jfde.cige.jfag.ejca.kfhi.gbkf..",40,60],["gekb.adhi.jeeh.hcjj.lgbd.debc.fihc.glal.gkfc.ajki.ikda.blff..",41,62],["hficji.daikea.bkkddj.gibkfb.idabef.ekhcdj.fdhghk.gjefjc.cbcaae.ifjgeg.cbahgh..",62,120],["gjkg.gkea.ecbf.ajde.fghc.dddf.ihhe.libl.cfjb.iljl.bkah.akic..",42,65],["bfehiebj.abcihjhe.iddfidcj.eabajchi.aafihibf.dehcjghb.gcjajdeb.gcbgjfed.gcgaifgd.hfdfegac..",80,174],["bijahk.igdfah.hacacf.cbfiif.ejegkg.jihdgb.fecgdh.kkcadb.ajejkb.ejdhgf.kiebcd..",62,118],["fhil.celc.adhj.egbk.jbak.fgle.eaca.fkfj.bhdd.ibil.idhc.gkgj..",43,69],["gbkgjh.akaeef.ihhcib.iafbcb.iccaek.ehdkjb.jagdkg.ffjfjc.fdbeig.dkdhie.gahdjc..",62,127],["jcjihjef.hbfhafhh.bgbjbibg.bagiejaj.gggehfic.acihhadi.eedcbcdi.digafeed.fcdeajdc.dfbjfcag..",72,191],["bfjl.fhjc.lhad.gfai.bhad.kiig.gkgf.bekl.jdcb.lkie.hjda.ecec..",41,63],["keig.achj.lcdj.feib.dabk.lcik.cheg.bfag.dffg.dijl.ljeh.abhk..",43,63],["bgki.kdbe.dfhd.hckc.hjaj.kiia.cagg.lbfl.laee.iefj.cjbh.fdgl..",39,58],["gkkjje.kebkcf.ibifef.idaccb.ebdhcb.ghbgja.edikhh.cgfage.afhkdj.gfchji.adjadi..",61,111],["jlfb.jjfg.kiec.ccgd.bebl.elhd.aiig.hfka.aebc.jidg.dakk.hlfh..",40,60],["gfdeidbf.cbbhgjgj.jiaafhie.jcjahfie.bdebdhaf.cffchhag.jibddgah.egeicjdb.cabiefjc.dchgegai..",77,208],["hjifke.dkfiaa.ijbgjb.fkbgkh.jedhbd.ecbehd.ckgbac.hefcdi.akadfg.igjcjf.ihcage..",61,99],["lahf.lkjd.jdcd.hcfj.ehaf.gcgh.akgk.fdii.kbjb.alce.lgeb.iibe..",40,61],["eahihf.faddgk.bdgdjb.ikijie.cbcfid.eabccc.hakkhe.ijceaj.jfbfek.fkgbga.dghjgh..",60,134],["ggbiijgj.jajegigb.deacfgec.ghbchjef.eicjdfcb.edjdcdhh.fadfhiba.aghhaidf.cfaeiibb.fbahdcje..",75,216],["ikef.dkel.ijfa.hdfe.cbll.hibc.kdhc.gkhe.djbg.ggij.cjbl.afaa..",42,66],["ccal.ehfh.jclf.flhe.kdca.dkbf.kjel.jggb.iikd.dbgi.habi.ajeg..",38,55],["hkgf.ledl.dbka.cibj.hfdk.alaj.fgec.hidb.ibel.agjj.icek.fchg..",44,65],["fbgdbc.djbiej.chjhei.afbcff.cdcjck.dhihae.kkgbgk.ekhejg.iaejik.dfgbai.dfagha..",64,132],["fgfi.lbba.gahc.kebh.jhfi.kdkc.ifle.ejjk.gadg.dlhc.cdia.bjel..",41,62],["ejjgdfdg.gjbebdhj.bcfbdfhe.gfbhehgd.efgcidbc.eaafgbic.ichefiha.aiidjjhj.jaeiciah.gccafabd..",78,201],["fkfjch.ieaife.ehakcd.cdcghb.gbbkbk.dhjeaa.gahhjj.diffkj.ejcgeb.ikaidf.igdbgc..",62,121],["djae.eghc.jlid.dbdi.gcec.bhga.bhal.kelc.kfkg.ihaf.jkbi.ljff..",40,57],["ckfbaa.akcfhk.gkidec.jekfje.fdhjfg.ibigii.gbckdb.gdbach.hcgafh.edjeeh.djjaib..",64,137],["aecgfebg.ficcibha.aefhecfj.cbidbaag.fdajdhcc.ejbahdhi.hbdjafdi.ghgbhfej.gidjjdfg.egijecbi..",75,189],["icdk.iaag.lfcg.bbdi.ecjc.akha.kfhe.gfgk.djed.beij.jlhb.llfh..",40,68],["kdih.ffhe.fele.kcdg.jckb.klia.jlcf.aabg.cgil.giej.dbhb.jadh..",42,59],["ajka.hhdc.chib.feff.bjkk.calg.eggl.ecjh.igdk.idid.lbef.lbaj..",41,66],["kgkfjk.fgigbb.ehhhfc.aikjdf.aejckh.cfijac.ecjbda.bgkhgg.dacdbe.idhfee.dbaiji..",59,129],["ilhl.akei.lgik.elgj.geeh.abib.fbbf.cdca.fdkh.jjfc.ahkd.cdgj..",40,62],["hehchedf.cbgabjaj.igeifjaj.gabhcbch.hjieijdc.gjhdfdcd.bdffbeid.gdhieaij.gfaabcca.gebeffig..",83,219],["cifade.ebjfah.bjgdjd.adchkj.kgikij.afjfbg.fhaegi.becahg.gckdbb.iihhcf.kkdeec..",60,133],["cbdj.kaag.iggj.dcbi.hfcb.hbed.ihaf.jedf.eeig.flkc.kajl.kllh..",39,63],["ajdaah.bhigfk.khhaeh.eggbci.caeffb.gejfcb.fdijdj.dhecbd.ijcgca.bkjikf.dgkeki..",66,124],["edhfbjdi.ddajbhdc.afchbbei.hicfgbeg.idjeajgh.idfgfceg.ijcciafa.ijfacdgj.hhgbeeeg.bafajcbh..",74,166],["dgfe.edbk.kilf.lbcg.lhfi.aebb.dacj.hjgj.jaie.adci.hchl.gfkk..",40,64],["fjhe.flgi.kcjf.halg.ejkb.gdii.adad.aehi.lbgk.bfdc.bjle.chck..",39,64],["fidj.lahh.dcaj.cedi.jhfc.gige.bhll.kcdi.aaef.bbkj.gklg.befk..",43,61],["bkiaif.dhcjde.fcebcg.gkacgf.abfdhk.fkbika.eabjgc.gdhahh.bjkedg.jfjdci.jieehi..",64,134],["dfgb.cech.jagk.cklc.leej.akgl.biij.bdhd.dfhl.aief.hbfa.kgij..",44,61],["ihjeiffa.bjejeedb.aefbhaci.agfaebif.cadbdjdj.gidgjhdh.ghccgiij.icagjabb.dgcedcfb.hhefhgcf..",77,203],["gbaaje.idafdf.dbcdkf.jhhaji.gbajkj.fiebeh.dckghk.cieikg.gckfie.bjbcah.gecdfh..",65,130],["jlcl.labc.dcig.hadh.aejh.fhkf.kkbe.ieif.gked.jjfc.bagb.gild..",38,56],["ijekdh.jadibk.eiafgf.gkbcck.ahcbjd.fiajgf.hbdfjc.eaheig.kgjefa.ekcgbh.cdhbid..",63,124],["aifffahc.jgcbheig.jhejdebe.jiiecbgf.fifjcaea.bideaafh.gbeaciid.gdhchggj.hdbdjfch.gcjbadbd..",79,173],["dcii.gefb.chhg.bjdh.efkb.flab.ielj.clik.fkak.cdde.ajgg.aljh..",40,60],["lhgb.hcjb.defe.lcdi.jbkh.lkfa.afad.abig.giij.kjlc.hece.dfkg..",43,67],["alek.ldib.cagh.ldfe.kifb.lkij.ihhe.gcgj.cdag.ajdf.cbeb.fkjh..",44,69],["jceajd.fdckeh.ejafgc.dbbjha.bfiahj.kiadke.dhkcif.gkccig.bbihgd.ehjfib.fkeagg..",60,112],["fjlj.hafd.cbgh.hclf.lbgg.lcee.keja.fdka.iici.hdek.dbkj.biag..",40,58],["fddjjbei.cfgaefcj.bhejgchg.ifcaagja.idefhfde.bfgegfec.aiajhahg.dcebdbgi.bhhcdjdb.abiiihcj..",76,180],["ibkkdc.bagjfb.aigcja.bghcij.bkhffa.cidhdh.jkbage.cefgdi.jegkce.hfekah.jefidd..",62,119],["lcbd.iclf.aegc.faag.ikbd.eilk.jbdh.degg.hjlf.ckha.hbif.jjek..",39,65],["ifbkie.gefdhj.cjkced.cfbajd.igbcid.jbfieg.khgaeh.hbhfag.dkcedb.aaijkg.hfkcja..",64,129],["gaeiehjh.ajbcdibf.ddfgehei.gbhebdab.cdgbdcad.fcfgicbi.jfhfifag.ecaicjfb.jhacdjeh.hgaegijj..",81,192],["ckbd.fgch.flaj.khlc.fdij.kcgb.bakh.dfla.dlei.ihjb.ajgg.eeei..",41,62],["eejl.cgid.ehbb.kcdb.fhfl.aick.kjgd.kidc.heaa.bjif.jfhl.lgag..",41,69],["hjej.ecdl.afle.aicg.dkbc.bihj.cjge.idhg.flgl.kiak.fhfb.abdk..",43,68],["adbfch.bgjgih.fabjkh.fagcaa.dhidgh.jbfjfe.cjikbk.eikgke.acbkhe.icfgdc.edjdie..",63,129],["kehb.algk.jhli.gdej.cfaa.bgjk.afci.kfhf.gbce.hdjc.dibd.elli..",41,68],["igbbiedc.cdjcjghb.fgjgbbbf.jfdefedi.ffcgihad.ijchbaha.edgigigi.hjcchcja.edeadabj.faaehefh..",80,193],["hhjcff.efegbi.deibak.hfgfkj.aehdbc.jagjdc.cdiabe.kdhaik.ecibgk.hbcdaj.jfkgig..",65,140],["eifh.dagb.afcl.gkli.icbe.ebgc.klba.cddh.ghjd.hflf.ieak.jjjk..",40,67],["ffgakg.dcjhbk.fdhcfe.agaigf.gjhcdi.ebhcag.cdbkjj.kbahfe.jeiiai.kdedce.kibjhb..",64,129],["cgfbhdbj.feebichf.biahhbgc.iaabjgji.ceijcdde.efbaddah.icfhgadj.ajdgifgc.fjfegdhe.hcgbjeai..",79,204],["bbjc.gfic.cdhk.kajl.hgke.agcl.kaib.ehie.aldl.fgie.bfdh.fjdj..",45,68],["ggaj.iahk.hjli.fkbc.ebec.fdfd.lika.kgbd.lehj.ghac.ecdf.jlib..",41,63],["lcek.blgj.dfcg.kdkh.hhlh.jiae.jgea.ifdi.agfi.jfbb.aklb.cecd..",42,63],["bgdkdh.jffige.fekjid.hhbaii.jagekh.dkcjej.gbicbk.cjcgdf.gafhfb.aeaaci.dbkche..",60,106],["bfdc.hcha.caib.klhj.gegb.eeia.jiik.alfg.ejdd.kjhg.cbkl.flfd..",43,58],["ahjbjecf.cicahadc.debghafj.fdihhedj.fghgefgi.fafecbba.gaigbehi.edfhbjgj.ccdijbda.jgbiiecd..",75,199],["hcbdge.bihkjj.bjhajc.badjkg.hgaahe.cfafkd.fegbcd.fgeceh.ifcafk.bkdiij.giiekd..",59,123],["egag.kjce.iffi.bdcb.lfhg.jjhi.ajfb.lldk.ahdh.ckde.ekag.icbl..",41,66],["efbgjb.idhkja.aidfdg.gcjaak.igjfef.egcjce.ccdgbb.hjkiha.fhibde.kkeihb.hdckfa..",60,124],["fidbchja.gcfjjhdf.gaeiicaj.edcicegd.dfajcgag.bheagbfh.hajaeeff.eieifjig.bhbdddib.bchcjbgh..",79,215],["khce.lgcc.dafk.jfab.edhh.lbak.kdfa.ficj.gjed.liib.gleh.igbj..",40,66],["efgf.gakj.dbkh.bldb.claj.cdha.eiil.kijc.gfgb.eifh.kehd.claj..",42,68],["kljg.ddde.fhif.iiak.jbac.lhcj.lfjb.agaf.eglk.ehec.bhki.cbdg..",40,59],["kdidej.cajdbf.bfchif.ikbdjc.aghegg.dejacf.hehkgb.ekgijb.kefhia.gacdih.bfkacj..",62,132],["lfkg.ebia.jdei.eflc.bcgb.kgil.hadd.fikj.hdab.gfjc.hcje.hkal..",44,70],["adbhffci.gjjdahac.gdfcgidc.hdcfiabg.dhbeaegd.faiaifje.fgjidjbj.jihhbjgc.bbegfhae.heicceeb..",75,158],["khccff.ifhfhc.faidei.daabki.gcaiab.ekbegc.bgjjgh.bekdja.gjeigd.bjjdkd.khehfc..",59,125],["lfbl.lgje.ekaj.ckda.dibi.hfkd.cgjk.lghh.acic.fieg.bbjh.afed..",41,61],["efeiid.ggdaid.fjgbdj.chaeik.dhkbji.ebceha.fkkhbf.hjcbhi.akgegf.jcjfca.bagdck..",57,113],["fhccgihj.ddjajiae.abbigfaj.gbjaiaji.chedjecf.fefciddf.debficge.ggfabdej.hcaedbhh.cihgbhbg..",75,186],["ibdj.hage.kcfb.jiej.feac.baih.kjll.hlgi.ddfa.dkhl.kgef.ccbg..",39,60],["cdhl.bfdg.gehf.dcei.hija.jgkk.kafe.bfbe.ailh.cjba.jigl.kcld..",41,62],["igfk.jkgf.fjcd.hgle.bdec.jahe.kakc.djli.fdah.ihbl.baie.glbc..",43,66],["fkfjee.gcihaj.akjebc.bfgiaj.kfigha.fibhbh.hacgbc.kgdeii.kjdadg.hcdbdc.fekjed..",73,137],["chdg.clfh.jalj.dljg.kbbg.eeai.abfk.bjai.hiec.ckdf.dkeh.gifl..",40,66],["gfhechic.cfcbejjh.jajaafdf.ieabhddb.igeeffbd.dedejhaj.cjceafga.ibgfgahg.dgibihbb.ghicicjd..",77,156],["cdihce.hjfihc.dkfbge.kehhfj.gifibk.gacijd.eajidj.fefabd.gkgghb.dkcaac.bajbke..",63,119],["jbla.didb.gkjk.lhea.kcde.kljg.afea.figg.hdcj.icef.ifhh.cbbl..",38,58],["gdkagi.gddcca.jdbhhj.bdkhkh.akfkbi.febahf.gieeje.ihcaig.jcedcf.kgbija.ffejbc..",61,123],["jbgfhdbd.ahfbgegi.adcafhgh.jcaheifg.jbcbjigf.bjibcbjg.daifdieg.daicidjc.heececef.heahfadj..",83,175],["edfa.ijga.kabh.kbic.jdlk.jlhe.feba.cigf.bgkj.ilef.lcdh.cgdh..",43,67],["cbec.eagl.jahk.gfki.ldbj.iced.fgdb.bjfd.hklj.leha.afic.kihg..",40,64],["aaic.gkhe.fhde.iekg.flgb.bbfd.fdkj.dacb.ijal.ljhk.gcci.helj..",38,58],["hbdjhd.ejcdga.eidihb.ahcjek.biffbi.ggagcf.cfkcdh.kabekb.kifjac.fiejkg.daeghj..",64,126],["lhke.gfaf.abld.kjkh.ikjg.iblf.gide.bbjc.caeh.cflh.dgia.decj..",40,53],["fidjebgh.acfbchfh.geihiecf.dfghagjb.ceghdgig.jjacehdi.jfhjibaa.cdbdecbd.abjijiaf.feecagdb..",80,180],["hchidj.khfhgc.addjik.ajekjh.babfjf.faecdg.ciadbk.eghaik.ibcbif.edfebc.gggkej..",61,126],["bbkk.leeg.djic.bebk.hcfi.ilaf.jkhg.fdaj.dclh.efga.gcil.ahdj..",39,66],["kcfbae.dfihbk.edgkgh.gaibej.aeaeih.jkcabk.dfcijj.hgifcf.fcgjdc.aibbhh.jddegk..",60,117],["aiejddjc.eajcdhia.bifbdbah.begceifh.gihdegea.gdafjjce.digfaich.jbcbejhd.jigbbffc.gafghfch..",79,173],["hhdb.iebj.ilkd.hbhl.ifca.ljlk.kgfa.accd.bgee.gjci.ffke.jgda..",35,51],["kjbf.ljff.eidc.eihd.alel.hjbc.hiba.abig.dkkg.jgeh.cgak.dcfl..",42,65],["bggj.libj.fklg.hebc.ekah.ihcc.fjab.ddeh.cflk.fkli.dgae.diaj..",40,59],["jjbfbk.kheihh.ifjedg.figchb.ddaikg.ekaehj.cabkaj.igdbgb.icjfce.hadcgk.adceff..",60,114],["becg.ikhh.ldlf.labe.gbgi.fecl.gjej.bkaj.hfad.idik.ajch.kfdc..",44,75],["fifjihbh.fgbedege.efedaebc.cbjjhebj.cafhgahi.jgigbcid.afeabida.dbjgcdcg.haihjcci.fgahfddj..",82,219],["cjfkff.dcihak.cedabf.agfjkj.bbghji.akbekg.ibeejh.igkcge.fchdgi.aiejhd.addbch..",63,120],["lgle.cked.ifgi.gdea.hiff.hcgh.bjkd.bajl.kaac.jcbd.hike.lbfj..",41,64],["bkdffg.cjaeag.hdeekb.cakhbg.fiffcj.idcaib.hbejaa.kjcedg.hgjigk.hfickh.idjdbe..",61,112],["eecabbgh.jfhedhbf.icahfafj.eiegdidc.iggfjgab.jgcfcbei.cdfigdgj.hbchijhj.dbfeedab.acjaahid..",80,192],["lfdl.bijl.cgkc.lkjk.iijf.gaed.caeh.gbff.gche.jahb.bhde.iakd..",42,62],["cggk.bgai.bfha.ecla.dfjl.dlab.eedj.klcb.kehc.kfji.ghji.fhdi..",39,55],["eglb.eaci.dbid.hbla.alld.ihkg.ifkj.abjc.dckk.ggfe.cefh.jfhj..",40,59],["chbfbc.dihjia.jdfffc.ebdkeh.fdjibg.hkikhi.ajhedg.jakaia.ebjkge.cdccgf.gkgbae..",62,111],["iagc.cehe.jfig.liac.leka.ljdi.hbhb.gjkj.fghe.lbfd.ddkb.afck..",45,71],["dgbjfbig.echdfgcf.iidghbdh.ajeihjgj.bijbidac.hadaeadb.jaeecfje.egdcegaj.bfichfbc.gahcfhfi..",82,203],["dkhiha.cgjhka.kcfefc.hjaagf.gbjgch.eadedi.dgcfda.gdbcii.ebefjk.ibjkfh.kbeibj..",60,109],["fiaj.ejeb.idbk.efbe.gijl.gbgk.hckf.dgih.cdcd.lkaf.jahc.lahl..",41,61],["fkibge.ihhkhe.adfefg.agadib.ihekgb.jeaccf.ckcfjc.gbdbfk.ejjjad.hbdjih.aidkgc..",64,139],["iddeiggd.cdeifcbj.aiahjiha.gbfehfjh.chfbejae.gdhffadg.eaaechbh.jcegidgc.bjjiccbj.fdbfbgai..",74,179],["kdcd.iglk.jblh.chjl.kjfd.kgcc.bgbi.ffdl.eabi.agjh.eaie.heaf..",41,65],["djeh.kaie.jkgd.deja.lgfb.blfc.alji.ibbg.hlcf.ahhd.cike.gkfc..",40,60],["lhhb.gide.fkee.egab.jkdg.cjia.bdkk.facl.lfjc.hhcl.iafj.gdib..",41,67],["ffgcdj.gfjddk.egbage.jkachk.ibhhig.ieijkf.bhfeee.ackcai.ifdbjd.hbkagh.dcjabc..",60,121],["daic.jggl.dafj.flke.hkdb.fjkj.akhc.ldeg.eibe.iach.bchi.gfbl..",43,62],["jehfjdfe.cihccfgh.dbihdgjb.fbcgfhia.efhfejhj.daaeafbe.iiibchbg.bjicedgc.ejaigcgb.jdagadda..",79,204],["aahbcj.ggdfcb.cedkgj.dakcig.akbiie.bihgch.kficef.dfhjdj.bbjfge.akfehe.adkjhi..",65,119],["fhib.gelc.djeb.faga.fiak.jhhd.icig.ckhk.lalj.jlbe.dbkf.egdc..",40,61],["jdbicc.ekehfa.kekabf.fhihjd.gdagib.bejeig.ciacfd.gbhkeh.cdbjgj.fcajia.hgkkfd..",66,140],["ificgfhf.ajhbaggj.iabciebc.fadbahgb.afecddfc.dijdigdj.ehefhjea.debchjab.jfbhgcde.igjciegh..",84,200],["eafi.kigl.dcia.hjfb.ekid.lhac.bkej.kadh.jhjc.glbc.efbg.dlgf..",45,67],["ihfl.bcdf.lkek.idje.agjf.jcbe.laaf.igbh.gejk.ahcg.lbid.kcdh..",43,68],["jeij.ehac.dlci.cfil.dffd.aihc.dbhg.khbb.ggel.akle.jkjk.abgf..",43,70],["hijjbi.eckjbe.gahddf.gkjdea.hacigh.feeiac.dbgdjk.cdiiff.gacgbh.kajfkf.kbhcbe..",60,119],["ljba.ejha.kfci.hfci.adde.hilb.hedf.kkjc.glef.babl.jcgk.dgig..",43,68],["hcffbfca.diedcbji.diehigga.jgdbgfed.hafjhefa.jajhaefd.gaecihca.gfgihbbh.egiedjjc.bbdiccbj..",73,165],["gbbghf.cackjd.ejaeeg.kgijfi.acddck.jfkihj.kgbhab.idfahf.hfcgeb.idejie.dacbkh..",61,133],["glka.half.deel.kfci.dgjc.edkh.dhce.ibaj.hijb.afcf.ilbk.gbjg..",43,62],["igaiah.gidhdd.kifeak.fbggcc.chdjgc.jdebej.cikehj.gkafei.fbbjfb.ehabkh.kadjcf..",64,141],["jfgbdegi.aidejdgi.fehdcfac.egjajehb.djeaafif.cfgdebch.dibhhacc.bcgibfgi.hhecjbfg.jhadajib..",75,193],["jida.ciec.jkia.gagk.eeil.cblh.bagd.ckbd.ljlf.eghf.hkfh.jbfd..",43,60],["ajbd.bdlg.jjfk.lgbj.fkch.ibfe.lehh.dfed.icae.ccgk.iali.akgh..",39,55],["cdjg.jlec.jkbe.ffia.haji.llbb.haed.gdif.icfk.gbca.kelk.hgdh..",39,54],["hjfehf.ejchef.dggjab.gfdghf.bchkia.bkbiag.kcdiia.eabjik.jcadeg.ikhcdf.jkcdbe..",63,123],["bhfe.lfeg.dclh.ehbg.jadg.diib.kdkc.hecj.akba.gajk.ilic.ffjl..",39,61],["ahhaiahf.jgbiabej.idgbgddb.cjafbeae.fadiidgf.gccehcje.bfjhfhhc.deiggjdj.dfjabhgc.iebiecfc..",78,206],["chdkbj.kaeeea.jkhded.gkcbkg.fakdff.ifbifi.ajabec.biighc.cdhjdg.hbijgh.gacfje..",61,111],["dghc.dbfi.jilk.cldf.jfja.befe.ihal.beac.lgdk.aeck.ghkb.gijh..",44,73],["cekfed.bjaekg.edfgbd.khbgcc.jhiibk.gehfdf.ekaacd.jgifck.aijhag.cbjihi.dabhjf..",61,119],["jfjiifig.ijgbhafh.iadhbcdg.ahfcdceb.hfiagidc.eafhagjd.ijhcebbg.eceefdga.efdbhjgc.edjjbbac..",78,217],["gfgl.ajdd.fjkj.gjhc.liib.kfla.aebe.eabk.cfed.lhck.hiib.hcdg..",41,66],["idik.hakd.bjff.ahhj.ljff.bigk.lcab.cbel.edgg.cekh.jigl.ceda..",41,69],["ihke.gkaj.lckg.hdle.ajld.hcja.dkfi.acjl.gbbe.dbfc.ifib.fgeh..",46,73],["gibgdk.fccega.bdaikg.cfjhfa.kdhdhd.ckjcck.eeaiii.fejabe.jkdabh.hfjbie.fgbjgh..",56,94],["haib.khae.fcag.ijdg.dbkk.ehlh.gkgb.ljcc.bejl.dfdi.cief.aflj..",39,60],["bcjfhgaa.bfggajdg.bicejjch.ghchfacd.efhiebci.iegdiicb.ajfdjhab.fehcgbbf.iddfedjh.dageijea..",75,175],["bhafkg.ecjdjc.babdjb.gkkfbb.gdcakf.ajiied.kcihhi.gdejgh.cfaech.fgheif.dkeija..",61,128],["ledg.eigg.jbhl.iebd.kjab.hajh.jkff.kcfg.aidc.alfk.hcdi.eblc..",43,67],["dajaha.ficeej.bdheba.gdchje.fbfbbg.jeiajc.chicgk.kbikef.igidkk.kagdfc.hgdjhf..",64,133],["gdgabhcg.gaegaiib.gbjeaice.ffhjgjhd.fiebfdji.hccfhfhd.dbhefheb.diaicbdj.fjjgeaac.ijccbeda..",80,192],["fbgk.gflj.ccia.cejh.idee.efkb.adhb.jgfa.lbil.kcal.hgih.kdjd..",41,62],["dicj.lkbh.ilde.ghdh.bahi.ldgj.ffaa.kckj.ckfe.lcif.gjgb.ebea..",42,61],["kgii.cfjj.bfaj.edck.afad.ledd.lehg.lkeh.ihig.glcb.chbf.bkja..",41,70],["gfiejg.kbgebh.badbci.ekdkaa.ijjcie.ighhak.hjkhkc.fecgff.badgfb.hddfca.djecij..",59,124],["jefj.ceil.fbjb.fgkg.cika.jikh.bfde.hhdk.bhla.iegc.laal.gcdd..",39,55],["hhghgiif.cgejbbjd.efgifedi.cecbcaai.edahfeje.achbifgc.hagadfdc.bjgjihjd.ijdfgeab.bbacfjdh..",73,181],["khceeh.bkdhia.kffcib.ajehdg.iadged.kbeaia.kjhdhc.fgfjdg.jfbbka.cfjgei.bgccji..",62,130],["bcdc.jcde.ljgi.kffd.kdef.jial.gcgf.ekhh.haeb.kgia.bhjl.ibla..",40,64],["jbaich.hfbkbg.dgajke.kecice.jbgfga.iadbkg.chhide.dfdfef.jejidg.kahfcj.cbikah..",66,128],["iggeciej.bjhbdeig.ghhdeaeh.aijbhfjh.jabihdcf.cbbggcie.cfadbdcf.jejfigdd.aafadefb.fgihcjac..",74,185],["fcfj.delj.kdfh.eaia.bdbk.ilgg.gjgj.hlik.lbih.ackc.bech.fdea..",42,66],["ijhf.gceh.ddkb.lagl.gbaa.ikeh.flcc.kieg.cied.ajbf.jfjl.kdbh..",39,62],["hkel.hjbk.kajl.bbfg.icdj.flac.ehja.gcig.efeb.agdh.idfi.dckl..",40,63],["ckfjce.jddfeg.egaaab.jbhekc.bgkbck.ikjgcd.hagegi.deaiij.hkfdha.cbfijb.hhdfif..",61,132],["lkhj.fcll.ehab.bgga.ijkb.gkdf.iehc.kcda.aefi.ibdl.fjjg.ehcd..",40,65],["gicehbaf.cgajdaid.hgfjgbjh.bfjbghii.hccdfbji.hefffjdb.dbcaiecg.iaeaegae.dgdeihch.fecbjajd..",80,202],["fgihga.eajdde.ddjfbh.gjdkaf.becjak.icfkbg.ccbbag.ehfgcj.fekhji.hiihki.deakcb..",58,114],["dkac.abgj.fkfj.ibee.hdgk.hdbe.ilgf.dcih.kacl.gbec.fijl.ajhl..",42,62],["aehfgi.ekjceg.ddkdea.kfhbgi.kjfhcb.ciabff.fccdba.dbbkhd.gciije.jijgkh.ageahj..",57,112],["hadgacef.dffijceb.eeiijdih.jgefhabc.jgjdfhdc.abigabea.fgdhjabf.dhhchjge.bciidfbg.ajccegib..",78,190],["ieak.jabe.bgdg.kkld.flhl.feia.djce.jgad.bcbh.fgck.ilfh.ijch..",45,65],["bhlk.gbdl.aaai.dief.lcki.ekhf.ghca.djck.jbbd.gfgj.lhej.cefi..",38,57],["figc.kefa.lbhf.kibj.bgea.hhed.dced.hijj.llka.gifa.kglc.cjdb..",40,61],["daciff.hghkbi.hcaied.hbfbag.ahjjde.cgkgab.fdiebj.ffjbca.didijh.ekjekc.cekkgg..",66,143],["lbje.gajb.akcf.eggh.ifjb.hlgh.dlci.eifk.addi.fkec.djhc.klab..",41,58],["cebgeabi.jcfahfia.baeffbgc.cifdgbej.hgihiedb.gechfhdj.jijddeia.gaacdjga.bcibdhfj.hhdgjcfe..",81,220],["gbhekj.jhhchd.kehcka.akekgf.kbfieb.eigddd.jhgcaa.bfijci.fiabdb.jdgicf.jgefca..",62,113],["bacl.flcd.liec.hahg.aejh.kkde.afed.jkig.ikbl.gdbc.fjfj.ighb..",41,61],["jgbghi.didkii.gfbkfk.ecdfie.jdfkbj.bkaegk.hbahef.agccch.jgcaed.hfjhej.aicbad..",61,111],["ihhgbjhj.ehjibffc.cfhcgeda.dgbedfgb.jaigdeah.decbheib.aiacdfhe.cbagijbg.ffijdged.acaifjjc..",77,170],["bkef.aell.egdc.acla.hihd.kkie.fbgb.kgbd.afcf.jcil.jhih.djjg..",40,62],["eafa.eaka.ckih.hlff.jjji.bdke.bhlg.gkjd.lcfg.cgeh.ibdd.lcib..",39,60],["cahb.bela.jgbg.fifc.gheh.igld.bdkj.lckl.deih.adfc.jjkf.akie..",43,63],["bgbdcf.jeakbd.hfgefd.jfeibj.akikif.jahfhc.bgejke.chihgi.idcbac.dgackd.khgeja..",66,128],["ibgh.elfa.babc.eafg.igad.iljc.jekk.hhcb.dfkd.lcjk.fhgi.ledj..",41,60],["bedafeii.hahdfccb.jbidccde.jaahdbaj.ibgfcjah.hcefeija.ebejhbfg.gibhgdhd.agiefjcf.cjgdfgig..",78,167],["ddjcjk.ikcekb.dackck.hbfhag.jgaheh.ijgffg.efdbha.ckiigi.hedfbi.aefgdj.bebacj..",62,129],["jjlg.bckk.hfda.gbec.lagb.icjh.ihea.dica.fefh.kgkf.lljd.dbei..",40,62],["fbbgba.jhbcdi.jiedjd.hgiaik.gkaiae.dkfhac.cjefff.fbhehg.jceggk.ejbckh.iadkcd..",57,116],["aibhbegf.cefecadi.ggjhddfd.gabjdhca.bbgfecji.dhfjbcfg.jdchcahd.aeihfiij.haacefbg.eijigbej..",76,174],["ggck.aadh.fcek.lhjc.lbff.jfhg.ljid.ahji.kkld.gbeb.cdie.ebia..",39,62],["gbjd.cfbe.dfgi.ehak.gcki.elff.jbic.igja.akdc.ahhd.kjbh.llel..",38,57],["khdl.bdfl.ibai.hkjc.kgei.fdeg.liaa.ggjc.cefe.dfhb.cbaj.jhlk..",41,67],["dfadci.ebjccf.bfkefj.khagbh.dchcee.jgagjd.khkkai.ceagii.kjbhdb.ihfaif.jeggdb..",62,124],["icha.fkie.cjkf.dffh.ibjl.gcgd.behc.elbh.ajla.eald.dbig.gkjk..",43,64],["idhchefc.aggahjdh.fdhdbdci.biggjdab.ifhfbbba.djiaigij.cefghdcf.aeaehfea.cfccjbjb.ejiegegj..",79,204],["ikhijh.hgdaba.dgkfbk.gjdigf.edgjce.cechke.jfcdeh.bfaifi.fjedab.ckagcb.bihajk..",62,132],["febl.dijl.ahei.kbgh.ikcj.ahkl.lbbf.jahe.gkdg.dfcc.jgcf.aied..",40,61],["cibhdh.gbkdji.idbjea.iagckh.ecdeff.gkaiej.habhga.cajkig.jffhfe.gdkdbk.ccfbej..",65,116],["jgebajbf.dcgcgadh.fadafbhi.chacjebh.jigacehc.dfjbgdjh.jibigfbe.ihehagbe.icjgfaei.didcffde..",78,164],["biik.cblf.flba.gifh.gaje.kjgd.lklk.jahc.iecd.ched.edjf.bhga..",39,55],["khbi.ebag.dhkc.ekfi.bafg.ljhj.dklh.fjgi.glae.ccia.bdje.lcfd..",41,62],["chfg.dfad.beai.fjee.hglj.bglk.bgad.ccak.kjic.bjhh.llef.diki..",40,62],["bigdce.kfhgdk.acjfck.bkhikh.hbjdgj.agibcf.gfjidd.ejbaei.chedia.fjkgca.eebhaf..",64,121],["cjbl.aleh.fdec.bkhj.flgb.cife.cadf.hlak.kiji.igdh.jdga.egkb..",44,67],["ahfegaih.cjcdcgeb.hcdbcgag.aciedhgf.dgffjibb.fhgedbbf.aijfdejj.hiacceia.eihjbgja.ddihjfeb..",73,164],["fkhdfi.fcagkk.aecgaj.dgfeec.ibkijb.hdagjf.cjhehd.idjgbb.gbaefi.kabdhj.cckieh..",62,137],["kdfh.echj.iheg.gdei.dbbc.bcjj.jlai.kdgi.kefc.fbla.fllh.agak..",38,65],["bddckf.baebkf.jkfbie.fdbeaj.hhjagh.igiagk.ghchfc.cgegij.edakeb.icdkhd.ijacjf..",62,125],["daafeghb.hiajbaig.ihjjhcic.fecjddif.bhgbdjci.feehhibg.eagcdcfd.heebfbfd.cajfbega.jcgdgjia..",73,169],["chhj.clkg.iage.lbhb.cifa.bkeg.kdfe.jlda.fbei.kjhf.ddcj.ailg..",40,62],["beki.jgea.efcc.khlk.laji.bldj.behd.ibkh.hlic.jgdf.ggaf.cdaf..",41,62],["agcj.cbdc.khfj.hbie.dill.dgeg.bili.flkh.kaba.efdj.jfkc.ageh..",41,63],["dcaehe.fdchfe.kjfjgi.hbbjgb.gbekjb.hfabce.kdajgi.gkgcak.aichkf.djiief.cdahid..",62,127],["ldfc.gaej.ifae.fclc.geii.hdbl.gkjj.hjlc.ehdb.fdah.gkbi.bkka..",39,56],["icfaiigh.cgaedjec.bdgajebf.gcfhcfei.ficfdghh.gajeegjb.higdbjcd.cbeaiafa.ibjedhaf.bjdhbjhd..",80,201],["gkfkbi.dabace.iegdkf.fcjjfc.gjhjie.ifbdja.geajie.kbbhhd.chikdc.eakdhb.gcghaf..",64,128],["elfd.dhlb.eakc.cgjf.ciad.dijj.eikg.jkle.hafk.ibbh.ggca.hlfb..",42,61],["hbhdae.eikeca.dgdcia.bajedf.hhkffe.eifibc.igbjfc.jjgkdk.kjbcfh.akggjg.hicabd..",60,128],["bgijajhf.bcdegcdj.gdicahfe.bbfchcbj.bdhfgieg.bbaefhad.aidhceai.jdgjchii.aefffiea.jggjedhc..",81,202],["kaaj.cbgk.ahic.hikf.lffj.dbli.geeh.gcec.bllj.fhbg.idkd.deja..",38,62],["cadg.agfj.kheb.hhli.flkc.gjgb.hfkf.eide.libb.ecck.ajal.djdi..",43,66],["dfbj.digc.kjde.kefh.igil.gjka.cbak.cjid.celh.lhaf.bafh.gebl..",43,64],["fcghha.ehidik.fbgjca.kieedi.dbacbk.gkgdbe.jhacjh.ddjjff.febjcg.ebkgck.afiahi..",60,110],["kgci.cjbl.iacl.ebkk.alea.ifdj.fffh.hdjc.idjg.gbeg.habk.dhle..",39,57],["bhhfbcif.jchhehgc.eaicejbc.agfdbfje.hbgfehfj.gigbajfi.acaedhcd.bjjiicgd.igbdiedd.deafjaag..",74,201],["jghkid.jhfcdk.hjbbej.fdecie.cfikga.jijahb.eieaia.fbcfgk.beckfb.dgcddg.hhaakg..",59,111],["hfgh.ieaf.egab.gcjj.hkaj.icfd.cbdd.ahdb.lbli.cglk.jlfe.kiek..",41,63],["eabeja.ifddjh.gihgfh.bbfaeh.iiahjg.geicak.akcfec.kkjhib.kcjdfc.ckddfb.gbejgd..",59,123],["hcaedhei.jdhcfcge.bgiegbai.gjidjdjg.aaficcdj.fegjhdbf.acgbjbeh.aebhcabf.figacbei.hfddifhj..",82,203],["ejhk.eilf.ajda.cdgf.hleh.gaie.fidc.hcbg.jabb.kflk.jldi.ckgb..",44,70],["acaj.cccd.dlkl.gfbf.gjej.bkgf.eaje.abhh.dfli.kilg.iidh.ekhb..",37,54],["dfdh.cehb.klig.jjia.ljeh.cdfk.glba.fahk.efea.kbgi.idbg.clcj..",45,65],["cfhgjh.fgbied.ahchbk.cakfdd.dgkafj.cfeadi.jgehjc.dijkkk.ijbabb.befcga.igeihe..",60,121],["hgjj.aeje.ijhh.fdcl.hfdi.fcak.aalb.cedk.bgbk.ldbi.fcke.iglg..",42,62],["becgfcdd.ehciddcj.ceibdgef.hafcidjb.igidegef.cjefabdj.iihhabgj.fcfbgahg.fhiabjaj.ghebjhaa..",76,176],["hfhcck.cbfigh.kahkcd.iaegij.jjgidi.fbeebe.dfedgd.akgfjb.jjhebg.ahcdab.kckfai..",62,122],["clbb.dghg.leej.kbfg.addl.jjcf.gich.aief.ifba.khak.kchl.eidj..",35,48],["cajgce.hfehhi.bhaaid.bkeaff.dfcfhg.ddifej.gbkgha.ejkgkb.eicdgj.jcdicb.ibajkk..",60,107],["abfbajac.ihdbbfad.becggiaj.ffhefjga.cebgedci.heafhahg.hbghhjid.dcbcdiej.gfiijieg.jceddcfj..",77,179],["ckeg.hlfa.jjah.dlik.bljc.kbck.dddi.lfge.gbhh.aeci.fjfg.ibea..",38,60],["hjca.gheg.ddfb.blcd.kicf.ghia.ehal.kjjb.kfli.deil.ebka.jfgc..",40,60],["kfjc.dfac.ghib.lkgd.jike.ebkg.ailg.dljl.caeh.jehf.dbib.hcfa..",43,67],["ehdhkj.djdbfb.ceakch.hkbhff.jiikid.ehbfac.fijgce.gjbcck.adafba.ggiggd.ieajek..",60,109],["hblf.fafi.igad.kjbl.keee.lcfc.jggb.idij.bkcl.achd.hjkg.aehd..",42,57],["bedccdhf.caffibcd.bbggiegf.fichijai.dgjbidaj.ejfhgdha.jhhifaeb.gafedeae.bghgceji.ajhcjbdc..",78,196],["kjgjfk.ahkiaj.fkciee.afichc.fkbgcb.behjdc.deebdi.hgdkih.fgajcj.bgfhba.ddeaig..",62,120],["fdfb.jeaj.kabi.bchc.ekkd.glal.ldbg.ihih.jjif.agkd.ehcl.gfce..",42,60],["iahejk.kibacd.gfaibd.fcdehi.adhgaj.ghehfb.bjfefb.cgjgkk.ajicce.cddekk.ifbghj..",60,125],["efdcbfed.jaicbghd.ibjhahbj.cgaibfia.jiefehdc.aejcdfgd.feichdaj.hjfjghhf.eeidggcb.gagicabb..",77,196],["bkjd.ilhf.idbf.aefa.gkik.cegb.hlhl.cecj.glbe.didj.kfac.hjag..",43,67],["lafg.hgla.kbjk.bafg.cgjk.ebdh.lcii.ihdd.fjae.ckfd.ceie.hljb..",43,63],["bhie.cecj.flab.dlgd.kled.icfl.ekjc.jghg.khfh.gifi.djkb.baaa..",40,61],["dkckbh.bfjcfj.gdabhi.gigcfe.biedfg.bjjejj.hkhidd.hcikha.icagea.dkebgf.kacafe..",65,140],["dhkl.icbh.jiaf.kijd.fihk.ekjc.jael.hgcg.dgea.fbcb.ldbe.aglf..",43,71],["hbahggga.gefhciai.bdbhbjbe.bicecfjj.jefcjgie.dhjaecfg.bahjjhdf.hbdeggfi.fidcidcf.aadcidae..",79,172],["gjckcj.fhjjid.kghfkh.hfegca.badafd.kbabja.ibeide.bkdcgg.kiieeh.dbhaif.jgcecf..",61,127],["giag.cidb.kblc.ffae.cckk.eejg.jdei.ldgh.ljhj.ilkf.bdfh.ahab..",38,56],["ifaije.fagbef.dcdgik.idefjh.cahghi.jhggbg.kcceeb.badkkb.ijfkdh.jjabef.chdkca..",60,122],["hjafafgd.bgedgfda.idjejffb.eiieibea.ibdehbhf.eibcfhjg.cgceiccc.hadfjajd.abjgdahc.ihjcbggh..",77,172],["cghe.ailh.kbaa.cefd.gjbf.eibd.chbl.afej.jlkj.ghfl.dgik.dcki..",45,67],["aill.hfdc.elkh.ffgj.bike.acej.ahac.hbgb.jkjd.gbdl.igcd.eikf..",42,69],["adgd.hjbk.iijh.cida.ilfe.alhc.glkf.kbff.belh.bgje.akcd.jegc..",41,59],["eajjci.bhhdkd.ekagib.gheigc.ikgjfh.kddgka.fdehae.jbfjca.ibcdif.abkgjf.checbf..",63,129],["llfh.ggia.ebdd.djbk.iaek.hjhe.cicb.ffia.keag.klfc.jcgh.lbdj..",38,56],["fjgbabdd.jhceadjf.jidcdjbg.ifjbegbe.hichfjdi.dgfebieb.hhjacehf.ibecdiga.fecgachi.cafghgaa..",84,199],["fkjfkf.dbeaec.dhibdg.fjjeie.hhacgd.dihkaj.kiaigb.cbgcgc.bejkai.fbekaf.hdchgj..",67,141],["cajh.jbfb.dkgc.jdkd.hkae.dfee.gicg.hfif.abjh.lkbi.clei.llag..",43,71],["ifbgbh.ghjafj.dbjeck.bgdajc.kbhekc.aackga.bfgeie.hdifga.ccheif.dkfjkd.dhjeii..",61,114],["hjijidgb.dcjadedc.fijhhfeg.gcfaehcc.cihbjdgf.ghhaefdj.begicjbf.ehigddfa.agabaejf.bebicaib..",78,189],["hckj.ccgc.dlgd.bafi.bgkh.eeif.laik.fjeh.bkba.dald.jhji.eflg..",41,62],["jdjg.ieia.hagk.dcdb.gakh.elfl.khfb.klec.fhej.bccb.aild.fijg..",41,65],["lgkl.fake.feih.kdfi.ehgg.cbcb.edjj.chjl.aihc.kbdl.jfab.gadi..",42,63],["bihghk.fgbiik.hkjgcg.kbdefa.bhcfeg.daaeea.djbahh.bfckkf.djidea.jdicjc.fcegij..",61,119],["gbib.jlac.kjkg.aeej.cfef.dffl.cigh.kaka.gbhd.dihc.hdbl.ejli..",42,69],["aieiifda.gdbifegj.fbhcefcb.bfjcajai.gchjhjjd.hhcdabcj.jaheadde.agbfigce.hfgedbbe.ighgifcd..",78,184],["cjecee.fcjckb.cfibdi.dhdafa.bijigk.kjgahb.dahcfk.kkegai.bgfjfd.gghjbh.ehdiea..",63,120],["idkd.kfah.blic.gdhg.khjf.jbic.lcee.lhfa.abde.jkgg.bica.lefj..",43,65],["jbkfkj.gbejbj.afcdkf.ikccec.cdhhjg.hkikaa.dfigad.jhidgf.eafdbi.bcehgi.aeebgh..",63,142],["cfjiffbg.ficfcada.eiafjdaj.ajaedeba.gbihjdbd.chdhjjfg.ecdebceh.ghgibjaf.edicgihi.ebghhcgb..",80,200],["dblh.daef.jejb.jahc.lllf.gbki.ijak.kgbc.kggf.dhed.fhci.ieca..",40,64],["kgkc.gfhe.lklb.bfdh.ajhg.jaeh.fjii.adki.bfll.gije.cecd.cabd..",39,56],["jbal.cdeb.fgcj.eakc.iglf.iblf.khdd.cjhe.ghia.bhkd.aikj.fleg..",43,67],["ijibab.gfkhcc.ekgdab.hicddk.ifhfje.abehbf.affkce.gcjaji.jjgkdi.hgdabk.edcegh..",62,126],["hlbi.kalj.dkej.bgec.gafh.kbeg.dbfc.iiaj.jakc.chlf.gdei.dfhl..",44,65],["ddahjehc.gecbcbif.hcbfcdag.cgcfehge.dbjfadef.hiahdjgi.afcibbih.ejijbgga.dgjbafdf.ajeiihej..",82,186],["igeekb.hhgdfa.kbdcfh.cdicbc.fgcgij.ekafbj.hbhefg.dikeaf.djdjjc.aabikg.khaije..",58,113],["lfba.bfja.kdhl.ghck.bjck.gjfd.igie.liec.jdcg.hkla.hifa.ebed..",42,68],["cagjfc.jbebki.ihffdd.cjbieh.agadid.faghbe.gabhgh.eeadji.fhjgcc.kjkkbi.kfckde..",59,121],["jbaidcjh.jdigadgi.edhdibbf.ihbdefhb.cafhgfcg.aiceaabe.jdjcfggd.ieefcjih.gaejhfjb.becghfac..",80,200],["ehbk.jgge.hkil.fijg.kcjf.bedj.cicl.blka.feha.ghli.dcdb.dafa..",39,60],["ilga.hgbd.ecae.khji.cjbl.jagd.kdeb.glff.cbck.dahi.efkh.ljif..",39,62],["dkaf.ldih.kbjc.lche.dcba.dgii.ebgh.fafg.ecjg.befl.jikk.lhaj..",44,65],["jbhgjk.hadjgg.kbfhfa.dcchej.ddgfek.ifbeha.cacfjd.idikfb.ebgakc.hjiekg.iceaib..",62,120],["kfii.eegl.jkfc.khcj.cdga.hgbh.hail.klei.ljbc.jdgd.ebad.affb..",41,64],["ghjcdcfb.icjgfigd.afbjiecf.dgbdbefa.fjddfcea.hjcjchhi.didfigag.aegageih.bajhiebe.jahhbecb..",76,196],["aciafh.jhdcad.dkijcg.edejia.iggehh.bfjiib.bebkjk.febhed.hjcfck.gkfcad.gkgfab..",61,121],["ccfj.cdfe.kjig.blad.lghe.kabd.lkff.hejl.aaik.heih.gcbg.dbij..",38,62],["icjeab.bfebde.ajifjb.icikef.gkkgfg.jdafcc.ghdehj.ciahhb.caedhj.dhkkbk.dfagig..",59,119],["aeeibidb.gjbcdfjc.jihfibfb.haehhaba.cdgijhbd.aiidajff.gdcegjhb.ccdefiha.ggcjfgfc.eaehjdeg..",76,186],["kldi.kdgk.ailj.befa.cgcj.bedf.fafb.ghjk.hjli.helh.ecca.dgib..",42,70],["jiig.dabb.aill.bjlj.hacf.kelc.kgba.egjg.dfck.efdh.ihfd.heck..",41,61],["dhbf.diie.ihkj.ecak.ajdg.hbjb.bllc.agcc.lfhl.egkf.gkae.ifdj..",39,58],["jaekab.gidckj.fecafb.hehkaf.ghcecj.ibjfjh.ekdffd.bgakii.dgdegh.jhkaii.gbbdcc..",64,124],["egca.lbli.fdda.kjfe.hbcd.baib.iekj.clja.jdlk.hcfe.ghgi.kfgh..",41,65],["edeahgac.bfcagfdg.ddhbihjc.egbfcdgh.aiefaibj.jbgfidde.gfjeahci.bhicjfia.accdjejj.fhbehgbi..",76,189],["ichdfk.agbcjd.igkkeg.kcbedh.ekifhi.ibaejd.gadcha.bgdhac.jkagbi.efefcj.fjjbfh..",62,124],["cjek.gilc.iffd.icgg.gkfh.jhjb.edab.dbjl.hhel.aaif.dkbl.akce..",37,54],["heijeb.bhaakb.ihjdbh.diggfk.ckdeff.ibgcka.afcgbj.fejddk.cafeki.djciaj.ghcghe..",61,137],["bhaegdgc.ebiejedh.hbhhbjec.aidiijff.cdjbiddf.fihadahb.jgbeacig.gcjffcha.deacbafe.gjgigfcj..",75,186],["bcdb.gjke.hjli.deia.hcjl.gfbg.ffkb.kegf.ihcd.lkhc.adia.alje..",41,68],["fkea.hfjk.igll.djib.ghef.hkac.hijg.fbca.dbek.aibc.egdj.lcld..",44,65],["lcel.dich.dflk.bidg.aaja.iblk.bjek.kabh.fgig.jheh.fdcc.egjf..",43,61],["cgkfja.ikhdjg.bgikke.jhjicg.fafcid.ddihah.fekecd.jebhbf.bgbjhc.efabaa.ekcdig..",62,119],["ilca.hbdh.kgbb.fihf.aagb.kfeg.edll.igij.jced.cldh.kjja.efck..",39,62],["eaajcjed.ghabjiha.gchdiehi.fgfjgddi.hfdgdgcj.ebdbjgbe.bajcfbef.chdahabc.iifibfec.fhijgace..",78,179],["egjgbh.kbddhi.fbifak.aibegc.fibijf.ajedcd.figjbh.hgjfhc.kdcgak.cjdcke.eaaehk..",64,135],["cjij.labh.lagk.hiie.dhlc.lhbf.afkd.fbec.ggee.jigf.dadb.ckkj..",40,58],["ebkcfi.dhjkai.hkhjha.jdieie.efbcje.jabbch.icgcgk.bjbhgf.afdkkg.dicdfg.agaefd..",64,142],["fhjfbhii.dcfgadaa.ehegaebi.ghfhdfba.fjcjeahe.fdgdbjcb.fgdajgch.ichdceje.bibiigdj.gecijbca..",84,238],["lbhc.ljaj.bihk.giia.gaff.ekdj.jbdf.hlke.achc.kedg.efbi.dcgl..",40,57],["cbkd.cklh.jajd.ggal.iibd.ealj.bjgc.ehgd.ahhc.eeif.lkfi.fbkf..",37,55],["jeag.fiah.ehkh.ekjb.cbhl.ddcg.lfii.dlig.jcbc.lgjk.ffab.akde..",40,59],["eickha.dbkbhj.cfakef.jhhfeg.hejdad.dhcfii.akigfk.cfbbig.bdjbig.caajjc.degkge..",59,116],["ldgg.acah.ldbc.bkgj.efel.kcaj.jjih.aicd.hkbb.ledk.fiei.fhgf..",42,71],["afijcdbg.eihcefec.bgcfdfdh.gbaaefjd.badjacdd.ghebhgii.ghafcijj.cggiecba.fhdhbaih.jbjeeijf..",78,184],["hdibec.ghbjbd.hakick.cdbeci.dkiegg.bidcfj.jkjabh.gegkcd.fajaah.eghiff.eakfjf..",61,116],["deba.cldj.bcif.kaie.jfbe.chei.gijg.hkhc.bdla.lfjd.ggkl.akfh..",40,61],["iaebii.eeibgh.gkkjbd.afjfga.cgback.ifjegk.fjadid.jdkhce.hdckfg.fjdahh.ecbhbc..",59,116],["aghdjbcj.gegfhfif.hbjabdif.geadbjje.fbgdcjag.dhdfebbf.iiecabei.geahahfj.ddcihcha.ijciegcc..",76,170],["daca.ljah.ffdh.ickc.aehk.eflb.gjgi.flei.bldb.ijec.bhgg.kkdj..",41,62],["edjl.lbfc.jdgi.bckh.iceb.ahdh.eggi.jabh.cfag.ldfk.laif.ekjk..",41,63],["dcka.jjbi.ehhc.ljkl.kacf.hdad.fhgf.eibi.dlkj.fbae.glgi.bcge..",40,59],["ahiaeh.hjcfbd.ifjfkf.ghhbaj.edjkgc.kikdak.ggbgcc.dedacf.bbbdfi.igajeh.eickej..",61,133],["fbaa.bflg.klhj.cdfb.hdkd.idkh.bgfg.leae.hgak.jici.jiel.cjce..",43,63],["fhfcjbfg.iibhache.dacegfab.gehafbhd.ddbfehbc.hejgihbi.aiaegcji.edccfigj.jjdgijdj.gceadbaf..",79,170],["dfedbb.bkhafa.jhdjie.jhiaac.ccgejh.aiikck.fgicgj.kagkhb.fkgfjb.eebigd.chedfd..",60,123],["ahki.jcik.illh.eedj.kcbd.gdfb.cabc.ggfd.gaff.liae.ebhk.ljhj..",38,54],["jfieai.kagdik.bbggda.heghaf.hcdcbk.bcgebe.bdidcj.hedjjk.fkecif.caffga.khijhj..",61,105],["cajefacg.heajfeih.dbifdich.hefbbaie.icdjcjgi.jhjdigca.ecgedgcg.gbaffbbf.jdhdbedf.hbjagiah..",79,198],["eiga.fcck.ijld.efbj.blgh.hafi.ceek.dbca.llbf.hdda.kjgk.igjh..",37,56],["ekjf.cjbi.ifde.lhhj.gkka.bbfa.dclb.hgea.ljai.fcie.hgcd.glkd..",37,59],["fadb.kafl.icjj.hlkj.dfie.egdc.eljg.ldkc.cfbk.ahha.ibhg.begi..",41,65],["fgjbcg.bdkcee.efedkf.hijjdb.icaaah.kbfajk.badcfb.ejhkgf.ghgcah.ihdjdk.giceii..",62,126],["jkcg.flea.ghda.fijh.gdle.cclh.ehib.kakd.bcid.giae.bfbk.jlfj..",42,64],["fcjahagf.jbhbjiac.gdjcjfch.bcbghcha.ggjfigje.begdhidd.eidifged.fefbiiaa.hdabhaef.jebdceci..",82,185],["ebdjjb.cgaiid.kgjbdi.hdfjgk.chkhfk.abagib.eebhac.dffhgd.ckefeh.kjcejf.iaciag..",64,136],["kefb.idek.ilgc.dacb.flfi.hkda.hcjd.cbli.ehej.ghlb.fagg.kjaj..",44,65],["hidkje.hbgeci.feibhg.bigagj.bakhji.ekfaea.kcfajd.cjekic.kbfbhj.fdcadd.gdhgfc..",61,113],["eiigfbea.jghhijac.jdbfbgic.fgejahea.jdcfbgia.iedhdhgc.bechhdjg.fhfdcafe.igbjiedj.cfadbabc..",78,175],["bilh.jgci.dkaa.kcdj.lada.ghgc.lfed.fbjk.efhg.iibl.kbeh.fjce..",37,60],["gkce.fkfe.cdgi.dhjj.iced.akjb.ecid.lbkj.lbhg.albl.hgih.aaff..",40,62],["flhh.lkcb.ejdk.egcf.eiaf.klgb.hejh.jfbc.cilk.gjgi.ddid.abaa..",41,61],["jeahcb.gcdagk.cdjghk.fediff.chchbb.kifagi.fhebjd.djcbab.kejgek.idgkaf.iheija..",59,112],["jaeg.ffaj.hllc.khbg.bgdj.egfi.kibl.eadk.icci.blej.hckf.ahdd..",39,57],["edgddiae.hjbhefjc.aeegadhg.cidegijg.fdabajcb.bhijiaif.bfcacjhb.gefdjhid.cabfgcjb.chffhegi..",75,189],["ifakjd.aagdgj.kejfkh.cfkccd.ehbida.edbkbg.ifhccb.gaeibk.hdefgh.gjjcaj.fhibie..",62,121],["ibag.gkfb.feie.bchj.daid.gdll.caeh.fgfi.heca.bklj.kjlj.kdhc..",45,67],["higkbg.ajhcei.bikeac.dkfeci.ijdhka.jafghb.gbkjbj.eedfcd.abfidj.ckhhfd.fagcge..",63,130],["cjjceaji.bghgeffh.bijdhadc.ebjgafcf.fdjdbgac.gbigidei.iacdahdh.ghecfbbi.fchdfjee.habaiegj..",79,188],["cikg.bcaj.chfe.kged.hgcb.dajf.dilj.lfke.kleh.iaag.dibf.jblh..",41,61],["lbhb.dcji.hljk.kbei.kbdf.efca.ggai.ehlh.iacj.kdgd.facj.elgf..",42,66],["bekc.kidc.jfja.lkah.lhah.eddd.flje.ikhg.bcie.iabb.gglf.cjfg..",38,53],["gifcbk.gbfiej.cegbka.hfhced.fidieb.dajceg.khafeh.igkcgb.hjdjdk.cjfdkh.baaaij..",61,119],["gkdi.jglb.dkil.gbej.hcbl.bkgj.ildk.jfah.ffae.caci.efhe.adhc..",42,66],["dhabgahe.dhjfhbgc.dbidcibf.fiejciga.cadjhbef.fbihcifg.eiccjeja.bgedhgjd.cjeagaff.ejdihagb..",78,177],["hdijkd.ibbcik.dggcja.kgjdjf.degach.hjgkgb.ifhjae.fbacbe.eheefh.dbakck.aiiffc..",60,120],["igfi.bjhl.chdh.ajbg.gjbe.geab.kdkd.aklc.kjde.aief.lifh.clfc..",44,66],["fbdaia.hedfcb.fgbgaf.acgigc.fecjej.jkdhia.kbeakd.jkijhd.gdkheb.fhgchi.jicekb..",68,121],["cdcfgdij.gchdaeab.cigbdhfh.aigheieh.ibjcjjaf.efdefdhb.bijhejdd.bcifgjbg.jiegafba.aahgcefc..",77,161],["edfj.cbhj.djlh.kblc.ccaa.blfi.ldjk.kgai.gdhe.igfg.ebke.hfia..",43,65],["hekf.jfla.ehgl.hieg.kfcb.cadi.bdid.bjgk.elaj.clfd.jcab.hkig..",46,74],["bija.bgek.ldbc.idhg.cafh.gefa.ical.ikkg.ljke.jjce.bdhh.lfdf..",42,66],["fbgcie.kkaeke.icfjai.hhkhcb.eacfbd.gadhgb.hcheak.gijjdk.ijfgdj.fbicfb.aeddgj..",58,110],["bead.hiag.ecli.ikfk.jcbg.ddkf.bjcc.ljai.jlae.efhh.hbgl.gdfk..",41,61],["gejejbdc.fdcfdhie.gbiaddfg.fiiafdeg.icbechhe.cejfjdih.cbbehjia.agjggjbb.fhacadhg.hijabcaf..",78,174],["fjhgad.kjibfg.dihgaj.fhbjdg.kkihje.eiaaed.iebjee.abchbg.akidbk.fkgcfd.ccfchc..",59,108],["fged.dhdf.bckj.ehbg.beah.fjca.bick.hllk.adfi.gijl.keaj.gilc..",43,68],["adabek.jjfkca.ebkidc.hackch.figfek.biggfa.jbckie.bgfjhd.adhdei.gbdhhe.icfjjg..",60,131],["fdjadjbh.ejhchddb.hebgcebi.facjcbdb.gfiageae.cifeedfh.ibbgdfjh.hcgiagjg.fcehiacg.jaiadijf..",77,222],["bhia.eech.gafd.kdjc.libe.cbge.kddl.fgia.fjcg.jhjl.lakh.bfik..",41,62],["gcic.iffc.hgab.kdjb.dgld.hjbl.ekdh.ejba.leci.kafj.lieg.kfha..",41,65],["bcfa.kgfa.igkc.lidc.hbja.eflg.faee.dill.jcgb.hkdb.jide.hkhj..",41,63],["hfjckg.jjigie.jgdkfa.dcejhb.bheaih.jkckda.bfhdfh.ececgk.idaafi.gigcbf.keabbd..",65,136],["aikj.aalg.iheb.dblh.cdcc.efjd.eikf.hbke.jidb.flkg.jlgh.fcga..",39,61],["faafbfea.cbiicjhh.geacfdcd.jdhcjfgi.afdigcgd.eebdchgj.djbahbaf.eigeejfd.bbiehagb.ichihjgj..",72,169],["cgdbfc.aeahfa.jhaigi.biidjg.fjdedj.fcchbe.akkihe.jcdheh.gcebgk.afigkb.dbkkfj..",60,131],["ibak.eilj.ehcg.ieka.dflb.kehd.ggja.fhih.ljac.lfcg.kbjc.dfdb..",43,65],["ihkgab.bfidhg.fafghb.bggejd.kdajjf.eiabah.edcjbd.aihiek.gkehck.efdkjc.jicfcc..",61,116],["ijfhdcei.dhajbaje.gdfcheag.cjiceecc.hebjbdhf.begdjjfg.eddagabh.hagfibab.fcgafbfc.hgiidjii..",78,200],["gicd.hbel.dieb.gcdb.jkcg.jhil.aakj.fgba.eeja.lhff.likf.dkch..",42,66],["hadk.jjae.lhfi.bgeb.iccf.gkji.bdil.lgcj.kefk.fadh.lead.gbhc..",40,58],["flih.laic.lkek.fide.cacj.gagk.bbjd.hhdj.hedf.clja.bgbg.kief..",44,68],["gckfhj.gcdjai.bibggf.hcbgfk.ehfake.jiaeci.ajkeif.bcedha.afckdd.jjghbk.dhidbe..",59,110],["aied.dkbg.ikae.ckad.jfcl.bhfl.egde.fjij.cbgh.bcfj.llkh.aigh..",42,62],["deaebefc.cdbaijib.hijcfifi.jdhfbeec.ecfaagdh.fjhbhjbg.bagdifhj.jbggaefc.eijgchdg.adcihagd..",78,206],["ceffhj.cafikj.jjkdbd.figkei.bahbdh.ahhcie.dcjigh.aegfke.jbgbfi.dagkca.cebdgk..",64,122],["gkia.lhel.kkfg.iahl.bajh.igbe.jcfd.edgc.fekc.ahjd.bijc.dlfb..",41,61],["behfik.hgjfji.ebhbej.gdchac.fdiadc.bgihke.ikcgac.fhiakf.akbedf.cgdjkd.egjbja..",67,140],["achdejha.cijfgjae.iaeibeda.bgcjbbji.cdfcgieh.jhgfdjed.geeaghhb.gidccfjg.fhfdiiba.bfcfdabh..",79,173],["bheb.fkga.dfgb.kfig.lgkl.jecc.icaj.ejec.bkja.aiih.dhhd.dfll..",41,64],["faej.cblk.lfhk.haeb.djgj.ikae.icih.lifb.lggc.kbfh.ajeg.dcdd..",41,63],["lebh.eiha.aihb.blad.cgka.ldke.ffkl.cdgj.cibd.jcej.fkgi.ghfj..",44,68],["jdfidc.gjdjea.bcbjka.bhgfcd.ebkdig.dacchb.eihehh.kaacih.fkgkaf.bggkij.ieffej..",60,120],["ligk.afkg.dedb.ecbk.jlli.iabi.dech.ahhg.jhlf.jejf.gccf.bdak..",40,58],["cgachgbg.caigabed.aejbjdjh.fifeihia.ijfeibhc.beehgdac.cbghdfdb.hjifefjc.hfgddjdi.gajfaceb..",76,177],["agjjab.hicgch.bgekdg.gaekdd.hidcke.fihbkc.dhcdeh.baiejf.fekjik.gfjjaf.ibfcba..",62,130],["ccbi.jcda.ejgk.jkfk.dfjf.dhlg.ibee.fgei.ialk.abhh.bgla.lchd..",39,63],["adjbkc.hiideb.jegcej.fidgef.ebchkb.kdghgd.gaiahk.jeacbf.fhgjdf.cbkkii.fajahc..",61,132],["egdcidji.iicejifa.bghdfbab.bcfadadc.fjbajbga.bjdhieaj.ieecefdf.gjggfcbe.hhfcihja.gchdeghh..",77,167],["debf.kcgi.jhad.lbij.feeg.kcdh.kgjb.kcba.lifl.fjal.aeig.hhdc..",42,62],["calk.ckbf.eifd.chga.digh.jgcb.bfke.iejd.ejlb.lhkd.fghi.jala..",46,68],["lhca.akfk.gbcj.bicg.ahif.alle.cfeb.edei.gljk.fjhi.bddg.hdkj..",41,58],["dgdigk.fkifbe.ekgbai.ahdhfc.geccie.kjcjcc.fjgajk.ijhhfi.bbadja.gbhhfd.ebakde..",61,120],["ebdb.gihl.lejg.hikk.cldb.kjfj.hfki.lgce.abci.fjae.adac.fdgh..",41,65],["dhcieadb.ifbhdefi.agjaaafd.hfacidcf.edgdcibj.gjbegcdh.igbfbhfh.gjgjaehc.jcbeijfb.hejgaice..",83,221],["bdjbcf.djghhg.efdjef.kgecik.gjkcak.bchhhk.ibiaea.ggeacf.ekifdi.djihcf.bajdab..",59,116],["cejl.fcgg.ilfg.ekgd.fabi.dlba.dala.hfjj.icke.eikc.khjh.bdhb..",39,62],["edhgdk.jhdfig.ggbjkh.eihccc.jkafki.jifacg.ecbfhf.gkajdb.bbjiea.iaehek.adfcbd..",64,105],["eabcabdj.djigabcc.icffgace.bdhjacgj.ididfjdc.bdfgejgf.eibheahi.hfggheha.fbebighj.ciedhafj..",79,184],["afce.ikbb.chfa.edaf.jkjc.igda.iclf.dggj.jedl.hbih.kbhl.elkg..",39,63],["elkc.hhad.acil.kigk.eddf.efgk.djlb.chge.ibbj.cfba.hijg.ajlf..",43,69],["abcd.ggei.aehl.kdig.lbfd.jbae.gikc.lffj.alhd.hjib.kcke.hcjf..",43,66],["kbbffb.agbaeg.ecfkhe.kjdkgd.kijgjb.iijdac.ckcigh.hfcdhi.ajedgj.hhfafe.debcia..",62,126],["ljdc.hgae.balf.ibjk.fiil.dedh.jgbk.hgaf.ibcd.elca.ckgk.fhje..",41,62],["gfdacecb.ebbhgjga.ihaifjhi.hedgafih.jiaeceed.bcffehcj.bgghcgda.idjieddc.jfjbifbf.acjdabgh..",73,186],["dekicj.cdhfei.eaeffa.fgcjik.ikcfcc.hjjadb.fgakae.iikabj.gkgbdh.hdehgd.bbgbjh..",61,138],["aafg.ekie.flkd.hbgc.kdgi.lbfi.jihh.gbcd.jcjd.lbke.faeh.lcja..",41,59],["kdbdhg.haikeb.dgfhea.bffcfh.gaicab.kdjjec.bkcjij.faiefc.agekdh.gejidi.hjbcgk..",63,133],["hjiiaahb.dgcfbege.ejbdicdf.ejggchgc.djhbiaja.jcjiehfa.ibjefbfa.bddghgha.cciedfde.ffaibhgc..",72,166],["ikcj.hkbi.jhja.adfb.lgdf.hlil.egjl.cefd.eghb.acbg.deca.ikkf..",43,68],["eldb.gbig.cadk.gdjc.iihh.kcjh.abfk.ljjf.ekeh.gace.afbl.ifld..",41,64],["hlkh.flcj.flge.hblk.efcd.kbee.ijjb.adfi.aiag.djgc.cbdg.hika..",43,64],["ifhfdk.kdeafb.jgchjc.ghfbfi.egdakk.gjebhk.ccifdk.eiegab.hgaebh.ddjbaa.ijcjic..",61,121],["lafg.hcje.cbab.jbdb.kljf.eeke.lfgk.dlia.dcgh.iihh.cigk.adjf..",43,61],["fcgiaifi.ajjhgabe.badgcjeg.hacdebhd.cjgeaeeh.bjbhigjd.ehcifgfd.bfefgcac.ihfjdhia.ibbcddjf..",82,222],["jgggje.kibbje.igcdga.ejkfgd.hehdhf.fhkfca.bhdahk.dekjic.jafcic.fkcbab.ieidba..",59,122],["fhef.ckei.lbai.khgk.gfda.hkaj.hcbe.gjcb.eddc.ajjg.ilbd.lifl..",44,69],["jkhkdf.gjebca.iekaac.fcdfak.dcjidk.hcebja.hghkdf.hejefg.ibgjgf.eihgbc.iabibd..",65,130],["bjbjhcdj.ehfchdae.bafghdaj.ecbbicae.baihicdj.iheafcdh.ibcjgbef.hgijdegd.iaacffij.gefgggdf..",78,200],["bihl.glhi.jgjh.hdfa.efgd.jikd.eglk.jicb.kbdf.elef.acck.abca..",40,63],["kjgf.lafi.bkcb.ijgd.jjef.hchg.dkal.elgl.fiee.cihk.abcd.hdab..",40,61],["giig.eekg.echl.khjl.caaj.dekf.jbcf.alji.ladf.dkhd.gfbh.bcbi..",37,58],["bijega.ddkbje.cgfgie.hfikcf.ahikkh.jbbjbi.fcedhk.cdigka.egjdbh.ehcgcj.aafadf..",60,121],["didc.elka.hejf.ahia.ajfc.gkkl.hdgl.lbcc.dbbg.eijk.fbfi.ghej..",43,63],["adebhbda.gibbcega.gchdgfjh.fdfehjij.efeceijd.cjadjgdf.hfjcdehi.hgfjcaga.bacgibha.eiibfcbi..",79,192],["ididig.cgefek.ebbdhh.dkichk.dcaecb.fakekb.jfkbhg.fjbhag.ahjjgj.caficj.gfieda..",63,117],["fefi.jegd.ebgh.bjfl.gbij.hcje.akbh.clfi.iadc.dkac.hllk.dagk..",42,67],["jbaagi.gaekif.kedabj.ichajh.hjfgfh.kcjcid.bbhhdb.fkgcjg.feddec.eakdie.fbgcki..",61,119],["iihgjjdh.hdabdjig.edjebcda.cciageej.ffefcfbg.ajbcifbe.fagihgjb.agdhfbci.hdgieaah.edbchjfc..",76,193],["kddc.fegj.ekba.djcj.ifhe.kfil.bhlf.lbcb.egih.lgdi.ajaa.kghc..",43,70],["ldik.agig.idcg.ecbd.elhf.bjkf.fcca.ejdb.hhae.jajh.kfig.lklb..",41,54],["ffgk.jdkl.dhie.cjel.lcfb.iahe.khbd.lbid.eajf.jaga.hgkb.ccgi..",44,62],["ghdejd.eahbfh.hgiijb.jgikga.bdfdad.ekcgcf.habaki.fkckde.ichkie.bfbajj.gjfcec..",65,131],["bgdg.hhkc.jhfd.kkig.iclb.abfl.gede.fjca.cfje.ibha.lklj.deai..",40,58],["iedjghfg.afcjcceg.aahbdfbj.cijacdaj.defehbjh.ejdihgeb.fdcaibcf.gahegicb.abjdeihg.fgidfhbi..",78,169],["hjegdf.abecfk.bfaecb.cjgkgd.biaidg.eacdbe.icjjhf.jdghai.kdkahk.kcfbef.ihjghi..",67,143],["lkii.ided.jegk.ggia.blaj.fldf.jbjl.chck.hgef.hkac.hdaf.ebbc..",39,59],["iejdff.bdfbib.ckaheb.giebkc.kfcaki.fcdjda.jjcghe.gadgae.kihkde.hbcggh.ajfijh..",61,129],["jhbjiigb.cdcjeadb.gijabche.dadediia.cgcgjhae.habgffjc.fjfjigfe.hddaedfi.fehgbhbe.cgfbahci..",76,185],["flcj.bchl.kdhd.kkae.fiil.geaf.beid.dggj.kcfb.hcba.hagi.jlej..",43,68],["flbb.hkge.ccjl.lggb.kded.jehf.fjaf.ehcg.icai.bjka.aikl.iddh..",38,63],["dfaj.bhel.akeg.fhhg.gfad.ajhd.ilbj.kbck.eljg.idfl.ceci.bick..",42,63],["kkhbeh.caadcf.ecehjb.ijbcaf.digifd.adhcii.hdjbih.kgkfkj.feegag.afdjcb.gkgjbe..",62,134],["dfih.iklb.feib.kedb.gccf.gjdi.hajk.lhgh.jalg.jacc.dbea.kfel..",43,70],["badhjhjc.jgheagde.bhbeicei.fjdacefi.bfdacjhi.gigcdgfd.gajichgb.jfhbegfi.ebfeacha.bfdicadj..",85,196],["hgkcfh.higbaj.bkgaak.efjcbk.hejaje.ddejhd.caifaj.begiif.fdckhk.bgcgbf.eiidcd..",62,127],["feld.jedh.legg.idac.fibg.bkkc.bclb.fcij.khaf.jkjh.ihga.dale..",44,74],["cihdec.kdigaf.eciifg.cadfhe.jdhjgj.dabbfi.behaca.gfdike.gkebbj.fhckka.khjgjb..",63,138],["jidhcchj.jcfbghch.bfghacae.ebfhbagd.fbdgabie.gjifigdh.bgijfeae.jheifecb.iddadefa.jgjciadc..",78,190],["laia.bigj.clel.dejb.ifdj.cfhg.afel.baji.hgec.ddkg.bckk.hhfk..",40,60],["bdba.blhd.egji.ciec.fdfh.ejlg.ajki.kglc.aheh.ilak.fcfg.kdjb..",45,70],["jckf.hcef.bkgb.gaai.bgjd.hfel.bihc.laki.kegd.dlid.chjf.ejla..",41,59],["jgkbij.gjbcej.khgedj.gbkcdf.cabhdk.gdifhi.ehffda.iebbad.jhccke.iicaga.fafekh..",63,123],["jcfi.bkkl.ejld.edkd.hkbi.aada.legg.hifh.hbcj.gabe.iclj.fcfg..",39,54],["accdhahg.cfgejiab.chbfgjfh.hajihdbe.feecjgdi.bfegdbhg.jfiigaii.jjeaddbd.ehbcafcg.icafedbj..",68,131],["aedcki.ehfjkg.gdeigj.kjdbhj.cdhebh.ddiekj.ijbkgi.caccha.fbbafg.bfaafi.efgkhc..",59,116],["cikc.lccd.jelh.bieg.kfaj.kaie.hgad.fldj.jgbf.hgfe.kabb.dilh..",41,62],["cgbddh.jcijak.fkfhdj.afhbfh.gekhee.eakgkj.gcdcig.eicffg.bbdkbj.hbjaai.ciaedi..",59,107],["ifcbfdci.jfgghgeh.hjdcedfj.jdabfagi.bgfbdjhc.haeheihf.fdbaaegi.deceicge.iiccjabj.bjabahdg..",80,211],["gbck.bfld.gjfj.ebcf.ijdd.dace.jekg.hlak.bafl.iehi.klic.hhga..",42,66],["hdic.aeff.ajkl.cjab.jlge.jhig.ikeb.hkcg.ldbg.fdif.cahl.kbde..",41,57],["kljg.hjga.iklb.kiec.gifh.edaj.hfed.fcdl.fkib.bccb.aaje.dhlg..",41,60],["ddaegf.kkigbe.bjkbdf.hchaae.idhjcb.gaiicd.iaihbg.egefkb.jkahcd.fkjcff.jhgcje..",57,115],["ddbh.cefe.kjbb.elic.dedg.hjii.cfgh.klaf.kilf.cbga.jaal.gjhk..",40,58],["egafgaef.hebcibda.ddchfibj.hacibjfh.bgibhehe.jajdfdgg.ccdbfcjc.fegieejh.igicfgad.jhbadaji..",78,197],["fciefi.fjgadk.jekjik.acibcb.eaabkh.edgcec.jghbhd.highak.fcfjgi.jfekhd.dagdbb..",60,107],["ldfc.liig.lghj.ekaf.kieb.kjkh.babf.dfdi.dehg.acjg.jlhc.ecab..",42,63],["ckjggd.ihkeba.ikfchg.dbgcde.bfagib.hdaeif.afacbj.kbijkj.kjfeah.fehdch.gdeicj..",63,121],["ihfcbhhg.aejdcefa.fhajgdgj.djejbcdf.ibhaicac.ebbhifeg.dhjiadge.gehfcjii.dcbabjfi.fadcgebg..",76,182],["lklf.bkek.gjle.cddc.aecg.dhfh.gaii.bfbk.abjl.fici.dheh.jjag..",40,54],["ibhd.akbd.kcjc.lhjj.cifl.kfaa.elij.dfgl.gbhk.eagg.bief.chde..",41,65],["kcjd.dkdh.bigl.jaei.beeh.cfbe.ffgj.kila.ghlc.daka.fchb.iljg..",41,61],["hcjedh.igjbec.didgkk.jfdafj.ebekca.gbghea.jeaafb.hgfgah.khkibf.ickcij.fbddci..",64,134],["khje.clde.lkbg.jgjh.lcbj.ifcg.cfhk.afad.biak.defd.beia.lihg..",45,69],["cadihega.hecjjfij.ejfjfghi.fedaghca.cbiheajg.djgbibcf.hdedbaga.bbggccdb.jeiihffi.dcdbeafh..",74,173],["ihjbek.eeacgd.faiiik.kgbkhf.abjiaa.eecdgh.fcfhcj.jgbedg.kdgija.khdcfb.dbfhcj..",61,116],["flce.hgdf.khba.leke.jkfa.djab.cjhi.abbi.hcge.dldl.icgg.jkif..",41,60],["khgejc.bjkjkd.ecibah.cjbafg.fbcegf.adedha.dfajhd.aiiiec.hgicfj.kegkkb.digfbh..",62,128],["affeefhg.jbhjhcbj.ihhehged.cgfibfdc.efedhjgi.djedhdfg.fjcibgdi.aaiaijbi.gbdcacbg.abjacaec..",81,186],["kijh.gkkh.ahab.lcde.jdei.cjfl.cfbg.bbdh.gidi.clal.fgke.feja..",41,60],["caca.gkel.ilgf.hfle.ieba.jgcl.jbha.kcde.fkdd.dbif.igbh.jhkj..",43,64],["jbec.afaj.glkh.kcfi.fjcg.blei.bghh.djei.flgd.eihb.acld.kkad..",40,64],["dcjaek.ejibdi.bggfdk.ikcijf.jficke.aadgbd.cjjgke.cahbbf.akhidb.fghgef.cehahh..",59,117],["eiid.fckk.glhl.hfce.icbj.gdab.fkef.kaag.ecli.jdjh.djal.bhgb..",40,64],["edgcechb.ahcegjdi.iggeefhi.afgebjah.bifdfbdh.addjjfjf.gccbjbaa.hcidjgai.fechjadg.ihcfbebi..",77,180],["bhdgbd.gdjkac.kaiked.fjihjf.ahjckk.cfggbf.hbedij.afefge.icabag.djhcii.ebechk..",60,128],["flbk.figf.bgki.hklj.fgaa.cclb.egbi.ilhd.hehc.ajje.akdd.ecdj..",40,65],["jdkkak.aeihca.cdkbef.gcjhck.aidebb.ifcieb.gkfgdj.gibdgg.jehhih.abeajd.fjhfcf..",60,119],["jfbdehja.jgbccifc.jidbdcia.ghigecha.fegfbfhd.giagbddd.ifjehaaj.iedahiac.chebfefh.gbejcgjb..",76,200],["abig.kceg.clle.chbh.jjid.lekh.egdf.fkjb.fkia.fgjb.aadi.cldh..",40,63],["iika.fkhc.jfdc.hjbd.glca.khek.gbjb.elfd.egbl.ghdj.fice.aail..",42,69],["dlef.eldb.jhad.kgdf.iiag.jgbh.ffkb.iegc.hclc.akkj.jcea.ihlb..",40,57],["ccfijd.agehhc.ichebj.egdijc.effgaj.khhjia.gfkegb.akhcdf.kgbkif.ijbdkd.deabba..",59,114],["gfki.cdca.idjh.gijd.ebjh.kelb.lbhe.hkef.iadf.gaak.gclc.jlbf..",45,70],["bjgdbchj.hicehdja.fieaedgi.jbcbbjfd.gcdhgjeg.fegfafji.ihhcaija.cfiabhea.afdeegdd.cbigbfch..",78,200],["gjcabc.ckjahi.fafied.aebjcb.ebdhad.cbdhig.khjffe.dbhheg.ifgckd.iijakg.jkgefk..",67,118],["fgdj.khlc.bcba.jbih.ikfg.flka.abhg.dlhc.eekj.fdig.delc.iaej..",41,64],["jgkffb.kjdcab.edabfi.hieaka.gbacgi.ddchfi.kdfdfe.gijgjh.ghechh.bebajk.ijckce..",62,129],["debjjjji.ecfgfiab.cbeefihb.dhadgdfa.jiibebhd.fccjgijc.abgagacf.hegdhdah.hcejfbgi.giedcahf..",82,216],["kedj.fjhl.habg.kbcj.gaea.gfid.ebch.eili.kcba.ikfl.ldch.fdjg..",46,69],["cgae.ikdl.bafd.ciel.jjba.fjib.gihf.kkle.cghb.hakc.dhjf.dlge..",40,62],["gagb.gbad.kjeb.dclh.cfce.hfbl.dgaj.iack.ehji.ikkl.fhjf.edli..",41,66],["jjkhhe.dkgeeh.eibbgb.ajhbdi.kgfibg.efahff.cfdiac.kdiakd.cgakcj.fabged.cjcihj..",61,127],["icia.bjdb.ffkh.hcbg.abcl.edkc.fdjh.lgle.fijh.gkda.ejal.ekig..",43,61],["afjbfegb.jbcfbjgh.aiaibdjf.diegfhbe.ddhgjahb.jdacfiec.eegehdhc.jchhcigi.ifiddbeg.acgaacfj..",80,180],["iejied.eaefkh.gbabdd.gahkbi.gfigag.fbacck.heijdf.gjfjcf.dejdjh.hikcck.ahbckb..",61,114],["lgae.jdfc.fdia.cgke.iahc.hkkf.fklh.beid.jbbl.gedb.jgha.lcij..",43,62],["fkcaec.dchgeh.igbahb.fkjjca.igjegf.iebdhc.gikdea.dbdhka.dhkgik.afjfbj.ecibfj..",68,137],["ighbfadb.efbaicjf.gdfhcaji.edddhgja.ceheidae.bdhgcebh.gcbdcjff.iaihiejg.bejahgfj.bafigjcc..",81,178],["dbaj.bcjh.gjhe.ffhi.lchg.eged.ldfk.faib.cklk.caja.ligi.dkbe..",44,68],["hkic.bfka.dhig.bllg.dkfk.hiea.cglf.jelj.ebjb.cfcj.adeg.ihda..",42,60],["clef.hjgc.dgij.hcjd.adfa.ifhl.eagh.kbbk.ajgi.blcd.elik.kefb..",41,58],["igahjk.ckkbeb.fieged.hadiej.jfaeak.gibbcg.jcbcid.hifagj.hfhkkg.cbdcjf.ehafdd..",60,117],["kija.ghee.jdec.dfil.hdfa.bhcb.alfk.dicg.lchg.jakj.bikl.gfeb..",42,64],["gegjbajg.edfdgfic.chicihjg.dajhbfic.cddffhdb.hebeaafh.ihefbdad.jghcjbei.iabgjeea.gacjicbf..",77,178],["feggej.ckaajf.ieajkb.bchiac.fghfge.cekijd.hdbhkd.cfgbkd.kghhie.ajbadf.ijcidb..",65,120],["cbch.jgke.bjgl.fdak.glfl.hbdh.aklg.hbdf.efak.ccii.jiei.aedj..",42,62],["aibjgj.bgacjf.dedaah.gbchba.ciedjf.gkebgb.ededhi.caifdf.ifkfkg.jkccjh.kikhhe..",60,126],["cabefech.cafdegjb.jbhbbhii.cidbgejj.cgheafda.dhjeebjf.cagbhdfc.eaiifjcj.ihiggdai.afgfdhgd..",80,183],["liia.gchb.bdfj.dfdi.ceke.dafa.kkhg.clgi.hejc.jhll.gbae.bkjf..",38,54],["bigh.cfkl.ebed.jhfa.kdfl.jhke.ildj.cbja.chfl.diig.gbkc.gaea..",47,72],["hhgf.dfhb.alie.aicd.kkad.kjhc.ljjf.lcia.bcge.bbkl.defg.giej..",39,57],["eihkfi.bdfjbj.fdkfcc.efijad.chkbei.ackghc.gkbjdb.gdjgai.agegfk.eehihc.abahdj..",63,131],["jage.hcck.dkaj.kdgi.gfcf.labb.fibh.aefh.ihle.kljc.dgel.ibjd..",41,65],["ecgbfefd.eghdhcij.abjbdaia.jfgfdbih.ajcfbcga.ifefjaag.deigjcge.achjeihc.ibdcjhdb.dhbgeihf..",83,180],["feigfb.dgdicb.hgackj.gceffk.kjdigd.hddhch.ekiaji.beahea.cajfka.bjgkhj.ibbefc..",61,128],["jdfb.kjeb.elgi.gaib.iahk.jcjl.kech.ebll.dadd.cffg.ciha.hkgf..",40,64],["eedeea.ajkcih.fdcbfk.hifdaj.ihfeji.kibedb.ahbcdh.fcaagj.kbjchc.gfkgji.bgdkgg..",60,121],["dgahdgci.giigaihc.fabfihbd.icaidheh.jejhjgbc.jfbdbcec.ifaacgjf.bejecbgj.dfdjdfhb.efeahgae..",80,197],["egdc.hhii.bjaj.ahfk.algl.ldij.hadf.fgbk.kebg.ccbf.iljc.eked..",40,63],["hdad.bcbf.hajf.baig.cfbi.ejgj.kile.ejcf.ligh.lecg.adlk.khdk..",43,68],["ldjl.ckic.dgfa.hgji.edea.lkel.ffgk.ahdi.heab.bcgh.cjib.fkjb..",44,69],["ibjeci.bhdhbe.gfhgka.bgjfdi.afajgj.kkihhe.dceccb.adgfac.feeidk.gfbkcd.jhjaik..",60,133],["dgcf.iahf.ekge.hkjl.ddke.cclb.laha.dfih.bjge.ijkl.fbbg.caij..",42,62],["cgjjgcdd.fgdfcaad.dbafabgi.fefbdagb.jhfgjacd.eidfhaih.bhejbhci.ifcieijh.ejhecgec.jgibbeha..",80,215],["eekbac.keaahg.hjbhic.dfifig.ebgdij.gkeakd.decbkh.fjdibk.gccahj.bjgajd.cfiffh..",60,130],["ebai.alil.hfec.chjk.ahkb.hkfj.glag.gdff.edlk.bibc.deic.djgj..",43,70],["dichgi.kehcei.hccabi.gjidbg.eiehkb.dheced.ffghab.afckka.dfadjk.kfgbgj.jbfjaj..",65,133],["ieebcghg.ibjieacb.ehfibdeh.fffjcjda.hchfaiej.diafgahd.bjigdeag.jbbddcba.jgagccfe.cihdfghj..",71,178],["calc.gaef.hkid.adek.fbbg.jicb.ildi.acgh.jejg.bhje.kfdf.lhlk..",42,69],["kbaf.dkdj.kjge.gehe.dlbj.hlel.gjic.gccb.hiaf.biic.dhaa.fflk..",40,57],["cbah.hbdk.eikd.fedb.bcla.chia.ljec.llkf.gfga.gkeg.hjdf.ijji..",38,60],["fdfgjb.fdjhke.iekckb.jdbagj.hcjceb.echadh.jaafak.fibiie.gcdich.gedkha.gkfgbi..",61,117],["gcjc.llcd.ffke.jbli.lfda.bhfk.jdek.ghbe.idgh.ekgi.aacb.ajhi..",39,59],["caihajcj.gaggfghb.hidhaacd.bebhefeb.hfidcghb.fidaabgi.ijbfjjec.edecjbec.jefddcgf.fhdjiiga..",77,203],["dbhdae.cgbikc.cgfjfa.dfijkc.ghdgaj.ebihck.igfbcd.bikfad.kheehh.iejajk.geajfb..",63,123],["jbja.ellg.ibhc.egce.fhka.kdhb.ijfc.agdd.heaf.igji.klcf.bdlk..",42,67],["gkajka.aidfec.kgcedg.fdcbkg.jffhhe.chkkgf.abhbjj.aedjij.ideabb.hfgicb.ihedic..",56,111],["fgcdijdh.jbcahhfc.gjcfcgjc.defaiagh.aeibjhfd.ebgfiehc.aejcbjbg.gbihbjaf.diahiddg.ifeedbea..",81,187],["acge.jgib.hajl.jfhk.bkee.leia.hkkd.cgli.fhid.dfbj.clcg.badf..",42,68],["ciif.jfja.kkbd.alfl.ghkl.chci.eibf.gdla.kgca.ejhd.dgjb.eebh..",39,64],["cheh.aecd.lhja.bkfd.ckhk.bjfa.ebgl.idag.fgdi.flbl.ikij.cejg..",44,68],["gcafei.kheikd.ejjhkg.fgbdba.abjcic.jbaadd.kfcgfc.dbgfjd.hikheh.faiiee.gjkhbc..",56,102],["flhg.ciba.clbd.dkle.iibg.gjej.hjff.egha.dafi.ehlb.cdak.ckkj..",41,60],["biabfegj.dhdghdej.fcbgbdie.bbjcecai.fgjdcaag.feafcabi.dehfijgb.hccaihif.ahigehgj.hdcedfjj..",77,189],["hfkjgg.fcahfh.beccib.kdejfh.ibdced.khijdh.jbaggj.kcbjee.dbegfa.aiakai.icgdfk..",64,125],["kfdc.biif.adbc.ebag.ejha.dcji.glfh.ikkk.cfeg.hgla.hdej.jbll..",36,62],["cfgfid.cgaigi.ahkkca.becjbe.agdigh.fdajkk.ebaedk.kifbdb.hgejci.ejhjdf.cbfjhh..",61,134],["ehjhgchd.gjaddjed.ibjjbecd.gcfgcaei.cfibejij.fighcbda.giibaaji.gbegeffc.hadeaffh.acbhbdfh..",76,205],["efbh.ikga.kfbe.ldbb.ckll.dlji.ggfj.hjfc.idea.khae.gjci.adhc..",38,58],["fbch.cejb.ldbd.ikak.eflb.fhak.klfj.lahc.ggdj.egii.edga.jcih..",42,64],["dhlf.jbll.ehhl.bijd.gegj.jecd.kcha.agfk.ifga.ckkb.fdci.ebai..",38,56],["ijakjc.ghdhia.hbkckc.jdbdkg.cgjbef.fejihc.iifdef.bkgekg.gijcfe.hbabda.haaefd..",63,117],["egkg.bjck.kjbi.fhhd.lgel.bdaa.edff.chlc.jaaf.jibi.cehk.idgl..",44,70],["dgcidaia.gbcgjceb.ijgfahef.gebijjef.ehfeebda.aidihcci.bdhbaacd.hijfhcgd.bdffghfa.jjhejbgc..",75,169],["gjbhaj.iackca.adhkki.cegdbg.hbfibh.ffdjfd.cgieba.eecegd.hjbcdi.akkffj.kjheig..",57,118],["ighc.acik.egca.eglj.ahdl.aheb.kldf.fbcf.hjji.lfjd.igke.dkbb..",43,63],["ifejgj.bddiic.jaakkg.bfehic.fdghhg.ekaghj.kcbdib.cfkgea.ibchfd.aeafcj.bkdjhe..",60,113],["bibajbgj.iagcjbdg.didcecih.eghidgdf.hadefjea.eeiccbdb.cifhcjhf.ifhgheba.jhfgfeja.jdagfabc..",85,204],["gecg.ckhl.bdkl.ebcf.djjb.fhij.albk.ahhi.ekai.ficd.gagd.lejf..",43,64],["gicb.dcji.bkji.cala.fkhg.hhal.edeb.dgek.ijfe.aldk.lbcf.gfhj..",41,63],["jgha.faal.bfgd.kgkd.bidj.gaek.ieej.dcfc.hhci.kblj.cehl.ilfb..",40,55],["ikijki.hkfbjb.hkahkc.cgcded.hbieeb.ajabjg.dfdfca.ifedba.gkgjce.fcgdfh.aijghe..",64,137],["hhgb.hjlk.bahi.fcgd.idce.bdjk.cagb.jjag.flec.aidl.efel.ikkf..",39,59],["hehjidge.gcefheab.dcaiafbg.ffdbbfei.aacddbfe.iiagcjae.djihdcjg.fjbcicfh.ehhajgig.djbgjbhc..",74,179],["fbdcba.edjgkj.cbggce.fkdche.kjidch.iahikb.hafgfb.jgkgai.ddbfaa.iehkec.efjjih..",60,132],["fbib.jaik.jdkg.bhah.fbhg.fekj.hfce.liia.ecej.dcll.dklc.gagd..",43,67],["gkiicd.ejeged.hegbej.jhihia.kccjfh.haagkg.bbccif.dbadka.acfjhk.fbkfbj.dfiged..",60,111],["biccdgeh.egjbghbd.afdgjfgb.cahgaiah.ijiicjeb.eadjdcfc.gcjfcehi.ejgfhiej.fbhfbfdd.ehabaiad..",76,207],["ifij.alje.cadc.dacg.bkee.bglf.ilhg.cdej.kjbk.kila.fghd.fhhb..",42,59],["aica.dilf.jabb.idkl.fglk.dfhl.ggab.fcke.hkhh.bcee.gjei.jcdj..",39,57],["alcj.dhge.gajg.afcj.cbbc.ikfi.hdfe.hhfd.ijkl.deia.bekk.lblg..",41,61],["bjaaii.dkiijj.eihkbd.fhcjkh.ieddbe.gkgfcj.fdejgh.gbkfac.begbce.hakagh.cfcdaf..",58,133],["jibg.bdil.adej.chaj.gifg.echj.kbfd.clih.aeke.fbaf.lkcd.ghkl..",43,66],["jhaabfga.bffddehb.agcdaeic.ijgifdhj.ijehfchc.dcbjecgd.gheebiaf.fbabdihg.acjegigb.jhefdjic..",79,191],["bfibbe.jhaaih.fgcdba.dhegid.ikecbg.ahecjk.kgdcgg.kjkbjc.fjfkje.ffhedi.aihcad..",59,111],["bfik.jgja.chdg.abic.idek.dbgg.aifl.hkla.khdl.chce.flbj.jefe..",41,62],["aiggbf.jfhbcf.cgjkhg.kaddji.khdedh.bebhki.fefddj.jciiac.egcach.kaeakg.ifjebb..",59,121],["ffjdbife.hjfbedij.hbjcbdcf.gibbddcc.egfajhca.bdjfdhgc.hfhghcae.gaieiaej.ajihgieg.acibdgae..",81,189],["fcid.gjlf.delg.ahjh.haib.agdb.hcel.feif.kgbl.bekk.aijd.kcjc..",43,66],["lfel.fajk.jhkb.dgfb.jkfg.cedc.liag.adhe.bhih.iedk.lcbi.agjc..",44,70],["hlge.iibh.idck.fkcf.ldaj.kkdg.cafg.jcbh.eija.afbg.eljd.belh..",41,65],["kiekhd.jehgig.gkgajb.baaffj.edjhec.ccefdh.bbkghi.idgcad.hfkbki.beaidj.fafcjc..",58,111],["iajl.bche.hdci.kbae.kgib.laji.gkdg.cgef.jcbl.fdlf.fekd.hjah..",44,67],["fgdbbcdg.aifchbbe.aeaiahai.ecgdafja.echfddeg.cgifdaif.jhcbfjhj.hbdbcbie.fjecjghg.deijghij..",78,204],["cfhijd.jedacc.igifek.bkhhgh.gcagek.ehkeif.fjiffg.hajbgb.jdajdi.bbeakc.ckbadd..",63,119],["djfd.ebil.daca.gbfd.hlib.leaj.ckjl.kihe.fbck.kgeh.acfj.ggih..",43,70],["egkiih.gedaij.jfacid.bhjjhd.idcdah.ebaecg.bfbjgk.chfikk.ackfde.bbfhej.fgkagc..",65,127],["bjfbciha.iccbcdfe.aebhgaga.jiecjjie.jbdigdij.acdhhgjh.dbegghcf.hefebdhg.jfaibide.faffgadc..",77,174],["cdlb.aejh.leli.jkdf.cghg.icei.adjb.aabf.gdki.kehg.fbfk.jlhc..",44,68],["aeeg.jihc.abjb.lcfl.dhek.gdfi.igaf.cclk.adkh.hilk.jjbf.gbed..",43,68],["faac.dakf.dilb.kkfe.bdfb.lcjh.jbde.lhig.gjeh.giae.ikcj.lchg..",41,63],["aibhdk.cijfbh.kdebbj.dfkich.fcbkfg.aegiig.gjkfcb.dfeajd.aehhci.gcdjeh.akjega..",60,111],["cgac.lgjd.cgef.bjha.eahb.ilib.hfkk.ibhk.gdjd.filj.dkae.lcfe..",44,65],["jhjibahb.jfdebfac.fceihiae.jbcdiafb.bdcjgcad.ejfaeeah.hddgggfh.aieddffc.igejhgib.cibcghjg..",74,172],["ckbije.fejgkk.gcdfdg.beakdc.eiheij.eaahdg.fafibh.cfbgbc.fdkjda.khajgi.jcbhhi..",60,114],["ldbl.aiek.cjkg.bkda.gehc.liag.fhic.lfee.fgda.jbhk.cijj.bfhd..",43,68],["haajaa.dkdebg.kdgafc.cgcbck.hdhdkc.feebib.hjjgij.bekiei.fkfbga.jieidf.ghjchf..",64,132],["efcgjiga.dfebbigi.ghfhjdhe.aibhjice.cbjiccii.bjbdhfja.hfedfadg.efcbcfbg.dcaejaag.gdadhhej..",76,156],["lagl.cgcb.lfia.ejdi.fghh.achc.bdgj.fkkk.bjeb.ajef.dekl.dihi..",40,57],["ffae.dcai.ddea.jlic.bhbk.lgdb.giae.fkjh.ljhg.kech.clfk.bjig..",40,59],["hbdh.ciab.ggfj.blik.keca.keif.lfba.cjjd.hlce.ifjh.dged.kgal..",42,60],["cckeda.kkcdek.ehgfgf.cajide.hbgbba.kjaijb.dahdif.chefjh.gbedia.ihicfk.gfgjjb..",66,131],["gfae.bkeg.laci.jjla.bhhj.cihi.addk.clbk.fhfd.eidk.cgjg.flbe..",40,58],["cifgdgib.cebdcdjc.bchjhaec.afegbhhe.iajadbca.jhdjhigi.gafabfdh.jhebfgjj.dgicadgf.beefifie..",79,192],["dhfeci.kaakgb.edkbce.dagceh.gigjia.icffkb.bjfjeg.dcfdhg.iihkja.hkabje.hjbfdc..",63,121],["kfik.cdlh.fgid.gija.blcf.bkfd.khja.elaj.egeb.ehcg.iacj.hdlb..",42,60],["hddcfh.fciede.hbaijb.aefjad.ijcbdi.ieadbi.kgkfhk.jgjefh.kbgbkg.jcacfa.khgcge..",68,128],["edjfdhjb.bgdaicig.idigbbjh.fheehhae.ecdjdcai.fdbhigjc.gcehaebf.gjbaefah.fgidfacc.gjjicbaf..",79,194],["kigf.bfkb.caff.hhce.bdje.lilj.gdda.blkj.gidh.ekcl.ehai.jgac..",39,58],["bhia.iedc.gleh.jcke.fjgf.klab.lldh.jiea.bkki.fdcj.bgfg.dcah..",40,57],["dblj.gafk.gedb.ifbg.aheh.eagj.dikj.clia.kldc.iekf.ljcb.hhcf..",41,63],["akfdbj.bifcba.adhhbf.kcjeef.jggakk.ebijdd.hjicag.ghibkh.iekgch.adjfec.iecdgf..",59,122],["bdji.ladb.aefd.gecl.bchi.ahej.kkhg.ildf.jkjb.ficg.cahe.fklg..",43,67],["cgdjajid.fejagfcf.agagegbh.afhfihej.jgchhebg.jfcdbiab.cfehjadb.bdhdceii.chdibcdj.aeeiigfb..",80,207],["cdjkjg.iijjbh.ffgigc.ghibeb.kcicai.kaddea.fdehhk.jhfgac.fhecga.jkbkaf.ebdedb..",61,121],["bfak.jfcl.kibg.afae.iljh.dilk.gcgc.dlbh.djek.egbe.jfha.ihdc..",45,65],["bfghkf.ifdcjf.ehbjcg.kkekbg.ckadhd.hajhec.aakgid.idafeh.fcjdic.bbieai.gjejbg..",60,118],["bdajhbcj.bggfegfa.bhedidic.jbdechag.agfiacfe.bcgbjibj.achediej.dicgdfie.afaihfdc.hjhgjhfe..",80,218],["cifc.bfjc.ighj.aggf.kdhe.ljej.aebi.hfdb.aakb.dkih.llkd.cgel..",41,58],["fiie.lcgf.ljkl.ekjg.hbke.hidc.ekgd.lgcd.bacj.iaaf.bjdf.bhah..",45,69],["gllk.idlb.fgji.akek.aadc.bheb.fgje.fkch.aiic.lcjb.fhde.hgjd..",41,64],["fjijca.eeecie.ahggca.dkbiha.cgikde.hdcafk.dedbfg.gkdjij.gchffb.jbbikb.hkjhaf..",59,120],["ijll.gfbh.kccj.eabe.ihgd.gglb.afca.ahed.dcdh.kjeb.ljfk.kifi..",43,67],["bdeajcaj.jehbgcbi.fhfgeffe.dibbdbih.jgaceijf.egabiahj.fcbcdaii.ggdaejad.dicfhchh.ejcgdfhg..",76,181],["aidcec.cjkchb.keihde.gjdafj.bgafhh.abjiei.fgbgkf.hkifji.jbdeac.hdfcgb.kkdgae..",63,128],["jjgh.cfcb.ibhk.ehid.ackd.baal.egaf.idlj.beik.lfde.gjgc.fhkl..",39,58],["hjhfdb.ikffbe.hfciea.kggjjk.ahifbc.idgkji.abjcgd.dbhage.ccjcea.kehagf.beiddk..",62,136],["jihcbjai.gecbagha.fdceddfa.gdgbabjf.agfijefe.ijgjagjb.ieiifhbh.abhediff.cdcdehec.ghchcdjb..",80,188],["ahik.glah.kkfk.fibc.jlae.cdcg.ljed.cbha.ddjb.jigi.egfh.elbf..",41,59],["ecij.daka.hfga.chgh.iclf.kgec.dlbd.flfd.aibk.jilg.kbhe.jebj..",44,69],["bgae.ccaf.difh.bgkj.dlib.ekhc.kgib.hcld.kefg.dije.jafl.jhla..",43,63],["affhfe.bjkieg.ickjba.fihfeb.iceadh.ekgbfc.jdejbb.ckhgad.acjdgd.gkhiig.ckdajh..",61,122],["icgd.baal.deic.bfdf.bkfk.ljai.cbhl.ehhg.agjh.jegk.flci.ekjd..",43,68],["aefgcjcg.fibidhdb.igdhceae.bdbcfdca.dcjjeffg.chjidfid.agaghejh.jhgaifah.bihjfebe.ebgijcab..",79,206],["efdfeh.kckdkh.dggbbd.fdaikg.acejei.ccafje.bagfei.jhjggf.ahibjh.aiicbk.jkbhdc..",61,114],["ghel.jfjc.igia.akge.lhlb.kdid.bhie.dafd.fbhj.ekjf.bcag.lckc..",44,63],["ajjdgg.ekchea.dahfbh.kdbagh.bjhgfi.cbifae.ffecde.fhgkck.jkbcji.igbikc.deiajd..",63,135],["jhiacbej.hffbegjb.jefjhicc.fhcbhjbd.aijdegcc.iaadijba.egdecfgh.gcafddfi.faedbiag.hgbghide..",79,188],["fkdb.ghfe.aald.ciij.hbbg.lcjh.igia.fcej.ckfb.lkej.lgka.dhed..",39,58],["hiff.gclk.ahhh.iaeg.eclk.ebcb.bagd.jadl.jfkl.cgji.ekdf.ibdj..",39,66],["heab.gigl.edak.cfek.kbgc.cikl.hged.fbaf.dilj.dahb.fjlj.ijhc..",43,66],["iadagh.cdbega.fkbeed.gadkke.hbfiic.jhfcbb.hkicbj.hjjdgi.dgfcje.ejhafa.ckikfg..",59,125],["jkal.dlfe.hilb.cbfg.ijfa.gcad.bcdi.khlg.ecej.kaef.hhdg.jkbi..",48,67],["ifbhihab.ideeeffj.hchhddae.aadjhfgf.eijgdcgc.befejgfb.bajchcac.gdicfhjc.digbegij.bagbjiad..",75,156],["bjfkad.ggkdja.kjkchf.dccbej.egkhdc.fieifd.eghibi.jkhfcb.haagje.abfcia.eihdgb..",63,127],["khlf.bjfg.aick.dblj.fbgi.laeb.adad.cdkl.ecef.hgij.ejkg.cihh..",43,67],["bfechd.gdjbce.kihkfg.kdkkfj.faaajf.hbeiih.ggjbcd.cgiaea.edckfg.cjhjai.dbhbei..",58,112],["difagacf.ebhdjibf.ahhdiccb.gbigdcjb.hcfgjeaf.fibaadea.ejdecejj.begficji.fhghedag.cbhihdjg..",80,189],["jgkh.lklh.edbg.dbkj.faci.hdag.fgai.bcee.cjdh.ilfl.bjik.fcea..",42,65],["ibfd.gkij.hfkc.bjdl.ehca.lbge.ikgj.lagk.adhe.blff.achc.eidj..",43,64],["bdea.fhfb.fblg.cgek.gbca.eigl.ilcj.dhjd.daji.aihk.jhkf.ckle..",42,55],["gccaii.jhackh.gfgfjd.kfgibj.fcbaba.bejkid.kgehbg.diajhf.bdkeee.kchfid.jcehda..",61,128],["elje.kgha.kddg.jihc.ilba.ecbi.gcfb.fedj.fbdi.gkak.hafl.lhcj..",43,70],["ggjabafe.hejgbcbe.jdgicaib.ajffdifj.gjdhdedc.jhijfhdc.gihfebcf.acbaghhf.edabeaec.gbchiiid..",77,170],["fkhcid.ajbhgc.efkbgi.jkaifb.didhci.hggkbb.eiakff.acfegj.dbaded.chhcge.jakejj..",64,134],["ahhe.gegl.flck.lakh.jfba.kbdj.jijg.aiee.fcdg.ldic.bdfb.hick..",41,63],["keijhj.fedjag.efhkbf.cihfcg.bccica.haidhg.jdcaad.iggekd.kdabgb.jbbfih.ekekjf..",58,115],["echfgeaa.hjfiaicj.ifbcifad.aijahgeh.fjbgdghh.dagfecjg.dibhjihe.ebbdegjc.ccigfjba.bbdfddec..",73,190],["blej.kfkl.dfjc.eghf.abba.egbi.ickf.ljkl.digg.ihhd.acad.jehc..",41,64],["dkkl.gech.jfbf.dgah.igkl.jdij.kejh.bcca.ihel.flcb.ebfa.diag..",40,59],["jilb.ehlb.lfea.ehhk.ijhg.dkeg.bddf.jjfb.idkc.cclk.giac.gafa..",41,61],["dkeabb.gjback.fdikdg.befekc.gfcjhi.iachfa.ffgkdd.edgchb.jhjhie.jhaabk.iigjec..",60,120],["fldh.gled.dbfk.igbh.dakj.hgfc.acaj.jjkl.befe.bkhg.ilea.cici..",44,66],["dgfhcedh.cgiidhcc.afeiiegd.ijbfhfhg.djbeadbg.eadccdii.ggeabjbc.bajeafbf.cajhfhbh.fjgijaej..",78,208],["ddecaf.cgedij.abhjag.ggkbaj.ajbhid.cdkikh.kbecci.ifhjhk.fefhgi.gecbjd.kaffeb..",61,124],["cdjg.ifbl.cdlk.ckfe.ejjh.gkhk.daea.fiai.abbe.dfhl.iclh.bjgg..",41,67],["bfcgkk.hagjkh.bakjgc.fbigdb.cfedkj.idehcf.giefdg.fahhie.jbajih.cbeicd.ekajad..",64,116],["bciejeei.hdjicdec.jfdggagg.baebibca.adichihf.dhffgbbe.hcjfdjba.bhcdcjhd.feijfgjh.aeafigga..",77,187],["cdic.fhgk.ilad.idec.gkcf.jagh.debj.ebhj.lbkl.bhji.faal.fegk..",43,69],["cjld.bdci.chek.debk.ljke.agja.bhif.gijg.gkif.ellf.achh.fabd..",42,65],["dljf.ekfe.gekd.hdbj.bckc.hclf.cihl.ghil.bbdj.ijag.afak.igae..",41,63],["kcfjhi.abfdgg.djekjg.cadiid.dcckck.ghegik.bbjakf.bfcafe.hehajb.hiadef.ehbijg..",57,112],["achc.gcki.ldjk.ldfl.elhb.dfea.bekj.ejig.bfkg.dajc.ihfi.bahg..",45,71],["fgbchejd.djjafacg.bgcdfbji.abaiiejb.behcbehh.ifhaddeh.hficjfdh.ggdeegci.eicfjgac.jfabiadg..",77,190],["hjeieg.aifacg.caegkk.fckbbb.dheibi.iehfkc.edfgkc.fgdjfj.hjagbd.hkjdch.ibjdaa..",60,122],["ccad.ljia.leej.dbkl.ihdf.ckjg.lkde.ifak.gbgj.ahch.eibf.bfgh..",43,65],["eecifb.bjdhha.idgccg.gkhebc.hkdkgg.iaeekf.jabjhd.akfeja.dcgjih.kdcfij.faibfb..",57,118],["bhdhjfeb.ffjifbib.ejabcddc.gbiggcdg.hjcadadh.fcgiggaf.dibfabfe.eidcahhj.hjejciah.ejacgiee..",74,180],["bcbi.gjai.fedd.lidf.cakl.hjhi.aheh.gfbe.dcek.jfcl.kgag.bjkl..",41,63],["fgka.glld.ejgk.ghhk.jefb.bikl.eljb.acch.fafc.ijid.cbae.dhdi..",38,62],["ldac.cblh.jhaf.ahke.fila.iebe.cihg.edgj.gkjb.gjbl.cffk.iddk..",43,69],["ggckbc.fgcebd.hhifka.cjgbhi.egkjbf.ckhfgi.afedcf.ajbdja.iddkee.jidhjh.abkiae..",60,118],["kkdc.ljhb.afll.kfae.jled.djeg.kedh.cafi.giai.fibc.bcjb.hghg..",43,62],["efeabjeb.ddhijcbe.dfdceija.hbjhcdfj.hfaagahb.hgcgfdge.fcaibjhi.iegfaccg.ibdifeia.bghcjgjd..",80,173],["afdegb.jibkcc.kakkfh.figejh.ecedia.fidagg.ibhijg.ecebkh.kjdbha.jdgfcf.bhcjad..",60,117],["lafe.hkjc.ekaf.aiii.dlej.dlgb.icjk.khlg.hjac.bbhg.ffdb.egcd..",36,50],["fdbajc.ghifie.dakhdh.bbjjhj.dhkgkf.egkafc.jfcgcd.gafgkb.eceiia.ebajkd.ihecbi..",62,130],["bgagiidc.ghbaafcj.faigehbf.cghchgic.ejbfhfdh.cbhjeddf.hcddaijb.jeebigfi.eabjeafd.icdgjeja..",75,190],["ebll.kkgg.jdid.jblj.ghie.cklc.fagi.kibe.ahcf.ejbf.ddah.chaf..",40,62],["idek.aleg.adgc.fljj.iika.dhek.gbce.hffc.hbil.bjhd.glck.afjb..",39,62],["clad.gebj.ajhc.jhgc.akbh.ieil.lekg.efhc.badg.ifld.bikf.dkfj..",41,60],["ifgcab.gfdahg.dichbb.fdkija.kghjed.jgfeaf.hkhbfd.cijgie.bkejca.kcedji.ebackh..",62,136],["ebke.akfl.hige.lccd.afji.idbf.kegl.bhaj.hfcd.jcik.gbjl.ghad..",44,69],["fbcaedbg.idgdefhh.igbifide.cjeajedc.ccfbaaie.gbjbicha.eaegagcd.gbjjbfjj.hihcdfgf.jhhafdhi..",74,199],["fiibdb.dgidjd.jejgef.hgehkc.adejja.kicbgb.cicahf.cdghaf.ekfbjc.aehhab.fkgkki..",61,126],["lfak.jkcc.dkea.lfbg.aild.hdlb.kjgh.fege.jieb.bfci.hadi.jgch..",43,65],["fcddcd.fhfcdh.gcebjb.jiikka.bhjdeg.fbihbk.aiajfe.gggejk.iabcha.cekjfi.gekdah..",58,114],["heiehbeg.gaceghid.achaifcf.ijgigcab.jjihdbgc.efbhdbgd.fajdebff.hehajgja.ceaidfjb.ijccbfdd..",77,191],["hbjd.acjc.edkf.ikll.lbgg.fdhe.igaf.ebid.clck.ahej.aijk.fbhg..",42,65],["dfed.aicd.lbeh.kjab.afbj.ilcb.kifc.adgj.jggk.elih.ehhc.lkfg..",40,61],["fbcb.lhbj.ggac.fehi.kdae.kjhc.agll.lhfi.eaif.ijjk.gkde.cddb..",39,56],["gjbhei.khgjaj.ajbgad.ddegke.hcbaki.gfhjbi.bibfca.kfieed.gdekfh.kccjif.ahcdfc..",64,134],["khei.kabe.iegj.lhcg.bhdg.kafj.cjfi.bldl.jdfk.flab.ecid.acgh..",44,68],["bhjaghch.jjgafcii.cgfgbihf.ifaecdei.jdbdaced.bdfcaehj.dfgjihee.dhaeajgb.beicdfgf.gcbjhaib..",79,192],["ibdhig.igkjgg.daabki.hfkfdh.keedbe.cjabcg.eibadj.ghkcji.cejafb.aechfd.cfjhkf..",65,143],["igkj.gjkl.gjkf.jblh.eaff.dilc.fege.hadd.bace.ckhi.icba.lhbd..",41,62],["bjdiac.bjhedb.jafhkh.bhagek.jdheee.ckcaji.bcafhk.efiagc.djfiid.cbggfd.ggikfk..",66,124],["cedfdjge.bghaigfe.bdeijigb.fihfebei.gajhjafd.ddbejgie.ghcchadi.fjacacca.fbhgcdjj.cbhhafib..",78,184],["cihf.lkgf.kfeh.clib.edel.hbgc.cdag.ejkd.kbaj.laab.gdii.hfjj..",43,64],["kaba.flje.gcea.ddfi.elak.lkdh.dcjg.liii.cbbh.kjfe.gbgj.hcfh..",41,65],["ealc.ekia.dabe.fdcb.hbcf.hkaf.hggl.gdkh.lefi.jkjd.giij.jclb..",44,66],["eaijdj.bjakdf.ggdhdb.akhijk.becgak.cieheb.hefjdj.gafcai.kbfkfc.cgfdbi.hcegih..",66,135],["bjbc.begk.dgaf.jack.bldj.caig.kefl.hiei.khjh.efci.agdl.hfld..",44,63],["hficbfhg.jgccjghh.bbedjafe.igibbhej.fjccaeda.jjdegaid.cidacdie.cgbifhfa.fiabadhg.gehdjefb..",84,184],["kahffg.gkhidg.adcfja.bifbjk.ibfeij.addjkb.eggcdh.bkehce.ahkdje.cacfgh.iciejb..",61,114],["ilga.akdc.elgh.dfie.jfgh.gkea.eakl.bhjk.hcji.cdlb.bfjc.bfid..",42,66],["beahaf.gcgddh.ideejf.ibijec.keciga.kkgfhk.agiaje.ghbckb.jkjchb.dfdacj.ffidhb..",64,133],["cifbicfa.djcifijg.adbeaifd.ebjijjag.cdbadeai.begfjddc.fichgecb.jhhgbdfh.ehhghcfg.jhbeeaag..",78,190],["ecib.kffk.elja.caga.gehi.gcak.elbl.cdkd.hlhg.jhbj.idfd.jbif..",41,62],["fafd.khbg.aigf.glkc.eclb.jiba.ejbe.hdfj.leal.ijhd.kgci.hkcd..",44,72],["ibgd.lhbc.gcbj.cklg.kefh.hdlj.gfal.jcak.fhfd.eidj.eiei.kaab..",42,60],["adcabh.ibjije.bebkbg.hdedie.kcaecg.bhjfei.jcgkdi.cdjifk.ghfkda.hghkaf.fgafjc..",64,122],["bghl.aflc.hjlf.lgci.bikj.iebh.jcee.abhd.dgkk.kgfd.eijf.acda..",42,62],["gcdjeagb.gfhiedib.jdjcffih.cidaecfj.bchhgjbe.dbhfaaeb.fihbgjfg.aheiaicg.cgdacfab.dhjidjee..",77,178],["baackg.ijcceg.ikegbk.haifdf.jbjjij.bkdcha.jaechk.dihedi.gffehf.fgkcbd.ghedab..",64,135],["iefg.ljbk.dhgc.kfdf.jieb.caek.ldlc.iiba.hjka.hgaf.bgje.cdlh..",42,61],["caficg.cdghbf.ghkcgf.jhdiid.kbhbck.bejhhj.iidaej.ejekif.adcejk.gefdbk.gfbaaa..",57,120],["hifcbjcd.dgcebaic.eghhabif.ebeehgdf.fjidgbej.cjdddehf.jfgaijai.hacjcgha.fihcbaai.fgbdbjge..",78,185],["fkjd.bcfh.habh.eljg.chcd.gfdg.albl.keaf.bejg.iiac.kkdl.ijei..",40,67],["ceaj.idbk.cbbd.hejf.hilb.gcad.ikai.hlfe.kggf.chaf.jgle.jldk..",43,67],["hjdi.lkie.glie.acke.jiab.bbdj.edka.lcgf.cagh.dhhk.bgcf.fjfl..",41,60],["iahdha.ibecjf.gfaagj.fdbcdk.fibfhf.adekje.hdikbb.bgcjhj.ecceic.jiakgk.gdehkg..",60,114],["abji.hlbj.flih.ealk.idkj.gicd.ebfg.hkce.abjf.edkl.cafg.dhcg..",43,62],["ecjhgeda.iihijibj.bcgebifc.fbdajccb.afahidfd.jebhgeif.fhgdfecj.eacfhgbj.ddgeghac.ibjdhgaa..",81,183],["abcbad.hjbhdi.keaggf.dceikh.iijhkc.kdeccb.jcfdeb.fhgdia.jfbigk.jehkaf.gjagfe..",62,138],["gbba.cbhj.ffih.jlgg.ajfe.cdha.edia.kgkd.klih.eclf.jkcl.eibd..",41,62],["jhgbah.kjgaij.cikbhf.bdjacb.ffhkak.gcdfke.fcgiae.jbcfde.cihjek.gebgie.ddadih..",58,112],["bejhehae.djgcbicd.cejaefif.aijjhjaf.hgghjgdc.gchedgij.icabdhbb.caafdfcd.hiibffig.fedgbabe..",80,217],["lgij.jgjb.fgfl.eadf.cihk.ciec.dkah.bklg.kace.dajb.hdfb.hiel..",45,68],["dedd.lgeg.iicl.fkfg.fjac.ihfl.jhih.klhg.bbae.dbja.cbaj.kekc..",40,59],["ehle.djil.cjfi.bdaf.giei.babk.elkc.blaa.khgd.dhgf.hgkj.fcjc..",42,63],["fdkghd.gekfga.hkddie.hbhjjf.cfdjac.ikifba.cijgak.ifejjk.bacige.hgbbcb.eadhec..",61,131],["kkld.ifig.dcge.gkae.fjjj.ecdi.baag.aleh.clfb.dhcb.fjbk.ihlh..",38,55],["hgcgggfj.ibiicbha.dfjfjfdc.aidbgdia.ebcefhef.gghahehd.behdbiag.dafjcfba.jahcceje.ijijedbc..",79,191],["ecjbhi.keakgi.djegfh.jibggg.kchjdk.gahheb.idjhid.eacaic.adfadf.cfebkj.bcbffk..",64,122],["ahac.ibhb.liaj.ddgd.jhek.kcdf.jgcl.fegk.lklc.bfjf.eiig.ahbe..",40,62],["hifdia.acjdga.idbfgf.ehkgbc.beidfg.fejbkj.iekjeh.dcbcgk.acfgkh.ciahaj.bjkhde..",65,122],["eeijfdga.aegbbghh.ibicjcid.aacghgac.fdaiegfi.hdeechfa.jfhjcbie.hjedgcaj.dgbjbdfc.fbjhifbd..",78,157],["ajal.dckf.jjgf.idih.efcb.edba.lklb.cceh.khlg.begf.idig.kajh..",40,57],["kbfk.eglj.badh.ealg.hcji.kjbe.ldhc.kadd.iebi.lfcf.ggjc.afih..",41,62],["ikbd.jgkf.fcei.gghf.bhce.dlli.hahj.aega.clkj.cdeb.lkbj.adfi..",41,59],["dehdhg.ejkbda.baiicg.aefdgg.eiabbf.jbkhjh.icafib.ifjekd.haffec.jcchdk.kgckjg..",59,119],["aeck.ejic.glkc.ddjf.gfbi.ahhj.bgfi.clhb.klhj.lbag.dkfa.eied..",40,59],["dibfdgab.ehiiaice.fgdjeccg.ehgjjjgf.fafhcgaj.ciahbdfj.dhhjiddc.bhbcjcea.fgebheid.aebfgiba..",79,193],["ihjfgj.dcdfkb.jeeakg.jcbfba.aikdhi.kbhgic.ebidcj.hfkcif.ehfgah.agdcde.akjegb..",64,148],["lgak.gaje.deik.hkhj.eibc.ljif.acdb.baed.fljg.flbi.hhfg.kcdc..",42,63],["gdfkhk.egehbc.bfijgh.bhagca.aiahfe.ddjiki.ckidfa.bjicbe.cekjgj.gadhjf.kefcdb..",65,122],["gadibhch.gageahfj.fabcgijj.fdhdgibh.ceibeajg.jhjidbec.fgigfabj.didbaaee.ccjffhef.idbdhcec..",84,220],["ehba.ifcl.bfaf.kegh.adbc.kldl.jgej.ehia.kjbd.gccd.jgil.ihkf..",42,64],["jegc.efai.kcgd.hfhd.ikgf.ceac.lkjh.dakb.jbgl.abdb.ihie.llfj..",43,61],["bkai.bjce.hagl.clci.hcjh.afla.kdel.ifed.bdej.ggbg.ikkd.ffjh..",41,61],["abhfjf.hkcfhj.fjigbg.bkaiie.edadhg.ffajkb.dckheg.gedbde.kjjkhb.idcaie.cacgic..",61,114],["hhlb.alkc.iajc.hecd.keaf.hklj.dkdj.gjbi.ebli.efdg.gffg.icba..",43,61],["ejicbdbh.dcdjgjag.hhegbgjb.fcidaahe.echdfica.egbgdiih.fehijaha.cdbjjbbj.cgfgdffc.ieafafei..",80,182],["heakie.dbcgeg.dfjifg.kchjab.bcjkdd.kjidcb.ehiiea.begchk.hcfahg.gjbfaj.fikfda..",65,134],["eahf.kjbk.dbdj.aflf.gehd.dbfb.ihal.agll.cieg.ijcc.jkik.hegc..",40,62],["gfgicb.fbkchb.ajdifa.ifgdek.iejkge.dahaej.dkdbja.jehgjg.ichkac.bhfkbh.cicfde..",67,129],["iiiecead.cefdhjgd.bhcdbefj.gggbaihe.aigjihcd.efjadgjf.bfaihija.chjbcgfe.jbecfbac.fdbhhgad..",73,147],["hicd.fkch.iebh.aabd.fggl.jedi.lghf.gbki.jaej.dlak.cecj.fkbl..",41,56],["ejad.idkf.kebc.belc.jlhd.gblh.iafi.jfgi.clcg.eafh.khjk.gadb..",44,64],["clif.jhga.kckg.ljec.ihaa.fekg.lbfh.gjed.dblb.ejcb.fdih.kaid..",40,60],["khbeji.gedfah.igkghe.idbfdd.cabfbk.jegkaf.dicgci.cijfhc.hcjdkj.afhkae.begbja..",66,133],["bkgf.jhdk.hgfd.akgj.fgle.ccia.ekal.ibil.jlha.dbch.fbei.cdej..",43,66],["biejgieg.gidfhicj.hjcffbeh.idabheed.fbabaejg.adifcdgh.aceigajd.hjfejhbh.afcdgjdi.afbccbcg..",83,183],["hkjhjb.jafiga.eacdke.eihibk.afhcce.dgikjc.hfckgb.difgfh.iakajd.jbcbgd.gfebed..",64,127],["ailf.aklj.gjkd.dbjg.cfke.hbca.aflh.gihd.befg.ilcc.jhbe.edik..",45,75],["jggekk.afkckj.ijkfii.caheij.hfbgie.dgcehb.jahecb.fbddba.akbdfd.igdhah.ccejgf..",61,113],["dchdbdfh.aahjhfae.fbdgecjd.fccjdiga.aebgjege.dchbhjef.icihbibi.dcegcaff.jgfgbiej.higiabaj..",77,190],["gehk.kldb.lhbi.cfij.lkda.abcf.elfd.cgdi.jaeb.ighf.kajg.ejch..",47,71],["gjdb.kehc.abeg.ickd.ceif.lgab.lfbj.jlfk.lhae.kicj.difa.gdhh..",42,64],["ldfi.ecab.klkc.igeb.jgjb.cefk.ehjh.jkad.fifc.hhdl.gbda.aigl..",42,59],["kfifgi.khdica.gjiifk.kehiac.dbddfd.kjcbfa.gjbfch.agjbbe.bgahhj.gaechd.eckeje..",66,122],["acbj.fedk.hihi.kbgl.lecg.jjaa.ckgf.jhil.gdbf.iekh.efcb.aldd..",38,60],["afeigagj.cbbdihdb.badffiji.ehifgcdi.fhhjebej.cabchjgf.dfhjgaec.cdjijdei.ccahbeeg.ahagfbgd..",81,203],["dgkicc.hcdgbk.cfcjgj.adifie.hekaia.ffhjdk.bhhdef.aekbba.cejgdb.ijgabi.kfjgeh..",61,120],["agla.defd.hhhb.ddfc.jilc.ghjj.fgja.ekil.ikfk.ckcb.ibeg.bale..",38,57],["bbghkc.bkjihe.ejecah.jcfaja.dbhbjb.cffcgi.dgiide.agghdi.kakhfk.aegkjd.fcifed..",62,134],["dfcchjda.adgedhhj.ahdiigfj.eehbcfib.bhbebaej.gcagdieg.ebjacgjh.ghfiajci.fbdjfice.cfbfdiag..",75,189],["dlfb.akdi.dcca.dhig.fekh.bjgj.eggl.kiab.cale.jhfh.cbij.fekl..",40,56],["kibb.hldk.hdbc.iddc.hjje.klgl.elab.ghff.jafe.acik.iagf.ejgc..",40,62],["dcbk.hcde.lclb.giif.gahg.fejk.jcbe.ljba.khaf.jlia.diek.fgdh..",44,65],["dicdki.fajafc.jdkbeb.fcjfab.hkgcea.igegfh.acgedk.ihkcki.bjedjd.bjigba.eghhfh..",64,120],["ehdh.jlfi.khak.lbdg.lcbc.fhbk.cijg.ljge.agik.jabd.adei.ecff..",45,75],["afhefahj.gegdcagj.bifddbah.eideifji.gbfjhihj.cijdahah.effgbcde.cgbejgci.bciedgbd.cahjfcba..",79,196],["iddehf.fhcjcf.gidfga.kgiada.ahcjjb.bggkka.khebdc.ijkebh.fjkcda.cfibeb.hjegei..",63,121],["lkig.cijk.lhde.cdkj.afeg.aahj.afdh.cfhg.ebkc.dlje.fbbb.lgii..",41,58],["hakfch.cbdfjk.ieddkg.agebag.heaikf.ecahdi.afeeic.hbfdjc.ijgkjh.bjkbfc.idggbj..",60,129],["ejajfdgc.gchjgibg.dchgjihg.daicffbb.dfdbfbif.iiegaehh.jchacaee.ajideejc.ihgcajed.bhbfafdb..",75,182],["lkbc.jgie.fjil.lcdc.kafl.jhbc.daeh.deif.iejk.khbb.afda.hggg..",41,68],["gbgl.cbdl.eicb.fgha.kekh.kcfd.blai.jefi.hjjd.gcai.lkje.hdfa..",39,59],["eilb.jdig.kdfa.agcj.lhaa.eghe.fecc.bijg.bclb.fdjd.lhik.khkf..",44,74],["hkbajk.ijccda.kickfj.heebie.agbajb.fdcfcg.fhidbe.degdic.aegfgk.ihjhja.gfkdbh..",62,112],["lajf.jkil.hfef.jeki.ikdg.efaj.bglb.edba.dbkl.ccgh.hdgh.acci..",39,62],["ibdehcjd.ebhffidb.gcgfjebd.icjdbghe.bdhjajjh.abdidcfh.igcgfhig.fbeaecci.fcaijeaa.fgaajheg..",78,188],["icjafk.kdeeij.gbcgac.gicjea.hjfbka.fbkgdi.cbckgi.fbahed.fkafeb.hdjhgd.hihdej..",61,132],["fkcd.igea.ilib.febf.hgge.hdkk.jjaf.bccl.alhd.akje.gdcj.hibl..",40,60],["chkgdj.ggfiic.aahdac.hfjkgi.ejhjdd.efcfkh.ibkeke.bgjgea.aebbcd.dajifk.cifbhb..",58,124],["bdgiidij.figcaaag.ajiidebg.efdghegc.ffahahje.haecefhg.hejcbfic.hbfdcbch.bjdfibgj.bdcadejj..",74,180],["ibeg.gjfg.fjlh.ikad.fadj.khih.dlac.ekbf.gcec.alie.kcbb.hljd..",43,68],["dalk.clhl.hdlj.kgfe.ijgk.ffcc.idia.ebkc.bfji.aheb.dabh.egjg..",43,65],["iidl.bgih.gbeh.jahf.hkjb.kled.cfcj.cekd.djfk.cael.lbga.giaf..",41,66],["jdiick.becckg.bjiedj.fcgbki.dhfjej.fhahfe.bgbfhd.egaidg.aekjcg.dkhaaa.fhikcb..",63,138],["albg.jlca.djll.ihag.ibkk.hkhd.hecf.jgef.adgj.eicc.bfie.dfkb..",39,59],["gbfadgfc.dbdbcbii.igebfaad.affadcah.cgaigdca.heieecid.bdchjgbi.jcjjbheh.efjghjef.fjehjghi..",73,170],["kbbhkh.ijchdg.dbefea.kakkgd.eghbjd.ikbcei.bidjfd.aicfaf.jjaejh.gghfgf.iecacc..",61,123],["ifcd.degj.jchi.kfaf.kdek.jhbi.balb.chhg.ieak.dfll.jleg.abgc..",43,68],["jaggde.bkfeaj.ifdkhg.chfihc.jfeigb.bccakh.dkfeab.fcgica.jhbieb.adhgjk.edjikd..",67,148],["ecbfaeed.bfceidhd.hadjdhji.cgcjacaj.djggbaga.efebhgfh.baaiidfc.bgfgieji.hiebfchd.jjgfhibc..",81,189],["glfc.fcfd.eekc.baik.bild.edcf.hlag.jijh.gial.hhkb.jdeg.kbja..",45,70],["cfhi.fleb.jelc.icja.hgfk.ijjf.ekdg.leak.bgkd.bhha.bdlg.daci..",39,59],["lejk.hdda.baea.giil.jeif.lahg.jgik.lkgj.ccef.fcbd.chkf.dbbh..",39,59],["hdbcgd.kehcai.fcgbeg.facifj.dfdkbb.gijjgh.bcfcki.kejiah.fjbdah.egaiea.hkdjke..",67,136],["iead.ffaa.gkjj.icee.bgjh.ckld.klfb.eihb.fadk.lbcg.lcih.dhgj..",38,60],["gfhdhedj.ifhibjbj.iacbgceh.jhaicceb.egdfbada.ahegbdfc.fjhcbfib.aiacjgge.ejdciihd.fadfjgge..",80,204],["eecbgj.cfhfei.khhdha.ebkbea.gkkicb.gdahdh.dcgifb.dkjdci.jiajgg.jfcafe.jkiafb..",59,120],["feka.aajc.dhbg.cdlc.djkh.kbgi.ilfk.flgd.hiej.fibl.chgj.ebea..",42,63],["kkcfae.hicbjg.bgdikg.fdagjd.fjagch.khihkf.ihebcg.cijikj.jaefde.bcdafb.debeah..",61,119],["abbgccie.fbfgjied.fggacced.fjcjbaje.dfafhaeb.idejbcfc.aihahghd.edgbihfh.ihggiejc.jddhiabj..",79,186],["hcei.lbfi.bjhe.kcga.dafa.bgdk.lebf.ddhg.hjcc.ikjk.lfaj.iegl..",44,68],["ahje.ijjh.acig.cgfk.bllf.ebid.bclb.fleg.cgde.hhaa.kifd.kjdk..",38,58]];
+</script>
+<script>
+/* Splash Sort sounds: synthesized with Web Audio (no audio files). */
+var SSSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay, f1) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(freq, t); if (f1) bp.frequency.exponentialRampToValueAtTime(f1, t + dur); bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    pick: function () { if (on) tone('sine', 620, 760, 0.07, 0.1); },
+    drop: function () { if (on) tone('sine', 520, 420, 0.07, 0.08); },
+    pour: function (n) { if (!on) return; noise(500, 1.2, 0.3 + n * 0.08, 0.35, 0, 1300); for (var i = 0; i < 3 + n; i++) tone('sine', 300 + Math.random() * 500, 0, 0.05, 0.05, 0.05 + i * 0.07); },
+    clack: function () { if (on) { tone('triangle', 1400, 900, 0.05, 0.14); noise(3000, 5, 0.03, 0.2); } },
+    cap: function () { if (!on) return; tone('square', 880, 1320, 0.07, 0.07); tone('sine', 1760, 0, 0.3, 0.12, 0.05); },
+    nope: function () { if (on) tone('sine', 300, 220, 0.1, 0.1); },
+    undo: function () { if (on) tone('sine', 700, 440, 0.12, 0.09); },
+    tube: function () { if (on) { tone('triangle', 520, 1040, 0.18, 0.12); tone('sine', 1560, 0, 0.2, 0.06, 0.12); } },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, i === 4 ? 0.6 : 0.18, 0.24, i * 0.1); }); noise(4000, 0.8, 0.5, 0.12, 0.45); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Splash Sort app: drawing the tubes (water that stays level as a tube tips, or glossy balls), taps, pour and ball
+   animations, undo, the spare tube, level flow for Water and Balls (separate progress), saves, stats, house ads. */
+(function () {
+  'use strict';
+  var S = SSSound, LEVELS = window.SS_LEVELS || [];
+  var COLORS = ['#ef3b4f', '#ff8f1f', '#ffd21e', '#97e03a', '#1fa653', '#2fd3e3', '#2f6ef0', '#8a4ae8', '#ff72c6', '#8d5a2b', '#a3a9b6', '#23306e'];
+  var LIGHT = ['#ff8a96', '#ffc07a', '#fff08a', '#cff78e', '#6fe39a', '#a6f3fa', '#8fb4ff', '#c4a0ff', '#ffb6e3', '#c8955f', '#dfe3ea', '#5a6ab8'];
+
+  // ================= storage =================
+  var store = Goobs.store('sort');
+  var settings = { sound: false, adEvery: 3, symbols: false };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'water', level: { water: 1, balls: 1 }, seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (meta.mode !== 'water' && meta.mode !== 'balls') meta.mode = 'water';
+  ['water', 'balls'].forEach(function (m) { if (!(meta.level[m] >= 1)) meta.level[m] = 1; });
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['water', 'balls'].forEach(function (m) { var o = stats[m] || (stats[m] = {}); ['solved', 'moves', 'fewest', 'undos', 'tubes'].forEach(function (k) { if (typeof o[k] !== 'number') o[k] = 0; }); });
+  if (typeof stats.capped !== 'number') stats.capped = 0;
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); } // no pouring while the Menu is open either
+  function fmt(n) { return (n || 0).toLocaleString(); }
+  // a level: [level string, solver's water moves, solver's ball moves] (1.2.0); past the list it is made on the phone
+  var beyond = {};
+  function levelEntry(n) { if (n <= LEVELS.length) return LEVELS[n - 1]; return beyond[n] || (beyond[n] = SS.levelBeyond(n)); }
+  function limitOf(n, balls) { var e = levelEntry(n); return SS.limitFor(balls ? e[2] : e[1]); }
+
+  // ================= game =================
+  var g = null, levelNo = 1, sel = -1, anims = [], parts = [], caps = {}, ending = false, lifts = [];
+  function startLevel(n) {
+    levelNo = n; meta.level[meta.mode] = n; saveMeta();
+    var balls = meta.mode === 'balls';
+    g = SS.create(levelEntry(n)[0], { balls: balls, limit: limitOf(n, balls) });
+    g.level = n; sel = -1; anims = []; parts = []; caps = {}; ending = false; lifts = [];
+    save(); layout(); renderInfo();
+  }
+  function save() { if (g && !ending) store.set('game.' + meta.mode, g); }
+  function load() {
+    var r = store.get('game.' + meta.mode, null);
+    if (!r || !Array.isArray(r.tubes) || typeof r.start !== 'string' || r.level !== meta.level[meta.mode] || !!r.balls !== (meta.mode === 'balls')) return false;
+    // 1.2.0 rebuilt the levels: a level saved before that (a different start) begins again as the new level of that number
+    if (r.start !== levelEntry(r.level)[0] || !(r.limit > 0) || !(r.cap >= 1)) return false;
+    if (!r.tubes.every(function (t) { return Array.isArray(t) && t.length <= r.cap; }) || SS.solved(r)) return false;
+    if (typeof r.base !== 'number') r.base = r.limit; if (typeof r.conts !== 'number') r.conts = 0;
+    g = r; levelNo = r.level; sel = -1; anims = []; parts = []; caps = {}; ending = false; lifts = [];
+    g.tubes.forEach(function (t, i) { if (SS.done(t, g.cap)) caps[i] = 1; });
+    layout(); renderInfo(); return true;
+  }
+  function busy(i) { return anims.some(function (a) { return a.a === i || a.b === i; }); }
+  function tap(i) {
+    if (!g || ending || sheetOpen()) return;
+    S.unlock();
+    if (SS.outOfMoves(g)) { if (!anims.length) outOfMoves(); return; } // no moves left: the card again (Continue or Restart)
+    if (i < 0) { if (sel >= 0) { sel = -1; S.drop(); } return; }
+    if (busy(i)) return;
+    if (sel < 0) {
+      if (!g.tubes[i].length || SS.done(g.tubes[i], g.cap)) { S.nope(); shake(i); return; }
+      sel = i; S.pick(); return;
+    }
+    if (sel === i) { sel = -1; S.drop(); return; }
+    var from = sel, n = SS.canMove(g, from, i);
+    if (!n) {
+      // not allowed: pick up the tapped tube instead if it has something to move
+      if (g.tubes[i].length && !SS.done(g.tubes[i], g.cap)) { sel = i; S.pick(); shake(from); return; }
+      S.nope(); shake(i); sel = -1; return;
+    }
+    var r = SS.move(g, from, i); sel = -1;
+    stats[meta.mode].moves++; saveStats();
+    anims.push({ a: from, b: i, n: r.n, c: r.c, t: 0, dur: g.balls ? 340 : 760, filled: r.filled, won: r.won });
+    if (g.balls) S.clack(); else setTimeout(function () { S.pour(r.n); }, 190);
+    save(); renderInfo();
+  }
+  function finishAnim(a) {
+    if (a.filled) { caps[a.b] = performance.now(); S.cap(); stats.capped++; saveStats(); burst(a.b, 14, COLORS[a.c]); }
+    if (a.won && SS.solved(g)) { win(); return; }
+    if (!anims.length && SS.outOfMoves(g)) { outOfMoves(); return; }
+    if (!anims.length && !SS.solved(g) && !SS.usefulMoves(g).length) stuck();
+  }
+  // the move limit ran out (1.2.0): Continue with more moves after a house ad (twice per try), or Restart
+  var MAXCONT = 2;
+  function outOfMoves() {
+    if (!g || ending || isOpen('ovEnd')) return;
+    sel = -1; S.nope();
+    var bonus = SS.bonusFor(g.base || g.limit), left = MAXCONT - g.conts, btns = [];
+    if (left > 0) btns.push({ label: 'Continue +' + bonus + ' moves', sub: 'watch an ad' + (left === 1 ? ' \u00b7 last one' : ''), red: true, go: function () {
+      showAd(function () { if (!g || ending) return; var b = SS.addMoves(g); save(); renderInfo(); toast('+' + b + ' moves. Keep sorting!'); S.tube(); });
+    } });
+    btns.push({ label: 'Restart', red: left <= 0, go: function () { restart(); } });
+    showCard('Out of moves', 'All <b>' + g.limit + '</b> moves are used and it isn\u2019t sorted yet.' + (left > 0 ? '' : ' No more Continues on this try.'), btns);
+  }
+  function stuck() {
+    if (g.undos > 0 && g.hist.length) toast('No moves left. Undo, add a tube, or restart.');
+    else if (g.extra > 0) toast('No moves left. Add a tube, or restart.');
+    else showCard('Stuck', 'Nothing can move anymore. Try this level again?', [{ label: 'Restart', red: true, go: function () { restart(); } }]);
+  }
+  function win() {
+    ending = true; store.del('game.' + meta.mode);
+    var st = stats[meta.mode]; st.solved++; if (!st.fewest || g.moves < st.fewest) st.fewest = st.fewest ? Math.min(st.fewest, g.moves) : g.moves; saveStats();
+    meta.finished++; meta.level[meta.mode] = levelNo + 1; saveMeta();
+    S.win(); for (var i = 0; i < 90; i++) confetti();
+    setTimeout(function () {
+      showCard('Level ' + levelNo + ' sorted!', 'Done in <b>' + SS.used(g) + '</b> of ' + g.limit + ' moves.' + (levelNo === LEVELS.length ? ' That was the last hand-checked level; new ones are made on the phone from here on.' : ''), [
+        { label: 'Next level', red: true, go: function () { between(function () { startLevel(levelNo + 1); }); } }]);
+    }, 1100);
+  }
+  function undo() {
+    if (!g || ending || anims.length || sheetOpen()) return;
+    if (!g.hist.length) { toast('Nothing to undo'); S.nope(); return; }
+    if (g.undos <= 0) { toast('No undos left on this level'); S.nope(); return; }
+    // the undone move is given back (moves used = moves on the board, g.hist)
+    var r = SS.undo(g); sel = -1; delete caps[r.a]; stats[meta.mode].undos++; saveStats(); S.undo(); save(); renderInfo();
+  }
+  function addTube() {
+    if (!g || ending || sheetOpen()) return;
+    if (!SS.addTube(g)) { toast('One spare tube per level'); S.nope(); return; }
+    stats[meta.mode].tubes++; saveStats(); S.tube(); save(); layout(); renderInfo();
+  }
+  function restart() { if (!g) return; SS.restart(g); g.level = levelNo; sel = -1; anims = []; caps = {}; ending = false; save(); layout(); renderInfo(); }
+  function switchMode(m) {
+    if (m === meta.mode || anims.length) return;
+    save(); meta.mode = m; saveMeta(); syncModes();
+    if (!load()) startLevel(meta.level[m]);
+  }
+
+  // ================= layout =================
+  // the canvas covers the whole screen (1.2.0); FR is the free box for the tubes: below the floating top row and pills,
+  // above the floating Restart / Undo / Tube buttons, inside the side safe areas
+  var cv, cx, W = 300, H = 400, DPR = 1, L = { tw: 40, th: 160, u: 30, hr: 18, pos: [] }, FR = { x: 0, y: 0, w: 300, h: 400 };
+  function fit() {
+    var st = $('stage'), r = st.getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1);
+    W = Math.max(100, r.width); H = Math.max(100, r.height);
+    var tp = document.querySelector('.top').getBoundingClientRect(), tb = document.querySelector('.toolbar').getBoundingClientRect();
+    var y0 = Math.max(0, tp.bottom - r.top) + 6, y1 = (tb.height ? tb.top - r.top : H) - 6, x0 = Math.max(4, tb.left - r.left - 6), x1 = Math.min(W - 4, tb.right - r.left + 6);
+    if (!(x1 - x0 > 100)) { x0 = 4; x1 = W - 4; }
+    FR = { x: x0, y: y0, w: x1 - x0, h: Math.max(100, y1 - y0) };
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); layout();
+  }
+  // unit height per capacity (1.2.0): taller tubes are drawn finer so 6 and 8 fit in about the height of 5 and 5.5
+  function unitFor(cap) { return cap <= 4 ? 0.86 : cap <= 6 ? 0.72 : 0.6; }
+  function layout() {
+    if (!g) return;
+    // a tube is tw wide and about 4.1 tw tall; leave room above each row for the lift and the pour.
+    // full screen (1.1.0): tubes may grow to 84px wide (was 64), and the number of rows is whichever of 1-3 gives the
+    // biggest tubes (was fixed: 1 row up to 6 tubes, 2 up to 16), so a tall phone's height is used too
+    // 1.2.0: sized to the free box FR, and a row is as tall as the level's capacity needs (4, 6 or 8)
+    var n = g.tubes.length, rows = 1, per = n, tw = 0, uf = unitFor(g.cap), rowF = 0.62 + uf * g.cap + 1.29, FW = FR.w, FH = FR.h;
+    for (var rr = 1; rr <= 3 && rr <= n; rr++) {
+      var pr = Math.ceil(n / rr), t = Math.min(FW / (pr * 1.34 + 0.3), FH / (rr * rowF + 0.3), 84);
+      if (t > tw + 0.5) { tw = t; rows = rr; per = pr; }
+    }
+    var u = tw * uf, hr = tw * 0.62, th = hr + u * g.cap;
+    var rowH = FH / rows, pos = [];
+    for (var i = 0; i < n; i++) {
+      var row = Math.floor(i / per), inRow = Math.min(per, n - row * per), k = i - row * per;
+      var gap = Math.min(tw * 0.75, (FW - inRow * tw) / (inRow + 1));
+      var total = inRow * tw + (inRow - 1) * gap, x0 = FR.x + (FW - total) / 2;
+      var cxp = x0 + k * (tw + gap) + tw / 2, top = FR.y + row * rowH + (rowH - th) / 2 + tw * 0.55;
+      pos.push({ x: cxp, y: top });
+    }
+    L = { tw: tw, th: th, u: u, hr: hr, pos: pos };
+    while (lifts.length < n) lifts.push(0);
+  }
+  function hit(px, py) {
+    var best = -1, bd = 1e9;
+    L.pos.forEach(function (p, i) {
+      if (px < p.x - L.tw * 0.9 || px > p.x + L.tw * 0.9 || py < p.y - L.tw * 1.4 || py > p.y + L.th + L.tw * 0.4) return;
+      var d = Math.abs(px - p.x); if (d < bd) { bd = d; best = i; }
+    });
+    return best;
+  }
+
+  // ================= drawing =================
+  var shakes = {};
+  function shake(i) { shakes[i] = performance.now(); }
+  // runs of colour bottom → top: [{c, amt}]
+  function runs(t) { var out = []; t.forEach(function (c) { var l = out[out.length - 1]; if (l && l.c === c) l.amt++; else out.push({ c: c, amt: 1 }); }); return out; }
+  function adjust(rs, c, d) { // add d units of colour c on top (d may be negative)
+    rs = rs.map(function (r) { return { c: r.c, amt: r.amt }; });
+    if (d > 0) { var l = rs[rs.length - 1]; if (l && l.c === c) l.amt += d; else rs.push({ c: c, amt: d }); }
+    else { var rem = -d; while (rem > 1e-6 && rs.length) { var t = rs[rs.length - 1], take = Math.min(t.amt, rem); t.amt -= take; rem -= take; if (t.amt <= 1e-6) rs.pop(); } }
+    return rs;
+  }
+  // tube outline in tube coords: mouth centre at (0,0), body going down (+y)
+  function tubePath(x, tw, th, inset) {
+    var w = tw / 2 - inset, r = w, top = 2 + inset, bot = th - inset;
+    x.beginPath(); x.moveTo(-w, top); x.lineTo(-w, bot - r); x.arc(0, bot - r, r, Math.PI, 0, true); x.lineTo(w, top); x.closePath();
+  }
+  // water stays level: find the world-space height that holds a given volume in the tipped tube (tube ≈ a rectangle)
+  function levelFor(corners, vol) {
+    var ys = corners.map(function (p) { return p[1]; }), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+    if (vol <= 0) return hi;
+    function area(h) { // area of the polygon below the line y = h (larger y = lower)
+      var out = [];
+      for (var i = 0; i < corners.length; i++) {
+        var A = corners[i], B = corners[(i + 1) % corners.length], ia = A[1] >= h, ib = B[1] >= h;
+        if (ia) out.push(A);
+        if (ia !== ib) { var t = (h - A[1]) / (B[1] - A[1]); out.push([A[0] + (B[0] - A[0]) * t, h]); }
+      }
+      var s = 0; for (var j = 0; j < out.length; j++) { var P = out[j], Q = out[(j + 1) % out.length]; s += P[0] * Q[1] - Q[0] * P[1]; }
+      return Math.abs(s) / 2;
+    }
+    var a = lo, b = hi;
+    for (var k = 0; k < 22; k++) { var m = (a + b) / 2; if (area(m) > vol) a = m; else b = m; }
+    return (a + b) / 2;
+  }
+  function drawSymbol(c, sx, sy, s) {
+    cx.save(); cx.translate(sx, sy); cx.fillStyle = 'rgba(255,255,255,.9)'; cx.strokeStyle = 'rgba(0,0,0,.25)'; cx.lineWidth = s * 0.08; cx.beginPath();
+    var k = c % 12;
+    if (k === 0) cx.arc(0, 0, s * 0.3, 0, Math.PI * 2);
+    else if (k === 1) cx.rect(-s * 0.26, -s * 0.26, s * 0.52, s * 0.52);
+    else if (k === 2) { cx.moveTo(0, -s * 0.34); cx.lineTo(s * 0.32, s * 0.24); cx.lineTo(-s * 0.32, s * 0.24); cx.closePath(); }
+    else if (k === 3) { cx.moveTo(0, -s * 0.34); cx.lineTo(s * 0.3, 0); cx.lineTo(0, s * 0.34); cx.lineTo(-s * 0.3, 0); cx.closePath(); }
+    else if (k === 4) for (var i = 0; i < 10; i++) { var a = i / 10 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? s * 0.14 : s * 0.34; cx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    else if (k === 5) { cx.rect(-s * 0.1, -s * 0.32, s * 0.2, s * 0.64); cx.rect(-s * 0.32, -s * 0.1, s * 0.64, s * 0.2); }
+    else if (k === 6) cx.ellipse(0, 0, s * 0.36, s * 0.18, 0, 0, Math.PI * 2);
+    else if (k === 7) for (var h = 0; h < 6; h++) { var a2 = h / 6 * Math.PI * 2; cx.lineTo(Math.cos(a2) * s * 0.3, Math.sin(a2) * s * 0.3); }
+    else if (k === 8) { cx.moveTo(0, s * 0.3); cx.bezierCurveTo(-s * 0.5, -s * 0.05, -s * 0.2, -s * 0.4, 0, -s * 0.14); cx.bezierCurveTo(s * 0.2, -s * 0.4, s * 0.5, -s * 0.05, 0, s * 0.3); }
+    else if (k === 9) { cx.moveTo(-s * 0.32, s * 0.26); cx.lineTo(s * 0.32, -s * 0.26); cx.lineTo(s * 0.32, s * 0.26); cx.closePath(); }
+    else if (k === 10) { cx.arc(0, 0, s * 0.3, 0, Math.PI * 2); cx.moveTo(s * 0.14, 0); cx.arc(0, 0, s * 0.14, 0, Math.PI * 2, true); }
+    else { cx.moveTo(-s * 0.3, -s * 0.1); cx.lineTo(0, s * 0.24); cx.lineTo(s * 0.3, -s * 0.1); cx.lineTo(s * 0.18, -s * 0.28); cx.lineTo(0, -s * 0.04); cx.lineTo(-s * 0.18, -s * 0.28); cx.closePath(); }
+    cx.fill('evenodd'); cx.stroke(); cx.restore();
+  }
+  // a water tube with its mouth at (mx, my), tipped by ang (radians, clockwise), holding runs rs
+  function drawWaterTube(mx, my, ang, rs, glow, capT) {
+    var tw = L.tw, th = L.th, u = L.u, hr = L.hr, iw = tw - 6;
+    cx.save(); cx.translate(mx, my); cx.rotate(ang);
+    if (glow) { cx.shadowColor = 'rgba(255,255,255,.9)'; cx.shadowBlur = 16; }
+    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(255,255,255,.22)'; cx.fill(); cx.shadowBlur = 0;
+    cx.restore();
+    // liquid: clip to the tipped tube, fill level bands in world space
+    var total = rs.reduce(function (s, r) { return s + r.amt; }, 0);
+    if (total > 0.001) {
+      var ca = Math.cos(ang), sa = Math.sin(ang);
+      function w2(px, py) { return [mx + px * ca - py * sa, my + px * sa + py * ca]; }
+      var corners = [w2(-iw / 2, hr), w2(iw / 2, hr), w2(iw / 2, hr + u * g.cap + 3), w2(-iw / 2, hr + u * g.cap + 3)];
+      cx.save(); cx.translate(mx, my); cx.rotate(ang); tubePath(cx, tw, th, 3); cx.restore();
+      cx.save(); cx.clip();
+      var vol = 0, prev = levelFor(corners, 0), unitA = iw * u;
+      rs.forEach(function (r) {
+        vol += r.amt; var h = levelFor(corners, vol * unitA);
+        var grad = cx.createLinearGradient(mx - tw, 0, mx + tw, 0);
+        grad.addColorStop(0, COLORS[r.c]); grad.addColorStop(0.55, COLORS[r.c]); grad.addColorStop(0.8, LIGHT[r.c]); grad.addColorStop(1, COLORS[r.c]);
+        cx.fillStyle = grad; cx.fillRect(mx - th - 10, h, (th + 10) * 2, prev - h + 0.6);
+        if (settings.symbols && Math.abs(ang) < 0.05 && r.amt > 0.55) { for (var k = 0; k < Math.floor(r.amt + 0.001); k++) drawSymbol(r.c, mx, prev - (k + 0.5) * u, u * 0.62); }
+        prev = h;
+      });
+      cx.fillStyle = 'rgba(255,255,255,.45)'; cx.fillRect(mx - th - 10, prev, (th + 10) * 2, Math.max(1.5, u * 0.07));
+      cx.restore();
+    }
+    // glass
+    cx.save(); cx.translate(mx, my); cx.rotate(ang);
+    tubePath(cx, tw, th, 0); cx.lineWidth = Math.max(2, tw * 0.06); cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.stroke();
+    cx.beginPath(); cx.moveTo(-tw * 0.26, hr * 0.8); cx.lineTo(-tw * 0.26, th - tw * 0.6); cx.lineWidth = tw * 0.08; cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineCap = 'round'; cx.stroke();
+    cx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(-tw / 2 - tw * 0.1, -tw * 0.02, tw * 1.2, tw * 0.16, tw * 0.07); cx.fill();
+    if (capT) drawCap(capT);
+    cx.restore();
+  }
+  function roundRect(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+  function drawCap(capT) { // a cork pops on a finished tube
+    var tw = L.tw, age = (performance.now() - capT) / 1000, s = capT === 1 ? 1 : Math.min(1, age * 4) * (1 + Math.max(0, 0.25 - Math.abs(age - 0.25)) * 1.2);
+    cx.save(); cx.translate(0, -tw * 0.1); cx.scale(s, s);
+    var g2 = cx.createLinearGradient(0, -tw * 0.4, 0, tw * 0.1); g2.addColorStop(0, '#e2a868'); g2.addColorStop(1, '#9a6230');
+    cx.fillStyle = g2; roundRect(-tw * 0.4, -tw * 0.42, tw * 0.8, tw * 0.5, tw * 0.12); cx.fill(); cx.strokeStyle = 'rgba(80,40,10,.5)'; cx.lineWidth = 1.2; cx.stroke();
+    cx.fillStyle = 'rgba(80,40,10,.35)'; [-0.18, 0.05, 0.2].forEach(function (d, i) { cx.beginPath(); cx.arc(tw * d, -tw * (0.28 - i * 0.05), tw * 0.035, 0, Math.PI * 2); cx.fill(); });
+    cx.restore();
+  }
+  function drawBall(c, x, y, r) {
+    var g2 = cx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    g2.addColorStop(0, LIGHT[c]); g2.addColorStop(0.45, COLORS[c]); g2.addColorStop(1, shade(COLORS[c]));
+    cx.fillStyle = g2; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+    cx.lineWidth = 1; cx.strokeStyle = 'rgba(0,0,0,.18)'; cx.stroke();
+    cx.fillStyle = 'rgba(255,255,255,.8)'; cx.beginPath(); cx.ellipse(x - r * 0.32, y - r * 0.42, r * 0.28, r * 0.17, -0.5, 0, Math.PI * 2); cx.fill();
+    if (settings.symbols) drawSymbol(c, x, y + r * 0.08, r * 1.2);
+  }
+  function shade(hex) { var n = parseInt(hex.slice(1), 16), r = (n >> 16) * 0.62, g2 = ((n >> 8) & 255) * 0.62, b = (n & 255) * 0.62; return 'rgb(' + (r | 0) + ',' + (g2 | 0) + ',' + (b | 0) + ')'; }
+  function ballR() { return Math.min(L.tw * 0.42, L.u * 0.47); }
+  function ballY(i, k) { var p = L.pos[i]; return p.y + L.th - 3 - ballR() - k * (L.u) - (L.u - 2 * ballR()) * 0.5 * 0; }
+  function drawBallTube(i, x, y, contents, glow, capT, hideTop) {
+    var tw = L.tw, th = L.th;
+    cx.save(); cx.translate(x, y);
+    if (glow) { cx.shadowColor = 'rgba(255,255,255,.9)'; cx.shadowBlur = 16; }
+    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(255,255,255,.22)'; cx.fill(); cx.shadowBlur = 0;
+    cx.restore();
+    var r = ballR();
+    for (var k = 0; k < contents.length - (hideTop || 0); k++) drawBall(contents[k], x, y + th - 3 - r - k * L.u, r);
+    cx.save(); cx.translate(x, y);
+    tubePath(cx, tw, th, 0); cx.lineWidth = Math.max(2, tw * 0.06); cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.stroke();
+    cx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(-tw / 2 - tw * 0.1, -tw * 0.02, tw * 1.2, tw * 0.16, tw * 0.07); cx.fill();
+    if (capT) drawCap(capT);
+    cx.restore();
+  }
+  function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function draw(now) {
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
+    if (!g) return;
+    var n = g.tubes.length, tw = L.tw;
+    // display contents per tube, adjusted by moves still animating
+    var disp = g.tubes.map(function (t) { return runs(t); }), hold = {}, moving = [];
+    anims.forEach(function (a) {
+      var s = g.balls ? (a.t >= 1 ? 1 : 0) : Math.max(0, Math.min(1, (a.t - 0.3) / 0.42));
+      disp[a.a] = adjust(disp[a.a], a.c, a.n * (1 - s)); disp[a.b] = adjust(disp[a.b], a.c, -a.n * (1 - s));
+    });
+    for (var i = 0; i < n; i++) {
+      var p = L.pos[i]; if (!p) continue;
+      var target = (i === sel && !g.balls) ? tw * 0.55 : 0; lifts[i] += (target - lifts[i]) * 0.35;
+      var sx = 0; if (shakes[i] && now - shakes[i] < 300) sx = Math.sin((now - shakes[i]) / 25) * tw * 0.08 * (1 - (now - shakes[i]) / 300);
+      var an = anims.filter(function (a) { return a.a === i; })[0];
+      if (an && !g.balls) { moving.push([i, an]); continue; }
+      var capT = caps[i] && SS.done(g.tubes[i], g.cap) && !busy(i) ? caps[i] : 0;
+      if (g.balls) {
+        var flat = []; disp[i].forEach(function (r2) { for (var k = 0; k < Math.round(r2.amt); k++) flat.push(r2.c); });
+        drawBallTube(i, p.x + sx, p.y, flat, false, capT, i === sel ? 1 : 0);
+        if (i === sel) { var r = ballR(), bob = Math.sin(now / 160) * tw * 0.05; drawBall(flat[flat.length - 1], p.x, p.y - r * 1.25 + bob, r); }
+      } else drawWaterTube(p.x + sx, p.y - lifts[i], 0, disp[i], i === sel, capT);
+    }
+    // pours: the source tube swings over the target, tips, and pours a stream
+    moving.forEach(function (m) {
+      var i = m[0], a = m[1], P = L.pos[a.a], Q = L.pos[a.b], side = P.x >= Q.x ? 1 : -1;
+      // full screen (1.1.0): tubes are bigger now, so tip from the side with more room when the usual side runs out
+      // (a tipped tube reaches about its own length sideways; the canvas edge would cut it off)
+      var roomL = Q.x, roomR = W - Q.x;
+      if ((side < 0 ? roomL : roomR) < L.th && (side < 0 ? roomR : roomL) > (side < 0 ? roomL : roomR)) side = -side;
+      var mx = Q.x + side * tw * 0.28, my = Q.y - tw * 0.75, len = g.tubes[a.a].length + a.n;
+      var tilt = side * -(1.05 + (g.cap - len) / g.cap * 0.8), t = a.t, k, ang, x, y; // tips further the less it holds
+      if (t < 0.3) { k = ease(t / 0.3); x = P.x + (mx - P.x) * k; y = (P.y - tw * 0.55) + (my - P.y + tw * 0.55) * k; ang = tilt * k; }
+      else if (t < 0.72) { k = (t - 0.3) / 0.42; x = mx; y = my; ang = tilt + side * -0.35 * k; }
+      else { k = ease((t - 0.72) / 0.28); x = mx + (P.x - mx) * k; y = my + (P.y - my) * k; ang = (tilt + side * -0.35) * (1 - k); }
+      if (t >= 0.3 && t < 0.72) { // the stream
+        var ly = Q.y + L.th - 3 - disp[a.b].reduce(function (s2, r2) { return s2 + r2.amt; }, 0) * L.u;
+        cx.fillStyle = COLORS[a.c]; var sw = tw * 0.14 * Math.min(1, (0.72 - t) * 10, (t - 0.3) * 12);
+        cx.fillRect(Q.x - sw / 2, my - 2, sw, ly - my + 3);
+      }
+      drawWaterTube(x, y, ang, disp[i], false, 0);
+    });
+    // balls in flight
+    if (g.balls) anims.forEach(function (a) {
+      var P = L.pos[a.a], Q = L.pos[a.b], r = ballR(), t = a.t, k;
+      var y0 = P.y - r * 1.25, y1 = Q.y - r * 1.25, yEnd = Q.y + L.th - 3 - r - (g.tubes[a.b].length - 1) * L.u, x, y;
+      if (t < 0.55) { k = ease(t / 0.55); x = P.x + (Q.x - P.x) * k; y = y0 + (y1 - y0) * k - Math.sin(k * Math.PI) * L.tw * 0.8; }
+      else { k = (t - 0.55) / 0.45; x = Q.x; y = y1 + (yEnd - y1) * k * k; }
+      drawBall(a.c, x, y, r);
+    });
+    drawParts();
+  }
+  // ================= particles =================
+  function burst(i, n, col) { var p = L.pos[i]; for (var k = 0; k < n; k++) { var a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 3; parts.push({ x: p.x, y: p.y - L.tw * 0.2, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2, life: 40, t: 0, c: k % 3 ? col : '#ffffff', r: 2 + Math.random() * 2.5, star: k % 3 === 0 }); } }
+  function confetti() { var cols = COLORS; parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.4, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, life: 160, t: 0, c: cols[Math.floor(Math.random() * cols.length)], r: 3 + Math.random() * 3, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, flake: true }); }
+  function stepParts() { parts = parts.filter(function (p) { p.t++; p.x += p.vx; p.y += p.vy; p.vy += p.flake ? 0.03 : 0.15; if (p.flake) { p.vx *= 0.99; p.rot += p.vr; } return p.t < p.life && p.y < H + 20; }); }
+  function drawParts() {
+    parts.forEach(function (p) {
+      cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c;
+      if (p.flake) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); }
+      else { cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, Math.PI * 2); cx.fill(); }
+    });
+    cx.globalAlpha = 1;
+  }
+
+  // ================= loop =================
+  var lastT = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(60, now - lastT) : 16; lastT = now;
+    var done = [];
+    anims.forEach(function (a) { a.t += dt / a.dur; if (a.t >= 1) done.push(a); });
+    done.forEach(function (a) { anims.splice(anims.indexOf(a), 1); finishAnim(a); });
+    stepParts(); draw(now);
+  }
+
+  // ================= info, cards, sheets =================
+  function renderInfo() {
+    if (!g) return;
+    // pills: the level, and the moves left of the limit (orange when few are left, red at 0)
+    var left = SS.movesLeft(g), pm = $('pillMoves');
+    $('pillLevel').innerHTML = '<small>Level</small>' + levelNo;
+    pm.innerHTML = '<small>Moves left</small>' + Math.max(0, left) + '<i> / ' + g.limit + '</i>';
+    pm.classList.toggle('warn', left > 0 && left <= Math.max(3, Math.round(g.limit * 0.1)));
+    pm.classList.toggle('out', left <= 0);
+    $('undoCnt').textContent = g.undos; $('tubeCnt').textContent = g.extra;
+    $('btnUndo').disabled = g.undos <= 0; $('btnTube').disabled = g.extra <= 0;
+  }
+  function syncModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); }); }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2200); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#ss-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) { var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      if (b.sub) { var sm = document.createElement('small'); sm.textContent = b.sub; el.appendChild(sm); } el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; }
+    next();
+  }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Tap a tube</b> to pick it up, then <b>tap another</b> to pour into it. Tap the same tube again to put it down.',
+      'You can only pour onto the <b>same color</b> or into an <b>empty tube</b>, and only as much as fits. <b>Water</b> pours the whole top color at once; in <b>Balls</b> one ball moves at a time.',
+      'Sort it so every tube holds <b>one color</b>. A full tube gets a cork.',
+      'Some levels have taller tubes that hold <b>6</b> or <b>8</b>. A tube is done when it is full of one color.',
+      'Each level has a <b>move limit</b> (top right: moves left). It is a little more than our solver needed, so it is always possible. An <b>Undo</b> gives its move back. Out of moves? <b>Continue</b> with extra moves after a short ad (twice per try), or <b>Restart</b>.',
+      'Stuck? <b>Undo</b> (5 per level), add <b>one spare tube</b> per level, or <b>Restart</b>. Every level has been checked to be solvable.',
+      '<b>Water</b> and <b>Balls</b> each keep their own level. 1,000 levels are built in; after that new ones are made on the phone.',
+      'Settings: <b>color symbols</b> put a small shape on each color, handy in bright sun.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var w = stats.water, b = stats.balls;
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + fmt(w.solved) + '</b><span>Water levels</span></div><div class="tile"><b>' + fmt(b.solved) + '</b><span>Ball levels</span></div><div class="tile"><b>' + fmt(stats.capped) + '</b><span>Tubes corked</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(w.moves + b.moves) + '</b><span>Moves</span></div><div class="tile"><b>' + fmt(w.undos + b.undos) + '</b><span>Undos</span></div><div class="tile"><b>' + fmt(w.tubes + b.tubes) + '</b><span>Spare tubes</span></div></div>' +
+      '<p style="color:var(--muted);text-align:center;margin:4px 0 0">Next up: Water level ' + meta.level.water + ', Balls level ' + meta.level.balls + '.</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    // full screen: How to play, Stats and Settings live in the Menu sheet; Restart, Undo and Tube stay under the tubes
+    // 1.2.0: overlay (the backdrop fills the phone, the top row floats); Water / Balls tabs go to the top of the Menu
+    var FS = Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnStats', 'btnSettings'], info: function () {
+      if (!g) return '';
+      return '<b>' + (meta.mode === 'balls' ? 'Balls' : 'Water') + ' level ' + g.level + '</b> \u00b7 ' + SS.used(g) + ' of ' + g.limit + ' moves \u00b7 tubes hold ' + g.cap;
+    } });
+    FS.list.parentNode.insertBefore($('modes'), FS.list);
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    cv.addEventListener('pointerdown', function (e) { var r = cv.getBoundingClientRect(); tap(hit(e.clientX - r.left, e.clientY - r.top)); e.preventDefault(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('modes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { S.unlock(); FS.close(); switchMode(b.dataset.mode); } });
+    $('btnRestart').addEventListener('click', function () { if (!g || ending) return; if (g.moves) showCard('Restart this level?', 'It goes back to how it started.', [{ label: 'Restart', red: true, go: restart }, { label: 'Keep playing', go: function () {} }]); });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnTube').addEventListener('click', addTube);
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('pillLevel').addEventListener('click', openHelp);
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setSymbols').checked = settings.symbols;
+    $('setSymbols').addEventListener('change', function () { settings.symbols = this.checked; saveSettings(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe($('stagewrap')); ro.observe(document.querySelector('.toolbar')); ro.observe(document.querySelector('.top')); }
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); syncModes(); fit();
+    if (!load()) startLevel(meta.level[meta.mode]);
+    fit();
+    if (!meta.seen) openHelp();
+    requestAnimationFrame(frame);
+    window.__ssReady = true;
+    Goobs.markPlayed('sort');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Splash Sort ' + (v.sort || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  // hook for automated tests
+  window.__ss = { get g() { return g; }, tap: tap, outOfMoves: outOfMoves, restart: restart, get FR() { return FR; }, startLevel: startLevel, switchMode: switchMode, undo: undo, addTube: addTube, get anims() { return anims; }, meta: function () { return meta; }, SS: SS, get L() { return L; } };
+  init();
+})();
+</script>
+</body>
+</html>

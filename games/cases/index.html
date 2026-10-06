@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Case Closed can't open, say so on screen (never a blank page) and offer a fresh start (records are kept) */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__ckReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#1a0610;color:#fff;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Case Closed didn’t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start a new show', '#5a54f0', function () { try { localStorage.removeItem('cases.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__ckReady) fail('It took too long to start.'); }, 8000);
+})();
+</script>
+<title>Case Closed</title>
+<style>
+/* Case Closed styles (themes, UI kit and ad cards come from /shared/goobs.css).
+   Full screen (kit overlay mode): the ship's theatre fills the phone (velvet curtains, a valance with bulbs, two
+   sweeping spotlights); the top row floats over it. The stage: a band (your case, our host's line, the Banker's sky
+   box), the floor (the money board in two columns either side of the cases) and the bottom (offer history, buttons).
+   Sheets and cards follow the arcade theme; the theatre stays a theatre (Halloween recolours it). */
+:root { --wine1: #2a0712; --wine2: #120308; --velvet: #8e1630; --velvet2: #4a0716; --gold1: #fff0b0; --gold2: #f2cf62; --gold3: #b8860b;
+  --blue1: #bfe6ff; --blue2: #3d93d6; --blue3: #174f84; --spot: rgba(255,244,200,.16); --bw: 76px; --rh: 22px; --vfs: 12px;
+  --gold-grad: linear-gradient(180deg, #fff0b0 0%, #f2cf62 45%, #c9971f 100%); --deal: #f2b81f; --nodeal: #d8263f; }
+:root[data-skin="halloween"] { --wine1: #1c0a2a; --wine2: #0a0412; --velvet: #5a1f7a; --velvet2: #2a0a3d; --gold1: #ffe0b0; --gold2: #ff9a2e; --gold3: #b85a00;
+  --blue1: #d8ffc8; --blue2: #57b83a; --blue3: #1f5a1a; --spot: rgba(190,255,170,.12); --gold-grad: linear-gradient(180deg, #ffe0b0 0%, #ff9a2e 45%, #b85a00 100%); }
+html.gg-fs-over, html.gg-fs-over body { background: var(--wine2); }
+html.gg-fs-over body::before { display: none; }
+
+/* ---------- the theatre ---------- */
+.scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background: radial-gradient(90% 55% at 50% 100%, rgba(255,200,120,.16) 0, transparent 70%), radial-gradient(120% 70% at 50% 0%, var(--wine1) 0%, var(--wine2) 75%); }
+.curtain { position: absolute; top: 0; bottom: 0; width: clamp(14px, 4.5vw, 56px);
+  background: repeating-linear-gradient(90deg, var(--velvet2) 0, var(--velvet) 7px, #c0304f 10px, var(--velvet) 13px, var(--velvet2) 20px);
+  box-shadow: 0 0 30px rgba(0,0,0,.7); }
+:root[data-skin="halloween"] .curtain { background: repeating-linear-gradient(90deg, var(--velvet2) 0, var(--velvet) 7px, #8a3ab0 10px, var(--velvet) 13px, var(--velvet2) 20px); }
+.cl { left: 0; border-radius: 0 0 60% 0 / 0 0 8% 0; }
+.cr { right: 0; border-radius: 0 0 0 60% / 0 0 0 8%; }
+.valance { position: absolute; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top, 0px) + 14px);
+  background: radial-gradient(circle at 50% 0, var(--velvet) 62%, transparent 64%) 0 100% / 34px 16px repeat-x, linear-gradient(var(--velvet2), var(--velvet));
+  box-shadow: 0 4px 10px rgba(0,0,0,.5); }
+.bulbs { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; opacity: .55;
+  background: radial-gradient(circle, #ffe9a0 0 2px, rgba(255,210,120,.35) 3px, transparent 5px) 0 50% / 22px 10px repeat-x; animation: bulbs 1.6s steps(2) infinite; }
+@keyframes bulbs { 50% { background-position: 11px 50%; } }
+.spot { position: absolute; top: -10%; width: 46vmin; height: 130%; transform-origin: 50% 0; mix-blend-mode: screen;
+  background: linear-gradient(180deg, var(--spot) 0%, rgba(255,240,200,.05) 70%, transparent 100%); clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%); }
+.s1 { left: 6%; animation: sway1 9s ease-in-out infinite alternate; }
+.s2 { right: 6%; animation: sway2 11s ease-in-out infinite alternate; }
+@keyframes sway1 { from { transform: rotate(-18deg); } to { transform: rotate(14deg); } }
+@keyframes sway2 { from { transform: rotate(16deg); } to { transform: rotate(-12deg); } }
+@media (prefers-reduced-motion: reduce) { .s1, .s2, .bulbs { animation: none; } }
+
+.app { position: relative; z-index: 1; }
+html.gg-fs-over .top .brand .logo { display: none; }
+.pills { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; }
+.roundpill { font-family: inherit; font-size: 14px; padding: 7px 11px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.roundpill b { font-weight: 800; }
+html.gg-fs-over .top .topbtns { gap: 6px; }
+
+/* ---------- the stage ---------- */
+.stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; gap: 6px;
+  padding: calc(env(safe-area-inset-top, 0px) + 56px) calc(env(safe-area-inset-right, 0px) + max(8px, clamp(14px, 4.5vw, 56px) - 4px)) calc(env(safe-area-inset-bottom, 0px) + 8px) calc(env(safe-area-inset-left, 0px) + max(8px, clamp(14px, 4.5vw, 56px) - 4px)); }
+.stage > * { width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; }
+.band { flex: none; display: flex; align-items: stretch; gap: 8px; height: 76px; }
+.mycase { flex: none; width: 74px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.mycase .pcase { width: 66px; transition: transform .3s; }
+.mycase .pcase svg { display: block; width: 100%; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+.mycase .ped { width: 74px; height: 8px; border-radius: 4px 4px 2px 2px; background: linear-gradient(#f2cf62, #8a6410); box-shadow: 0 0 18px rgba(255,210,100,.45); }
+.mycase small { position: absolute; top: -2px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--gold2); }
+.mycase .empty { width: 62px; height: 46px; border: 2px dashed rgba(255,230,160,.5); border-radius: 10px; display: grid; place-items: center; color: rgba(255,230,160,.8); font-size: 22px; font-weight: 900; margin-bottom: 2px; }
+.mycase.glow .pcase { animation: myglow 1.4s ease-in-out infinite alternate; }
+@keyframes myglow { to { transform: translateY(-3px); filter: drop-shadow(0 0 10px rgba(255,220,120,.9)); } }
+.hostline { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; }
+.hostav { flex: none; width: 40px; height: 40px; display: block; }
+.hostav svg { width: 100%; height: 100%; display: block; }
+.hostline p { margin: 0; flex: 1; min-width: 0; background: rgba(255,250,235,.95); color: #2a1a10; border-radius: 14px; padding: 5px 10px; font-size: 13px; line-height: 1.24; font-weight: 650;
+  position: relative; box-shadow: 0 4px 12px rgba(0,0,0,.35); max-height: 74px; overflow: hidden; }
+.hostline p::before { content: ""; position: absolute; left: -6px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 0; border-right-color: rgba(255,250,235,.95); }
+.hostline p b { color: #8e1630; }
+.hostline p.pop { animation: pop .25s ease-out; }
+@keyframes pop { from { transform: scale(.94); opacity: .4; } }
+.skybox { flex: none; width: 96px; position: relative; cursor: pointer; }
+.skybox svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,.55)); }
+.skybox .bwin { transition: filter .3s; }
+.skybox .rings { opacity: 0; }
+.skybox.ringing .bkphone { animation: phone .09s linear infinite alternate; transform-box: fill-box; }
+.skybox.ringing .rings { animation: rings .5s ease-out infinite; }
+.skybox.ringing .bwin { animation: win .7s ease-in-out infinite alternate; }
+.skybox.talking .bkarm { animation: arm 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 30% 100%; }
+@keyframes phone { from { transform: translate(15px, 54px) rotate(-6deg); } to { transform: translate(17px, 54px) rotate(6deg); } }
+@keyframes rings { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-4px); } }
+@keyframes win { to { filter: brightness(1.5) saturate(1.3) hue-rotate(-15deg); } }
+@keyframes arm { to { transform: rotate(-4deg); } }
+
+/* ---------- the floor: the board either side of the cases ---------- */
+.floor { flex: 1 1 0; min-height: 0; display: flex; align-items: stretch; gap: 6px; }
+.board { flex: none; width: var(--bw); display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.board .v { height: var(--rh); border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding: 0 6px; position: relative; overflow: hidden;
+  font-weight: 850; font-size: var(--vfs); font-variant-numeric: tabular-nums; letter-spacing: -.3px; white-space: nowrap; transition: opacity .5s, filter .5s, transform .2s; }
+.board .v.lo { background: linear-gradient(180deg, var(--blue1) 0%, var(--blue2) 50%, var(--blue3) 100%); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.35); }
+.board .v.hi { background: var(--gold-grad); color: #3a2600; border: 1px solid rgba(80,50,0,.5); }
+.board .v::before { content: ""; position: absolute; left: 3px; top: 2px; right: 3px; height: 35%; border-radius: 4px; background: rgba(255,255,255,.35); }
+.board .v.out { opacity: .2; filter: grayscale(1); }
+.board .v.out::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; background: rgba(0,0,0,.6); transform: rotate(-4deg); }
+.board .v.hit { animation: hit .7s ease-out; }
+@keyframes hit { 0% { transform: scale(1.18); filter: brightness(1.8); } 100% { transform: none; } }
+.board.bl .v { justify-content: flex-start; }
+.cases { flex: 1 1 0; min-width: 0; display: grid; align-content: center; justify-content: center; gap: var(--cg, 6px); }
+.case { position: relative; border: 0; padding: 0; background: none; width: var(--cw, 52px); display: block; transition: transform .12s; }
+.case svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
+.case:active { transform: scale(.93); }
+.case.opened { pointer-events: none; }
+.case.opened svg { filter: none; opacity: .55; }
+.case.mine { pointer-events: none; }
+.case.mine::after { content: "YOURS"; position: absolute; inset: 18% 4% 2%; border: 2px dashed rgba(255,230,160,.45); border-radius: 8px; display: grid; place-items: center; font-size: 9px; font-weight: 900; letter-spacing: 1px; color: rgba(255,230,160,.6); }
+.case.mine svg { visibility: hidden; }
+.case.flip { animation: flip .38s ease-in-out; }
+@keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg) scale(1.1); } 100% { transform: rotateX(0); } }
+.case.hint svg { animation: nudge 1.6s ease-in-out infinite; }
+.case.hint:nth-child(3n) svg { animation-delay: .3s; }
+.case.hint:nth-child(3n+1) svg { animation-delay: .6s; }
+@keyframes nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-3px) rotate(-2deg); } 90% { transform: translateY(-1px) rotate(2deg); } }
+.case.last { animation: lastglow 1.2s ease-in-out infinite alternate; border-radius: 10px; }
+@keyframes lastglow { to { filter: drop-shadow(0 0 10px rgba(255,220,120,.9)); } }
+
+/* ---------- the bottom ---------- */
+.bottom { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.offers { display: flex; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; min-height: 26px; -webkit-overflow-scrolling: touch; }
+.offers::-webkit-scrollbar { display: none; }
+.offers .lbl { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: rgba(255,230,180,.75); }
+.offers .of { flex: none; font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 10px; background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.14); font-variant-numeric: tabular-nums; }
+.offers .of.no { text-decoration: line-through; text-decoration-color: rgba(255,90,110,.8); text-decoration-thickness: 2px; }
+.offers .of.yes { background: var(--gold-grad); color: #3a2600; border-color: transparent; }
+.offers .of.ghost { opacity: .6; border-style: dashed; }
+.offers .none { font-size: 13px; color: rgba(255,230,180,.6); font-weight: 650; }
+.acts { display: flex; gap: 8px; min-height: 52px; align-items: stretch; }
+.acts .status { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 15px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,220,150,.25);
+  color: #fff; font-weight: 800; font-size: 16px; padding: 4px 12px; }
+.acts .status small { display: block; font-weight: 650; font-size: 12px; color: rgba(255,230,180,.8); }
+.acts .status .dots { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.acts .status .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.25); }
+.acts .status .dots i.on { background: var(--gold2); box-shadow: 0 0 6px var(--gold2); }
+.bigbtn { flex: 1; border: 0; border-radius: 16px; font-weight: 900; font-size: 17px; letter-spacing: .3px; padding: 4px 8px; line-height: 1.15; transition: transform .1s; }
+.bigbtn small { display: block; font-size: 12px; font-weight: 700; opacity: .85; letter-spacing: 0; }
+.bigbtn:active { transform: scale(.96); }
+.bigbtn.keep { background: var(--gold-grad); color: #3a2600; box-shadow: 0 6px 18px -6px rgba(242,207,98,.8); }
+.bigbtn.swap { background: linear-gradient(135deg, #4c2a78, #2a1450); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+.bigbtn.plain { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+
+.toast { position: fixed; z-index: 12; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 60px); transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,6,12,.92); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(242,207,98,.5); }
+.toast.show { opacity: 1; }
+
+/* ---------- a case opening up close ---------- */
+.opener { position: fixed; inset: 0; z-index: 9; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: radial-gradient(42% 38% at 50% 50%, rgba(255,240,200,.22) 0, transparent 70%), rgba(8,2,6,.78); }
+.opener.show { display: flex; animation: ovin .2s ease-out; }
+.oplabel { color: var(--gold2); font: italic 800 26px/1 Georgia, serif; text-shadow: 0 2px 8px rgba(0,0,0,.6); letter-spacing: .5px; }
+.bigcase { position: relative; width: min(72vw, 320px); aspect-ratio: 240 / 184; perspective: 900px; }
+.bigcase .inside, .bigcase .lid { position: absolute; inset: 0; }
+.bigcase .inside svg { width: 100%; height: 100%; display: block; }
+.bigcase .lid { transform-origin: 50% 8%; transition: transform .5s cubic-bezier(.3,.7,.3,1.1); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.bigcase .lid svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.6)); }
+.opener.in .bigcase { animation: bigin .3s cubic-bezier(.2,.8,.3,1.2); }
+@keyframes bigin { from { transform: scale(.5) translateY(30px); opacity: 0; } }
+.opener.latch .bigcase { animation: rattle .28s linear; }
+@keyframes rattle { 25% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-3px); } 75% { transform: rotate(-1deg); } }
+.opener.open .lid { transform: rotateX(-118deg) translateY(-4%); }
+.opvalue { min-height: 40px; color: #fff; font: 900 30px/1.1 -apple-system, system-ui, sans-serif; text-align: center; opacity: 0; transition: opacity .3s; text-shadow: 0 2px 10px rgba(0,0,0,.6); padding: 0 16px; }
+.opvalue small { display: block; font: 700 15px/1.3 -apple-system, system-ui, sans-serif; color: rgba(255,230,180,.85); }
+.opener.open .opvalue { opacity: 1; }
+.opener.good .bigcase { animation: goodglow .9s ease-out .45s; }
+.opener.bad .bigcase { animation: badshake .5s ease-out .45s; }
+@keyframes goodglow { 40% { filter: drop-shadow(0 0 30px rgba(120,220,255,.9)); } }
+@keyframes badshake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.opener .tapnote { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); color: rgba(255,255,255,.45); font-size: 12px; font-weight: 700; }
+
+/* ---------- the Banker's offer ---------- */
+.offerov { z-index: 10; background: rgba(8,2,6,.55); }
+.offercard { width: min(92vw, 400px); border-radius: 24px; padding: 16px 16px 16px; color: #fff; text-align: center; position: relative; overflow: hidden;
+  background: radial-gradient(120% 70% at 50% 0%, #4a1022 0%, #1d0710 70%); border: 2px solid var(--gold2); box-shadow: 0 0 0 4px rgba(0,0,0,.35), 0 20px 50px rgba(0,0,0,.6); animation: cardin .3s cubic-bezier(.2,.8,.3,1.2); }
+:root[data-skin="halloween"] .offercard { background: radial-gradient(120% 70% at 50% 0%, #3a1450 0%, #140820 70%); }
+.ofhead { display: flex; align-items: center; gap: 10px; text-align: left; }
+.ofbank { flex: none; width: 74px; height: 52px; display: block; }
+.ofbank svg { width: 100%; height: 100%; display: block; }
+.ofhead small { display: block; font: italic 800 19px/1.1 Georgia, serif; color: var(--gold2); }
+.ofmood { display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 8px; background: rgba(255,255,255,.12); }
+.ofmood.stingy { background: rgba(255,90,110,.25); color: #ffb3bf; }
+.ofmood.generous { background: rgba(120,230,140,.22); color: #b7f5c2; }
+.ofamt { margin: 10px 0 4px; font: 900 46px/1 -apple-system, system-ui, sans-serif; letter-spacing: -1px; font-variant-numeric: tabular-nums;
+  background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgba(0,0,0,.4)); }
+.ofquip { margin: 4px 6px 8px; font: italic 600 16px/1.35 Georgia, serif; color: #ffe9c8; min-height: 22px; }
+.ofev { font-size: 13px; color: rgba(255,230,190,.8); font-weight: 650; }
+.ofev b { color: #fff; }
+.ofhist { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 8px 0 2px; }
+.ofhist span { font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 8px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.75); }
+.ofhist span.now { background: rgba(242,207,98,.3); color: #fff; }
+.ofq { margin: 10px 0 8px; font: italic 900 22px/1 Georgia, serif; color: #fff; letter-spacing: .5px; }
+.ofbtns { display: flex; gap: 10px; }
+.dealbtn, .nodealbtn { flex: 1; height: 64px; border: 0; border-radius: 18px; font: 900 22px/1 -apple-system, system-ui, sans-serif; letter-spacing: 1.5px; transition: transform .1s; }
+.dealbtn { background: var(--gold-grad); color: #3a2600; box-shadow: 0 6px 0 #8a6410, 0 10px 20px rgba(0,0,0,.4); }
+.nodealbtn { background: linear-gradient(180deg, #ff5a6e, var(--nodeal) 55%, #8e0f22); color: #fff; box-shadow: 0 6px 0 #5e0814, 0 10px 20px rgba(0,0,0,.4); }
+.dealbtn:active, .nodealbtn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.offercard.counter { border-color: #7ee35a; }
+.offercard.counter .ofhead small { color: #b7f5c2; }
+.offercard.wait .ofbtns { opacity: .35; pointer-events: none; }
+.stamp { position: fixed; z-index: 11; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-10deg); pointer-events: none;
+  font: 900 64px/1 Georgia, serif; letter-spacing: 4px; color: var(--gold2); border: 6px solid var(--gold2); border-radius: 14px; padding: 6px 18px;
+  text-shadow: 0 3px 0 rgba(0,0,0,.4); box-shadow: 0 0 0 4px rgba(0,0,0,.25); animation: stamp .5s cubic-bezier(.2,.8,.3,1.3) forwards; }
+.stamp.no { color: #ff5a6e; border-color: #ff5a6e; font-size: 48px; }
+@keyframes stamp { from { transform: translate(-50%, -50%) rotate(-10deg) scale(2.4); opacity: 0; } to { transform: translate(-50%, -50%) rotate(-10deg) scale(1); opacity: 1; } }
+.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+
+/* ---------- start and end cards ---------- */
+#ovStart { z-index: 11; }
+.startcard { padding-top: 18px; }
+.startlogo { width: 84px; height: 84px; margin: 0 auto 6px; }
+.startlogo svg { width: 100%; height: 100%; display: block; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.startcard h2 { font: italic 900 30px/1.1 Georgia, serif; margin-bottom: 4px; }
+.startsub { margin: 0 0 14px !important; font-size: 15px !important; }
+.startbtns { display: flex; flex-direction: column; gap: 10px; }
+.modebtn { border: 0; border-radius: 18px; padding: 12px 14px; text-align: left; background: linear-gradient(135deg, #8e1630, #4a0716); color: #fff; box-shadow: 0 6px 16px -6px rgba(142,22,48,.8); transition: transform .1s; }
+.modebtn.quick { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); box-shadow: 0 6px 16px -6px var(--accent); }
+.modebtn b { display: block; font-size: 20px; font-weight: 900; }
+.modebtn small { font-size: 13.5px; font-weight: 650; opacity: .88; }
+.modebtn:active { transform: scale(.97); }
+.fine { margin: 12px 0 0 !important; font-size: 12.5px !important; color: var(--muted); line-height: 1.4 !important; }
+.endcard { max-height: 92vh; overflow-y: auto; }
+.endcard .cardicon svg { width: 120px; height: auto; }
+.endtext { color: var(--muted); font-size: 15.5px; line-height: 1.45; margin: 4px 0 14px; }
+.endtext b { color: var(--ink); }
+.endtext .big { display: block; font: 900 40px/1.1 -apple-system, system-ui, sans-serif; letter-spacing: -1px; color: var(--ink); margin: 2px 0 6px; }
+.endtext .verdict { display: inline-block; margin: 6px 0 4px; padding: 4px 12px; border-radius: 10px; font-weight: 800; font-size: 14.5px; }
+.endtext .verdict.good { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); color: var(--ok); }
+.endtext .verdict.bad { background: color-mix(in srgb, var(--bad) 15%, var(--surface)); color: var(--bad); }
+.endtext .wi { text-align: left; margin: 8px 0 0; font-size: 13.5px; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.endtext .wi div { display: flex; justify-content: space-between; gap: 8px; }
+.endtext .newbest { margin: 6px 0 0; }
+.endtext .play { font-size: 12px; margin-top: 8px; }
+.card .actions .btn small { display: block; font-size: 12px; font-weight: 600; opacity: .8; }
+
+/* ---------- sheets ---------- */
+.seg { display: flex; gap: 3px; background: var(--surface-2); border-radius: 12px; padding: 3px; flex: none; }
+.seg button { border: 0; background: none; border-radius: 9px; padding: 8px 10px; font-weight: 750; font-size: 14px; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.row.col { flex-wrap: wrap; }
+#statsMode { margin: 6px 0 10px; }
+.statgroup { font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin: 10px 2px 6px; }
+.tile b { font-size: 21px; }
+.hall { list-style: none; margin: 0; padding: 0; }
+.hall li { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.hall li .n { width: 22px; font-weight: 900; color: var(--muted); text-align: center; }
+.hall li .a { font-weight: 900; font-variant-numeric: tabular-nums; min-width: 98px; }
+.hall li .h { flex: 1; color: var(--muted); font-size: 13px; }
+.hall li.first .a { color: var(--gold3); }
+.helpbody { font-size: 15.5px; line-height: 1.5; }
+.helpbody h3 { margin: 14px 0 4px; font-size: 16px; }
+.helpbody ol, .helpbody ul { padding-left: 20px; margin: 4px 0; }
+.helpbody li { margin-bottom: 5px; }
+.helpbody table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 6px 0; }
+.helpbody td, .helpbody th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.helpbody .note { color: var(--muted); font-size: 13.5px; }
+
+/* ---------- small phones ---------- */
+@media (max-height: 700px) {
+  .band { height: 64px; }
+  .mycase { width: 64px; } .mycase .pcase { width: 56px; } .mycase .ped { width: 64px; }
+  .hostav { width: 34px; height: 34px; }
+  .hostline p { font-size: 12.5px; padding: 4px 9px; max-height: 62px; line-height: 1.2; }
+  .endcard .cardicon svg { width: 84px; }
+  .endtext .big { font-size: 34px; }
+  .endcard { padding: 18px 16px 14px; }
+  .skybox { width: 84px; }
+  .acts { min-height: 48px; }
+  .offercard { padding: 12px 14px 14px; }
+  .ofamt { font-size: 40px; margin: 6px 0 2px; }
+  .ofq { margin: 8px 0 6px; font-size: 20px; }
+  .dealbtn, .nodealbtn { height: 56px; }
+}
+/* iPad and big screens */
+@media (min-width: 700px) and (min-height: 800px) {
+  .band { height: 104px; }
+  .mycase { width: 110px; } .mycase .pcase { width: 98px; } .mycase .ped { width: 110px; }
+  .hostav { width: 56px; height: 56px; }
+  .hostline p { font-size: 18px; padding: 10px 16px; max-height: 96px; }
+  .skybox { width: 140px; }
+  .offers .of { font-size: 16px; }
+  .acts { min-height: 64px; }
+  .acts .status { font-size: 20px; }
+  .bigbtn { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M9 8V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2M12 11.5v5M9.5 14h5"/></g></symbol>
+</defs></svg>
+
+<!-- the ship's theatre: velvet curtains, a valance, two spotlights that sweep the stage -->
+<div class="scene" aria-hidden="true">
+  <div class="curtain cl"></div><div class="curtain cr"></div><div class="valance"></div>
+  <i class="spot s1"></i><i class="spot s2"></i><i class="bulbs"></i>
+</div>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <span class="logo" id="topLogo"></span>
+      <h1>Case Closed</h1>
+    </button>
+    <div class="pills"><button class="ggpill roundpill" id="pillRound" aria-label="Round"><b id="roundTxt">Pick your case</b></button></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+      <button class="iconbtn" id="btnNew" aria-label="New game"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <section class="stage" id="stage">
+    <div class="band">
+      <div class="mycase" id="myCase"></div>
+      <div class="hostline" id="hostLine"><span class="hostav" id="hostAv"></span><p id="hostText"></p></div>
+      <div class="skybox" id="skybox" aria-label="The Banker"></div>
+    </div>
+    <div class="floor" id="floor">
+      <div class="board bl" id="boardL"></div>
+      <div class="cases" id="cases"></div>
+      <div class="board br" id="boardR"></div>
+    </div>
+    <div class="bottom">
+      <div class="offers" id="offers"></div>
+      <div class="acts" id="acts"></div>
+    </div>
+  </section>
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- a case opening up close -->
+<div class="opener" id="opener" aria-live="polite">
+  <div class="oplabel" id="opLabel"></div>
+  <div class="bigcase" id="bigCase"><div class="inside" id="bigInside"></div><div class="lid" id="bigLid"></div></div>
+  <div class="opvalue" id="opValue"></div>
+</div>
+
+<!-- the Banker's offer -->
+<div class="overlay center offerov" id="ovOffer">
+  <div class="offercard" role="dialog" aria-label="The Banker's offer">
+    <div class="ofhead"><span class="ofbank" id="ofBank"></span><div><small id="ofKicker">The Banker’s offer</small><div class="ofmood" id="ofMood"></div></div></div>
+    <div class="ofamt" id="ofAmt">$0</div>
+    <p class="ofquip" id="ofQuip"></p>
+    <div class="ofev" id="ofEv"></div>
+    <div class="ofhist" id="ofHist"></div>
+    <div class="ofq">Deal… or not?</div>
+    <div class="ofbtns"><button class="dealbtn" id="btnDeal">DEAL</button><button class="nodealbtn" id="btnNoDeal">NO DEAL</button></div>
+  </div>
+</div>
+
+<canvas class="confetti" id="confetti"></canvas>
+
+<!-- start: choose the show -->
+<div class="overlay center" id="ovStart">
+  <div class="card startcard" role="dialog" aria-label="New game">
+    <div class="startlogo" id="startLogo"></div>
+    <h2>Case Closed</h2>
+    <p class="startsub">Tonight, live in the ship’s theatre. Pick a case, outsmart the Banker.</p>
+    <div class="startbtns">
+      <button class="modebtn" id="btnClassic"><b>Classic</b><small>26 cases · 9 offers · about 8 minutes</small></button>
+      <button class="modebtn quick" id="btnQuick"><b>Quick game</b><small>16 cases · 5 offers · about 3 minutes</small></button>
+    </div>
+    <p class="fine" id="startFine"></p>
+  </div>
+</div>
+
+<!-- cards: the end of a show, questions -->
+<div class="overlay center" id="ovEnd">
+  <div class="card endcard" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <div id="endText" class="endtext"></div>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>The phone, the cases, the crowd.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Music<small>Our own little game-show theme.</small></div>
+        <span class="switch"><input type="checkbox" id="setMusic"><span></span></span></label>
+      <label class="row"><div>Fast mode<small>Skip the case close-ups and the long phone rings.</small></div>
+        <span class="switch"><input type="checkbox" id="setFast"><span></span></span></label>
+      <div class="row col"><div>The Banker<small>How he plays from the next game on.</small></div>
+        <div class="seg" id="setPers"><button data-v="classic">Classic</button><button data-v="generous">Generous</button><button data-v="tough">Tough</button></div></div>
+      <label class="row"><div>Old-time ads<small>Joke ads between games, never during one. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">2</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Case Closed 0.1.0</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your records</h2>
+    <div class="modes" id="statsMode"><button data-m="classic">Classic</button><button data-m="quick">Quick</button></div>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody" id="helpBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Got it</button></div>
+  </div>
+</div>
+
+<script>
+/* Case Closed logic (CL): runs in the page and in Node (tools/check.js).
+   The board (which case holds which value) is fixed at the start by a fair Fisher-Yates shuffle with
+   crypto.getRandomValues (exact rejection sampling, no modulo bias). The Banker's offer is a function of the values
+   still in play ONLY (yours included, but he never knows which one is yours), the round, his personality and a mood
+   rolled from the same RNG. Every state change happens here first and is saved before the page animates it. */
+var CL = (function () {
+  'use strict';
+
+  // ---------- the two shows ----------
+  var MODES = {
+    classic: {
+      id: 'classic', name: 'Classic', cases: 26, rounds: [6, 5, 4, 3, 2, 1, 1, 1, 1],
+      values: [0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750,
+        1000, 5000, 10000, 25000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 750000, 1000000]
+    },
+    quick: {
+      id: 'quick', name: 'Quick', cases: 16, rounds: [5, 4, 3, 1, 1],
+      values: [0.01, 1, 10, 50, 100, 500, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 750000, 1000000]
+    }
+  };
+  var BIG = 1000; // values from here up are "gold" on the board (below it: "blue")
+
+  // ---------- fair random numbers ----------
+  var src = null; // a function returning a uint32; tests may replace it (setRandom) to replay a run
+  function cryptoU32() {
+    var c = (typeof globalThis !== 'undefined' && globalThis.crypto) || (typeof window !== 'undefined' && window.crypto);
+    if (c && c.getRandomValues) { var a = new Uint32Array(1); c.getRandomValues(a); return a[0]; }
+    if (typeof require === 'function') { return require('crypto').randomBytes(4).readUInt32LE(0); }
+    throw new Error('No secure random source');
+  }
+  function u32() { return (src || cryptoU32)() >>> 0; }
+  function setRandom(fn) { src = fn || null; }
+  // an integer 0..n-1, exactly uniform (rejection sampling)
+  function rand(n) {
+    if (!(n >= 1)) return 0;
+    var lim = Math.floor(4294967296 / n) * n, x;
+    do { x = u32(); } while (x >= lim);
+    return x % n;
+  }
+  function rand01() { return rand(1000000) / 1000000; }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = rand(i + 1), t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  // a seeded uint32 stream (xorshift) for reproducible simulations in tests only
+  function seeded(seed) {
+    var s = (seed >>> 0) || 0x9e3779b9;
+    return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s; };
+  }
+
+  // ---------- money ----------
+  function money(v) {
+    if (v < 1) return '$' + v.toFixed(2);
+    return '$' + Math.round(v).toLocaleString('en-US');
+  }
+  function short(v) {
+    if (v < 1) return '$' + v.toFixed(2);
+    if (v >= 1000000) return '$' + (v / 1000000).toFixed(v % 1000000 ? 1 : 0) + 'M';
+    if (v >= 1000) { var k = v / 1000; return '$' + (k >= 100 || k === Math.floor(k) ? Math.round(k) : k.toFixed(1)) + 'K'; }
+    return '$' + Math.round(v);
+  }
+  // round an offer to a number a banker would say out loud
+  function nice(x) {
+    if (!(x > 0)) return 0;
+    if (x < 1) return Math.max(0.01, Math.round(x * 100) / 100); // pocket change: to the cent
+    var step = x < 20 ? 1 : x < 200 ? 5 : x < 1000 ? 10 : x < 5000 ? 50 : x < 20000 ? 100 : x < 100000 ? 500 : x < 500000 ? 1000 : 5000;
+    return Math.max(1, Math.round(x / step) * step);
+  }
+
+  // ---------- the Banker ----------
+  var PERS = {
+    classic: { id: 'classic', name: 'Classic', mul: 1.00, moods: [0.25, 0.50, 0.25] },
+    generous: { id: 'generous', name: 'Generous', mul: 1.04, moods: [0.10, 0.50, 0.40] },
+    tough: { id: 'tough', name: 'Tough', mul: 0.88, moods: [0.45, 0.45, 0.10] }
+  };
+  var MOODS = [
+    { id: 'stingy', name: 'Stingy', lo: 0.88, hi: 0.95 },
+    { id: 'fair', name: 'Fair', lo: 0.97, hi: 1.03 },
+    { id: 'generous', name: 'Generous', lo: 1.05, hi: 1.12 }
+  ];
+  function mean(vs) { var s = 0; for (var i = 0; i < vs.length; i++) s += vs[i]; return vs.length ? s / vs.length : 0; }
+  // certainty equivalent for a risk-averse player (utility sqrt): rises with every value, falls with the spread
+  function certainty(vs) { var s = 0; for (var i = 0; i < vs.length; i++) s += Math.sqrt(vs[i]); s /= vs.length || 1; return s * s; }
+  function sd(vs) { var m = mean(vs), s = 0; for (var i = 0; i < vs.length; i++) s += (vs[i] - m) * (vs[i] - m); return Math.sqrt(s / (vs.length || 1)); }
+  // how far through the show we are: cases opened so far / cases there are to open (0..1)
+  function progress(mode, round) {
+    var m = MODES[mode], tot = 0, done = 0;
+    for (var i = 0; i < m.rounds.length; i++) { tot += m.rounds[i]; if (i <= round) done += m.rounds[i]; }
+    return done / tot;
+  }
+  // the share of "fair value" the Banker pays after this round: low early (he wants you to keep playing), near the
+  // full value at the end
+  function factor(p) { return 0.14 + 0.86 * Math.pow(p, 1.7); }
+  // the deterministic part of an offer: no mood, no rounding
+  function baseOffer(vs, mode, round, pers) {
+    var p = progress(mode, round), ev = mean(vs), ce = certainty(vs);
+    var w = 0.45 * (1 - p) + 0.08;                       // how much the spread (risk) counts: a lot early, little late
+    var target = ev * (1 - w) + ce * w;                  // between the plain average and a cautious player's value
+    return Math.min(Math.max.apply(null, vs), factor(p) * (PERS[pers] || PERS.classic).mul * target);
+  }
+  function pickMood(pers) {
+    var pr = (PERS[pers] || PERS.classic).moods, r = rand01(), i = 0;
+    while (i < 2 && r >= pr[i]) { r -= pr[i]; i++; }
+    return i;
+  }
+  // the full offer after round `round` (0-based): values in play only (never which case is yours)
+  function offer(vs, mode, round, pers, moodIdx) {
+    var b = baseOffer(vs, mode, round, pers), mi = moodIdx == null ? pickMood(pers) : moodIdx, md = MOODS[mi];
+    var mul = md.lo + (md.hi - md.lo) * rand01();
+    var top = Math.max.apply(null, vs), low = Math.min.apply(null, vs);
+    var amt = nice(b * mul);
+    if (amt > top) amt = top >= 1 ? Math.floor(top) : top; // never more than the best case left
+    if (amt < low) amt = nice(low) <= top ? nice(low) : low;
+    var ev = mean(vs);
+    return { amount: amt, ev: ev, mood: md.id, ratio: ev ? amt / ev : 0, base: b };
+  }
+  // what a fair-mood Banker would have said (the "what if" replay): no randomness at all
+  function fairOffer(vs, mode, round, pers) {
+    var b = baseOffer(vs, mode, round, pers), top = Math.max.apply(null, vs), amt = nice(b);
+    return Math.min(amt, top >= 1 ? Math.floor(top) : top);
+  }
+
+  // ---------- the Banker's lines (original) ----------
+  var Q = {
+    early: ['Let’s start small. Small is a lovely size.', 'A little something for your trouble. Very little.', 'I’m feeling cautious tonight. Take it or leave it.',
+      'This is my warm-up number. Don’t get used to it.', 'Plenty of night left. Here’s a taste.', 'I never open my wallet in the first act.'],
+    stingy: ['My accountant says this is generous. My accountant is wrong.', 'Times are hard up here in the sky box.', 'I counted twice. This is what I’ve got.',
+      'Take it before I change my mind. Again.', 'I’d offer more, but I just bought a yacht.'],
+    fair: ['A fair number for a fair contestant.', 'This is what the board is worth. Roughly. Ish.', 'Straight down the middle. No tricks.',
+      'I’ve done the math. Have you?', 'A sensible offer for a sensible person.', 'Think it over. The phone’s still warm.'],
+    generous: ['I like you. Don’t tell anyone.', 'I’m in a good mood. It won’t last.', 'This is me being nice. Write it down.',
+      'Rarely do I say this: take the money.', 'A gift from the sky box. Don’t make me regret it.'],
+    topGone: ['The big one is gone. My offer is not.', 'Ooh, the top prize left the building. Let’s talk.', 'No more jackpot. I’m still here for you.'],
+    bigLeft: ['Those big numbers make me nervous. Here.', 'You’ve got muscle on that board. I’ll pay for it.', 'The gold side is shining. So is my offer.'],
+    final: ['Two cases. One question. My last offer.', 'This is it. After this, it’s just you and that case.', 'Last call from the sky box.'],
+    counter: ['Wait! Don’t hang up. One time only…', 'Fine. You drive a hard bargain. Final answer:', 'Hold on, hold on. I can stretch a little.']
+  };
+  function pickLine(arr) { return arr[rand(arr.length)]; }
+  function quip(o, vs, mode, round, startTop) {
+    var m = MODES[mode], top = Math.max.apply(null, vs);
+    if (round === m.rounds.length - 1) return pickLine(Q.final);
+    if (top < startTop && rand(3) === 0) return pickLine(Q.topGone);
+    var bigs = vs.filter(function (v) { return v >= 100000; }).length;
+    if (bigs >= Math.max(3, vs.length / 2) && rand(3) === 0) return pickLine(Q.bigLeft);
+    if (round <= 1) return pickLine(Q.early);
+    return pickLine(Q[o.mood]);
+  }
+
+  // ---------- a game ----------
+  // G: { v, mode, pers, values[case] (case numbers are index + 1), mine (-1 until picked), opened [case idx in order],
+  //      round (0-based), phase: pick | open | offer | counter | final | done, offers [{ r, amount, ev, mood, quip, ans }],
+  //      counter { amount, quip } | null, countered (bool), result | null, whatif | null, id }
+  function newGame(mode, pers) {
+    var m = MODES[mode] || MODES.classic;
+    return { v: 1, mode: m.id, pers: PERS[pers] ? pers : 'classic', values: shuffle(m.values), mine: -1, opened: [], round: 0,
+      phase: 'pick', offers: [], counter: null, countered: false, result: null, whatif: null, id: Date.now() };
+  }
+  function inPlay(G) { var o = {}; G.opened.forEach(function (i) { o[i] = 1; }); var r = []; for (var i = 0; i < G.values.length; i++) if (!o[i]) r.push(i); return r; }
+  function inPlayValues(G) { return inPlay(G).map(function (i) { return G.values[i]; }).sort(function (a, b) { return a - b; }); }
+  function openedBefore(G, r) { var m = MODES[G.mode], n = 0; for (var i = 0; i < r; i++) n += m.rounds[i]; return n; }
+  // { need: cases this round, done: opened this round, left }
+  function roundInfo(G) {
+    var m = MODES[G.mode], need = m.rounds[G.round] || 0, done = G.opened.length - openedBefore(G, G.round);
+    return { need: need, done: done, left: Math.max(0, need - done), last: G.round === m.rounds.length - 1, rounds: m.rounds.length };
+  }
+  function pick(G, i) {
+    if (G.phase !== 'pick' || !(i >= 0 && i < G.values.length)) return false;
+    G.mine = i; G.phase = 'open'; return true;
+  }
+  function makeOffer(G) {
+    var vs = inPlayValues(G), o = offer(vs, G.mode, G.round, G.pers);
+    o.quip = quip(o, vs, G.mode, G.round, MODES[G.mode].values[MODES[G.mode].values.length - 1]);
+    o.r = G.round; o.ans = null;
+    G.offers.push(o); G.phase = 'offer';
+    return o;
+  }
+  // open case i in the current round; returns { value, roundDone } or null if not allowed
+  function open(G, i) {
+    if (G.phase !== 'open' || i === G.mine || G.opened.indexOf(i) >= 0 || !(i >= 0 && i < G.values.length)) return null;
+    G.opened.push(i);
+    var ri = roundInfo(G), res = { value: G.values[i], roundDone: ri.left === 0 };
+    if (res.roundDone) makeOffer(G);
+    return res;
+  }
+  function lastOffer(G) { return G.offers[G.offers.length - 1] || null; }
+  function finish(G, how, won) {
+    var m = MODES[G.mode], mineV = G.values[G.mine], top = m.values[m.values.length - 1];
+    var lo = lastOffer(G);
+    G.result = { mode: G.mode, how: how, won: won, mine: mineV, mineCase: G.mine, round: G.round, offers: G.offers.map(function (o) { return o.amount; }),
+      best: Math.max.apply(null, G.offers.map(function (o) { return o.amount; }).concat([0])), top: mineV === top,
+      refused: G.offers.filter(function (o) { return o.ans === 'no'; }).map(function (o) { return o.amount; }),
+      countered: !!G.countered, dealAt: how === 'deal' ? (G.counter && G.counter.ans === 'deal' ? G.counter.amount : lo.amount) : null, date: Date.now(), pers: G.pers };
+    G.phase = 'done';
+    if (how === 'deal') G.whatif = whatIf(G);
+    return G.result;
+  }
+  // the Banker's counter: a rare second call after you refuse a strong offer
+  function counterChance(G, o) {
+    var m = MODES[G.mode];
+    return !G.countered && G.round >= 3 && G.round < m.rounds.length - 1 && o.ratio >= 0.85;
+  }
+  // answer the current offer: 'deal' or 'no'
+  function answer(G, a) {
+    var m = MODES[G.mode];
+    if (G.phase === 'counter') {
+      G.counter.ans = a;
+      if (a === 'deal') return finish(G, 'deal', G.counter.amount);
+      G.round++; G.phase = 'open'; return null;
+    }
+    if (G.phase !== 'offer') return null;
+    var o = lastOffer(G); o.ans = a;
+    if (a === 'deal') return finish(G, 'deal', o.amount);
+    if (counterChance(G, o) && rand(100) < 6) {
+      var vs = inPlayValues(G), top = Math.max.apply(null, vs);
+      var amt = Math.min(nice(o.amount * (1.05 + 0.07 * rand01())), top >= 1 ? Math.floor(top) : top);
+      if (amt > o.amount) { G.countered = true; G.counter = { amount: amt, quip: pickLine(Q.counter), r: G.round, ans: null }; G.phase = 'counter'; return null; }
+    }
+    if (G.round >= m.rounds.length - 1) { G.phase = 'final'; return null; }
+    G.round++; G.phase = 'open'; return null;
+  }
+  // two cases left: keep yours or swap for the other one
+  function lastOther(G) { var r = inPlay(G).filter(function (i) { return i !== G.mine; }); return r.length === 1 ? r[0] : -1; }
+  function decide(G, swap) {
+    if (G.phase !== 'final') return null;
+    var other = lastOther(G); if (other < 0) return null;
+    var was = G.mine;
+    if (swap) { G.mine = other; other = was; }
+    G.swapped = !!swap; G.otherCase = other; G.firstCase = was;
+    var res = finish(G, swap ? 'swap' : 'keep', G.values[G.mine]);
+    res.other = G.values[other]; res.firstCase = was;
+    return res;
+  }
+  // after a deal: open the rest round by round, with what a fair Banker would have offered after each round
+  function whatIf(G) {
+    var m = MODES[G.mode], left = shuffle(inPlay(G).filter(function (i) { return i !== G.mine; })), steps = [], opened = G.opened.slice();
+    var r = G.round + 1, k = 0;
+    while (k < left.length && r < m.rounds.length) {
+      var need = m.rounds[r], cs = left.slice(k, k + need); k += need;
+      opened = opened.concat(cs);
+      var o = {}; opened.forEach(function (i) { o[i] = 1; });
+      var vs = []; for (var i = 0; i < G.values.length; i++) if (!o[i]) vs.push(G.values[i]);
+      steps.push({ r: r, cases: cs, offer: fairOffer(vs, G.mode, r, G.pers) });
+      r++;
+    }
+    return { steps: steps, last: left.slice(k), mine: G.values[G.mine] };
+  }
+
+  // ---------- stats ----------
+  function blankStats() { return { games: 0, total: 0, best: 0, deals: 0, kept: 0, swaps: 0, goodDeals: 0, refused: 0, offers: 0, biggestRefused: 0, topInCase: 0, counters: 0, swapWins: 0 }; }
+  function applyStats(s, res) {
+    s.games++; s.total += res.won; if (res.won > s.best) s.best = res.won;
+    s.offers += res.offers.length; s.refused += res.refused.length;
+    res.refused.forEach(function (a) { if (a > s.biggestRefused) s.biggestRefused = a; });
+    if (res.how === 'deal') { s.deals++; if (res.won >= res.mine) s.goodDeals++; }
+    else if (res.how === 'swap') { s.swaps++; if (res.won > res.other) s.swapWins++; }
+    else s.kept++;
+    if (res.top) s.topInCase++;
+    if (res.countered) s.counters++;
+    return s;
+  }
+  function average(s) { return s.games ? s.total / s.games : 0; }
+  function goodPct(s) { return s.deals ? Math.round(100 * s.goodDeals / s.deals) : null; }
+  function addHall(hall, res, max) {
+    hall = (hall || []).concat([{ won: res.won, how: res.how, mine: res.mine, round: res.round, date: res.date, pers: res.pers }]);
+    hall.sort(function (a, b) { return b.won - a.won || a.date - b.date; });
+    return hall.slice(0, max || 10);
+  }
+  // a saved game is usable (resume) only if everything in it is consistent
+  function valid(G) {
+    try {
+      var m = MODES[G.mode]; if (!m || !G.values || G.values.length !== m.cases) return false;
+      var a = G.values.slice().sort(function (x, y) { return x - y; }), b = m.values.slice().sort(function (x, y) { return x - y; });
+      for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+      if (['pick', 'open', 'offer', 'counter', 'final', 'done'].indexOf(G.phase) < 0) return false;
+      if (G.phase !== 'pick' && !(G.mine >= 0 && G.mine < m.cases)) return false;
+      var seen = {}; for (var j = 0; j < G.opened.length; j++) { var c = G.opened[j]; if (seen[c] || c === G.mine && G.phase !== 'done' || !(c >= 0 && c < m.cases)) return false; seen[c] = 1; }
+      if (G.opened.length > m.cases - 2 && G.phase !== 'done') return false;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  return { MODES: MODES, PERS: PERS, MOODS: MOODS, BIG: BIG, rand: rand, rand01: rand01, shuffle: shuffle, setRandom: setRandom, seeded: seeded,
+    money: money, short: short, nice: nice, mean: mean, sd: sd, certainty: certainty, progress: progress, factor: factor, baseOffer: baseOffer, offer: offer, fairOffer: fairOffer, Q: Q,
+    newGame: newGame, inPlay: inPlay, inPlayValues: inPlayValues, roundInfo: roundInfo, pick: pick, open: open, answer: answer, decide: decide, lastOther: lastOther,
+    lastOffer: lastOffer, whatIf: whatIf, blankStats: blankStats, applyStats: applyStats, average: average, goodPct: goodPct, addHall: addHall, valid: valid };
+})();
+if (typeof module !== 'undefined') module.exports = CL;
+</script>
+<script>
+/* Case Closed art (CA): everything drawn in code. Aluminium briefcases with a number tag, the big case that opens
+   (lid, latches, velvet lining and the value plate), the Banker in his sky box with a retro phone, our host Vic Velvet,
+   the logo and confetti. */
+var CA = (function () {
+  'use strict';
+  var uid = 0;
+  function id(p) { uid++; return p + uid; }
+
+  // a closed briefcase, front view (viewBox 120 x 92); the number on a cream tag
+  function caseSVG(num, opts) {
+    opts = opts || {};
+    var g = id('cg'), h = id('ch'), t = id('ct');
+    var mine = opts.mine;
+    return '<svg viewBox="0 0 120 92" class="casesvg" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + (mine ? '#fff2c2' : '#f4f6fa') + '"/><stop offset=".45" stop-color="' + (mine ? '#e9c35a' : '#c6ccd6') + '"/><stop offset=".55" stop-color="' + (mine ? '#d8ab3a' : '#b3bac6') + '"/><stop offset="1" stop-color="' + (mine ? '#a47517' : '#8a92a0') + '"/></linearGradient>' +
+      '<linearGradient id="' + h + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4f5c"/><stop offset="1" stop-color="#15171d"/></linearGradient>' +
+      '<linearGradient id="' + t + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf4"/><stop offset="1" stop-color="#ece3c8"/></linearGradient></defs>' +
+      '<path d="M44 16 V8 Q44 3 49 3 H71 Q76 3 76 8 V16" fill="none" stroke="url(#' + h + ')" stroke-width="6" stroke-linecap="round"/>' +
+      '<rect x="3" y="15" width="114" height="74" rx="9" fill="url(#' + g + ')" stroke="' + (mine ? '#7a5408' : '#5f6672') + '" stroke-width="2"/>' +
+      '<path d="M5 28 H115" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/><path d="M5 30 H115" stroke="rgba(255,255,255,.55)" stroke-width="1"/>' +
+      '<path d="M10 40 V82 M110 40 V82" stroke="rgba(0,0,0,.12)" stroke-width="3" stroke-linecap="round"/>' +
+      '<rect x="18" y="20" width="12" height="11" rx="2" fill="#e8c45a" stroke="#8a6410" stroke-width="1.2"/><rect x="90" y="20" width="12" height="11" rx="2" fill="#e8c45a" stroke="#8a6410" stroke-width="1.2"/>' +
+      '<rect x="31" y="38" width="58" height="42" rx="7" fill="url(#' + t + ')" stroke="rgba(60,40,0,.35)" stroke-width="1.5"/>' +
+      '<text x="60" y="70" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="900" font-size="' + (num > 9 ? 30 : 32) + '" fill="#1b1f2e" letter-spacing="-1">' + num + '</text>' +
+      '<path d="M8 20 Q60 12 112 20" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+  // an opened case (small): the lid up, the lining dark and the value showing (used on the grid after opening)
+  function openSVG(label, big) {
+    return '<svg viewBox="0 0 120 92" class="casesvg" aria-hidden="true">' +
+      '<rect x="3" y="40" width="114" height="49" rx="8" fill="#2a2f3a" stroke="#4a515e" stroke-width="2"/>' +
+      '<path d="M8 40 L18 8 H102 L112 40Z" fill="#3b414d" stroke="#4a515e" stroke-width="2" stroke-linejoin="round"/>' +
+      '<rect x="12" y="46" width="96" height="36" rx="6" fill="' + (big ? '#3a2c08' : '#0c2c44') + '"/>' +
+      '<text x="60" y="72" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="' + (label.length > 6 ? 19 : 22) + '" fill="' + (big ? '#f6d36b' : '#8fd3ff') + '">' + label + '</text></svg>';
+  }
+  // the big case for the opening: the inside (lining + plate) and the lid (the front) as separate layers
+  function bigInside(valueText, big) {
+    var g = id('pl');
+    return '<svg viewBox="0 0 240 184" aria-hidden="true"><defs><linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1">' +
+      (big ? '<stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#f0c64e"/><stop offset="1" stop-color="#b8860b"/>' : '<stop offset="0" stop-color="#bfe6ff"/><stop offset=".5" stop-color="#4fa8e8"/><stop offset="1" stop-color="#1d5f99"/>') +
+      '</linearGradient></defs>' +
+      '<rect x="4" y="4" width="232" height="176" rx="16" fill="#1a1d24" stroke="#5f6672" stroke-width="4"/>' +
+      '<rect x="14" y="14" width="212" height="156" rx="10" fill="#4a0d1a"/>' +
+      '<path d="M14 40 H226 M14 80 H226 M14 120 H226 M14 160 H226" stroke="rgba(0,0,0,.25)" stroke-width="2"/>' +
+      '<rect x="30" y="56" width="180" height="72" rx="12" fill="url(#' + g + ')" stroke="rgba(0,0,0,.35)" stroke-width="3"/>' +
+      '<rect x="36" y="62" width="168" height="18" rx="9" fill="rgba(255,255,255,.35)"/>' +
+      '<text x="120" y="108" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="900" font-size="' + (valueText.length > 9 ? 31 : 36) + '" fill="' + (big ? '#3a2600' : '#fff') + '">' + valueText + '</text></svg>';
+  }
+  function bigLid(num, mine) { return caseSVG(num, { mine: mine }).replace('class="casesvg"', 'class="casesvg lidsvg"'); }
+
+  // the Banker: a silhouette in a lit sky-box window, with a top hat and an old desk phone
+  function banker() {
+    var w = id('bw'), l = id('bl');
+    return '<svg viewBox="0 0 120 84" aria-hidden="true" class="bankersvg"><defs>' +
+      '<radialGradient id="' + w + '" cx=".5" cy=".55" r=".7"><stop offset="0" stop-color="#ffd27a"/><stop offset=".6" stop-color="#e0892a"/><stop offset="1" stop-color="#6a2a10"/></radialGradient>' +
+      '<linearGradient id="' + l + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2f3a"/><stop offset="1" stop-color="#0d0f14"/></linearGradient></defs>' +
+      '<rect x="2" y="2" width="116" height="80" rx="8" fill="url(#' + l + ')"/>' +
+      '<rect class="bwin" x="8" y="8" width="104" height="62" rx="4" fill="url(#' + w + ')"/>' +
+      '<path d="M8 22 H112 M60 8 V70" stroke="rgba(40,16,0,.35)" stroke-width="1.5"/>' +
+      // the silhouette: shoulders, head, top hat, the receiver at his ear
+      '<g fill="#14090a"><path d="M30 70 Q30 50 46 46 L54 44 Q60 50 66 44 L74 46 Q90 50 90 70Z"/>' +
+      '<ellipse cx="60" cy="36" rx="10.5" ry="12"/><rect x="50" y="12" width="20" height="16" rx="2"/><rect x="44" y="26" width="32" height="4" rx="2"/>' +
+      '<g class="bkarm"><path d="M76 52 Q86 46 80 34 L74 36 Q78 44 70 50Z"/><rect x="69" y="26" width="7" height="16" rx="3" transform="rotate(-18 72 34)"/></g></g>' +
+      '<rect x="8" y="64" width="104" height="6" fill="rgba(20,8,0,.5)"/>' +
+      // the desk phone on the sill
+      '<g class="bkphone" transform="translate(16 54)"><path d="M0 14 Q2 4 12 4 Q22 4 24 14Z" fill="#b8142a" stroke="#4a0610" stroke-width="1.2"/><circle cx="12" cy="10" r="3.5" fill="#f6e8c8"/>' +
+      '<path d="M-1 4 Q12 -4 25 4" fill="none" stroke="#4a0610" stroke-width="3.5" stroke-linecap="round"/></g>' +
+      '<g class="rings" fill="none" stroke="#fff3c4" stroke-width="2" stroke-linecap="round"><path d="M8 50 Q4 58 8 66"/><path d="M3 47 Q-2 58 3 69"/></g>' +
+      '<rect x="2" y="70" width="116" height="12" rx="3" fill="#3b2a1a"/><text x="60" y="79.5" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="8.5" fill="#f2cf62" letter-spacing="1.5">THE BANKER</text></svg>';
+  }
+  // our host, Vic Velvet: slick hair, a smile, a velvet bow tie (round avatar)
+  function host() {
+    var b = id('hb');
+    return '<svg viewBox="0 0 60 60" aria-hidden="true"><defs><radialGradient id="' + b + '" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#4c2a78"/><stop offset="1" stop-color="#1b0f33"/></radialGradient></defs>' +
+      '<circle cx="30" cy="30" r="29" fill="url(#' + b + ')" stroke="#e8c45a" stroke-width="2"/>' +
+      '<path d="M10 56 Q12 42 30 40 Q48 42 50 56Z" fill="#14161c"/><path d="M24 41 L30 52 L36 41Z" fill="#fff"/>' +
+      '<path d="M22 46 L30 49 L22 52Z M38 46 L30 49 L38 52Z" fill="#a8122a"/><circle cx="30" cy="49" r="2" fill="#7a0a1c"/>' +
+      '<ellipse cx="30" cy="27" rx="11" ry="12.5" fill="#f2c8a0"/>' +
+      '<path d="M18.5 25 Q18 13 30 13 Q43 13 41.5 25 Q38 18 30 19 Q24 17 18.5 25Z" fill="#2a1a10"/>' +
+      '<circle cx="25.5" cy="27" r="1.5" fill="#2a1a10"/><circle cx="34.5" cy="27" r="1.5" fill="#2a1a10"/>' +
+      '<path d="M24.5 32.5 Q30 37 35.5 32.5" fill="none" stroke="#8a3a2a" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  }
+  // the logo (also the tile art): a case under a spotlight with "CC" on its tag
+  function logo() {
+    var bg = id('lg'), sp = id('ls'), c = id('lc');
+    return '<svg viewBox="0 0 100 100" aria-hidden="true"><defs>' +
+      '<linearGradient id="' + bg + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a0f22"/><stop offset="1" stop-color="#1a0610"/></linearGradient>' +
+      '<linearGradient id="' + sp + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d0" stop-opacity=".75"/><stop offset="1" stop-color="#fff6d0" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="' + c + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2c2"/><stop offset=".5" stop-color="#e2b84a"/><stop offset="1" stop-color="#9a6c12"/></linearGradient></defs>' +
+      '<rect width="100" height="100" rx="22" fill="url(#' + bg + ')"/>' +
+      '<path d="M0 0 H14 Q10 50 16 100 H0Z M100 0 H86 Q90 50 84 100 H100Z" fill="#8a1530"/><path d="M6 0 Q3 50 7 100 M94 0 Q97 50 93 100" stroke="#3a0612" stroke-width="2" fill="none"/>' +
+      '<path d="M42 0 H58 L82 86 H18Z" fill="url(#' + sp + ')"/>' +
+      '<ellipse cx="50" cy="86" rx="32" ry="6" fill="rgba(255,240,190,.35)"/>' +
+      '<path d="M41 50 V44 Q41 40 45 40 H55 Q59 40 59 44 V50" fill="none" stroke="#1b1f2e" stroke-width="4"/>' +
+      '<rect x="22" y="49" width="56" height="36" rx="6" fill="url(#' + c + ')" stroke="#6a4808" stroke-width="1.6"/>' +
+      '<rect x="36" y="58" width="28" height="20" rx="4" fill="#fffaf0"/><text x="50" y="73" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="13" fill="#7a0a1c">CC</text>' +
+      '<g fill="#fff6d0"><circle cx="24" cy="18" r="1.4"/><circle cx="76" cy="14" r="1.2"/><circle cx="70" cy="28" r="1"/></g></svg>';
+  }
+
+  // confetti: a canvas over everything; returns a stop function
+  function confetti(cv, ms, opts) {
+    opts = opts || {};
+    var ctx = cv.getContext('2d'), W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var COLS = opts.colors || ['#f2cf62', '#ff5a7a', '#5ad1ff', '#7ee35a', '#ffffff', '#c78bff'], P = [], n = opts.n || 140;
+    for (var i = 0; i < n; i++) P.push({ x: Math.random() * W, y: -20 - Math.random() * H * 0.6, vx: (Math.random() - 0.5) * 2.2, vy: 1.6 + Math.random() * 2.6,
+      r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3, w: 5 + Math.random() * 6, h: 3 + Math.random() * 4, c: COLS[i % COLS.length], s: Math.random() * 6 });
+    var t0 = performance.now(), raf = 0, stopped = false;
+    function step(t) {
+      if (stopped) return;
+      var el = t - t0; ctx.clearRect(0, 0, W, H);
+      var fade = el > ms - 600 ? Math.max(0, (ms - el) / 600) : 1;
+      ctx.globalAlpha = fade;
+      P.forEach(function (p) {
+        p.x += p.vx + Math.sin((el / 300) + p.s) * 0.6; p.y += p.vy; p.r += p.vr;
+        if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.scale(1, Math.abs(Math.cos(p.r * 2)) + 0.15);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+      });
+      if (el < ms) raf = requestAnimationFrame(step); else ctx.clearRect(0, 0, W, H);
+    }
+    raf = requestAnimationFrame(step);
+    return function () { stopped = true; cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  }
+  function svgURL(s) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s); }
+
+  return { caseSVG: caseSVG, openSVG: openSVG, bigInside: bigInside, bigLid: bigLid, banker: banker, host: host, logo: logo, confetti: confetti, svgURL: svgURL };
+})();
+</script>
+<script>
+/* Case Closed sounds (CS): all synthesized with Web Audio, off by default. The Banker's old desk phone (a bell
+   trill, twice), a snare drumroll that swells, the audience cheering (filtered noise and whistles) or groaning (a
+   falling "aww"), latches, the lid, board dings, a sting and a fanfare. Music (its own switch): our own short
+   game-show theme, a brassy vamp in B-flat with a bass and a light hi-hat. */
+var CS = (function () {
+  'use strict';
+  var ac = null, master = null, mus = null, on = false, musicOn = false, musTimer = 0, noiseBuf = null;
+  function ctx() {
+    if (!on && !musicOn) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      mus = ac.createGain(); mus.gain.value = 0.13; mus.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay, out, attack) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + (attack || 0.005)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(out || master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(freq, q, dur, gain, delay, type, f1, attack, out) {
+    var a = ctx(); if (!a) return;
+    if (!noiseBuf) { var len = a.sampleRate * 2; noiseBuf = a.createBuffer(1, len, a.sampleRate); var d = noiseBuf.getChannelData(0); for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; }
+    var t = a.currentTime + (delay || 0), s = a.createBufferSource(); s.buffer = noiseBuf;
+    var f = a.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.setValueAtTime(freq, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur); f.Q.value = q;
+    var g = a.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + (attack || 0.004)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(out || master); s.start(t, Math.random()); s.stop(t + dur + 0.02);
+  }
+  // a brassy note: two detuned saws through a soft low-pass
+  function brass(f, dur, gain, delay, out) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), lp = a.createBiquadFilter(), g = a.createGain();
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(600, t); lp.frequency.linearRampToValueAtTime(2400, t + 0.06); lp.frequency.exponentialRampToValueAtTime(900, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.03); g.gain.setValueAtTime(gain, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    [-6, 6].forEach(function (dt) { var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + dur + 0.03); });
+    lp.connect(g); g.connect(out || master);
+  }
+  // the old desk phone: a bell struck fast by a hammer (two pitches beating), one ring = ~1 s of trill
+  function ring(delay) {
+    var d = delay || 0;
+    for (var i = 0; i < 18; i++) {
+      var t = d + i * 0.05;
+      tone('sine', 1180, 0, 0.09, 0.07, t); tone('sine', 1320, 0, 0.09, 0.05, t + 0.012); tone('square', 2360, 0, 0.02, 0.012, t);
+    }
+  }
+  // music: a short vamp (Bb - Gm - Eb - F) with a stab on the off-beats, walking bass and hi-hat
+  var CH = [[233.08, 293.66, 349.23], [196, 233.08, 293.66], [155.56, 196, 233.08], [174.61, 220, 261.63]];
+  var BS = [[58.27, 87.31, 58.27, 87.31], [49, 73.42, 49, 73.42], [77.78, 116.54, 77.78, 116.54], [87.31, 130.81, 87.31, 110]];
+  var MEL = [[587.33, 0, 698.46, 587.33], [466.16, 0, 587.33, 0], [622.25, 587.33, 523.25, 466.16], [523.25, 0, 0, 0]];
+  var bar = 0, beat = 0;
+  function musicStep() {
+    if (!musicOn || !ctx()) return;
+    var c = CH[bar % 4];
+    tone('triangle', BS[bar % 4][beat], 0, 0.3, 0.3, 0, mus, 0.01);
+    if (beat === 1 || beat === 3) c.forEach(function (f) { brass(f * 2, 0.16, 0.035, 0.005, mus); });
+    noise(8000, 1, 0.05, 0.08, beat % 2 ? 0.17 : 0, 'highpass', 0, 0.002, mus);
+    if (bar % 8 >= 4) { var m = MEL[bar % 4][beat]; if (m) brass(m, 0.26, 0.05, 0, mus); }
+    beat++; if (beat >= 4) { beat = 0; bar++; }
+  }
+  function setMusic(v) { musicOn = !!v; clearInterval(musTimer); if (musicOn) { ctx(); bar = 0; beat = 0; musTimer = setInterval(musicStep, 330); } }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    setMusic: setMusic,
+    unlock: function () { if (on || musicOn) ctx(); },
+    button: function () { if (on) tone('sine', 660, 520, 0.06, 0.06); },
+    pick: function () { if (!on) return; tone('triangle', 523.25, 0, 0.16, 0.1); tone('triangle', 659.25, 0, 0.16, 0.1, 0.08); tone('triangle', 783.99, 0, 0.3, 0.12, 0.16); },
+    latch: function (delay) { if (!on) return; var d = delay || 0; noise(3800, 6, 0.04, 0.3, d); tone('square', 1800, 900, 0.03, 0.04, d); noise(3600, 6, 0.04, 0.3, d + 0.09); tone('square', 1700, 850, 0.03, 0.04, d + 0.09); },
+    lid: function (delay) { if (!on) return; noise(900, 0.8, 0.28, 0.12, delay || 0, 'bandpass', 2600, 0.05); },
+    // the reveal: good = a small value gone (cheer), bad = a big one gone (groan), mid = an "ooh"
+    cheer: function (big) {
+      if (!on) return;
+      noise(1400, 0.6, big ? 1.8 : 1.2, big ? 0.35 : 0.24, 0, 'bandpass', 1100, 0.08);
+      noise(2600, 0.9, big ? 1.6 : 1.0, 0.12, 0.05, 'bandpass', 2000, 0.1);
+      for (var i = 0; i < (big ? 6 : 3); i++) noise(5200 + Math.random() * 1500, 2.5, 0.08, 0.05, 0.1 + Math.random() * 0.8, 'bandpass');
+      tone('sine', 2200, 3000, 0.25, 0.03, 0.2); if (big) tone('sine', 2400, 3300, 0.3, 0.03, 0.7);
+      tone('triangle', 784, 0, 0.12, 0.08, 0); tone('triangle', 1046.5, 0, 0.25, 0.09, 0.09);
+    },
+    groan: function (big) {
+      if (!on) return;
+      // "aww": voiced buzz falling in pitch through two vowel formants
+      var a = ctx(); if (!a) return;
+      var t = a.currentTime, dur = big ? 1.4 : 1.0;
+      [0, 7, -5, 12].forEach(function (dt, k) {
+        var o = a.createOscillator(), f1 = a.createBiquadFilter(), f2 = a.createBiquadFilter(), g = a.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(180 + k * 23, t); o.frequency.exponentialRampToValueAtTime(95 + k * 10, t + dur); o.detune.value = dt * 3;
+        f1.type = 'bandpass'; f1.frequency.value = 700; f1.Q.value = 4; f2.type = 'bandpass'; f2.frequency.setValueAtTime(1100, t); f2.frequency.linearRampToValueAtTime(800, t + dur); f2.Q.value = 5;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(big ? 0.09 : 0.06, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+      });
+      noise(500, 0.7, dur, 0.06, 0, 'bandpass', 300, 0.1);
+      tone('triangle', 392, 370, 0.3, 0.06, 0.05); tone('triangle', 311.13, 293.66, 0.5, 0.06, 0.3);
+    },
+    ooh: function () { if (!on) return; tone('sine', 400, 520, 0.5, 0.05, 0, null, 0.1); noise(900, 1.5, 0.6, 0.06, 0, 'bandpass', 1200, 0.15); },
+    strike: function () { if (!on) return; tone('sine', 1568, 0, 0.12, 0.05); tone('sine', 2093, 0, 0.18, 0.04, 0.05); },
+    ring: function () { if (!on) return; ring(0); ring(1.35); },
+    drumroll: function (dur) {
+      if (!on) return; var d = dur || 1.6, n = Math.floor(d / 0.034);
+      for (var i = 0; i < n; i++) { var k = i / n; noise(2600, 0.9, 0.05, 0.05 + 0.2 * k * k, i * 0.034, 'bandpass'); }
+      noise(160, 1, 0.5, 0.4, d, 'lowpass'); tone('sine', 110, 50, 0.4, 0.3, d); // the cymbal-less "boom"
+    },
+    tick: function () { if (on) tone('sine', 90, 60, 0.12, 0.18); },
+    deal: function () { if (!on) return; tone('square', 220, 0, 0.08, 0.06); brass(523.25, 0.2, 0.12, 0.02); brass(659.25, 0.2, 0.12, 0.12); brass(783.99, 0.5, 0.14, 0.22); },
+    nodeal: function () { if (!on) return; tone('sawtooth', 160, 120, 0.25, 0.07); noise(300, 1, 0.25, 0.2, 0, 'lowpass'); },
+    sting: function () { if (!on) return; brass(466.16, 0.14, 0.12, 0); brass(587.33, 0.14, 0.12, 0.12); brass(698.46, 0.14, 0.12, 0.24); brass(932.33, 0.6, 0.14, 0.36); },
+    fanfare: function () {
+      if (!on) return;
+      [[523.25, 0], [659.25, 0.12], [783.99, 0.24], [1046.5, 0.36], [783.99, 0.6], [1046.5, 0.72]].forEach(function (n) { brass(n[0], 0.3, 0.12, n[1]); });
+      [523.25, 659.25, 783.99, 1046.5].forEach(function (f) { brass(f, 1.1, 0.07, 0.9); });
+      noise(6000, 0.6, 1.2, 0.08, 0.9, 'highpass', 0, 0.02);
+    },
+    sad: function () { if (!on) return; [[392, 0], [369.99, 0.3], [349.23, 0.6], [329.63, 0.9]].forEach(function (n) { brass(n[0], 0.4, 0.08, n[1]); }); },
+    swap: function () { if (!on) return; noise(1200, 1, 0.3, 0.15, 0, 'bandpass', 3000, 0.05); noise(3000, 1, 0.3, 0.15, 0.25, 'bandpass', 1200, 0.05); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Case Closed app: an evening game show in the ship's theatre. Pick a case, open the others round by round, and
+   after each round the Banker calls from his sky box with an offer: Deal or No deal. With two cases left: keep yours
+   or swap. Every move is decided in CL (logic.js) and saved BEFORE the page animates it, so a reload resumes exactly
+   (cases, what's open, the offers, the round, a pending offer). Saves: cases.game, cases.meta, cases.stats,
+   cases.hall, cases.settings. */
+(function () {
+  'use strict';
+  var S = CS;
+
+  // ================= storage =================
+  var store = Goobs.store('cases');
+  var settings = { sound: false, music: false, fast: false, pers: 'classic', adEvery: 2 };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); if (!CL.PERS[settings.pers]) settings.pers = 'classic'; })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { best: 0, bestMode: '', finished: 0, lastAdAt: 0, seen: {}, statsMode: 'classic', live: '' };
+  for (var mk in MD) if (meta[mk] === undefined || meta[mk] === null) meta[mk] = MD[mk];
+  if (typeof meta.seen !== 'object') meta.seen = {};
+  var stats = store.get('stats', null) || {};
+  ['classic', 'quick'].forEach(function (m) { var b = CL.blankStats(); if (typeof stats[m] !== 'object' || !stats[m]) stats[m] = {}; for (var k in b) if (typeof stats[m][k] !== 'number') stats[m][k] = b[k]; });
+  var hall = store.get('hall', null) || {};
+  ['classic', 'quick'].forEach(function (m) { if (!Array.isArray(hall[m])) hall[m] = []; });
+  var G = store.get('game', null);
+  if (G && !CL.valid(G)) G = null;
+  var preview = false; // true while the board behind the start card is only a picture (not saved)
+  function liveLine() {
+    if (!G || preview || G.phase === 'done') return '';
+    if (G.phase === 'pick') return 'Pick your case';
+    return (G.mode === 'quick' ? 'Quick game' : 'Game on') + ': round ' + (G.round + 1);
+  }
+  function commit() {
+    if (G && !preview) store.set('game', G);
+    meta.live = liveLine(); store.set('meta', meta);
+  }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  var money = CL.money;
+  function isOpen(id) { var e = $(id); return !!(e && e.classList.contains('show')); }
+  function sheetOpen() { return isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  var busyN = 0;
+  function busy() { return busyN > 0; }
+  function later(ms, fn) { return setTimeout(fn, settings.fast ? Math.min(ms, Math.max(60, ms * 0.35)) : ms); }
+  var toastT = 0;
+  function toast(t, ms) { var el = $('toast'); el.innerHTML = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, ms || 2400); }
+  // our host's line: shrinks to fit the bubble (never cut off)
+  function fitHost() { var p = $('hostText'); p.style.fontSize = ''; var fs = parseFloat(getComputedStyle(p).fontSize) || 13; while (p.scrollHeight > p.clientHeight + 1 && fs > 10) { fs -= 0.5; p.style.fontSize = fs + 'px'; } }
+  function say(html) { var p = $('hostText'); p.innerHTML = html; fitHost(); p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop'); }
+  function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+  function M() { return CL.MODES[G.mode]; }
+  function isBig(v) { return v >= CL.BIG; }
+  function stamp(text, no) { var d = document.createElement('div'); d.className = 'stamp' + (no ? ' no' : ''); d.textContent = text; document.body.appendChild(d); setTimeout(function () { d.style.transition = 'opacity .3s'; d.style.opacity = '0'; }, 900); setTimeout(function () { d.remove(); }, 1300); }
+  var stopConfetti = null;
+  function confetti(ms, n) { if (stopConfetti) stopConfetti(); stopConfetti = CA.confetti($('confetti'), ms || 3500, { n: n || 150 }); }
+
+  // ================= the board, the cases =================
+  var pending = {};      // cases opened in the game but not shown yet (their reveal is playing)
+  var replay = {};       // cases opened only in the "what if" replay
+  function shownOpen() { var o = {}; G.opened.forEach(function (i) { if (!pending[i]) o[i] = 1; }); for (var k in replay) o[k] = 1; return o; }
+  function outValues() {
+    var o = shownOpen(), out = {};
+    for (var i in o) out[G.values[i]] = 1;
+    if (G.phase === 'done' && G.result && revealedMine) out[G.values[G.mine]] = 1;
+    if (G.phase === 'done' && G.result && G.result.how !== 'deal' && revealedOther && G.otherCase >= 0) out[G.values[G.otherCase]] = 1;
+    return out;
+  }
+  var revealedMine = false, revealedOther = false;
+  function renderBoard(hit) {
+    var vals = M().values.slice().sort(function (a, b) { return a - b; }), half = vals.length / 2, out = outValues();
+    [['boardL', vals.slice(0, half)], ['boardR', vals.slice(half)]].forEach(function (c) {
+      var el = $(c[0]); el.innerHTML = '';
+      c[1].forEach(function (v) {
+        var d = document.createElement('div'); d.className = 'v ' + (isBig(v) ? 'hi' : 'lo') + (out[v] ? ' out' : '') + (hit === v ? ' hit' : '');
+        d.textContent = money(v); d.dataset.v = v; el.appendChild(d);
+      });
+    });
+  }
+  function renderCases() {
+    var box = $('cases'); box.innerHTML = ''; var o = shownOpen(), n = G.values.length;
+    var lastOther = G.phase === 'final' ? CL.lastOther(G) : -1;
+    for (var i = 0; i < n; i++) {
+      var b = document.createElement('button'); b.className = 'case'; b.id = 'case-' + (i + 1); b.dataset.i = i; b.setAttribute('aria-label', 'Case ' + (i + 1));
+      if (i === G.mine && G.phase !== 'pick') { b.classList.add('mine'); b.innerHTML = CA.caseSVG(i + 1); }
+      else if (o[i] || (G.phase === 'done' && revealedOther && i === G.otherCase)) { b.classList.add('opened'); b.innerHTML = CA.openSVG(CL.short(G.values[i]), isBig(G.values[i])); }
+      else { b.innerHTML = CA.caseSVG(i + 1); if (G.phase === 'pick' && !preview) b.classList.add('hint'); if (i === lastOther) b.classList.add('last'); }
+      box.appendChild(b);
+    }
+  }
+  function renderMyCase() {
+    var el = $('myCase');
+    if (G.phase === 'pick' || G.mine < 0) { el.innerHTML = '<small>Your case</small><div class="empty">?</div><div class="ped"></div>'; el.classList.remove('glow'); return; }
+    var opened = G.phase === 'done' && revealedMine;
+    el.innerHTML = '<small>Your case</small><div class="pcase">' + (opened ? CA.openSVG(CL.short(G.values[G.mine]), isBig(G.values[G.mine])) : CA.caseSVG(G.mine + 1, { mine: true })) + '</div><div class="ped"></div>';
+    el.classList.toggle('glow', G.phase === 'final');
+  }
+  function renderOffers(ghosts) {
+    var el = $('offers'), h = '<span class="lbl">Offers</span>';
+    if (!G.offers.length && !(ghosts && ghosts.length)) h += '<span class="none">' + (G.phase === 'pick' ? 'The Banker calls after every round' : 'The Banker calls after this round') + '</span>';
+    G.offers.forEach(function (o) {
+      var cls = o.ans === 'no' ? ' no' : o.ans === 'deal' ? ' yes' : '';
+      h += '<span class="of' + cls + '">' + CL.short(o.amount) + '</span>';
+    });
+    if (G.counter) h += '<span class="of' + (G.counter.ans === 'deal' ? ' yes' : G.counter.ans === 'no' ? ' no' : '') + '">↻ ' + CL.short(G.counter.amount) + '</span>';
+    (ghosts || []).forEach(function (a) { h += '<span class="of ghost">' + CL.short(a) + '?</span>'; });
+    el.innerHTML = h; el.scrollLeft = el.scrollWidth;
+  }
+  function renderActs() {
+    var el = $('acts'); el.innerHTML = '';
+    if (preview) { el.innerHTML = '<div class="status">Choose a show to start</div>'; return; }
+    if (G.phase === 'pick') { el.innerHTML = '<div class="status"><div>Tap a case to make it yours<small>It stays closed until the very end</small></div></div>'; return; }
+    if (G.phase === 'open') {
+      var ri = CL.roundInfo(G), dots = '';
+      for (var k = 0; k < ri.need; k++) dots += '<i class="' + (k < ri.done ? 'on' : '') + '"></i>';
+      el.innerHTML = '<div class="status"><div>Open ' + plural(ri.left, 'more case', 'more cases') + '<span class="dots">' + dots + '</span><small>Round ' + (G.round + 1) + ' of ' + ri.rounds + '</small></div></div>';
+      return;
+    }
+    if (G.phase === 'offer' || G.phase === 'counter') { el.innerHTML = '<div class="status">The Banker is on the line…</div>'; return; }
+    if (G.phase === 'final') {
+      var other = CL.lastOther(G);
+      var k1 = document.createElement('button'); k1.className = 'bigbtn keep'; k1.id = 'btnKeep'; k1.innerHTML = 'Keep case ' + (G.mine + 1) + '<small>The one you picked</small>';
+      var k2 = document.createElement('button'); k2.className = 'bigbtn swap'; k2.id = 'btnSwap'; k2.innerHTML = 'Swap for ' + (other + 1) + '<small>The last case on stage</small>';
+      k1.addEventListener('click', function () { decideFinal(false); }); k2.addEventListener('click', function () { decideFinal(true); });
+      el.appendChild(k1); el.appendChild(k2); return;
+    }
+    if (G.phase === 'done') {
+      if (replaying) { var sk = document.createElement('button'); sk.className = 'bigbtn plain'; sk.id = 'btnSkip'; sk.textContent = 'Skip to the end'; sk.addEventListener('click', function () { skipReplay = true; }); el.appendChild(sk); return; }
+      var a = document.createElement('button'); a.className = 'bigbtn keep'; a.id = 'btnAgain'; a.innerHTML = 'Play again<small>' + (G.mode === 'quick' ? 'Quick game' : 'Classic') + '</small>';
+      a.addEventListener('click', function () { newGameFlow(G.mode); });
+      var r = document.createElement('button'); r.className = 'bigbtn plain'; r.textContent = 'Results'; r.addEventListener('click', showEnd);
+      el.appendChild(r); el.appendChild(a);
+    }
+  }
+  function renderPill() {
+    var t;
+    if (preview) t = 'Case Closed';
+    else if (G.phase === 'pick') t = 'Pick your case';
+    else if (G.phase === 'open') { var ri = CL.roundInfo(G); t = 'Round ' + (G.round + 1) + ' · open ' + ri.left; }
+    else if (G.phase === 'offer' || G.phase === 'counter') t = 'Round ' + (G.round + 1) + ' · the Banker';
+    else if (G.phase === 'final') t = 'Keep or swap?';
+    else t = G.result ? 'Won ' + money(G.result.won) : 'Show over';
+    $('roundTxt').textContent = t;
+  }
+  function renderAll() { renderBoard(); renderCases(); renderMyCase(); renderOffers(replayGhosts); renderActs(); renderPill(); layout(); }
+
+  // the board either side, cases in the middle, as big as the space allows
+  function layout() {
+    var fl = $('floor'), W = fl.clientWidth, H = fl.clientHeight; if (!W || !H) return;
+    var n = G.values.length, rows = n / 2, gap = 3;
+    var rh = Math.max(14, Math.min(H > 700 ? 46 : H > 520 ? 40 : 34, (H - gap * (rows - 1)) / rows));
+    var fs = Math.min(rh * 0.56, (W * 0.24 - 14) / 6.1, 22); fs = Math.max(9.5, fs);
+    var bw = Math.min(170, Math.max(62, Math.round(fs * 6.1 + 16)));
+    var root = document.documentElement.style;
+    root.setProperty('--rh', rh.toFixed(1) + 'px'); root.setProperty('--vfs', fs.toFixed(1) + 'px'); root.setProperty('--bw', bw + 'px');
+    var aw = W - 2 * bw - 12, ah = H, cg = W > 600 ? 10 : 6, best = 0, bc = 3, score = 0;
+    for (var c = 2; c <= 8; c++) {
+      // the biggest cases that fit; two long columns look thin, so 3 or more get a small bonus
+      var r = Math.ceil(n / c), cw = Math.min((aw - (c - 1) * cg) / c, ((ah - (r - 1) * cg) / r) / 0.767), sc = cw * (c >= 3 ? 1.12 : 1);
+      if (sc > score) { score = sc; best = cw; bc = c; }
+    }
+    best = Math.min(124, Math.floor(best));
+    var cs = $('cases').style; cs.gridTemplateColumns = 'repeat(' + bc + ', ' + best + 'px)'; cs.setProperty('--cw', best + 'px'); cs.setProperty('--cg', cg + 'px');
+  }
+
+  // ================= playing =================
+  function tapCase(i) {
+    if (busy() || sheetOpen() || preview || isOpen('ovOffer') || isOpen('ovEnd') || isOpen('ovStart')) return;
+    if (G.phase === 'pick') {
+      if (!CL.pick(G, i)) return;
+      commit(); S.pick();
+      renderAll();
+      busyN++;
+      say('Case <b>' + (i + 1) + '</b> is yours! Not even the Banker knows what’s inside. Now open <b>' + M().rounds[0] + ' cases</b>.');
+      later(500, function () { busyN--; });
+      return;
+    }
+    if (G.phase !== 'open') return;
+    var before = CL.inPlayValues(G);
+    var res = CL.open(G, i); if (!res) return;
+    commit();
+    pending[i] = 1;
+    reveal(i, res.value, before, function () {
+      delete pending[i];
+      renderBoard(res.value); renderCases(); renderActs(); renderPill(); S.strike();
+      if (res.roundDone) bankerCall(false);
+    });
+  }
+  // how the crowd takes a value leaving the board
+  function feel(v, before) {
+    var ev = CL.mean(before), top = before[before.length - 1], low = before[0];
+    if (v === top && v >= 100000) return 'worst';
+    if (v >= ev && v >= 10000) return 'bad';
+    if (v === low || v < 1000 && v < ev / 10) return v === low ? 'best' : 'good';
+    if (v < ev / 3) return 'good';
+    return 'mid';
+  }
+  var LINES = {
+    worst: ['Oh no! <b>{v}</b>, the biggest one left, is gone.', 'The crowd groans. <b>{v}</b> was in case {n}.', 'Ouch! There goes <b>{v}</b>.'],
+    bad: ['That hurts: <b>{v}</b> off the board.', '<b>{v}</b>. The Banker is smiling up there.', 'Case {n} had <b>{v}</b>. Shake it off.'],
+    mid: ['<b>{v}</b>. Not bad, not great.', 'Case {n}: <b>{v}</b>. The show goes on.', '<b>{v}</b>. Right down the middle.'],
+    good: ['Only <b>{v}</b>! The crowd loves it.', '<b>{v}</b>. Lovely, a small one.', 'Case {n} had <b>{v}</b>. Keep that up!'],
+    best: ['<b>{v}</b>, the smallest one left! Perfect.', 'Yes! <b>{v}</b>. Couldn’t be better.', 'The tiniest one, <b>{v}</b>. Bravo!']
+  };
+  function line(kind, v, n) { var a = LINES[kind]; return a[Math.floor(Math.random() * a.length)].replace('{v}', money(v)).replace('{n}', n); }
+  function react(kind) {
+    if (kind === 'worst') S.groan(true); else if (kind === 'bad') S.groan(false);
+    else if (kind === 'best') S.cheer(true); else if (kind === 'good') S.cheer(false); else S.ooh();
+  }
+  // a case opens: up close (normal) or a quick flip in place (fast mode)
+  var opHurry = null;
+  function reveal(i, v, before, done) {
+    busyN++;
+    var kind = feel(v, before);
+    function finish() {
+      var ri = CL.roundInfo(G), tail = G.phase === 'open' && ri.left > 0 ? ' ' + plural(ri.left, 'more', 'more') + ' to go.' : '';
+      say(line(kind, v, i + 1) + tail);
+      busyN--; done();
+    }
+    if (settings.fast) {
+      var b = $('case-' + (i + 1)); if (b) { b.classList.add('flip'); }
+      S.latch(0); setTimeout(function () { react(kind); }, 120);
+      setTimeout(function () { if (b) b.classList.remove('flip'); finish(); }, 380);
+      return;
+    }
+    var op = $('opener'), t = [];
+    $('opLabel').textContent = 'Case ' + (i + 1);
+    $('bigInside').innerHTML = CA.bigInside(money(v), isBig(v));
+    $('bigLid').innerHTML = CA.bigLid(i + 1);
+    $('opValue').innerHTML = '';
+    op.className = 'opener show in';
+    var stage = 0;
+    function step(s) {
+      if (s <= stage) return; stage = s;
+      if (s === 1) { op.classList.add('latch'); S.latch(); }
+      if (s === 2) { op.classList.add('open'); S.lid(); $('opValue').innerHTML = money(v) + '<small>' + ({ worst: 'Ouch!', bad: 'Oh no…', mid: 'Hmm.', good: 'Nice!', best: 'Perfect!' })[kind] + '</small>'; }
+      if (s === 3) { op.classList.add(kind === 'good' || kind === 'best' ? 'good' : kind === 'mid' ? 'mid' : 'bad'); react(kind); }
+      if (s === 4) { op.className = 'opener'; opHurry = null; finish(); }
+    }
+    t.push(setTimeout(function () { step(1); }, 320));
+    t.push(setTimeout(function () { step(2); }, 650));
+    t.push(setTimeout(function () { step(3); }, 900));
+    t.push(setTimeout(function () { step(4); }, 2200));
+    opHurry = function () { t.forEach(clearTimeout); if (stage < 2) { step(1); step(2); step(3); } setTimeout(function () { step(4); }, 350); };
+  }
+  // the phone rings in the sky box, then the offer card
+  function bankerCall(resumed) {
+    busyN++;
+    renderActs(); renderPill();
+    var sky = $('skybox');
+    say(G.phase === 'counter' ? 'The phone again? The Banker <b>never</b> calls twice…' : 'The phone! <b>The Banker is calling…</b>');
+    sky.classList.add('ringing');
+    if (!resumed) S.ring(); else S.tick();
+    var ms = resumed ? 700 : settings.fast ? 900 : 2700;
+    setTimeout(function () {
+      sky.classList.remove('ringing'); sky.classList.add('talking');
+      busyN--; showOffer();
+    }, ms);
+  }
+  var countT = 0;
+  function showOffer() {
+    var counter = G.phase === 'counter', o = counter ? G.counter : CL.lastOffer(G), last = CL.lastOffer(G);
+    var card = $('ovOffer').querySelector('.offercard');
+    card.classList.toggle('counter', counter); card.classList.add('wait');
+    $('ofKicker').textContent = counter ? 'The Banker’s counter-offer' : 'The Banker’s offer';
+    var md = $('ofMood'); md.className = 'ofmood ' + (counter ? 'generous' : last.mood); md.textContent = counter ? 'One time only' : 'In a ' + last.mood + ' mood';
+    $('ofQuip').textContent = '“' + o.quip + '”';
+    var ev = CL.mean(CL.inPlayValues(G));
+    $('ofEv').innerHTML = 'Average of the ' + CL.inPlay(G).length + ' cases left: <b>' + money(ev) + '</b> · this offer is <b>' + Math.round(100 * o.amount / ev) + '%</b> of it';
+    var h = '';
+    G.offers.forEach(function (x, k) { h += '<span class="' + (k === G.offers.length - 1 && !counter ? 'now' : '') + '">R' + (x.r + 1) + ' ' + CL.short(x.amount) + '</span>'; });
+    if (counter) h += '<span class="now">↻ ' + CL.short(o.amount) + '</span>';
+    $('ofHist').innerHTML = G.offers.length > 1 || counter ? h : '';
+    $('ovOffer').classList.add('show');
+    var amt = $('ofAmt'), t0 = performance.now(), dur = settings.fast ? 250 : 900;
+    cancelAnimationFrame(countT);
+    (function tickUp(t) {
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), x = o.amount * e;
+      amt.textContent = k < 1 ? money(o.amount >= 100 ? Math.round(x / 10) * 10 : x) : money(o.amount);
+      if (k < 1) countT = requestAnimationFrame(tickUp); else { card.classList.remove('wait'); S.tick(); }
+    })(t0);
+    say(counter ? 'A counter-offer! He wants this done. <b>Deal… or not?</b>' : 'The Banker offers <b>' + money(o.amount) + '</b>. Deal… or not?');
+  }
+  function answerOffer(a) {
+    if (!isOpen('ovOffer') || $('ovOffer').querySelector('.offercard').classList.contains('wait') || busy()) return;
+    var amount = (G.phase === 'counter' ? G.counter : CL.lastOffer(G)).amount;
+    CL.answer(G, a);
+    if (a === 'deal') onFinish();
+    commit();
+    $('ovOffer').classList.remove('show'); $('skybox').classList.remove('talking');
+    if (a === 'deal') {
+      stamp('DEAL!'); S.deal();
+      if (G.result.won >= G.result.mine) confetti(2500, 90);
+      say('<b>Deal!</b> You sold case ' + (G.mine + 1) + ' for <b>' + money(amount) + '</b>. Now… what if?');
+      renderAll();
+      busyN++;
+      setTimeout(function () { busyN--; runWhatIf(); }, settings.fast ? 700 : 1600);
+      return;
+    }
+    stamp('NO DEAL', true); S.nodeal();
+    renderAll();
+    busyN++;
+    setTimeout(function () {
+      busyN--;
+      if (G.phase === 'counter') { bankerCall(false); return; }
+      if (G.phase === 'final') {
+        say('Two cases left: yours (<b>' + (G.mine + 1) + '</b>) and <b>case ' + (CL.lastOther(G) + 1) + '</b>. One holds ' + money(CL.inPlayValues(G)[0]) + ', the other ' + money(CL.inPlayValues(G)[1]) + '. <b>Keep or swap?</b>');
+        renderAll(); return;
+      }
+      var ri = CL.roundInfo(G);
+      say('No deal! Round <b>' + (G.round + 1) + '</b>: open <b>' + plural(ri.need, 'case', 'cases') + '</b>.');
+      renderAll();
+    }, settings.fast ? 500 : 1000);
+  }
+
+  // stats are counted once, the moment a show ends (saved with it)
+  var lastNewBest = false;
+  function onFinish() {
+    if (G.counted || !G.result) return;
+    var r = G.result;
+    stats[G.mode] = CL.applyStats(stats[G.mode], r);
+    var prevBest = hall[G.mode].length ? hall[G.mode][0].won : 0;
+    hall[G.mode] = CL.addHall(hall[G.mode], r, 10);
+    lastNewBest = r.won > prevBest && stats[G.mode].games > 1;
+    if (r.won > meta.best) { meta.best = r.won; meta.bestMode = G.mode; }
+    meta.finished++;
+    G.counted = true;
+    store.set('stats', stats); store.set('hall', hall);
+  }
+
+  // ================= the end: keep or swap, the "what if" replay, the big reveal =================
+  var replaying = false, skipReplay = false, replayGhosts = [];
+  function decideFinal(swap) {
+    if (busy() || G.phase !== 'final') return;
+    var res = CL.decide(G, swap); if (!res) return;
+    onFinish(); commit();
+    busyN++;
+    if (swap) { S.swap(); say('You swapped! <b>Case ' + (G.mine + 1) + '</b> is yours now.'); }
+    else { S.pick(); say('You keep <b>case ' + (G.mine + 1) + '</b>. Brave.'); }
+    renderAll();
+    var mc = $('myCase').querySelector('.pcase'); if (mc) mc.animate && mc.animate([{ transform: 'scale(1.25) rotate(-6deg)' }, { transform: 'none' }], { duration: 450, easing: 'ease-out' });
+    setTimeout(function () { busyN--; bigReveal(); }, settings.fast ? 400 : 1300);
+  }
+  function bigReveal() {
+    busyN++;
+    var v = G.values[G.mine], fin = function () {
+      revealedMine = true; renderAll();
+      var r = G.result, best = r.best;
+      if (r.how === 'deal') { busyN--; showEnd(); return; }
+      if (v >= 100000 || (best && v >= best)) { S.fanfare(); confetti(4200, v >= 500000 ? 220 : 150); }
+      else if (v < 1000) S.sad();
+      say('Case ' + (G.mine + 1) + ' held <b>' + money(v) + '</b>!' + (G.otherCase >= 0 ? ' The other case had ' + money(G.values[G.otherCase]) + '.' : ''));
+      setTimeout(function () { revealedOther = true; renderAll(); S.strike(); }, settings.fast ? 200 : 700);
+      setTimeout(function () { busyN--; showEnd(); }, settings.fast ? 900 : 2600);
+    };
+    say(G.result.how === 'deal' ? 'And your own case, number <b>' + (G.mine + 1) + '</b>, held…' : 'The moment of truth. <b>Case ' + (G.mine + 1) + '</b>…');
+    S.drumroll(settings.fast ? 0.5 : 1.7);
+    setTimeout(function () {
+      if (settings.fast) { S.latch(); fin(); return; }
+      var op = $('opener');
+      $('opLabel').textContent = 'Your case · ' + (G.mine + 1);
+      $('bigInside').innerHTML = CA.bigInside(money(v), isBig(v)); $('bigLid').innerHTML = CA.bigLid(G.mine + 1, true); $('opValue').innerHTML = '';
+      op.className = 'opener show in';
+      var t = [];
+      t.push(setTimeout(function () { op.classList.add('latch'); S.latch(); }, 250));
+      t.push(setTimeout(function () { op.classList.add('open'); S.lid(); $('opValue').innerHTML = money(v) + '<small>' + (G.result.how === 'deal' ? (G.result.won >= v ? 'You beat the Banker!' : 'The Banker got the better of you.') : 'is yours!') + '</small>'; }, 600));
+      t.push(setTimeout(function () { if (G.result.how === 'deal') { if (G.result.won >= v) S.cheer(true); else S.groan(v >= 100000); } }, 800));
+      t.push(setTimeout(function () { op.className = 'opener'; opHurry = null; fin(); }, 2600));
+      opHurry = function () { t.forEach(clearTimeout); op.classList.add('latch'); op.classList.add('open'); $('opValue').innerHTML = money(v); setTimeout(function () { op.className = 'opener'; opHurry = null; fin(); }, 350); };
+    }, settings.fast ? 500 : 1700);
+  }
+  // after a deal: the rest of the cases open round by round, with what the Banker would have offered
+  function runWhatIf() {
+    var W = G.whatif; if (!W) { bigReveal(); return; }
+    replaying = true; skipReplay = false; replay = {}; replayGhosts = []; busyN++;
+    renderActs();
+    var steps = W.steps, si = 0, ci = 0, gap = settings.fast ? 220 : 520;
+    say('Let’s see what would have happened if you’d said <b>no deal</b>…');
+    function done() {
+      replaying = false; busyN--;
+      steps.forEach(function (s) { s.cases.forEach(function (c) { replay[c] = 1; }); });
+      replayGhosts = steps.map(function (s) { return s.offer; });
+      renderAll(); bigReveal();
+    }
+    function next() {
+      if (skipReplay) { done(); return; }
+      if (si >= steps.length) { setTimeout(done, gap); return; }
+      var s = steps[si];
+      if (ci < s.cases.length) {
+        var c = s.cases[ci++]; replay[c] = 1;
+        var b = $('case-' + (c + 1)); if (b) { b.classList.add('flip'); }
+        setTimeout(function () { renderBoard(G.values[c]); renderCases(); S.strike(); }, 180);
+        setTimeout(next, gap);
+        return;
+      }
+      replayGhosts.push(s.offer); renderOffers(replayGhosts);
+      say('After round ' + (s.r + 1) + ' he’d have offered about <b>' + money(s.offer) + '</b>.');
+      si++; ci = 0;
+      setTimeout(next, settings.fast ? 600 : 1500);
+    }
+    setTimeout(next, settings.fast ? 300 : 1200);
+  }
+  function verdictDeal(r) {
+    var d = r.won - r.mine;
+    return d >= 0 ? '<span class="verdict good">Good deal! You beat your case by ' + money(d) + '</span>' : '<span class="verdict bad">The Banker won this one: your case had ' + money(-d) + ' more</span>';
+  }
+  function showEnd() {
+    if (!G || !G.result) return;
+    var r = G.result, best = r.refused.length ? Math.max.apply(null, r.refused) : 0, html, title;
+    if (r.how === 'deal') {
+      title = 'Deal!';
+      html = '<span class="big">' + money(r.won) + '</span>You sold case <b>' + (r.mineCase + 1) + '</b> to the Banker in round ' + (r.round + 1) + '. It held <b>' + money(r.mine) + '</b>.<br>' + verdictDeal(r);
+      if (G.whatif && G.whatif.steps.length) {
+        html += '<div class="wi"><div><b>What if you’d played on?</b></div>' + G.whatif.steps.map(function (s) { return '<div><span>After round ' + (s.r + 1) + '</span><b>' + money(s.offer) + '</b></div>'; }).join('') +
+          '<div><span>Your case</span><b>' + money(r.mine) + '</b></div></div>';
+      }
+    } else {
+      title = r.won >= 100000 ? 'Big winner!' : r.won >= 1000 ? 'You won!' : 'Case closed';
+      html = '<span class="big">' + money(r.won) + '</span>' + (r.how === 'swap' ? 'You swapped for case <b>' + (G.mine + 1) + '</b>.' : 'You kept case <b>' + (G.mine + 1) + '</b> all the way.') +
+        ' The other case had <b>' + money(r.other) + '</b>.<br>' +
+        (best ? (r.won >= best ? '<span class="verdict good">Better than his best offer (' + money(best) + ')</span>' : '<span class="verdict bad">His best offer was ' + money(best) + '</span>') : '');
+    }
+    if (lastNewBest && G.counted) html += '<br><span class="newbest">New best ' + (G.mode === 'quick' ? 'quick game' : 'show') + '!</span>';
+    html += '<div class="play">Play money only.</div>';
+    $('cardIcon').innerHTML = '<div class="endcase">' + CA.openSVG(CL.short(r.won), isBig(r.won)) + '</div>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    var other = G.mode === 'quick' ? 'classic' : 'quick';
+    [{ label: 'Play again', sub: G.mode === 'quick' ? 'Quick game · 16 cases' : 'Classic · 26 cases', red: true, go: function () { newGameFlow(G.mode); } },
+     { label: other === 'quick' ? 'Quick game' : 'Classic game', sub: other === 'quick' ? '16 cases · 3 minutes' : '26 cases · the full show', go: function () { newGameFlow(other); } },
+     { label: 'Look at the board', go: function () {} }].forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      if (b.sub) { var sm = document.createElement('small'); sm.textContent = b.sub; el.appendChild(sm); }
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<div class="endcase">' + CA.logo() + '</div>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+
+  // ================= starting a show =================
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.button(); } }, done); }
+  function adDue() { return Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished; }
+  function newGameFlow(mode) {
+    if (adDue()) { meta.lastAdAt = meta.finished; store.set('meta', meta); showAd(function () { startGame(mode); }); return; }
+    startGame(mode);
+  }
+  function startGame(mode, values) {
+    $('ovStart').classList.remove('show'); $('ovEnd').classList.remove('show');
+    G = CL.newGame(mode, settings.pers);
+    if (values) G.values = values.slice();
+    preview = false; pending = {}; replay = {}; replayGhosts = []; revealedMine = false; revealedOther = false; lastNewBest = false;
+    commit(); renderAll(); S.sting();
+    say('Welcome to <b>Case Closed</b>! One of these ' + M().cases + ' cases holds <b>' + money(M().values[M().values.length - 1]) + '</b>. Pick yours!');
+  }
+  function showStart() {
+    $('ovEnd').classList.remove('show');
+    $('startFine').innerHTML = 'Play money only: nothing to buy, nothing to cash. The Banker is <b>' + CL.PERS[settings.pers].name + '</b> (Settings). Cases are shuffled fairly and the Banker never knows what’s in yours.';
+    $('ovStart').classList.add('show');
+  }
+  function askNew() {
+    if (busy()) return;
+    var live = G && !preview && G.phase !== 'done' && !(G.phase === 'pick');
+    if (!live) { showStart(); return; }
+    showCard('Start a new show?', '<p>This show ends without a prize and isn’t counted.</p>', [
+      { label: 'New show', red: true, go: function () { store.del('game'); G = CL.newGame(G.mode, settings.pers); preview = true; pending = {}; replay = {}; replayGhosts = []; renderAll(); commit(); showStart(); } },
+      { label: 'Keep playing', go: function () {} }]);
+  }
+
+  // ================= sheets =================
+  function help() {
+    return '<div class="helpbody"><ol>' +
+      '<li><b>Pick your case.</b> It’s yours, closed, until the very end.</li>' +
+      '<li><b>Open the others</b>, a few each round: tap a case. Its value lights out on the board. Small values gone are good news; big ones gone hurt.</li>' +
+      '<li><b>The Banker calls</b> after every round with an offer to buy your case. <b>Deal</b> takes the money and ends the show (then you see what would have happened). <b>No deal</b> plays on.</li>' +
+      '<li><b>Two cases left:</b> keep yours or <b>swap</b> it for the last one on stage. Then the big reveal.</li></ol>' +
+      '<h3>The shows</h3><table><tr><th></th><th>Cases</th><th>Opened per round</th></tr>' +
+      '<tr><td>Classic</td><td>26 ($0.01 … $1,000,000)</td><td>6, 5, 4, 3, 2, 1, 1, 1, 1</td></tr>' +
+      '<tr><td>Quick</td><td>16 ($0.01 … $1,000,000)</td><td>5, 4, 3, 1, 1</td></tr></table>' +
+      '<h3>The Banker</h3><p class="note">He works from the average of the cases still in play, pays a small share of it early and close to all of it late, pays less when the board is risky (a few huge values among small ones), rounds to a nice number and has moods: stingy, fair or generous. He never knows what’s in your case. Very rarely, after you turn down a strong offer, he calls straight back with a counter-offer.</p>' +
+      '<p class="note">Settings: Fast mode (no close-ups), the Banker (Classic, Generous, Tough), sound and music. Play money only.</p></div>';
+  }
+  function openHelp() { $('helpBody').innerHTML = help(); $('ovHelp').classList.add('show'); }
+  function renderStats() {
+    var m = meta.statsMode === 'quick' ? 'quick' : 'classic', s = stats[m], h = hall[m];
+    $('statsMode').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.m === m); });
+    var tile = function (v, l) { return '<div class="tile"><b>' + v + '</b><span>' + l + '</span></div>'; };
+    var gp = CL.goodPct(s);
+    var html = '<div class="tiles">' + tile(s.games, 'Games') + tile(s.games ? CL.short(CL.average(s)) : '-', 'Average') + tile(s.games ? CL.short(s.best) : '-', 'Best') + '</div>' +
+      '<div class="tiles">' + tile(s.deals, 'Deals taken') + tile(s.refused, 'Offers refused') + tile(gp == null ? '-' : gp + '%', 'Good deals') + '</div>' +
+      '<div class="tiles">' + tile(s.biggestRefused ? CL.short(s.biggestRefused) : '-', 'Biggest refused') + tile(s.topInCase, 'Top prize in your case') + tile(s.swaps ? s.swapWins + '/' + s.swaps : '-', 'Swaps that paid') + '</div>' +
+      '<div class="statgroup">Hall of fame</div>';
+    if (!h.length) html += '<p class="helpbody note">No shows finished yet.</p>';
+    else html += '<ul class="hall">' + h.map(function (e, k) {
+      var how = e.how === 'deal' ? 'Deal in round ' + (e.round + 1) + ' (case had ' + CL.short(e.mine) + ')' : e.how === 'swap' ? 'Swapped and won' : 'Kept the case';
+      var d = new Date(e.date); return '<li class="' + (k === 0 ? 'first' : '') + '"><span class="n">' + (k + 1) + '</span><span class="a">' + money(e.won) + '</span><span class="h">' + how + ' · ' + (d.getMonth() + 1) + '/' + d.getDate() + '</span></li>';
+    }).join('') + '</ul>';
+    html += '<p class="helpbody note" style="text-align:center">“Good deals”: deals worth at least what your case held. Play money only.</p>';
+    $('statsBody').innerHTML = html;
+  }
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery === 1 ? '1 game' : settings.adEvery + ' games'; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function syncPers() { $('setPers').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === settings.pers); }); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+
+  // ================= start up =================
+  function init() {
+    Goobs.fullscreen({ overlay: true, menu: ['btnNew', 'btnStats', 'btnSettings'], icon: CA.logo(), title: 'Case Closed', info: function () {
+      if (!G || preview) return 'Play money only';
+      if (G.phase === 'done') return '<b>' + (G.mode === 'quick' ? 'Quick game' : 'Classic') + '</b> · won ' + money(G.result.won) + ' · play money';
+      return '<b>' + (G.mode === 'quick' ? 'Quick game' : 'Classic') + '</b> · round ' + (G.round + 1) + ' of ' + M().rounds.length + (G.mine >= 0 ? ' · your case ' + (G.mine + 1) : '') + ' · ' + CL.inPlay(G).length + ' cases in play · Banker: ' + CL.PERS[G.pers].name;
+    } });
+    Goobs.themePicker($('themes'));
+    $('topLogo').innerHTML = CA.logo(); $('startLogo').innerHTML = CA.logo();
+    $('hostAv').innerHTML = CA.host(); $('skybox').innerHTML = CA.banker(); $('ofBank').innerHTML = CA.banker();
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { commit(); Goobs.home(); });
+    $('cases').addEventListener('click', function (e) { var b = e.target.closest('.case'); if (b) tapCase(+b.dataset.i); });
+    $('opener').addEventListener('click', function () { if (opHurry) opHurry(); });
+    $('btnDeal').addEventListener('click', function () { answerOffer('deal'); });
+    $('btnNoDeal').addEventListener('click', function () { answerOffer('no'); });
+    $('skybox').addEventListener('click', function () { if (G && (G.phase === 'offer' || G.phase === 'counter') && !busy() && !isOpen('ovOffer')) showOffer(); else toast('The Banker only calls at the end of a round.'); });
+    $('btnClassic').addEventListener('click', function () { newGameFlow('classic'); });
+    $('btnQuick').addEventListener('click', function () { newGameFlow('quick'); });
+    $('btnNew').addEventListener('click', function () { setTimeout(askNew, 50); });
+    $('pillRound').addEventListener('click', openHelp);
+    $('btnHelp').addEventListener('click', openHelp);
+    sheet(null, 'ovHelp', 'btnCloseHelp');
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('statsMode').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; meta.statsMode = b.dataset.m; store.set('meta', meta); renderStats(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.button(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.button(); });
+    $('setMusic').checked = settings.music;
+    $('setMusic').addEventListener('change', function () { settings.music = this.checked; saveSettings(); S.setMusic(settings.music); });
+    $('setFast').checked = settings.fast;
+    $('setFast').addEventListener('change', function () { settings.fast = this.checked; saveSettings(); });
+    syncPers();
+    $('setPers').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; settings.pers = b.dataset.v; saveSettings(); syncPers(); if (G && !preview && G.phase !== 'done' && G.phase !== 'pick') toast('The ' + CL.PERS[settings.pers].name + ' Banker takes over from your next show.'); else if (G && !preview && G.phase === 'pick') { G.pers = settings.pers; commit(); } });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) { var ro = new ResizeObserver(function () { layout(); }); ro.observe($('floor')); }
+    window.addEventListener('resize', function () { layout(); fitHost(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) commit(); });
+    window.addEventListener('pagehide', commit);
+    syncSound(); syncAds(); if (settings.music) S.setMusic(true);
+
+    if (G) {
+      preview = false;
+      if (G.phase === 'done') { revealedMine = true; revealedOther = true; if (G.whatif) { G.whatif.steps.forEach(function (s) { s.cases.forEach(function (c) { replay[c] = 1; }); }); replayGhosts = G.whatif.steps.map(function (s) { return s.offer; }); } }
+      renderAll();
+      if (G.phase === 'pick') say('Welcome back! Pick the case you’ll take home tonight.');
+      else if (G.phase === 'open') { var ri = CL.roundInfo(G); say('Welcome back to <b>Case Closed</b>! Round ' + (G.round + 1) + ': open <b>' + plural(ri.left, 'more case', 'more cases') + '</b>.'); }
+      else if (G.phase === 'offer' || G.phase === 'counter') bankerCall(true);
+      else if (G.phase === 'final') say('Welcome back! Two cases left: yours (<b>' + (G.mine + 1) + '</b>) and <b>case ' + (CL.lastOther(G) + 1) + '</b>. <b>Keep or swap?</b>');
+      else { say('Last show: you won <b>' + money(G.result.won) + '</b>. Ready for another?'); setTimeout(showEnd, 200); }
+    } else {
+      G = CL.newGame('classic', settings.pers); preview = true;
+      renderAll();
+      say('Good evening! I’m <b>Vic Velvet</b>, and this is <b>Case Closed</b>, live in the ship’s theatre!');
+      showStart();
+    }
+    if (!meta.seen.help) { meta.seen.help = 1; store.set('meta', meta); }
+    commit();
+    window.__ckReady = true;
+    Goobs.markPlayed('cases');
+    Goobs.initUpdates({ beforeReload: commit, onVersions: function (v) { $('version').textContent = 'Case Closed ' + (v.cases || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  // hook for automated tests (players never reach it)
+  window.__cases = {
+    get G() { return G; }, meta: function () { return meta; }, stats: function () { return stats; }, hall: function () { return hall; }, settings: settings, CL: CL,
+    busy: function () { return busy() || replaying; }, phase: function () { return G && !preview ? G.phase : 'none'; }, preview: function () { return preview; },
+    start: function (mode, values) { startGame(mode, values); }, layout: layout,
+    setFast: function (v) { settings.fast = !!v; saveSettings(); $('setFast').checked = settings.fast; }
+  };
+  init();
+})();
+</script>
+</body>
+</html>

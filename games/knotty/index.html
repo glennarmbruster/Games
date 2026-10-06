@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Knotty can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__knReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#e6f5ff;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Knotty didn’t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('knotty.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__knReady) fail('It took too long to start.'); }, 8000);
+})();
+</script>
+<title>Knotty</title>
+<style>
+/* Knotty styles (themes, UI kit and ad cards come from /shared/goobs.css).
+   Full screen (kit overlay mode): the sky scene fills the phone edge to edge; the top row (back, Level and Moves
+   pills, sound, Menu) and the helper buttons float on it; the peg board is laid out in the free box between them. */
+.brand h1 { font-size: 22px; }
+html.gg-fs-over, html.gg-fs-over body { background: #8fd3ff; }
+.stagewrap { position: fixed; inset: 0; z-index: 0; }
+.stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; background: #a9defc; }
+.stage canvas { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.stage #bg { pointer-events: none; }
+.toast { position: absolute; z-index: 3; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.84); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+/* the top row pills: level (with a thin bar: ropes free) and moves */
+.pills { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; gap: 6px; }
+.pills .ggpill { position: relative; font-size: 17px; padding: 4px 13px 6px; line-height: 18px; min-width: 0; overflow: hidden; text-align: center; white-space: nowrap; }
+.pills button.ggpill { font-family: inherit; cursor: pointer; }
+.pills .ggpill small { display: block; font-size: 10px; line-height: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; opacity: .6; }
+.pills .ggpill i { font-style: normal; font-size: 13px; opacity: .6; }
+.pills .ggpill .bar { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(0,0,0,.1); overflow: hidden; }
+.pills .ggpill .bar b { display: block; height: 100%; width: 0; background: #3fae4a; border-radius: 2px; transition: width .4s; }
+.pills .ggpill.warn { background: #ffb020; color: #3a2400; }
+.pills .ggpill.out { background: #ef3b4f; color: #fff; }
+/* Restart / Undo / Hint float at the bottom, clear of the home bar */
+html.gg-fs-over .toolbar { position: fixed; z-index: 5; left: calc(env(safe-area-inset-left, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); width: auto; max-width: 480px; margin: 0 auto; }
+html.gg-fs-over .toolbar .tool { box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.93); color: #1b2130; border-color: transparent; }
+html.gg-fs-over .toolbar .tool:disabled { opacity: .55; }
+.tool { position: relative; }
+.tool .cnt { position: absolute; top: 4px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--gold); color: #3a2a00; font-style: normal; font-weight: 800; font-size: 12px; line-height: 20px; }
+.tool.red .cnt { background: #ffffff; color: var(--accent); }
+.cardicon svg { border-radius: 16px; }
+.card .btn small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
+.stars { display: flex; justify-content: center; gap: 6px; margin: 2px 0 4px; min-height: 0; }
+.stars:empty { display: none; }
+.stars svg { width: 40px; height: 40px; }
+.stars svg.on { animation: knStar .5s cubic-bezier(.3,1.6,.5,1) both; }
+.stars svg:nth-child(2) { animation-delay: .15s; transform: translateY(-6px); }
+.stars svg:nth-child(3) { animation-delay: .3s; }
+@keyframes knStar { from { transform: scale(0) rotate(-40deg); opacity: 0; } to { opacity: 1; } }
+.tippic { display: block; width: 240px; height: 120px; margin: 0 auto 6px; border-radius: 16px; background: linear-gradient(#a9defc, #e8f7ff); }
+.helplist canvas { display: block; margin: 6px 0 2px; border-radius: 12px; }
+.statsnote { color: var(--muted); text-align: center; margin: 4px 0 0; }
+html[data-theme="dark"] .tippic { background: linear-gradient(#1d2a4a, #33456e); }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="kn-logo" viewBox="0 0 100 100"><defs><linearGradient id="knbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#e3f6ff"/></linearGradient>
+<radialGradient id="knr" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ff9aa6"/><stop offset=".45" stop-color="#ef3b4f"/><stop offset="1" stop-color="#a5172a"/></radialGradient>
+<radialGradient id="knb" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#9cc6ff"/><stop offset=".45" stop-color="#2f74f0"/><stop offset="1" stop-color="#1a3f9c"/></radialGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#knbg)"/><rect x="11" y="11" width="78" height="78" rx="16" fill="#ffffff" opacity=".55"/>
+<g fill="#9aa7b6"><circle cx="24" cy="24" r="4"/><circle cx="50" cy="24" r="4"/><circle cx="76" cy="24" r="4"/><circle cx="24" cy="50" r="4"/><circle cx="50" cy="50" r="4"/><circle cx="76" cy="50" r="4"/><circle cx="24" cy="76" r="4"/><circle cx="50" cy="76" r="4"/><circle cx="76" cy="76" r="4"/></g>
+<path d="M24 76 Q52 56 76 24" stroke="#1a3f9c" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M24 76 Q52 56 76 24" stroke="#2f74f0" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="3 3"/>
+<path d="M24 24 Q46 52 76 76" stroke="#a5172a" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M24 24 Q46 52 76 76" stroke="#ef3b4f" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="3 3"/>
+<circle cx="24" cy="24" r="9" fill="url(#knr)"/><circle cx="76" cy="76" r="9" fill="url(#knr)"/><circle cx="24" cy="76" r="9" fill="url(#knb)"/><circle cx="76" cy="24" r="9" fill="url(#knb)"/>
+<g fill="#fff" opacity=".85"><circle cx="21" cy="21" r="2.6"/><circle cx="73" cy="73" r="2.6"/><circle cx="21" cy="73" r="2.6"/><circle cx="73" cy="21" r="2.6"/></g></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="currentColor" fill-opacity=".15"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#kn-logo"/></svg>
+      <h1>Knotty</h1>
+    </button>
+    <div class="pills"><button class="ggpill" id="pillLevel" aria-label="How to play">Level 1</button><div class="ggpill" id="pillMoves"></div></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="bg"></canvas>
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnRestart"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to play</span></button>
+    <button class="tool red" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-hint"/></svg><span>Hint</span><i class="cnt" id="hintCnt">3</i></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Knob symbols<small>A small white shape on every knob, so the colours are easy to tell apart (bright sun, colour blindness).</small></div>
+        <span class="switch"><input type="checkbox" id="setSymbols"><span></span></span></label>
+      <label class="row"><div>Sound<small>Rope creaks, plucks and twangs.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Music<small>A gentle plucked tune while you play.</small></div>
+        <span class="switch"><input type="checkbox" id="setMusic"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Knotty 0.1.0</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Knotty records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- A new twist: a one-line tip the first time it appears -->
+<div class="overlay center" id="ovTip">
+  <div class="card" role="dialog">
+    <canvas class="tippic" id="tipPic" width="240" height="120"></canvas>
+    <h2 id="tipTitle"></h2>
+    <p id="tipText"></p>
+    <div class="actions"><button class="btn red" id="btnTip">Got it</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <div class="stars" id="endStars"></div>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Knotty rules, solver and level maker (no DOM; runs in Node for tools/gen.js and tools/check.js).
+   A board is a set of pegs on a grid (one cluster, or several clusters side by side). Each rope has two knobs (its two
+   ends), each knob sits on its own peg; a peg holds at most one knob. A move: drag one knob to an EMPTY peg (the other
+   end stays put). Goal: no two ropes cross.
+   THE CROSSING RULE: a rope is the straight segment between its two pegs. Two ropes cross when the segments make a
+   real X, or when a knob of one rope TOUCHES the other rope: the knob's centre is closer than 0.38 peg spacings to the
+   other segment (the drawn knob radius 0.28 + half the drawn rope 0.10; exact integer test). That covers a rope
+   running over a peg that holds another rope's knob, a rope grazing a knob, and two ropes overlapping along a line.
+   Ropes never share a peg (one knob per peg). A rope may pass over an EMPTY peg; it only matters once a knob is put
+   there. The game draws ropes so that what you see follows this rule (app.js: a free rope's sag is only as deep as
+   it can be without touching another rope or knob; crossed ropes are drawn straight and taut).
+   Twists: a rope can have a LENGTH LIMIT (its knobs may be at most sqrt(lim) apart, squared board units), and a knob
+   can be PINNED (it never moves). Coordinates are integers: peg spacing 2, clusters 3 apart (1.5 spacings).
+   Level string: "spec|ropes|lims|pins"
+     spec  "w.h" (one cluster w x h) or "w.h.cx.cy" (cx x cy clusters of w x h)
+     ropes 2 chars per rope (peg index in ALPH), first knob then second knob (knob k of rope r = r*2 + k)
+     lims  one char per rope: '0' = no limit, else ALPH index = squared length limit
+     pins  one char per pinned knob (ALPH index of the knob)
+   Bank entry: [level string, minimum moves (proven by IDA*), crossings at start, solution as "kp kp ..."]. */
+var KN = (function () {
+  'use strict';
+  var ALPH = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_';
+  var SP = 2, GAP = 3, TOUCH = 0.38; // TOUCH: knob radius + half a rope, in peg spacings
+  function ai(c) { return ALPH.indexOf(c); }
+
+  // ---------------- boards ----------------
+  var boards = {};
+  function board(spec) {
+    if (boards[spec]) return boards[spec];
+    var p = spec.split('.').map(Number), w = p[0], h = p[1], cx = p[2] || 1, cy = p[3] || 1;
+    var cwU = (w - 1) * SP, chU = (h - 1) * SP, pts = [], cl = [];
+    for (var j = 0; j < cy; j++) for (var i = 0; i < cx; i++) {
+      var x0 = i * (cwU + GAP), y0 = j * (chU + GAP); cl.push({ x0: x0, y0: y0, x1: x0 + cwU, y1: y0 + chU });
+      for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) pts.push([x0 + x * SP, y0 + y * SP, cl.length - 1]);
+    }
+    pts.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+    var B = { spec: spec, w: w, h: h, cx: cx, cy: cy, n: pts.length, px: pts.map(function (q) { return q[0]; }), py: pts.map(function (q) { return q[1]; }),
+      pc: pts.map(function (q) { return q[2]; }), clusters: cl, W: cx * cwU + (cx - 1) * GAP, H: cy * chU + (cy - 1) * GAP };
+    var n = B.n; B.d2 = new Int32Array(n * n);
+    for (var a = 0; a < n; a++) for (var b = 0; b < n; b++) { var dx = B.px[a] - B.px[b], dy = B.py[a] - B.py[b]; B.d2[a * n + b] = dx * dx + dy * dy; }
+    boards[spec] = B; return B;
+  }
+
+  // ---------------- geometry: the crossing rule ----------------
+  function orient(ax, ay, bx, by, cx, cy) { var v = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax); return v > 0 ? 1 : v < 0 ? -1 : 0; }
+    // a knob at p touches rope ab: p lies within TOUCH of the segment, beside it (not past its ends).
+  // TOUCH^2 = 29/50 board units^2 (0.38 of a peg spacing) = knob radius (0.28) + half a rope (0.10) as drawn.
+  function touch(px, py, ax, ay, bx, by) {
+    var vx = bx - ax, vy = by - ay, wx = px - ax, wy = py - ay, dot = vx * wx + vy * wy, L2 = vx * vx + vy * vy;
+    if (dot <= 0 || dot >= L2) return false;
+    var cr = vx * wy - vy * wx; return 50 * cr * cr < 29 * L2;
+  }
+  // ropes ab and cd cross: a real X, or a knob of one touching the other rope (this also covers a rope running
+  // through a knob's peg and two ropes overlapping along one line). Knobs are never on the same peg.
+  function segX(ax, ay, bx, by, cx, cy, dx, dy) {
+    var o1 = orient(ax, ay, bx, by, cx, cy), o2 = orient(ax, ay, bx, by, dx, dy), o3 = orient(cx, cy, dx, dy, ax, ay), o4 = orient(cx, cy, dx, dy, bx, by);
+    if (o1 * o2 < 0 && o3 * o4 < 0) return true;
+    return touch(cx, cy, ax, ay, bx, by) || touch(dx, dy, ax, ay, bx, by) || touch(ax, ay, cx, cy, dx, dy) || touch(bx, by, cx, cy, dx, dy);
+  }
+  function ropesX(B, a, b, c, d) { var X = B.px, Y = B.py; return segX(X[a], Y[a], X[b], Y[b], X[c], Y[c], X[d], Y[d]); }
+  // crossing masks: m[r] has bit j set when ropes r and j cross
+  function masks(B, pos, R) {
+    var m = new Array(R).fill(0);
+    for (var r = 0; r < R; r++) for (var j = r + 1; j < R; j++) if (ropesX(B, pos[2 * r], pos[2 * r + 1], pos[2 * j], pos[2 * j + 1])) { m[r] |= 1 << j; m[j] |= 1 << r; }
+    return m;
+  }
+  function crossings(B, pos, R) { var m = masks(B, pos, R), c = 0; for (var r = 0; r < R; r++) c += popc(m[r]); return c / 2; }
+  function popc(x) { var c = 0; while (x) { x &= x - 1; c++; } return c; }
+
+  // vertex cover of the crossing graph: every crossing needs at least one of its two ropes moved, so the smallest set of
+  // ropes touching every crossing is a lower bound on the moves left (one move changes one rope)
+  function vcLeq(m, R, removed, k) {
+    var u = -1, best = -1, bd = 0, edges = 0;
+    for (var i = 0; i < R; i++) { if ((removed >> i) & 1) continue; var e = m[i] & ~removed; if (e) { var d = popc(e); edges += d; if (u < 0) u = i; if (d > bd) { bd = d; best = i; } } }
+    if (u < 0) return true;
+    if (k <= 0) return false;
+    edges /= 2;
+    if (edges > k * bd) return false;
+    if (bd > k) return vcLeq(m, R, removed | (1 << best), k - 1); // a rope with more crossings than k must be in it
+    var e2 = m[best] & ~removed, v = 0; while (!((e2 >> v) & 1)) v++;
+    // either 'best' is in the cover, or all its neighbours are
+    if (vcLeq(m, R, removed | (1 << best), k - 1)) return true;
+    var nb = m[best] & ~removed, cnt = popc(nb);
+    if (cnt > k) return false;
+    return vcLeq(m, R, removed | nb | (1 << best), k - cnt);
+  }
+  function vc(m, R) { for (var k = 0; ; k++) if (vcLeq(m, R, 0, k)) return k; }
+
+  // ---------------- level strings ----------------
+  function parse(str) {
+    var p = str.split('|'), B = board(p[0]), ro = p[1] || '', R = ro.length / 2, pos = [], lim = [], pins = [];
+    for (var i = 0; i < ro.length; i++) pos.push(ai(ro[i]));
+    for (var r = 0; r < R; r++) { var c = (p[2] || '')[r]; lim.push(c && c !== '0' ? ai(c) : 0); }
+    for (var q = 0; q < (p[3] || '').length; q++) pins.push(ai(p[3][q]));
+    return { spec: p[0], B: B, R: R, pos: pos, lim: lim, pins: pins };
+  }
+  function serial(spec, pos, lim, pins) {
+    return spec + '|' + pos.map(function (x) { return ALPH[x]; }).join('') + '|' + lim.map(function (l) { return l ? ALPH[l] : '0'; }).join('') + '|' +
+      pins.slice().sort(function (a, b) { return a - b; }).map(function (k) { return ALPH[k]; }).join('');
+  }
+  function wellFormed(str) {
+    var L; try { L = parse(str); } catch (e) { return 'unreadable'; }
+    if (!(L.R >= 2 && L.R <= 12) || L.pos.length !== L.R * 2) return 'rope count';
+    var seen = {};
+    for (var k = 0; k < L.pos.length; k++) { var p = L.pos[k]; if (!(p >= 0 && p < L.B.n)) return 'peg out of range'; if (seen[p]) return 'two knobs on one peg'; seen[p] = 1; }
+    for (var r = 0; r < L.R; r++) if (L.lim[r] && L.B.d2[L.pos[2 * r] * L.B.n + L.pos[2 * r + 1]] > L.lim[r]) return 'rope longer than its limit';
+    for (var i = 0; i < L.pins.length; i++) if (!(L.pins[i] >= 0 && L.pins[i] < L.R * 2)) return 'bad pin';
+    if (L.pos.length >= L.B.n) return 'no empty peg';
+    return '';
+  }
+
+  // ---------------- a game in progress ----------------
+  // g: { str, spec, R, pos (knob -> peg), lim, pins, used (moves on the board), hist [[knob, from, to]], z (rope draw
+  //      order, bottom first), hints (used), limit (0 = none), base, conts }
+  function create(entry, o) {
+    o = o || {}; var str = typeof entry === 'string' ? entry : entry[0], L = parse(str);
+    var g = { str: str, spec: L.spec, R: L.R, pos: L.pos.slice(), lim: L.lim, pins: L.pins, used: 0, hist: [], z: [], hints: 0,
+      limit: o.limit || 0, base: o.limit || 0, conts: 0, best: typeof entry === 'string' ? 0 : entry[1] };
+    for (var r = 0; r < L.R; r++) g.z.push(r);
+    return g;
+  }
+  function B_(g) { return board(g.spec); }
+  function pinned(g, k) { return g.pins.indexOf(k) >= 0; }
+  function occ(g) { var o = {}; for (var k = 0; k < g.pos.length; k++) o[g.pos[k]] = k; return o; }
+  function knobAt(g, p) { var i = g.pos.indexOf(p); return i; }
+  function reach(g, k, p) { var r = k >> 1, l = g.lim[r]; if (!l) return true; var B = B_(g); return B.d2[g.pos[k ^ 1] * B.n + p] <= l; }
+  // why a knob can't go to a peg ('' = it can)
+  function canMove(g, k, p) {
+    if (!(k >= 0 && k < g.pos.length)) return 'knob';
+    if (pinned(g, k)) return 'pinned';
+    if (!(p >= 0 && p < B_(g).n)) return 'peg';
+    if (g.pos[k] === p) return 'same';
+    if (knobAt(g, p) >= 0) return 'taken';
+    if (!reach(g, k, p)) return 'far';
+    if (g.limit && g.used >= g.limit) return 'limit';
+    return '';
+  }
+  function move(g, k, p) {
+    if (canMove(g, k, p)) return false;
+    var from = g.pos[k]; g.pos[k] = p; g.used++; g.hist.push([k, from, p]);
+    var r = k >> 1, zi = g.z.indexOf(r); if (zi >= 0) g.z.splice(zi, 1); g.z.push(r);
+    return true;
+  }
+  function undo(g) { var h = g.hist.pop(); if (!h) return null; g.pos[h[0]] = h[1]; g.used = Math.max(0, g.used - 1); return h; }
+  function restart(g) { var L = parse(g.str); g.pos = L.pos.slice(); g.used = 0; g.hist = []; g.hints = 0; g.limit = g.base; g.conts = 0; g.z = []; for (var r = 0; r < g.R; r++) g.z.push(r); }
+  function crossMasks(g) { return masks(B_(g), g.pos, g.R); }
+  function solved(g) { return crossMasks(g).every(function (x) { return !x; }); }
+  function limitFor(m, n) { return n >= 100 ? m + Math.max(3, Math.ceil(m * 0.35)) : m + Math.max(3, Math.ceil(m * 0.5)); }
+  function bonusFor(limit) { return Math.max(4, Math.ceil(limit * 0.3)); }
+  function movesLeft(g) { return g.limit ? g.limit - g.used : Infinity; }
+  function outOfMoves(g) { return !!g.limit && g.used >= g.limit && !solved(g); }
+  function addMoves(g) { var b = bonusFor(g.base || g.limit); g.limit += b; g.conts++; return b; }
+  // stars: 3 at or under the level's best, 2 within half again (at least +2), else 1; each hint takes one off (min 1)
+  function stars(best, used, hints) { var s = used <= best ? 3 : used <= best + Math.max(2, Math.ceil(best * 0.5)) ? 2 : 1; return Math.max(1, s - (hints || 0)); }
+
+  // ---------------- solver: IDA* over knob positions ----------------
+  // h = vertex cover of the crossing graph (admissible). Pruning: never the same knob twice in a row; two independent
+  // moves in a row (different ropes, the second not using the peg the first freed) only in one order; when a node is
+  // tight (g + h = bound) only ropes whose removal lowers the cover may move (a move changes one rope's crossings, so
+  // the cover drops by at most one, and only if some minimum cover holds that rope); a table of visited states (keyed
+  // with the last move too, so the move order rule can't hide a path).
+  // Returns { moves: [[knob, peg], ...], exact: true } or null when the node budget runs out (or, with opt.proveNone,
+  // { moves: null, none: true } when the complete search finds no solution within opt.maxDepth).
+  function solveState(spec, pos0, lim, pins, opt) {
+    opt = opt || {};
+    var B = board(spec), n = B.n, d2 = B.d2, R = pos0.length / 2, K = R * 2, pos = pos0.slice(), X = B.px, Y = B.py;
+    var occ = new Int16Array(n).fill(-1); for (var k = 0; k < K; k++) occ[pos[k]] = k;
+    var pin = new Uint8Array(K); (pins || []).forEach(function (q) { pin[q] = 1; });
+    var m = masks(B, pos, R), maxNodes = opt.maxNodes || 2e6, maxDepth = opt.maxDepth !== undefined ? opt.maxDepth : 40, nodes = 0, path = [], seen = new Map(), out = false;
+    function rowFor(r) { return rowOf(B, pos, R, r); }
+    function setRow(r, row) { var old = m[r]; m[r] = row; var diff = old ^ row; for (var j = 0; j < R; j++) if ((diff >> j) & 1) m[j] ^= 1 << r; }
+    function key() { var s = ''; for (var r = 0; r < R; r++) { var a = pos[2 * r], b = pos[2 * r + 1]; s += a < b ? String.fromCharCode(a + 48, b + 48) : String.fromCharCode(b + 48, a + 48); } return s; }
+    function dfs(gd, bound, lastK, lastFrom) {
+      if (++nodes > maxNodes) { out = true; return false; }
+      var b = bound - gd, any = false;
+      for (var r0 = 0; r0 < R; r0++) if (m[r0]) { any = true; break; }
+      if (!any) return true;
+      if (b <= 0) return false;
+      var ky = key() + String.fromCharCode(lastK + 49, lastFrom + 49), sv = seen.get(ky); // the move order rule depends on the last move
+      if (sv !== undefined && sv <= gd) return false;
+      seen.set(ky, gd);
+      var tight = !vcLeq(m, R, 0, b - 1), allow = 0;
+      for (var r = 0; r < R; r++) if (!tight || vcLeq(m, R, 1 << r, b - 1)) allow |= 1 << r;
+      for (var k2 = 0; k2 < K; k2++) {
+        var rr = k2 >> 1;
+        if (!((allow >> rr) & 1) || pin[k2] || k2 === lastK) continue;
+        var from = pos[k2], other = pos[k2 ^ 1], l = lim[rr], indep = lastK >= 0 && (lastK >> 1) !== rr;
+        for (var p = 0; p < n; p++) {
+          if (occ[p] >= 0) continue;
+          if (l && d2[other * n + p] > l) continue;
+          if (indep && k2 < lastK && p !== lastFrom) continue; // the same two moves the other way round are tried
+          pos[k2] = p; occ[from] = -1; occ[p] = k2;
+          var old = m[rr]; setRow(rr, rowFor(rr));
+          if (vcLeq(m, R, 0, b - 1)) {
+            path.push([k2, p]);
+            if (dfs(gd + 1, bound, k2, from)) return true;
+            path.pop();
+          }
+          setRow(rr, old); pos[k2] = from; occ[p] = -1; occ[from] = k2;
+          if (out) return false;
+        }
+      }
+      return false;
+    }
+    var h0 = vc(m, R);
+    for (var bound = h0; bound <= maxDepth; bound++) {
+      seen.clear();
+      if (dfs(0, bound, -1, -1)) return { moves: path.slice(), exact: true, nodes: nodes };
+      if (out) return null;
+    }
+    return opt.proveNone ? { moves: null, none: true, nodes: nodes } : null; // no solution within maxDepth (complete search)
+  }
+  function solveGame(g, opt) { return solveState(g.spec, g.pos, g.lim, g.pins, opt); }
+  // a quick (not shortest) solution when the exact search is too big: greedy descent on (cover, crossings) with a
+  // little noise on later tries, never revisiting a state. Used by Hint (fallback) and for made levels the exact
+  // search can't finish (their best is then this length, a bound).
+  function rowOf(B, pos, R, r) {
+    var X = B.px, Y = B.py, a = pos[2 * r], b = pos[2 * r + 1], row = 0;
+    for (var j = 0; j < R; j++) { if (j === r) continue; var c = pos[2 * j], d = pos[2 * j + 1]; if (segX(X[a], Y[a], X[b], Y[b], X[c], Y[c], X[d], Y[d])) row |= 1 << j; }
+    return row;
+  }
+  function quickSolve(spec, pos0, lim, pins, seed, maxSteps) {
+    var B = board(spec), n = B.n, R = pos0.length / 2, K = R * 2, rnd = rng(seed || 1), pin = {}, best = null; (pins || []).forEach(function (q) { pin[q] = 1; });
+    for (var tries = 0; tries < 4; tries++) {
+      var pos = pos0.slice(), path = [], seen = {}, m = masks(B, pos, R); seen[pos.join(',')] = 1;
+      for (var s = 0; s < (maxSteps || 40); s++) {
+        if (m.every(function (x) { return !x; })) break;
+        var occ = {}; pos.forEach(function (p, k) { occ[p] = k; });
+        var bestV = 1e9, mv = null;
+        for (var k = 0; k < K; k++) {
+          if (pin[k]) continue; var r = k >> 1, l = lim[r], from = pos[k], old = m[r];
+          for (var p = 0; p < n; p++) {
+            if (occ[p] !== undefined || (l && B.d2[pos[k ^ 1] * n + p] > l)) continue;
+            pos[k] = p;
+            if (!seen[pos.join(',')]) {
+              var row = rowOf(B, pos, R, r), mm = m.slice(), diff = old ^ row; mm[r] = row; for (var j = 0; j < R; j++) if ((diff >> j) & 1) mm[j] ^= 1 << r;
+              var v = vc(mm, R) * 100 + crossingsM(mm, R) * 3 + rnd() * (tries ? 40 : 1);
+              if (v < bestV) { bestV = v; mv = [k, p, mm]; }
+            }
+            pos[k] = from;
+          }
+        }
+        if (!mv) break;
+        pos[mv[0]] = mv[1]; m = mv[2]; seen[pos.join(',')] = 1; path.push([mv[0], mv[1]]);
+      }
+      if (m.every(function (x) { return !x; }) && (!best || path.length < best.length)) best = path;
+    }
+    return best;
+  }
+  function crossingsM(m, R) { var c = 0; for (var r = 0; r < R; r++) c += popc(m[r]); return c / 2; }
+
+  // ---------------- level maker ----------------
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  // the difficulty curve. Returns { spec, R, nLim, nPin, target: [lo, hi] min moves, scr: scramble steps, maxLen2,
+  //   moveLimit: bool, breather, intro }
+  var INTRO = { 6: 'limit', 12: 'pin', 20: 'clusters', 30: 'movelimit' };
+  function recipe(n) {
+    var r = rng(n * 7919 + 13); r(); r();
+    var breather = n > 10 && n % 10 === 5, intro = INTRO[n] || '';
+    var c = { n: n, nLim: 0, nPin: 0, moveLimit: n >= 30, breather: breather, intro: intro, maxLen2: 32 };
+    if (n === 1) { c.spec = '3.4'; c.R = 2; c.target = [1, 1]; return c; }
+    if (n === 2) { c.spec = '4.4'; c.R = 3; c.target = [2, 2]; return c; }
+    if (n === 3) { c.spec = '4.5'; c.R = 5; c.target = [4, 4]; return c; }
+    if (n <= 5) { c.spec = n === 5 ? '4.6' : '4.5'; c.R = n === 5 ? 6 : 5; c.target = [4, n === 5 ? 5 : 4]; return c; }
+    // tiers: ropes and boards grow; empty pegs get fewer
+    var T = [
+      // up to level: [boards], ropes [lo, hi], minimum moves [lo, hi]
+      [11, ['4.6', '5.5'], [6, 7], [4, 6]],
+      [19, ['4.6', '5.6', '5.5'], [7, 7], [5, 6]],
+      [29, ['5.6', '4.7', '3.4.1.2', '4.3.1.2'], [7, 8], [5, 7]],
+      [49, ['5.6', '5.7', '3.3.2.2', '4.3.1.2', '3.4.1.2'], [8, 9], [6, 7]],
+      [79, ['5.7', '6.6', '3.3.2.2', '4.4.1.2'], [9, 10], [6, 8]],
+      [129, ['6.6', '5.7', '3.4.2.2', '4.4.1.2', '3.3.2.2'], [10, 11], [7, 8]],
+      [199, ['6.7', '5.7', '3.4.2.2', '4.4.2.2', '4.4.1.2'], [10, 12], [7, 9]],
+      [1e9, ['6.7', '5.8', '3.4.2.2', '4.4.2.2', '4.5.1.2'], [11, 12], [8, 10]]
+    ];
+    var t = T[0]; for (var i = 0; i < T.length; i++) if (n <= T[i][0]) { t = T[i]; break; }
+    var specs = t[1].filter(function (s) { return n >= 20 || s.split('.').length === 2; });
+    if (intro === 'clusters') specs = ['3.4.1.2'];
+    c.spec = specs[Math.floor(r() * specs.length)];
+    c.R = t[2][0] + Math.floor(r() * (t[2][1] - t[2][0] + 1));
+    c.target = t[3].slice();
+    // never more than 2/3 of the pegs used by knobs
+    var B = board(c.spec); c.R = Math.min(c.R, Math.floor(B.n * 0.66 / 2));
+    if (n >= 6) c.nLim = intro === 'limit' ? 2 : n < 12 ? (r() < 0.6 ? 1 + Math.floor(r() * 2) : 0) : Math.floor(r() * (2 + Math.min(3, n / 40)));
+    if (n >= 12) c.nPin = intro === 'pin' ? 2 : intro ? 0 : (r() < 0.55 ? 1 + Math.floor(r() * (n < 60 ? 2 : 3)) : 0);
+    if (intro === 'pin') c.nLim = 0;
+    if (intro === 'clusters') { c.nLim = 0; c.nPin = 0; }
+    if (breather) { c.R = Math.max(5, c.R - 3); c.target = [Math.max(3, c.target[0] - 3), Math.max(4, c.target[1] - 3)]; c.nPin = 0; c.nLim = Math.min(1, c.nLim); }
+    if (intro) { c.R = Math.max(6, c.R - 1); c.target = [Math.max(4, c.target[0] - 1), Math.max(5, c.target[1] - 1)]; }
+    c.tierPos = 0; for (var q = 0; q < T.length; q++) if (n <= T[q][0]) { var lo0 = q ? T[q - 1][0] + 1 : 6; c.tierPos = Math.min(1, (n - lo0) / Math.max(1, Math.min(T[q][0], 400) - lo0)); break; }
+    c.target = [Math.min(c.target[0], c.R - 2), Math.min(c.target[1], c.R - 1)];
+    if (B.cx * B.cy > 1) c.maxLen2 = 80; // ropes reach across to the next cluster
+    return c;
+  }
+  // a crossing-free layout, then a scramble by random legal moves (preferring ones that add crossings)
+  function generate(c, rnd) {
+    var B = board(c.spec), n = B.n, R = c.R, K = 2 * R;
+    if (K >= n) return null;
+    var lim = new Array(R).fill(0), LIMS = [8, 16, 20];
+    var limRopes = []; while (limRopes.length < c.nLim) { var q = Math.floor(rnd() * R); if (limRopes.indexOf(q) < 0) limRopes.push(q); }
+    limRopes.forEach(function (q) { lim[q] = LIMS[Math.floor(rnd() * LIMS.length)]; });
+    var pos = null;
+    for (var att = 0; att < 60 && !pos; att++) {
+      var ps = [], occ = new Int16Array(n).fill(-1), okAll = true;
+      for (var r = 0; r < R && okAll; r++) {
+        var placed = false;
+        for (var t = 0; t < 300 && !placed; t++) {
+          var a = Math.floor(rnd() * n), b = Math.floor(rnd() * n);
+          if (a === b || occ[a] >= 0 || occ[b] >= 0) continue;
+          var dd = B.d2[a * n + b], L = lim[r] || c.maxLen2; if (dd > L) continue;
+          if (!lim[r] && dd < 8 && rnd() < 0.6) continue; // fewer tiny ropes
+          var bad = false; for (var j = 0; j < r && !bad; j++) if (ropesX(B, a, b, ps[2 * j], ps[2 * j + 1])) bad = true;
+          if (bad) continue;
+          ps.push(a, b); occ[a] = 2 * r; occ[b] = 2 * r + 1; placed = true;
+        }
+        if (!placed) okAll = false;
+      }
+      if (okAll) pos = ps;
+    }
+    if (!pos) return null;
+    var pins = [];
+    while (pins.length < c.nPin) { var kq = Math.floor(rnd() * K); if (pins.indexOf(kq) < 0 && pins.indexOf(kq ^ 1) < 0) pins.push(kq); }
+    // scramble
+    var steps = c.target[1] * 2 + 2 + Math.floor(rnd() * 4), last = -1, cur = pos.slice();
+    for (var s = 0; s < steps; s++) {
+      var opts = [], o2 = {}, m0 = masks(B, cur, R); cur.forEach(function (p, k) { o2[p] = k; });
+      for (var k = 0; k < K; k++) {
+        if (k === last || pins.indexOf(k) >= 0) continue;
+        for (var p = 0; p < n; p++) {
+          if (o2[p] !== undefined) continue;
+          if (lim[k >> 1] && B.d2[cur[k ^ 1] * n + p] > lim[k >> 1]) continue;
+          if (!lim[k >> 1] && B.d2[cur[k ^ 1] * n + p] > c.maxLen2 + 20) continue;
+          var from = cur[k]; cur[k] = p; var rr = k >> 1, row = rowOf(B, cur, R, rr), mm = m0.slice(), df = m0[rr] ^ row; mm[rr] = row; for (var jj = 0; jj < R; jj++) if ((df >> jj) & 1) mm[jj] ^= 1 << rr; var cr = vc(mm, R) * 8 + crossingsM(mm, R); cur[k] = from;
+          opts.push([k, p, cr]);
+        }
+      }
+      if (!opts.length) break;
+      opts.sort(function (x, y) { return y[2] - x[2]; });
+      var pick = opts[Math.floor(Math.pow(rnd(), 2.2) * Math.min(opts.length, 40))];
+      cur[pick[0]] = pick[1]; last = pick[0];
+    }
+    if (crossings(B, cur, R) === 0) return null;
+    return serial(c.spec, cur, lim, pins);
+  }
+  function entry(str, sol) {
+    var L = parse(str);
+    return [str, sol.moves.length, crossings(L.B, L.pos, L.R), sol.moves.map(function (m) { return ALPH[m[0]] + ALPH[m[1]]; }).join('')];
+  }
+  function solOf(e) { var s = e[3] || '', out = []; for (var i = 0; i + 1 < s.length; i += 2) out.push([ai(s[i]), ai(s[i + 1])]); return out; }
+  // levels past the bank: made on the phone from the level number (same level every time; budgets are node counts)
+  // levels past the bank: made on the phone from the level number (the same level every time: budgets are node counts,
+  // not time). The first candidate whose minimum the exact search proves inside its budget and that is on the curve;
+  // if none in 30 tries (rare), the best on-curve candidate by a quick solution (its best is then a bound, exact = 0).
+  function levelBeyond(n) {
+    var rc = recipe(n), r = rng(n * 2654435761 + 97), fall = null;
+    for (var i = 0; i < 30; i++) {
+      var s = generate(rc, r); if (!s) continue;
+      var L = parse(s), sol = solveState(L.spec, L.pos, L.lim, L.pins, { maxNodes: 8000, maxDepth: rc.target[1] });
+      if (sol && sol.moves.length >= rc.target[0]) return entry(s, sol);
+      if (!sol && !fall) { var q = quickSolve(L.spec, L.pos, L.lim, L.pins, n, 40); if (q && q.length >= rc.target[0]) fall = [s, q]; }
+    }
+    if (fall) { var e = entry(fall[0], { moves: fall[1] }); e.push(0); return e; }
+    for (var j = 0; j < 400; j++) { var s2 = generate(rc, r); if (!s2) continue; var L2 = parse(s2), sol2 = solveState(L2.spec, L2.pos, L2.lim, L2.pins, { maxNodes: 8000 }); if (sol2 && sol2.moves.length) return entry(s2, sol2); }
+    return BANK[(n - 1) % BANK.length];
+  }
+  var BANK = [];
+  var api = { ALPH: ALPH, SP: SP, GAP: GAP, TOUCH: TOUCH, touch: touch, board: board, segX: segX, ropesX: ropesX, masks: masks, crossings: crossings, vc: vc, vcLeq: vcLeq,
+    parse: parse, serial: serial, wellFormed: wellFormed, create: create, pinned: pinned, knobAt: knobAt, reach: reach, canMove: canMove, move: move,
+    undo: undo, restart: restart, crossMasks: crossMasks, solved: solved, limitFor: limitFor, bonusFor: bonusFor, movesLeft: movesLeft,
+    outOfMoves: outOfMoves, addMoves: addMoves, stars: stars, solveState: solveState, solveGame: solveGame, quickSolve: quickSolve, rng: rng,
+    INTRO: INTRO, recipe: recipe, generate: generate, entry: entry, solOf: solOf, levelBeyond: levelBeyond,
+    setBank: function (b) { BANK = b; api.BANK = b; }, BANK: BANK };
+  return api;
+})();
+if (typeof module !== 'undefined') module.exports = KN;
+// the banked levels ([level string, minimum moves, crossings at start, solution]; tools/gen.js writes this line)
+KN.setBank(/*BANK*/[["3.4|1937|00|",1,1,"06"],["4.4|3016c2|000|",2,3,"0423"],["4.5|4f6ha1j58b|00000|",4,10,"0220699c"],["4.5|7h5j2e34df|00000|",4,8,"002i778b"],["4.6|5eal4fn9cb83|000000|",4,12,"0g2h4i67"],["5.5|egf16j8m57hn|0000gg|",4,8,"00226f83"],["4.6|d2i6n9lefk1a|00000k|",4,10,"03274065"],["4.6|4i9malce12gf|000080|",4,10,"032j70ab"],["5.5|l8c391e67mdh|0k0008|",4,11,"04406285"],["4.6|e1labci49jh7nd|0000000|",5,18,"00224568a3"],["5.5|8f7i1hd0ec56|0k0008|",4,11,"032j4g61"],["4.6|kae2068mbg75|000000|36",4,8,"032174a9"],["5.6|rb6n2c75lhipa8|0000k00|04",5,12,"132450abdf"],["5.5|aidkjghe178nco|0000800|",5,15,"09b26nd05o"],["5.6|knrolqtmpi|00000|",3,6,"002195"],["5.6|m5dbf7a86hc0g2|0000000|24",5,19,"315k648ec3"],["5.5|8aebd7l6g3c91h|0000000|b",5,17,"002f7i82a4"],["4.6|h67a1f5i8b3dk9|0800000|2d",5,16,"004e6h94b1"],["5.5|9ba3cf5i2g6mh0|0000000|5",5,19,"04698dajc1"],["3.4.1.2|lb6kaj7fg5d2|000000|",4,12,"082e4i9n"],["4.3.1.2|4idnkjh6mbflce|000000g|",5,15,"10552j82d8"],["3.4.1.2|89g40ain1dhm3b|0000000|9",5,11,"06224c6k8e"],["4.3.1.2|16dni8cfgeh2m9|8000000|03",5,16,"20639cbkdl"],["5.6|tch2bjm57gdkai|0000000|2",5,18,"304291afdl"],["3.4.1.2|fik6c1984d|g0000|",3,6,"204265"],["4.7|i8jcoe5hng9mdplb|00000000|",6,25,"003f5k8cancq"],["3.4.1.2|i8k96jcg4hlaed|000g00g|7",5,15,"00234f8ka7"],["5.6|g20h6lbn8f7kaid1|00000000|",6,24,"032c648qapd0"],["3.4.1.2|9kj8ec3gdmfbh6|0000000|",5,20,"204i778jae"],["5.6|8ai6fs5d2gh1k7|0000000|",5,16,"0039638bc2"],["4.3.1.2|gi167m30hjn8bk|g800000|",5,11,"0f254la48n"],["5.7|g8h0wo7l1bmte6cdfs|000000080|34",6,15,"02255a7gd3gr"],["4.3.1.2|f8h2dni97cjgla|0000000|",5,17,"00214m63dk"],["5.7|m7xj69pb2gh1oyakcf|000000kg0|4",6,14,"102d7l85a2hh"],["3.4.1.2|0471flai62|0g000|",3,4,"13354b"],["5.7|h7ldxuqckvnam6bs|0000k000|04",6,16,"225075b4c1ej"],["3.4.1.2|f87j3ed1akb0g5|0000000|",5,19,"022c5679dn"],["3.3.2.2|3ml5s47hzkqbpngwar|000000000|fg",7,31,"062940bccfeihb"],["4.3.1.2|b57gikn8mah32e|00k0000|7d",5,14,"0026649fc7"],["5.6|ifm72jcteg3hldn8|00000000|",6,24,"00446o81b2dk"],["4.3.1.2|h97c6a4jd5g20i|00g0000|4d",5,16,"182k638ea1"],["5.6|isqjgtm9olhndr8b|0000000k|b",6,21,"0a2c4i628fck"],["4.3.1.2|692ea01hf8bdj5|g000000|",5,16,"042c6gb1di"],["5.6|qdbsthcr6iema8lonk|000000000|8c",7,26,"01256fb2dgejgp"],["4.3.1.2|ab5nj7d6e8|80000|",3,5,"192c60"],["4.3.1.2|9f4eg21h8bc6a5|0000008|",5,19,"03406g9dbi"],["5.6|9bm7jgi5h8sc4de1|0000k0k0|1d",6,19,"00224a7983e6"],["4.3.1.2|m58bc3a96hjie4|000g0g0|",5,16,"0021427f88"],["5.7|hmgtqjdrknyilesb|g0000000|8",6,25,"30416f9pc2fv"],["6.6|hf6qsaxi7cbrenwg29mp|g000800000|dg",6,19,"304368asctfo"],["4.4.1.2|94jh3em5qrbg6n2il7dv|g000000000|0h",6,24,"60ck56f1gaio"],["6.6|m2f74detqcgpl98sra|000000000|",6,22,"004665aic3em"],["5.7|whnkmgd4litrb9sfqc|00000g000|",6,19,"002p45ceeag1"],["5.7|n6yv8f7kbjcgdai1h5tw|0000000000|j",7,27,"002l4m6p83and2"],["3.3.2.2|46foajmekpr37l|0000g00|",4,13,"2855bncq"],["5.7|a83h7kn6wy4bgmel5i|0000g0800|6",6,19,"002a4f7jb2ep"],["4.4.1.2|m6n8euhvrsaqj9tfcbid|0000000000|",7,32,"00244g8kb3e7h5"],["5.7|b5qchujgpxwtankil7|800000000|",6,18,"204f718yeohm"],["3.3.2.2|r4je0k6lopg9dwimq7|0g00kk000|4d",6,18,"01285c6fcje5"],["5.7|i7tc8lbownk6re4had5g|k000000000|",7,24,"00234fbpc8f9gj"],["3.3.2.2|2ml3s8gx1f04r9tejn|000000000|5",7,26,"053c468acdfhhi"],["5.7|scpiqdh2nka83g7b1e|000000080|",7,19,"002j5p64b5cdef"],["3.3.2.2|xdzegpimcrfvq327sjw9|0000000800|",7,34,"004o64auc8giif"],["6.6|wdl19p0er7fo8qcj3k|0000000g0|fg",6,24,"1i5276aucdh4"],["4.4.1.2|i5l6otapgjrskf|0080000|",5,11,"00215l6i8m"],["5.7|85k6qsarwhg0vm7blf|00g0000g8|5c",6,16,"01224i6x83ba"],["3.3.2.2|im9wfvosak0qpgjzrcye|0000000000|f",8,40,"01264i6n87c2etgp"],["4.4.1.2|fkl5esm6h3gjbcour9nd|0000000k00|f",7,33,"004t81afd7hqjp"],["5.7|nkipgxlovmhwf2rcab|000000000|2b",7,22,"03344e6t9lanc0"],["6.6|lcj2oepdsyq7b4ifk0|0000g0g00|",6,21,"0123487je9g6"],["4.4.1.2|puakh1igl6j8dnr9ctoe|800k000000|",7,30,"2m4082cqe4gsi3"],["5.7|kdhrljfsngcq98m7pi|0k0000k00|bd",6,25,"022k45aue0ga"],["3.3.2.2|jz2q4deywris5781x9g0|0000k00800|",8,25,"03265a7faldbhyi7"],["6.6|k2j3i9gxey8nqh7m6f|000000000|3e",7,26,"0024456c8kcahd"],["4.4.1.2|a72etdbcf5hv|800000|",4,8,"0324486g"],["4.4.1.2|6le2i1undb5jvtpa0f|000kk0k00|",7,22,"0423466i87a9fg"],["6.6|of9raqlcbkgpmds8te|000000000|27",7,35,"304h6692c7fngi"],["4.4.1.2|cnte9pm46li0h3qdkbjg|0000000000|",8,43,"013o4892c7fhgfik"],["5.7|g2aib9m8h16jn7d5ce|00000000k|",7,30,"0330447baofyg8"],["3.4.2.2|x8GrqfcwuejIl0vpAJhbom|0000000k080|37d",7,23,"01246683aGc7kg"],["5.7|ow6mjli3husbnfrt4d7exg|00000000000|",8,23,"0a3055618kcqeih8"],["3.3.2.2|g6sndyir9ejzpa8f2q7wvt|0800000g000|6",8,28,"002m4x7cbdf3gbj1"],["3.4.2.2|vgrixelAdy49jt6aszEk|00000k0080|h",7,22,"00274f6o8Fc5fc"],["4.4.1.2|snm6te7hviucqkpjdrfl|0000000000|bcj",7,30,"0b205oa4fuh5ig"],["5.7|1e82un475bylrxc3|00008000|",5,9,"004a79aff6"],["3.4.2.2|gEyAz9vms3pDenarcCft|0000000000|3j",8,27,"0026417B84c5fggG"],["3.4.2.2|xapyzqoE37wuiDBsrJFktv|00000k00000|58",8,34,"0425406zd6fAi9ln"],["6.6|qygphxs9c2frjmd60ken|k000000800|",7,19,"0t2i6183d8gqja"],["4.4.1.2|k6n97hgb0ifc8psde2l4|0000000000|gi",7,34,"1o3j536qagcuft"],["5.7|4blydarsc38691qth2j7|000k0k0000|",7,21,"002i4584acffhg"],["4.4.1.2|agcf5hm9jsd04ipu6kte|0000000000|f",8,28,"01234a629ma8cljo"],["3.4.2.2|xA3mCfBl5swHuyn7JvIk|0000000000|18d",8,25,"002d5r7j91cshxiq"],["3.4.2.2|yGEAIHg4DsJlFvzB5eqK9n|00g0k000000|",8,24,"0031628ma8c7ewha"],["6.6|k93gvdeqpor7lcjub82h|k00gk00000|25b",7,15,"01406v8ic6gfi4"],["4.4.1.2|nlmjvdqa791fb8|0g00000|",5,11,"002e7k85d2"],["6.6|3lk2s8etaqf6hy1gn54db9|00000000000|",8,30,"0i20436z8oemicg4"],["4.4.1.2|2aefdqoj6lgn7mkb1i3h|kk00000000|4",7,27,"6r8pbcfo2bi4d3"],["4.4.1.2|qepadri2kvgbn6f13hm7|0000000000|59a",8,32,"002438bc6bdjgli3"],["5.7|anc371imjqhvbsg8d6lo|000k000000|03d",7,20,"1022798fakcre4"],["4.4.1.2|i2hb6m9r8j3deqf0c7ap|0000000000|",8,38,"012n6t94ag53e5ih"],["6.6|epk619zlq7j2ymxd8s3c|k0k000k000|i",7,19,"0i2064bwfrhej2"],["6.6|2lhqkomj8psdzfraxicv37|00k00000000|",8,28,"0e2u6694a0e5hriw"],["4.4.1.2|m6dv8ialgr7hcqtekfso|000000000k|9",7,31,"002m738bfpbehg"],["5.7|db7nrqocvlai8mxp1hg6|g080g00000|2",7,20,"055s728kbfd3jm"],["4.4.1.2|h7dpcbe0ao9n5m|0000000|",5,18,"01446688cq"],["3.3.2.2|hebqk5fg2r7cz9als418|0008080008|39j",7,25,"032d4b6h8fhxf4"],["3.4.2.2|IsrJEqwLFvyABuDm9bCz|00000080g0|",7,29,"002i6g8oaGfKjH"],["3.4.2.2|Bkyjlv8xritp6wDeCdo9|0000000000|ci",8,38,"00324u8cb3fqhAjp"],["6.6|7qloupjskc2if6aer8xdvw|00g0k00k008|h",7,21,"00113gdb86g3jq"],["4.4.1.2|itvhkpeujsm6dcfoq8ng|0080008000|",7,30,"0r236va0g4jq5g"],["6.6|xht92igzknsamf68pwe7|000000gg8k|c",7,18,"003d4j6q9oa2fc"],["4.4.1.2|6i8qcjgb7hldoeraf1p9|0000000000|27h",8,34,"00456293bcdgfmjs"],["3.3.2.2|r8cf7m3aj4zx2kopg6he9y|000k0g0g000|d",7,28,"002b85ccgdjgl1"],["5.7|likmqd3jnapcrgh04efwo9|kg0000k0g00|9",7,23,"072s426885a1ln"],["3.3.2.2|l3j9a6fgk2vy5e8m|00080000|",5,16,"00374c9hel"],["4.4.1.2|8bkpc7adh2e0nrf51i6g|0g00008000|fgi",7,28,"0354699jj2bgh0"],["5.7|ipqdymbs51gtolnfwhrc|0000800000|",8,36,"02235x64aecqe6hu"],["5.7|6narlveiskogjbpc3hqdm7|00kg0000000|beg",8,30,"0t218aa0dofui4k2"],["4.4.1.2|crbk8mlie3tpaqjg67df|000k0800gk|8f",7,21,"002o7s91cuecib"],["5.7|856npiel7ahxgjdrsc9m|0000000000|",8,31,"00235f6qceeggbj4"],["4.4.1.2|pktfaqg6rdvejs195iom|8000000k0k|0c",7,24,"239tbudnf0h2js"],["3.4.2.2|q98xcgfeapk5dhm1r3io|000000000k|",8,36,"00245687abcnfsg2"],["5.7|qgb4umj9rwpie1yld0sk7c|k00gg000008|4di",7,18,"05225q7nfojxkb"],["6.6|3kda9lbtm7pgfe8r5hoq|00g00080gk|",7,21,"00214s6n9zeja8"],["6.6|aj4l9reyvuh2kb|0000k00|",4,13,"2m4n6ia0"],["6.6|m75l8q3beht9gjkdaf41|000k000k80|8f",7,22,"00224i96cchhj5"],["4.4.1.2|oa1ibd4j5lfkcn9mqeh7|00k0000000|",8,39,"002p6r8od4etggi1"],["3.3.2.2|q23kue9os7cx8w6lfp1ghj|00000000000|",8,46,"0a345v6i80hmcpl5"],["5.7|sltrymunfk19ivgx48hw|kg00800080|2",7,22,"0a3j40accseyj6"],["4.4.1.2|ojhnimpfl67gdr13evaq|0000000g00|",7,28,"0b2u7k80hhcvil"],["3.4.2.2|8vdbEoukwp9cg6e0ytj7|000080008g|4fh",7,20,"04255r9Ba1dae6"],["4.4.2.2|ezS_Hl0ytjosENA4pgPkDvMh|080000g0k0g0|",7,22,"0142698abwe3nU"],["4.4.1.2|2gucqo9erp6d7f8avltn|00gk0kk000|f",7,17,"003k4s6h9ie3ij"],["3.4.2.2|ai7r3qdn9wlefucm1pCsbx|00000k00000|",8,35,"0024526ga8coetl5"],["6.7|zkri23FmfqsphyCwlo|000000080|",5,15,"002664ajgu"],["6.7|j1a9fkqC3dyBr84nlom7we|088g0000000|",7,16,"002g7jdsg6i2ll"],["3.4.2.2|yd1msrBIi3fu0q876gnjo254|0088000g000k|",7,26,"092a81clh0icli"],["4.4.1.2|pbiv6ln9ce8qftduorsj|0000g00000|6",7,29,"50b4eqhg2rjl7j"],["3.4.2.2|3rpkq9jywIimsox8lvBC|0g00g00008|",7,24,"04658Dagc0e1gu"],["4.4.2.2|HbyCIqJzjPOBelhavumdXr|000000888g0|hik",7,22,"01234g6o8DcclK"],["3.4.2.2|jkw8a5dbeu3hliExyDcq|8080000g80|09a",7,16,"2044768gceerim"],["6.7|zkEm13sjc2Dnxdpyqea4Blrw|00k00000kk08|",7,26,"15486ibuc9fokf"],["5.7|xhi7jqlo8g6ebndf5mc9ra|0k000000000|",8,28,"00214k6s92ajcwfi"],["4.4.2.2|NsGEltB5zmKrXpyuJChiaH|0g8000008g0|",7,21,"002w6186aqedkv"],["6.7|gjc3r8l4pBm7fevs|000000k0|",5,14,"0d5569bbeh"],["4.4.1.2|1hgailm6ke8nq9dbcjfo|00g0000000|f",7,32,"10227p9garc4ih"],["6.7|pskC3gorl9hqAuxdcwfvyjbe|00k0g0g00000|",7,31,"052B60bniiltm1"],["4.4.2.2|zd0ik6SQ9tbvhl7j4scge5|000k000000g|2",7,29,"01384ndiffgpio"],["4.4.2.2|phBcA4CrkQIdqulGUVztKjZs|800000008000|",8,44,"40698ba5c6eoill7"],["3.4.2.2|ov4hsua5GkDerqiBAlxj|8k0000k000|18e",7,22,"294C9Ea0dkf6g1"],["6.7|vfgpq7r9a5js4euwn8ilhk|0000g00g000|",7,27,"0b20417matg2jc"],["3.4.2.2|Df17sdjmlCqbc3tkpn8wzeyH|080000000000|4n",9,38,"0254709ra5c9fhhclE"],["3.4.2.2|cg3qet5a1lb46m08if72|000g080k08|",7,19,"092c4d63hoef90"],["3.4.2.2|oynpluiaGk8eEjxcdvmg|0000080008|",7,25,"022o4w6387drh0"],["3.4.2.2|pFvzCjxa0gwr64n2Do|000000000|",6,17,"2147639caec5"],["4.4.2.2|InxBGCvAyFSkOtYZTsKjoHuD|0000k008000g|",8,33,"002I4J7la8ggjLlp"],["4.4.2.2|Bieqx3sgjwb9y2thHaQu|00000g0000|4j",7,32,"062o5z8Ec0f7hA"],["5.7|tqf80d73ylbrspcm69ungx|00080000000|",8,24,"0k2162b5cvg4iekw"],["3.4.2.2|jEHyCnhgIxwFJkasDrBz|000g000000|",8,30,"01224famc0f3hJj6"],["6.7|en8qByl7f6kad1tDjg9p|000000k000|8",7,24,"025c7r9ma3h6iw"],["4.4.2.2|wjcxRCyz4q5e8siGFbpkHarO|00kg08000000|",8,34,"002f91dgeugclvmw"],["6.7|fcpg6luei2rj7m53k0q9s8|00000k0k000|",7,30,"012a4hbtcng6ko"],["4.4.2.2|IhPiefwEpzOrsFxBGWKy9H|00k80000k00|8c",7,29,"002196addlemkx"],["6.7|81wyElte79mxd2sBCrDq|8g0000k00k|",7,17,"002z436896ecg5"],["4.4.2.2|bI3zPuKG6ij9wxHLOC|000000800|",6,16,"102445688he6"],["6.7|9re5voh8al1gBif7nzpu2m|0080k000g80|5df",7,21,"06204j69abcckh"],["4.4.2.2|6ABdt7NWcvlLVXmbC4ezYM|000000g0000|4hi",9,31,"00215a7887asg3j5kw"],["3.4.2.2|eysihjJkpaul8wfErqvt9x6g|00000000k000|",9,47,"0z20417Aahd2eCkFm5"],["4.4.1.2|e9rqpah1kb4mnsdui85c|kg0000000k|d",7,24,"023v4360afetg4"],["3.4.2.2|eslFjtr307Cm92zkEfayid|000080g0008|bg",7,28,"0b2n5864ageej5"],["3.4.2.2|w6usAlr7ackG43ome8tpCv|00000080g0g|4ek",7,26,"002b5u618daBjn"],["4.4.2.2|IwFJenANzV9GOqgkphajQxyZ|00k000008800|5b",8,32,"00236i8MaPdWe4kE"],["5.7|vlomqj58xpdrwg6cis7khu|0g000000k00|l",8,21,"043n4970cagtifkv"],["3.4.2.2|eCsAkDdc6wyoLJ9iBrj7Kq|000800k00g0|e",8,27,"0p2u90a3f4g5i1kw"],["6.7|eb2kyBdgm3tfja9q|00000000|",5,19,"046hd08aei"],["4.4.2.2|qWgHEzsFtyGkhPxJ7epI|00000000g0|",8,36,"00215g6M92bXeair"],["5.7|fa37bspui1hldkqc58egm6|800k0800000|06b",7,22,"30449bcredjjlx"],["4.4.2.2|jGplyB2zbIsQr6JqtixcaA|00000000000|6",9,43,"002147738zaEc4idl9"],["6.7|lc9bhk3nexjrfwm5diatq7pg|0k000k00k000|",8,32,"006s8ud1e2iykeno"],["4.4.2.2|GxRBpVHwmlEroWiNJA9F|8k00800080|d",7,22,"1y2s4I60a1cKeE"],["6.7|ejgx7mfcCsadBAvylDqF8o0k|g00000g00000|",9,26,"0i314b668eb2fpgwku"],["5.7|mk14grqd63hv92bf5lipan|000000kk000|2",8,23,"08304e84ash6ill7"],["4.4.2.2|3ybi5haGLQ9Aj0NWq18sKR-t|0g0000080080|",9,31,"04324g6586adiHc8nv"],["4.4.1.2|lmh0fokjudc1apit58eq|k000000080|b",8,25,"0n2449639va2eris"],["4.4.1.2|7gfdl9cn5kj48m|0000000|",5,17,"0h305p8ocq"],["3.4.2.2|CfwltvurEqyoBmJkpsix|0000000000|6",9,45,"0025467A8dbecbghiE"],["3.4.2.2|dCnjo9p1crm3axl67svegihk|000000000000|1ag",9,50,"0q3t5u60cye2jAkpn4"],["3.4.2.2|q8AluxEkw9jgfCdstveDipr2|0000000000k0|a",9,45,"00247h81b6cAhziGnq"],["3.4.2.2|3sm2aiJyDF5ef90g8bAG|000kk0800g|",7,22,"0123466ra7e4g5"],["6.7|mjulCkgqriwf798pxdvs|000000k000|",7,30,"003o4e8ca4eAht"],["4.4.2.2|3tzeubscrd4AqmalIkYQ|000k000008|",7,35,"0f4163and0fihv"],["3.4.2.2|njDf9xzesidA5hGopgabBlcu|000000g00800|5e",9,28,"00214m679nakd3fyg2"],["4.4.1.2|2e9jtpda6lb03i57f41h|0088000k00|",7,26,"082m7c8gd2iia1"],["6.7|rcdwyjCt8qol7gBkev9ifpxD|000000000000|4di",9,37,"002a556h8ubjcmfAgC"],["3.4.2.2|o9p07ukza6dyKm|0000000|",5,12,"01288cajc4"],["4.4.2.2|AwPEJNy1qXRFrVUIGOQM|00000000g0|",8,32,"00234x62b4cWebiU"],["6.7|e4dxmjb93arcq7fvplhk|000gg00000|0",8,24,"10254662aiduewid"],["4.4.1.2|j80igf9ralesnd5hbk4m|0000000000|",8,43,"0c31428gaodaeqgp"],["4.4.2.2|lqIcbBhk2mr54zjsAJityd|0000000kg00|",8,41,"00314n6ba3cgilk6"],["3.4.2.2|JmDye5g2q3EjzIHBa6Fv9487|0800000k0088|5am",8,22,"0b2r4f608eccgdjh"],["3.4.2.2|BdtfqcCA4s6vjGlopaigHwzL|000g000000kg|",8,28,"00214k7xaqcAhujj"],["4.5.1.2|uisnehorpzc1yj89DmvkqCft|00k000080000|58e",8,35,"0b3l7g9wa0cnhzjr"],["6.7|rob3xidvBDtCFle5wjEs6qyp|0000g0000000|",8,24,"0021576Abbcfkdmu"],["6.7|vfulzx8rjaynFsqtEpg7Bk|00000000000|6ac",8,23,"02304b83bCehg1j5"],["3.4.2.2|r6f2bdj4ail39oBG|00000008|",5,19,"20556g8ccj"],["4.5.1.2|05rcm8gfpBna9j2il6bke1h7|800000000000|",8,38,"2od46jevhqj2k6m3"],["6.7|3nl4uwjq8b2gaspC5fAxDv01|00080000000k|8km",8,21,"063c4iahcreuh2it"],["4.4.2.2|y2RFi3MqGagbp4Yrch1sxw|0000000000g|2",8,27,"0035496i9ycjhkiA"],["6.7|97kqpm82wef1bacriljD4g|k008008000g|",8,19,"002n5o6386d5fdis"],["4.5.1.2|4b1jqCkpAz6iyue2c3a0lo|000k0000008|18",8,19,"07244s6m9wa8e1g6"],["3.4.2.2|Jl57mCBuyorwLqixsvpF8934|000g000000g8|",8,30,"003a469bbdfogIin"],["4.5.1.2|rkvguha7lDAmondtjipbyqf0|00080000g000|",8,34,"013r428wbBesiem4"],["4.5.1.2|i1j4eu56pnlqkva2g3fdzm|000g080g0k0|e",8,23,"00284h798ibodcg7"],["5.8|7goBvt16lynu3a0dmxwiDqrC|000000000000|",8,28,"2f448cakc5e2jllh"],["5.8|yqdrmCxl647jkp3a|00000080|",5,10,"004t79aoef"],["3.4.2.2|m6zeLEqasyr7bjBukfighdHp|00g08008g000|",8,30,"002162accoeAi5ki"],["3.4.2.2|m3iC9gap8n5kudf4Gj7bKL|00k00000008|3jl",8,26,"002e4h6v8mflb4hA"],["6.7|mhkg6dp7ec1jrbFCaqfsi8l3|8kg000000k00|4jn",8,19,"0n3950629obcitm4"],["6.7|qmkCteyfnw9sxp4ajDulb2|000000kg000|",8,24,"002v467tb1dEf5hc"],["3.4.2.2|p87sqJfCedEjxcrHyovznw|00008000000|1g",9,36,"00224i6ubteAhkiFl3"],["3.4.2.2|r7FqyvDzIkBm4cfCxE18wAus|000k0000ggk0|",8,29,"00235t6F86a5cieB"],["6.7|k43ar785sdli2hfwFtmpzg|0g000000k00|08e",8,22,"102b5n9xa6d1fekh"],["4.4.2.2|yMaGed4uriHwqWPhFjt7xIb3|008080000008|",8,26,"002p456fb4cDg1kk"],["6.7|jr0362loqhypdwDxkB71Cs|k0k0000g0g0|",8,20,"0e24486085ajd9fy"],["3.4.2.2|jgIHk06rp18v9ocaBd|0g0000000|",6,27,"426h9ialcuhs"],["4.5.1.2|prm8xuvAysnB7heodfkDcj|k0g0k000k00|",8,23,"204t6waxcgeiivkm"],["5.8|BockryxjCn3amDszg08fwt|00000000000|1k",8,25,"042d4B7A8icCelg1"],["3.4.2.2|oA9p3fuDekiajb601mhd4lq2|k0g0k00g0000|14h",8,30,"0B2755a9cgjnkrnw"],["6.7|r9wzasDo3l8mehxgfyCtbk|00000000000|",8,32,"102nb1c4f6gEjul5"],["4.5.1.2|aoi1gj5lyhBDet7bnscqpfrk|00000g080000|3",8,33,"00224a9ugwimk6nn"],["4.5.1.2|xhkzps67Alji5mrwn9oqetyg|008g08000000|",8,31,"002v88bfjkhqlanx"],["3.4.2.2|zs9yl0jIcadb3ie7po6f458v|8000000k8080|bd",8,28,"1t416k8gahccj2mu"],["5.8|15cswAivk7rdm9thbogjnale|g00000000000|cl",8,38,"2p6u82a3dffxi4nk"],["6.7|qowteurFym7jk6sEdxpgfiBv|g000kg00000g|",8,23,"0c244q6z8rc0gwl1"],["5.8|i5twrCd1qyf89bh2k7|0k0000000|",6,17,"2l8aa3d4fnhf"],["3.4.2.2|ry6qBeLKmopztwhDxj8vJl|800k0000000|",8,28,"0s235u80a4cff5g1"],["6.7|q9583j7aDlb2fvAury4d1kes|000000088000|8",8,25,"00467g9icoiq34kx"],["4.4.2.2|qVtmnjlDzv5CAfbuLkB6eK|0g000000000|",8,42,"2d4087b1difcjskz"],["6.7|rzwiDmoqpkyjf1ul89e2Cs|000g8000800|1d",8,18,"00457v8dfAg4i3lx"],["3.4.2.2|g4zpCsyutw68Kra3j7xqlD|g0000008gk0|8",8,23,"05294b609na1cfkv"],["6.7|gdr89c0fvme5AjkCpEwu3lix|000000000k00|",9,28,"0122466b8gcreygtkk"],["4.5.1.2|ge0hyv6lzqduoanctBbkAr|k080k000000|2dh",8,26,"05315C6gapc2iokm"],["4.5.1.2|lvoeyp5i7gnkwmudthsrjcq8|000000000000|",9,37,"023l93agc0fzhxjwlb"],["4.4.2.2|Bx6tkKQlyruaDcmH4CdJAe|0000g000000|1d",8,40,"00317ba9ezgLisk7"],["3.4.2.2|bqCkfg4lsHjhm73tvD|000000000|",7,20,"0021458iabdner"],["5.8|2guCmhrB7nf8aiobjld5tA6e|008000000000|",9,26,"0024a3dffygkj2kpn1"],["5.8|jw92bshmlC03rxkdifnagt|0k0g00g0000|5",8,22,"0p34478ue8g6i5ke"],["4.4.2.2|3ulefjm2zX89PGdIYENJOH|0g0008g0008|18",8,21,"00254g9ocxergwis"],["5.8|nuc6xg7hylvmarpzsqAkf8|080g0k00g00|",8,23,"1240936lcwhxiqla"],["5.8|mCvo78qdjw2iDnxs94are6ly|00g0000g8000|2e",8,25,"0f3k437B95abchmo"],["5.8|bsgjuhvtfdarl7ywmckixq|0000000k000|bj",8,29,"042e5p6o9Ac0eBi3"],["6.7|8nkmpDjadwyf9qehurbs1gl3|000000000000|",9,33,"042t7690cif7gkj5m2"],["6.7|q6p7udsnifrcgy1jFlCmtx|00080000000|",8,24,"002243b4czfchui5"],["6.7|du9cxfe1DlEktwjsq8ovr7|000k0000080|a",8,25,"0A20426d85byfilb"],["3.4.2.2|a6c3KCm1f7JpIL982k|000000000|",7,18,"0024456c8daifa"],["4.4.2.2|vrXpyRtZJFHPBfKjuIsSAnmQ|00000g000000|3",9,40,"0042688gc3fchlkdnv"],["6.7|i8wntqxlf7opkzd9sej3rh|000gk00k000|h",8,22,"00224c7vcmf6i4k5"],["5.8|qdah20genAm6ifbszxcrCl|00000000000|",8,28,"0335648ka7cggoji"],["6.7|qx2fsdhkjm85BCgpln79year|8k000080g000|0d",8,24,"24406c8habeigslt"],["6.7|juwg4kofl1xerByq8mipd9|k000000k0k0|",8,23,"0v22476nbsejgtl0"],["6.7|sdgpfoenBkCvaqm3l79rxu|00000g00000|",8,30,"00264i648sbAcyiz"],["4.5.1.2|orpaAnfehvkD9qm51jdbzstl|000800000k0g|4gl",8,28,"0i225uayd8e4h0kc"],["6.7|ADsdhqra481gey97vB2lmjkt|000000000000|78",9,29,"00355nafe169j3k6mz"],["6.7|k3weABf0l87rmvyjdap9gq|00800000000|",8,29,"012674b0cig5jclb"],["5.8|d5hcg89bl6xkqaf7|08000000|",5,15,"003d729ic1"],["6.7|4gujn3dxcr8qfvplowhekB|gk00000kk00|7",8,24,"12265m6s8Cb0cukA"],["3.4.2.2|x8CkydeDqFfutBcmgvorlIjn|000000000000|d",9,52,"002i5z6C8Eawh2kAm4"],["5.8|kshfBla2wgzx6eivCpAr1b|0k00000000g|6bd",8,22,"034k709tayc4emgq"],["5.8|im63qvjlwh14sbc2drxpkn|8kg0000k000|hl",8,20,"1e284u7o80a9dtgy"],["4.4.2.2|DzpiRlOythJeLsuqvrkC4BAI|0g0g0000000k|",8,34,"024380a5cbewh7kJ"],["5.8|wmfch4adrAovlBg8zsb9px|g000k000000|6",8,24,"0i708uakfrgej1ko"],["4.5.1.2|gpi27hcflrkbudes8a9jn5|00000000g00|",8,34,"0o204ga3dqetiik4"],["4.4.2.2|xOUEfAHmIMDrJl8aFPeBzvtL|kg00000gk000|2fj",8,26,"0N42639gahcbisk6"],["4.5.1.2|et8qblcrudixpahyAm5nCB|00000000008|2fi",8,37,"0g304q89aoc1euhs"],["4.5.1.2|q9alfu37rc8jvmnwiy|000800000|",6,20,"002g4hek9ngp"],["4.4.2.2|quSrtxBpnfzLQDAagkHbj2Ji|0000k00000k0|9",8,34,"032048c6e1gsjynI"],["4.4.2.2|i9JdmQpWCjTtsuKlxVNyFO|k00000g00kk|f",8,21,"20486E8ab6dkgMip"],["4.4.2.2|-s3ulcjfb7qeTRrdkn64ZS|00k000k00g8|9",8,21,"00216mb88ecAfigv"],["4.4.2.2|yBuzHhJqkFWrwAIptxOiVMc4|0000000000gk|",8,40,"0031488gbHdEhajy"],["3.4.2.2|aqlLnJj8rspzkFimhfDyw6gE|000k8000g800|",8,32,"002t4o61bcd3elmK"],["3.4.2.2|hd9oFBjtxEezDyifKn8v2k|00008080000|5g",8,27,"0026457p9raFe3iu"],["3.4.2.2|q1o9v8ds6lyer7cak0j4tC2p|000000000000|",10,52,"03254f6b9ialdmegjomq"],["3.4.2.2|r4sl5kCuh2vBa08b9yAxt3|0g0k0800000|6i",8,25,"01467p9ec7gcjilm"],["5.8|cq3gdfl87i6jsuwvArbekB|0000k00k000|",8,26,"09408naocpezj1ks"],["5.8|Cl3g1b64wyBrvx85An|00k000000|",6,15,"098eaie068gs"],["4.4.2.2|A5k16icndhasbeIK4lq23ymQ|00000000k000|07b",9,34,"1025576f88eugkjgko"],["3.4.2.2|fqvgAHtCJkmopn9xyDEjr3lu|008000008000|",9,39,"00246681aic5esjtmv"],["5.8|yqso853gmCnxk76cb90dBr|08000g0k00g|a",8,21,"042i426a8tc3gej1"],["5.8|fd7l38kcrespyhxganb4iqm6|000000000000|",9,32,"002f658jdBfui9lbnt"],["3.4.2.2|FftqgELlDyJmsovwbrxazk|0000k00k000|",8,37,"00264t65buccjelF"],["3.4.2.2|x8dmgvowyDq9lBFketfcEr|000kg00000k|j",8,29,"00224u8xa3cAe6ii"],["5.8|mda7boAp6nrcsy2g5ile4hvz|k00000g00008|",8,28,"03304j618tjqgel9"],["4.4.2.2|xIpQzTjP1yVANs9hFO8kKGw2|0000000g8000|",9,32,"03274f8aboc4j0kgm1"],["5.8|m5eghwsulBarifobyqcpxD|0000000000g|",8,29,"002k4t8zb1c6glj2"],["5.8|kBwfqbamg0hucpAl|00000000|",5,19,"4185azd2fp"],["6.7|EpxFjmBsfztkg5Dnywqhl4ar|000000k00000|35",9,30,"002u417Aebjdk2n98r"],["3.4.2.2|5kt8s3mcigJAje9xHB7nf4|000000k0g0k|",8,29,"0h2041669dalemis"],["3.4.2.2|iDpzkIxGyolBdAw7EqKuCrvs|000000000000|ci",9,48,"052h4J6H80e1hyjFn2"],["3.4.2.2|j97sKBdm4kcgif8wGCuIq3Ho|000000000000|",10,34,"002546779aarclitk2mu"],["5.8|7o4hdqip086egrfslnmB13|00000000g0g|dk",8,25,"052a4k6u84ctfgiv"]]/*BANKEND*/);
+</script>
+<script>
+/* Knotty art: everything drawn in code on a 2D canvas.
+   Ropes: a thick twisted rope (dark edge, base colour, diagonal twist stripes, a soft top highlight) with a soft shadow
+   under it; a free rope gets a soft white glow and hangs in a gentle sag, a crossed rope is pulled straight and taut
+   with a faint red strain line. Knobs: glossy coloured balls with a little pin in the middle (pinned knobs: a steel
+   bolt and ring). Pegs: grey holes in rounded board panels. Scenes: four soft skies that rotate by level (morning,
+   peach, seafoam, lilac), each with clouds, hills and a calm sea; night versions in the dark theme; Halloween: dusk,
+   moon, pumpkins and bats. */
+var KA = (function () {
+  'use strict';
+  // 12 rope colours: [base, dark, light]
+  var COLORS = [
+    ['#ef3b4f', '#a5172a', '#ff9aa6'], ['#2f74f0', '#1a3f9c', '#9cc6ff'], ['#ffc21e', '#c08300', '#fff0a0'], ['#35b44a', '#1d7a2e', '#a6ee9e'],
+    ['#9b4fe0', '#5f2496', '#d6b0ff'], ['#ff8a1e', '#b85400', '#ffd09a'], ['#18b6b0', '#0b6f6c', '#9ff0e8'], ['#ff5fa8', '#b8246a', '#ffc0dc'],
+    ['#8a5a32', '#54331a', '#d8b08a'], ['#f4f4f4', '#9aa3ad', '#ffffff'], ['#2b3548', '#0f1522', '#7b879c'], ['#a6d63a', '#62881a', '#e2ff9a']];
+  var NAMES = ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange', 'Teal', 'Pink', 'Brown', 'White', 'Navy', 'Lime'];
+
+  // ---------------- symbols (white shapes for colour blindness) ----------------
+  function symbol(x, i, cx, cy, r, fill) {
+    x.save(); x.translate(cx, cy); x.fillStyle = fill || 'rgba(255,255,255,.95)'; x.strokeStyle = x.fillStyle; x.lineWidth = r * 0.32; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath();
+    switch (i % 12) {
+      case 0: x.arc(0, 0, r * 0.62, 0, Math.PI * 2); x.fill(); break; // dot
+      case 1: x.rect(-r * 0.55, -r * 0.55, r * 1.1, r * 1.1); x.fill(); break; // square
+      case 2: x.moveTo(0, -r * 0.72); x.lineTo(r * 0.68, r * 0.5); x.lineTo(-r * 0.68, r * 0.5); x.closePath(); x.fill(); break; // triangle
+      case 3: x.moveTo(0, -r * 0.75); x.lineTo(r * 0.6, 0); x.lineTo(0, r * 0.75); x.lineTo(-r * 0.6, 0); x.closePath(); x.fill(); break; // diamond
+      case 4: for (var k = 0; k < 10; k++) { var a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.32 : r * 0.78; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fill(); break; // star
+      case 5: x.moveTo(0, r * 0.65); x.bezierCurveTo(-r * 1.1, -r * 0.1, -r * 0.45, -r * 0.85, 0, -r * 0.3); x.bezierCurveTo(r * 0.45, -r * 0.85, r * 1.1, -r * 0.1, 0, r * 0.65); x.fill(); break; // heart
+      case 6: x.moveTo(-r * 0.6, 0); x.lineTo(r * 0.6, 0); x.moveTo(0, -r * 0.6); x.lineTo(0, r * 0.6); x.lineWidth = r * 0.36; x.stroke(); break; // plus
+      case 7: x.moveTo(-r * 0.5, -r * 0.5); x.lineTo(r * 0.5, r * 0.5); x.moveTo(r * 0.5, -r * 0.5); x.lineTo(-r * 0.5, r * 0.5); x.lineWidth = r * 0.34; x.stroke(); break; // cross
+      case 8: x.arc(0, 0, r * 0.62, 0.6, Math.PI * 2 - 0.6); x.arc(r * 0.32, 0, r * 0.44, Math.PI * 2 - 1.2, 1.2, true); x.closePath(); x.fill(); break; // moon
+      case 9: x.arc(0, 0, r * 0.55, 0, Math.PI * 2); x.lineWidth = r * 0.3; x.stroke(); break; // ring
+      case 10: for (var h = 0; h < 6; h++) { var b = h * Math.PI / 3; x.lineTo(Math.cos(b) * r * 0.66, Math.sin(b) * r * 0.66); } x.closePath(); x.fill(); break; // hexagon
+      default: x.moveTo(0, -r * 0.75); x.quadraticCurveTo(r * 0.7, r * 0.1, 0, r * 0.62); x.quadraticCurveTo(-r * 0.7, r * 0.1, 0, -r * 0.75); x.fill(); // drop
+    }
+    x.restore();
+  }
+
+  // ---------------- ropes ----------------
+  // pts: a polyline [[x,y],...] (dense enough to look smooth); w: rope width in px; c: colour index
+  // o: { free, tense, alpha, phase (twist animation), glow (0..1 extra), shadow (default true), ferrule (length limit) }
+  function strokePoly(x, pts, dx, dy) { x.beginPath(); x.moveTo(pts[0][0] + (dx || 0), pts[0][1] + (dy || 0)); for (var i = 1; i < pts.length; i++) x.lineTo(pts[i][0] + (dx || 0), pts[i][1] + (dy || 0)); x.stroke(); }
+  function rope(x, pts, w, c, o) {
+    o = o || {}; var C = COLORS[c % COLORS.length];
+    x.save(); x.lineCap = 'round'; x.lineJoin = 'round';
+    if (o.alpha !== undefined) x.globalAlpha = o.alpha;
+    if (o.shadow !== false) { x.strokeStyle = 'rgba(20,30,60,.22)'; x.lineWidth = w * 1.1; strokePoly(x, pts, w * 0.18, w * 0.5); }
+    if (o.free) { x.strokeStyle = 'rgba(255,255,255,' + (0.55 + 0.35 * (o.glow || 0)) + ')'; x.lineWidth = w * (1.75 + 0.5 * (o.glow || 0)); strokePoly(x, pts); }
+    if (o.tense) { x.strokeStyle = 'rgba(255,70,70,.5)'; x.lineWidth = w * 1.45; strokePoly(x, pts); }
+    x.strokeStyle = C[1]; x.lineWidth = w + Math.max(1.5, w * 0.16); strokePoly(x, pts);
+    x.strokeStyle = C[0]; x.lineWidth = w; strokePoly(x, pts);
+    // twist stripes: diagonal bands across the rope (dark), each with a thin light edge, every ~0.8 widths
+    var step = w * (o.tense ? 0.92 : 0.8), s0 = ((o.phase || 0) % 1) * step, al = o.alpha === undefined ? 1 : o.alpha;
+    function stripes(col, lw, shift, alpha) {
+      var acc = 0, next = s0 + step * 0.5 + shift; x.strokeStyle = col; x.globalAlpha = al * alpha; x.lineWidth = lw; x.lineCap = 'butt'; x.beginPath();
+      for (var i = 1; i < pts.length; i++) {
+        var ax = pts[i - 1][0], ay = pts[i - 1][1], bx = pts[i][0], by = pts[i][1], L = Math.hypot(bx - ax, by - ay); if (L < 1e-6) continue;
+        var tx = (bx - ax) / L, ty = (by - ay) / L, nx = -ty, ny = tx;
+        while (next <= acc + L) {
+          var u = next - acc, px = ax + tx * u, py = ay + ty * u, hw = w * 0.4;
+          x.moveTo(px + nx * hw - tx * w * 0.28, py + ny * hw - ty * w * 0.28); x.lineTo(px - nx * hw + tx * w * 0.28, py - ny * hw + ty * w * 0.28);
+          next += step;
+        }
+        acc += L;
+      }
+      x.stroke();
+    }
+    stripes(C[1], Math.max(1.2, w * 0.3), 0, 0.5);
+    stripes(C[2], Math.max(0.8, w * 0.1), w * 0.24, 0.55);
+    // a soft highlight along the upper side
+    x.globalAlpha = (o.alpha === undefined ? 1 : o.alpha) * 0.5; x.lineCap = 'round'; x.strokeStyle = C[2]; x.lineWidth = Math.max(1, w * 0.18);
+    var hl = []; for (var j = 0; j < pts.length; j++) { var a2 = pts[Math.max(0, j - 1)], b2 = pts[Math.min(pts.length - 1, j + 1)], L2 = Math.hypot(b2[0] - a2[0], b2[1] - a2[1]) || 1, nx2 = -(b2[1] - a2[1]) / L2, ny2 = (b2[0] - a2[0]) / L2; if (ny2 > 0) { nx2 = -nx2; ny2 = -ny2; } hl.push([pts[j][0] + nx2 * w * 0.24, pts[j][1] + ny2 * w * 0.24]); }
+    if (hl.length > 2) { var cut = Math.max(1, Math.round(hl.length * 0.08)); strokePoly(x, hl.slice(cut, hl.length - cut)); }
+    x.restore();
+  }
+  // a metal clamp across the rope near a knob: marks a rope with a length limit
+  function ferrule(x, ax, ay, bx, by, w, d) {
+    var L = Math.hypot(bx - ax, by - ay); d = Math.min(d, L * 0.3); if (L < w * 2.4) return;
+    var tx = (bx - ax) / L, ty = (by - ay) / L, px = ax + tx * d, py = ay + ty * d;
+    x.save(); x.translate(px, py); x.rotate(Math.atan2(ty, tx));
+    var g = x.createLinearGradient(0, -w * 0.75, 0, w * 0.75); g.addColorStop(0, '#f4f7fb'); g.addColorStop(0.5, '#a9b4c2'); g.addColorStop(1, '#5d6878');
+    x.fillStyle = g; x.strokeStyle = 'rgba(30,40,60,.6)'; x.lineWidth = 1;
+    roundRect(x, -w * 0.26, -w * 0.68, w * 0.52, w * 1.36, w * 0.16); x.fill(); x.stroke();
+    x.restore();
+  }
+
+  // ---------------- knobs ----------------
+  // o: { pinned, sym, lift (0..1), glow, pop (scale), free, dim }
+  function knob(x, cx, cy, r, c, o) {
+    o = o || {}; var C = COLORS[c % COLORS.length], s = (o.pop || 1) * (1 + 0.12 * (o.lift || 0));
+    r *= s;
+    x.save();
+    if (o.dim) x.globalAlpha = 0.5;
+    // shadow (further down when lifted)
+    var sh = 0.22 + 0.45 * (o.lift || 0);
+    x.fillStyle = 'rgba(20,30,60,' + (0.28 - 0.08 * (o.lift || 0)) + ')'; x.beginPath(); x.ellipse(cx + r * 0.12, cy + r * (0.3 + sh), r * 0.95, r * 0.7, 0, 0, Math.PI * 2); x.fill();
+    if (o.glow) { x.fillStyle = 'rgba(255,255,255,' + (0.35 * o.glow) + ')'; x.beginPath(); x.arc(cx, cy, r * 1.45, 0, Math.PI * 2); x.fill(); }
+    if (o.pinned) { // a steel ring around the ball
+      var gr = x.createRadialGradient(cx - r * 0.3, cy - r * 0.4, r * 0.2, cx, cy, r * 1.3); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.5, '#b7c1cd'); gr.addColorStop(1, '#5a6574');
+      x.fillStyle = gr; x.beginPath(); x.arc(cx, cy, r * 1.22, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = 'rgba(30,40,55,.55)'; x.lineWidth = Math.max(1, r * 0.07); x.stroke();
+    }
+    var g = x.createRadialGradient(cx - r * 0.35, cy - r * 0.42, r * 0.08, cx, cy, r * 1.05);
+    g.addColorStop(0, C[2]); g.addColorStop(0.42, C[0]); g.addColorStop(1, C[1]);
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,.28)'; x.lineWidth = Math.max(1, r * 0.06); x.stroke();
+    // gloss
+    x.fillStyle = 'rgba(255,255,255,.7)'; x.beginPath(); x.ellipse(cx - r * 0.34, cy - r * 0.44, r * 0.34, r * 0.2, -0.6, 0, Math.PI * 2); x.fill();
+    x.fillStyle = 'rgba(255,255,255,.25)'; x.beginPath(); x.ellipse(cx + r * 0.35, cy + r * 0.45, r * 0.25, r * 0.12, -0.6, 0, Math.PI * 2); x.fill();
+    if (o.sym) symbol(x, c, cx + r * 0.08, cy + r * 0.12, r * 0.52, c === 9 ? 'rgba(60,70,85,.9)' : 'rgba(255,255,255,.95)');
+    else if (!o.pinned) { // the pin: a small dark hole with a bright rim
+      x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.arc(cx + r * 0.05, cy + r * 0.08, r * 0.2, 0, Math.PI * 2); x.fill();
+      var pg = x.createRadialGradient(cx, cy, 0, cx, cy, r * 0.17); pg.addColorStop(0, '#ffffff'); pg.addColorStop(1, '#8d96a3');
+      x.fillStyle = pg; x.beginPath(); x.arc(cx + r * 0.02, cy + r * 0.04, r * 0.13, 0, Math.PI * 2); x.fill();
+    }
+    if (o.pinned) { // a bolt head
+      var bg = x.createRadialGradient(cx - r * 0.12, cy - r * 0.14, r * 0.02, cx, cy, r * 0.42); bg.addColorStop(0, '#ffffff'); bg.addColorStop(0.6, '#aab4c0'); bg.addColorStop(1, '#4e5866');
+      x.fillStyle = bg; x.beginPath(); for (var h = 0; h < 6; h++) { var a = h * Math.PI / 3 + 0.3; x.lineTo(cx + Math.cos(a) * r * 0.4, cy + Math.sin(a) * r * 0.4); } x.closePath(); x.fill();
+      x.strokeStyle = 'rgba(20,30,45,.6)'; x.lineWidth = Math.max(1, r * 0.06); x.stroke();
+      x.strokeStyle = 'rgba(20,30,45,.7)'; x.lineWidth = Math.max(1, r * 0.08); x.beginPath(); x.moveTo(cx - r * 0.2, cy); x.lineTo(cx + r * 0.2, cy); x.stroke();
+      if (o.sym) symbol(x, c, cx + r * 0.62, cy - r * 0.62, r * 0.3, '#ffffff');
+    }
+    x.restore();
+  }
+
+  // ---------------- pegs and panels ----------------
+  function roundRect(x, X, Y, w, h, r) { r = Math.min(r, w / 2, h / 2); x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
+  function panel(x, X, Y, w, h, r, dark, skin) {
+    x.save();
+    x.fillStyle = dark ? 'rgba(0,0,0,.3)' : 'rgba(40,70,120,.16)'; roundRect(x, X + 2, Y + 6, w, h, r); x.fill();
+    var g = x.createLinearGradient(0, Y, 0, Y + h);
+    if (skin === 'halloween') { g.addColorStop(0, 'rgba(70,40,95,.9)'); g.addColorStop(1, 'rgba(45,24,64,.92)'); }
+    else if (dark) { g.addColorStop(0, 'rgba(46,60,96,.88)'); g.addColorStop(1, 'rgba(30,40,70,.9)'); }
+    else { g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(1, 'rgba(238,245,252,.94)'); }
+    x.fillStyle = g; roundRect(x, X, Y, w, h, r); x.fill();
+    x.strokeStyle = dark ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.95)'; x.lineWidth = 2; roundRect(x, X + 1, Y + 1, w - 2, h - 2, r - 1); x.stroke();
+    x.strokeStyle = dark ? 'rgba(0,0,0,.35)' : 'rgba(90,120,160,.22)'; x.lineWidth = 1; roundRect(x, X, Y, w, h, r); x.stroke();
+    x.restore();
+  }
+  function peg(x, cx, cy, r, dark) {
+    x.save();
+    x.fillStyle = dark ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(cx, cy + r * 0.18, r * 1.18, 0, Math.PI * 2); x.fill();
+    var g = x.createRadialGradient(cx, cy - r * 0.3, r * 0.1, cx, cy, r);
+    if (dark) { g.addColorStop(0, '#05070d'); g.addColorStop(1, '#3a4664'); } else { g.addColorStop(0, '#5b6576'); g.addColorStop(0.7, '#8f99a8'); g.addColorStop(1, '#b4bdc9'); }
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+    x.fillStyle = dark ? 'rgba(0,0,0,.5)' : 'rgba(40,48,62,.55)'; x.beginPath(); x.arc(cx, cy - r * 0.12, r * 0.55, 0, Math.PI * 2); x.fill();
+    x.restore();
+  }
+
+  // ---------------- scenes ----------------
+  var SCENES = [
+    { name: 'Morning sky', sky: ['#7fc8ff', '#c9ecff', '#eef9ff'], sun: '#fff3b0', hill: ['#9fdc8a', '#7fcb72'], sea: '#7fd0e6' },
+    { name: 'Peach dawn', sky: ['#ffb39a', '#ffd9c2', '#fff2e6'], sun: '#fff1c4', hill: ['#c7d98e', '#a9c876'], sea: '#9fd6dc' },
+    { name: 'Seafoam bay', sky: ['#78d8cf', '#c3f0ea', '#effcfa'], sun: '#ffffff', hill: ['#a5df9c', '#86cf88'], sea: '#5fc3d4' },
+    { name: 'Lilac evening', sky: ['#a99cf2', '#d9cff9', '#f6f0ff'], sun: '#ffe1f0', hill: ['#b9d79a', '#9cc782'], sea: '#9bb8ec' }];
+  function rnd(seed) { var s = seed >>> 0 || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  function cloud(x, cx, cy, s, a) {
+    x.save(); x.globalAlpha = a; x.fillStyle = '#ffffff';
+    x.beginPath(); x.arc(cx, cy, s * 0.5, 0, Math.PI * 2); x.arc(cx + s * 0.55, cy - s * 0.22, s * 0.62, 0, Math.PI * 2); x.arc(cx + s * 1.2, cy, s * 0.48, 0, Math.PI * 2);
+    x.rect(cx, cy - s * 0.1, s * 1.2, s * 0.6); x.fill(); x.restore();
+  }
+  function scene(x, W, H, i, theme, skin) {
+    var S = SCENES[i % SCENES.length], dark = theme === 'dark' || skin === 'halloween', r = rnd(i * 97 + 5), g = x.createLinearGradient(0, 0, 0, H);
+    if (skin === 'halloween') { g.addColorStop(0, '#1b0f2e'); g.addColorStop(0.55, '#4a2560'); g.addColorStop(1, '#ff8a3a'); }
+    else if (dark) { g.addColorStop(0, '#0d1630'); g.addColorStop(0.6, '#1f2f5a'); g.addColorStop(1, '#3a4f86'); }
+    else { g.addColorStop(0, S.sky[0]); g.addColorStop(0.55, S.sky[1]); g.addColorStop(1, S.sky[2]); }
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    // a soft pattern: scattered bubbles of light
+    x.save(); x.fillStyle = dark ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.3)';
+    for (var q = 0; q < 46; q++) { var bx0 = r() * W, by0 = r() * H, br = 3 + r() * r() * 22; x.beginPath(); x.arc(bx0, by0, br, 0, Math.PI * 2); x.fill(); }
+    x.restore();
+    if (dark) { // stars
+      x.fillStyle = 'rgba(255,255,255,.8)';
+      for (var k = 0; k < 70; k++) { var sx = r() * W, sy = r() * H * 0.6, sr = r() * 1.3 + 0.3; x.globalAlpha = 0.3 + r() * 0.7; x.beginPath(); x.arc(sx, sy, sr, 0, Math.PI * 2); x.fill(); }
+      x.globalAlpha = 1;
+      var mx = W * 0.8, my = H * 0.1, mr = Math.min(W, H) * 0.06;
+      x.fillStyle = skin === 'halloween' ? '#ffb347' : '#f4f1d8'; x.beginPath(); x.arc(mx, my, mr, 0, Math.PI * 2); x.fill();
+      if (skin !== 'halloween') { x.fillStyle = dark ? '#0f1a38' : '#000'; x.beginPath(); x.arc(mx + mr * 0.45, my - mr * 0.2, mr * 0.9, 0, Math.PI * 2); x.fill(); }
+      else { var mg = x.createRadialGradient(mx, my, mr, mx, my, mr * 3); mg.addColorStop(0, 'rgba(255,170,70,.35)'); mg.addColorStop(1, 'rgba(255,170,70,0)'); x.fillStyle = mg; x.beginPath(); x.arc(mx, my, mr * 3, 0, Math.PI * 2); x.fill(); x.fillStyle = '#ffb347'; x.beginPath(); x.arc(mx, my, mr, 0, Math.PI * 2); x.fill(); x.fillStyle = 'rgba(200,110,30,.35)'; x.beginPath(); x.arc(mx - mr * 0.3, my - mr * 0.1, mr * 0.22, 0, Math.PI * 2); x.arc(mx + mr * 0.35, my + mr * 0.3, mr * 0.15, 0, Math.PI * 2); x.fill(); }
+    } else { // sun with a soft halo
+      var sx2 = W * 0.82, sy2 = H * 0.09, sr2 = Math.min(W, H) * 0.07;
+      var hg = x.createRadialGradient(sx2, sy2, sr2 * 0.5, sx2, sy2, sr2 * 3.2); hg.addColorStop(0, 'rgba(255,255,255,.7)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = hg; x.beginPath(); x.arc(sx2, sy2, sr2 * 3.2, 0, Math.PI * 2); x.fill();
+      x.fillStyle = S.sun; x.beginPath(); x.arc(sx2, sy2, sr2, 0, Math.PI * 2); x.fill();
+      for (var c = 0; c < 4; c++) cloud(x, r() * W * 0.9 - 20, H * (0.05 + r() * 0.22), 26 + r() * 30, 0.75 + r() * 0.2);
+    }
+    // the sea and hills at the bottom
+    var hy = H * 0.86;
+    x.fillStyle = dark ? (skin === 'halloween' ? '#3b1d47' : '#203463') : S.sea; x.fillRect(0, hy, W, H - hy);
+    x.strokeStyle = dark ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.55)'; x.lineWidth = 2;
+    for (var wv = 0; wv < 5; wv++) { var wy = hy + 8 + wv * 10; x.beginPath(); for (var wx = (wv % 2) * 20; wx < W; wx += 40) { x.moveTo(wx, wy); x.quadraticCurveTo(wx + 8, wy - 4, wx + 16, wy); } x.stroke(); }
+    var h1 = dark ? (skin === 'halloween' ? '#2a1636' : '#1a2a4c') : S.hill[0], h2 = dark ? (skin === 'halloween' ? '#211029' : '#14223f') : S.hill[1];
+    x.fillStyle = h1; x.beginPath(); x.moveTo(0, H); x.lineTo(0, H * 0.9); x.quadraticCurveTo(W * 0.18, H * 0.84, W * 0.42, H * 0.92); x.lineTo(W * 0.42, H); x.fill();
+    x.fillStyle = h2; x.beginPath(); x.moveTo(W, H); x.lineTo(W, H * 0.88); x.quadraticCurveTo(W * 0.8, H * 0.83, W * 0.55, H * 0.94); x.quadraticCurveTo(W * 0.5, H * 0.97, W * 0.45, H); x.fill();
+    if (!dark) { // a little sailboat on the sea
+      var bx = W * 0.5, by = hy + 10, bs = Math.min(W, H) * 0.035;
+      x.fillStyle = '#ffffff'; x.beginPath(); x.moveTo(bx, by - bs * 1.6); x.lineTo(bx, by - bs * 0.15); x.lineTo(bx + bs * 1.1, by - bs * 0.15); x.closePath(); x.fill();
+      x.fillStyle = '#ef3b4f'; x.beginPath(); x.moveTo(bx - bs * 0.9, by - bs * 0.05); x.lineTo(bx + bs * 1.3, by - bs * 0.05); x.lineTo(bx + bs * 0.9, by + bs * 0.4); x.lineTo(bx - bs * 0.6, by + bs * 0.4); x.closePath(); x.fill();
+    }
+    if (skin === 'halloween') { pumpkin(x, W * 0.12, H * 0.9, Math.min(W, H) * 0.045); pumpkin(x, W * 0.86, H * 0.885, Math.min(W, H) * 0.035); }
+  }
+  function pumpkin(x, cx, cy, r) {
+    x.save(); x.fillStyle = '#ff7a1a';
+    x.beginPath(); x.ellipse(cx - r * 0.45, cy, r * 0.6, r * 0.8, 0, 0, Math.PI * 2); x.ellipse(cx + r * 0.45, cy, r * 0.6, r * 0.8, 0, 0, Math.PI * 2); x.ellipse(cx, cy, r * 0.65, r * 0.85, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#3d8a2c'; x.fillRect(cx - r * 0.1, cy - r * 1.1, r * 0.2, r * 0.35);
+    x.fillStyle = '#ffd34d'; x.beginPath(); x.moveTo(cx - r * 0.5, cy - r * 0.2); x.lineTo(cx - r * 0.25, cy - r * 0.45); x.lineTo(cx - r * 0.1, cy - r * 0.2); x.fill();
+    x.beginPath(); x.moveTo(cx + r * 0.5, cy - r * 0.2); x.lineTo(cx + r * 0.25, cy - r * 0.45); x.lineTo(cx + r * 0.1, cy - r * 0.2); x.fill();
+    x.beginPath(); x.moveTo(cx - r * 0.5, cy + r * 0.15); x.quadraticCurveTo(cx, cy + r * 0.6, cx + r * 0.5, cy + r * 0.15); x.quadraticCurveTo(cx, cy + r * 0.35, cx - r * 0.5, cy + r * 0.15); x.fill();
+    x.restore();
+  }
+  // moving bits: drifting clouds (light) or bats (Halloween)
+  var fx = [];
+  function fxInit(i, W, H, theme, skin) {
+    fx = []; var r = rnd(i * 31 + 7);
+    if (skin === 'halloween') for (var b = 0; b < 3; b++) fx.push({ bat: true, x: r() * W, y: H * (0.04 + r() * 0.16), p: r() * 10, v: 0.25 + r() * 0.25 });
+    else if (theme !== 'dark') for (var c = 0; c < 2; c++) fx.push({ cloud: true, x: r() * W, y: H * (0.03 + r() * 0.12), s: 22 + r() * 18, v: 0.05 + r() * 0.08 });
+  }
+  function fxDraw(x, W, H, dt, t) {
+    fx.forEach(function (f) {
+      f.x += f.v * dt / 16; if (f.x > W + 80) f.x = -80;
+      if (f.cloud) cloud(x, f.x, f.y, f.s, 0.55);
+      if (f.bat) { var y = f.y + Math.sin(t * 2 + f.p) * 8, fl = Math.sin(t * 14 + f.p) * 0.6; x.save(); x.translate(f.x, y); x.fillStyle = '#120818';
+        x.beginPath(); x.ellipse(0, 0, 3.5, 4.5, 0, 0, Math.PI * 2); x.fill();
+        x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(-8, -8 * fl - 2, -15, -2 * fl); x.quadraticCurveTo(-9, 2, 0, 2); x.moveTo(0, 0); x.quadraticCurveTo(8, -8 * fl - 2, 15, -2 * fl); x.quadraticCurveTo(9, 2, 0, 2); x.fill(); x.restore(); }
+    });
+  }
+  // a gold star for the result card (SVG)
+  function starSVG(on) { return '<svg viewBox="0 0 40 40" class="' + (on ? 'on' : '') + '"><path d="M20 3l5.1 10.6 11.6 1.6-8.4 8.1 2 11.5L20 29.3 9.7 34.8l2-11.5-8.4-8.1 11.6-1.6z" fill="' + (on ? '#ffc21e' : 'rgba(127,127,127,.25)') + '" stroke="' + (on ? '#c08300' : 'rgba(127,127,127,.35)') + '" stroke-width="2" stroke-linejoin="round"/></svg>'; }
+  return { COLORS: COLORS, NAMES: NAMES, SCENES: SCENES, symbol: symbol, rope: rope, ferrule: ferrule, knob: knob, peg: peg, panel: panel, roundRect: roundRect,
+    scene: scene, fxInit: fxInit, fxDraw: fxDraw, starSVG: starSVG };
+})();
+</script>
+<script>
+/* Knotty sounds: all synthesized with Web Audio (no audio files). Off by default.
+   A soft creak while a rope is stretched (filtered noise with a wobble, quicker the faster you drag), a wooden pluck
+   when a knob seats on a peg, a low "twang" when a rope comes free (a bending string), a chord and sparkles when the
+   level is untangled, chimes for the stars. Music (its own switch): a slow plucked pentatonic tune. */
+var KS = (function () {
+  'use strict';
+  var ac = null, master = null, mus = null, on = false, musicOn = false, musTimer = 0, lastCreak = 0;
+  function ctx() {
+    if (!on && !musicOn) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      mus = ac.createGain(); mus.gain.value = 0.2; mus.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay, out, attack) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + (attack || 0.006)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(out || master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(freq, q, dur, gain, delay, f1, type) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.max(1, Math.floor(a.sampleRate * dur)), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = type || 'bandpass'; bp.frequency.setValueAtTime(freq, t); if (f1) bp.frequency.exponentialRampToValueAtTime(f1, t + dur); bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  // a plucked string: a few harmonics with a fast decay
+  function pluck(f, gain, delay, out) { tone('triangle', f, f * 0.995, 0.45, gain, delay, out); tone('sine', f * 2, 0, 0.25, gain * 0.35, delay, out); tone('sine', f * 3.01, 0, 0.12, gain * 0.15, delay, out); }
+  var SCALE = [196, 220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25], mi = 4;
+  function musicStep() {
+    if (!musicOn || !ctx()) return;
+    mi = Math.max(0, Math.min(SCALE.length - 1, mi + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)]));
+    if (Math.random() < 0.85) pluck(SCALE[mi], 0.12, 0, mus);
+    if (Math.random() < 0.25) pluck(SCALE[Math.max(0, mi - 4)] / 2, 0.08, 0.36, mus);
+  }
+  function setMusic(v) { musicOn = !!v; clearInterval(musTimer); if (musicOn) { ctx(); musTimer = setInterval(musicStep, 720); } }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    setMusic: setMusic,
+    unlock: function () { if (on || musicOn) ctx(); },
+    // a knob lifted off its peg
+    lift: function () { if (on) { tone('sine', 520, 700, 0.07, 0.07); noise(1800, 2, 0.05, 0.12); } },
+    // a soft rope creak while stretching (call often; throttled; speed 0..1)
+    creak: function (speed) {
+      if (!on) return; var t = performance.now(); if (t - lastCreak < 140 - 70 * Math.min(1, speed || 0)) return; lastCreak = t;
+      var f = 260 + Math.random() * 160; noise(f, 6, 0.09, 0.22 + 0.2 * Math.min(1, speed || 0), 0, f * 0.8); tone('sawtooth', f * 0.5, f * 0.45, 0.05, 0.012);
+    },
+    // a knob seats on a peg: a wooden pluck
+    seat: function () { if (!on) return; tone('sine', 300, 140, 0.09, 0.22); noise(2200, 1.5, 0.04, 0.25); tone('triangle', 880, 0, 0.08, 0.05, 0.01); },
+    // a rope comes free: a bending string
+    twang: function (i) {
+      if (!on) return; var f = [146.8, 164.8, 196, 220, 246.9, 293.7][(i || 0) % 6];
+      tone('sawtooth', f * 1.06, f, 0.5, 0.05); tone('triangle', f * 2.1, f * 2, 0.6, 0.1); tone('sine', f, 0, 0.7, 0.12);
+    },
+    // a rope gets crossed: a low tight thrum
+    tense: function () { if (on) { tone('sawtooth', 95, 88, 0.18, 0.035); tone('sine', 190, 180, 0.15, 0.04); } },
+    nope: function () { if (on) tone('sine', 300, 220, 0.1, 0.1); },
+    back: function () { if (on) { tone('sine', 700, 420, 0.12, 0.06); noise(900, 1.4, 0.1, 0.12); } },
+    undo: function () { if (on) { tone('sine', 900, 500, 0.14, 0.08); noise(800, 1, 0.12, 0.15); } },
+    hint: function () { if (on) { [1047, 1319, 1568].forEach(function (f, i) { tone('sine', f, 0, 0.3, 0.09, i * 0.07); }); } },
+    win: function () {
+      if (!on) return;
+      [261.63, 329.63, 392, 523.25].forEach(function (f, i) { pluck(f, 0.16, i * 0.07); });
+      [523.25, 659.25, 783.99, 1046.5].forEach(function (f) { tone('triangle', f, 0, 1.4, 0.07, 0.4, null, 0.04); });
+      for (var j = 0; j < 8; j++) tone('sine', 1800 + Math.random() * 1600, 0, 0.12, 0.04, 0.5 + j * 0.06);
+    },
+    pop: function (i) { if (on) tone('sine', 600 + (i || 0) * 70, 1200 + (i || 0) * 90, 0.07, 0.07); },
+    star: function (i) { if (on) { tone('triangle', [1047, 1319, 1568][i % 3], 0, 0.35, 0.12); tone('sine', [2094, 2638, 3136][i % 3], 0, 0.2, 0.04); } },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.22); tone('sine', 1568, 0, 0.5, 0.18, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Knotty app: layout (the peg board in the free box between the top row and the helper buttons), drawing (scene, panels
+   and pegs on a still layer; ropes, knobs, drag hints and particles on the live layer), dragging and tapping knobs,
+   helpers (undo, hint, restart), the move limit with Continue, twist tips, saves, stats, house ads. */
+(function () {
+  'use strict';
+  var S = KS;
+
+  // ================= storage =================
+  var store = Goobs.store('knotty');
+  var settings = { sound: false, music: false, adEvery: 3, symbols: false };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { level: 1, seen: false, finished: 0, lastAdAt: 0, tips: {}, stars: {} };
+  for (var mk in MD) if (meta[mk] === undefined || meta[mk] === null) meta[mk] = MD[mk];
+  if (!(meta.level >= 1)) meta.level = 1;
+  if (typeof meta.tips !== 'object') meta.tips = {};
+  if (typeof meta.stars !== 'object') meta.stars = {};
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['cleared', 'moves', 'undos', 'hints', 'restarts', 'conts', 'three', 'stars', 'freed'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovTip') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function fmt(n) { return (n || 0).toLocaleString(); }
+  var made = {};
+  function entryFor(n) { if (n <= KN.BANK.length) return KN.BANK[n - 1]; return made[n] || (made[n] = KN.levelBeyond(n)); }
+  function now() { return performance.now(); }
+  var MAXHINTS = 3;
+
+  // ================= game =================
+  var g = null, B = null, levelNo = 1, ending = false, M = [], free = [], sag = [];
+  var drag = null, sel = -1, anims = {}, shakes = {}, freeT = {}, parts = [], winT = 0, hintT = 0, lastMoveT = 0;
+  function resetFx() { drag = null; sel = -1; anims = {}; shakes = {}; freeT = {}; winT = 0; hintT = 0; }
+  function startLevel(n) {
+    levelNo = n; meta.level = n; saveMeta();
+    var e = entryFor(n), rc = KN.recipe(n);
+    g = KN.create(e, { limit: rc.moveLimit ? KN.limitFor(e[1], n) : 0 }); g.level = n;
+    ending = false; resetFx(); parts = [];
+    B = KN.board(g.spec); evalState(true);
+    save(); newScene(); renderInfo(); tipsFor();
+  }
+  function save() { if (g && !ending) store.set('game', { level: g.level, str: g.str, pos: g.pos, used: g.used, hist: g.hist, z: g.z, hints: g.hints, limit: g.limit, base: g.base, conts: g.conts }); }
+  function load() {
+    var r = store.get('game', null);
+    if (!r || r.level !== meta.level || typeof r.str !== 'string') return false;
+    var e = entryFor(r.level); if (r.str !== e[0]) return false;
+    var t = KN.create(e, { limit: r.base || 0 }), K = t.pos.length, Bd = KN.board(t.spec);
+    if (!Array.isArray(r.pos) || r.pos.length !== K || !Array.isArray(r.hist) || !Array.isArray(r.z) || r.z.length !== t.R) return false;
+    var seen = {};
+    for (var k = 0; k < K; k++) {
+      var p = r.pos[k]; if (!(p >= 0 && p < Bd.n) || seen[p]) return false; seen[p] = 1;
+      if (KN.pinned(t, k) && p !== t.pos[k]) return false;
+    }
+    for (var q = 0; q < t.R; q++) if (t.lim[q] && Bd.d2[r.pos[2 * q] * Bd.n + r.pos[2 * q + 1]] > t.lim[q]) return false;
+    if (!(r.used >= 0) || !(r.hints >= 0 && r.hints <= MAXHINTS)) return false;
+    t.pos = r.pos.slice(); t.used = r.used; t.hist = r.hist; t.z = r.z; t.hints = r.hints; t.limit = r.limit || 0; t.base = r.base || 0; t.conts = r.conts || 0; t.level = r.level;
+    if (KN.solved(t)) return false;
+    g = t; levelNo = r.level; B = Bd; ending = false; resetFx(); parts = [];
+    evalState(true); newScene(); renderInfo(); tipsFor(); return true;
+  }
+  // crossings, free ropes (twang when one comes free) and the safe sag of every free rope
+  function evalState(silent) {
+    var m = KN.crossMasks(g), was = free.slice(), nowFree = 0, newly = 0, tensed = false;
+    M = m; free = m.map(function (x) { return !x; });
+    free.forEach(function (f, r) {
+      if (f) nowFree++;
+      if (!silent && f && was[r] === false) { freeT[r] = now(); newly++; setTimeout(function () { S.twang(r); }, 90 + newly * 70); }
+      if (!silent && !f && was[r] === true) tensed = true;
+    });
+    if (newly && !silent) { stats.freed += newly; saveStats(); }
+    if (tensed && !newly) setTimeout(function () { S.tense(); }, 90);
+    computeSag();
+    return nowFree;
+  }
+
+  // ================= layout =================
+  var cv, cx, bg, bx, W = 300, H = 400, DPR = 1, FR = { x: 0, y: 0, w: 300, h: 400 };
+  var L = { s: 20, sp: 40, ox: 0, oy: 0, kr: 11, rw: 8, pr: 5 };
+  function fit() {
+    var st = $('stage'), r = st.getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1);
+    W = Math.max(100, r.width); H = Math.max(100, r.height);
+    var tp = document.querySelector('.top').getBoundingClientRect(), tb = document.querySelector('.toolbar').getBoundingClientRect();
+    var y0 = Math.max(0, tp.bottom - r.top) + 6, y1 = (tb.height ? tb.top - r.top : H) - 6;
+    FR = { x: 0, y: y0, w: W, h: Math.max(120, y1 - y0) };
+    [cv, bg].forEach(function (c) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
+    layout(); drawBg();
+  }
+  var PAD = 0.62; // panel padding around the pegs, in peg spacings
+  function layout() {
+    if (!g) return;
+    var bw = B.W + 4 * PAD + 0.6, bh = B.H + 4 * PAD + 0.6; // in board units (a spacing is 2 units)
+    var s = Math.min((FR.w - 12) / bw, (FR.h - 6) / bh, 46);
+    var ox = FR.x + (FR.w - B.W * s) / 2, oy = FR.y + (FR.h - B.H * s) / 2;
+    var sp = s * KN.SP;
+    L = { s: s, sp: sp, ox: ox, oy: oy, kr: sp * 0.26, rw: sp * 0.24, pr: sp * 0.12 }; // kr + rw/2 = KN.TOUCH (0.38): what touches, crosses
+    L.top = oy + Math.min.apply(null, B.clusters.map(function (c) { return c.y0; })) * s - PAD * sp;
+    computeSag();
+  }
+  function pegXY(p) { return { x: L.ox + B.px[p] * L.s, y: L.oy + B.py[p] * L.s }; }
+  function knobXY(k, t) {
+    if (drag && drag.k === k) return { x: drag.x, y: drag.y };
+    var a = anims[k], P = pegXY(g.pos[k]);
+    if (a) {
+      var u = (t - a.t0) / a.dur;
+      if (u >= 1) { delete anims[k]; if (a.onEnd) a.onEnd(); return P; }
+      if (u < 0) u = 0;
+      var e = a.glide ? (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2) : 1 - Math.pow(1 - u, 3);
+      var hop = a.glide ? Math.sin(u * Math.PI) * L.sp * 0.35 : 0;
+      return { x: a.fx + (P.x - a.fx) * e, y: a.fy + (P.y - a.fy) * e - hop, lift: a.glide ? Math.sin(u * Math.PI) : 0 };
+    }
+    return P;
+  }
+  var sceneNo = 0;
+  function newScene() { sceneNo = (levelNo - 1) % KA.SCENES.length; layout(); drawBg(); KA.fxInit(sceneNo, W, H, Goobs.theme(), Goobs.skin()); }
+  function dark() { return Goobs.theme() === 'dark' || !!Goobs.skin(); }
+  // the still layer: scene, board panels, pegs
+  function drawBg() {
+    if (!bx) return;
+    bx.setTransform(DPR, 0, 0, DPR, 0, 0); bx.clearRect(0, 0, W, H);
+    KA.scene(bx, W, H, sceneNo, Goobs.theme(), Goobs.skin());
+    if (!g) return;
+    var pad = PAD * L.sp, dk = dark();
+    B.clusters.forEach(function (c) { KA.panel(bx, L.ox + c.x0 * L.s - pad, L.oy + c.y0 * L.s - pad, (c.x1 - c.x0) * L.s + pad * 2, (c.y1 - c.y0) * L.s + pad * 2, L.sp * 0.42, dk, Goobs.skin()); });
+    for (var p = 0; p < B.n; p++) { var P = pegXY(p); KA.peg(bx, P.x, P.y, L.pr, dk); }
+  }
+
+  // ================= rope shapes =================
+  // A free rope hangs in a gentle sag (more for flat ropes); the sag is halved until the curve keeps clear of every
+  // other rope and knob by the same distance the crossing rule uses, so a rope never LOOKS crossed when it isn't.
+  function sagDir(a, b) { var dx = b.x - a.x, dy = b.y - a.y, Ln = Math.hypot(dx, dy) || 1, nx = -dy / Ln, ny = dx / Ln; if (ny < 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; } return { nx: nx, ny: ny, L: Ln, flat: Math.abs(dx) / Ln }; }
+  function curve(a, b, amt, N, wave) {
+    var d = sagDir(a, b), pts = [], n = N || 14;
+    for (var i = 0; i <= n; i++) {
+      var u = i / n, bow = 4 * u * (1 - u) * amt + (wave ? Math.sin(Math.PI * u) * wave(u) : 0);
+      pts.push([a.x + (b.x - a.x) * u + d.nx * bow, a.y + (b.y - a.y) * u + d.ny * bow]);
+    }
+    return pts;
+  }
+  function dSegPt(ax, ay, bx2, by2, px, py) { var vx = bx2 - ax, vy = by2 - ay, l2 = vx * vx + vy * vy, t = l2 ? ((px - ax) * vx + (py - ay) * vy) / l2 : 0; t = Math.max(0, Math.min(1, t)); var qx = ax + vx * t - px, qy = ay + vy * t - py; return Math.sqrt(qx * qx + qy * qy); }
+  function segSegD(a, b, c, d) {
+    // 0 when they intersect
+    function o(p, q, r) { return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); }
+    var o1 = o(a, b, c), o2 = o(a, b, d), o3 = o(c, d, a), o4 = o(c, d, b);
+    if (o1 * o2 < 0 && o3 * o4 < 0) return 0;
+    return Math.min(dSegPt(a[0], a[1], b[0], b[1], c[0], c[1]), dSegPt(a[0], a[1], b[0], b[1], d[0], d[1]), dSegPt(c[0], c[1], d[0], d[1], a[0], a[1]), dSegPt(c[0], c[1], d[0], d[1], b[0], b[1]));
+  }
+  function polyD(P, Q) { var m = 1e9; for (var i = 1; i < P.length; i++) for (var j = 1; j < Q.length; j++) { var v = segSegD(P[i - 1], P[i], Q[j - 1], Q[j]); if (v < m) m = v; if (m === 0) return 0; } return m; }
+  function polyPtD(P, x, y) { var m = 1e9; for (var i = 1; i < P.length; i++) m = Math.min(m, dSegPt(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1], x, y)); return m; }
+  function computeSag() {
+    if (!g || !B) return;
+    var R = g.R, ends = [], amt = [], i, j;
+    for (i = 0; i < R; i++) {
+      var a = pegXY(g.pos[2 * i]), b = pegXY(g.pos[2 * i + 1]); ends.push([a, b]);
+      var d = sagDir(a, b); amt.push(free[i] ? Math.min(d.L * 0.12, L.sp * 0.42) * (0.3 + 0.7 * d.flat) : 0);
+    }
+    var thrK = L.sp * KN.TOUCH + 1, thrR = L.rw + 2;
+    for (var pass = 0; pass < 8; pass++) {
+      var shapes = ends.map(function (e, r) { return amt[r] ? curve(e[0], e[1], amt[r], 12) : [[e[0].x, e[0].y], [e[1].x, e[1].y]]; }), changed = false;
+      for (i = 0; i < R; i++) {
+        if (!amt[i]) continue;
+        var bad = false;
+        for (j = 0; j < R && !bad; j++) {
+          if (j === i) continue;
+          if (polyPtD(shapes[i], ends[j][0].x, ends[j][0].y) < thrK || polyPtD(shapes[i], ends[j][1].x, ends[j][1].y) < thrK) bad = true;
+          else if (!M[j] && polyD(shapes[i], shapes[j]) < thrR) bad = true;
+          else if (M[j] && polyD(shapes[i], shapes[j]) < thrR) bad = true;
+        }
+        if (bad) { amt[i] = amt[i] < 1.2 ? 0 : amt[i] * 0.5; changed = true; }
+      }
+      if (!changed) break;
+    }
+    sag = amt;
+  }
+
+  // ================= input: drag a knob (or tap a knob, then a peg) =================
+  function local(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function knobHit(p) {
+    var best = -1, bd = Math.max(22, L.sp * 0.6);
+    for (var zi = g.z.length - 1; zi >= 0; zi--) { var r = g.z[zi]; for (var e = 0; e < 2; e++) { var k = 2 * r + e, P = pegXY(g.pos[k]), d = Math.hypot(P.x - p.x, P.y - p.y); if (d < bd) { bd = d; best = k; } } }
+    return best;
+  }
+  function pegHit(p, rad) { var best = -1, bd = rad || Math.max(20, L.sp * 0.5); for (var q = 0; q < B.n; q++) { var P = pegXY(q), d = Math.hypot(P.x - p.x, P.y - p.y); if (d < bd) { bd = d; best = q; } } return best; }
+  function validPeg(k, p) { var c = KN.canMove(g, k, p); return c === '' || c === 'limit'; }
+  // the nearest empty peg in reach of the dragged knob (within 0.8 spacings of the finger)
+  function snapPeg(k, x, y) {
+    var best = -1, bd = L.sp * 0.8;
+    for (var q = 0; q < B.n; q++) { if (!validPeg(k, q) && q !== g.pos[k]) continue; var P = pegXY(q), d = Math.hypot(P.x - x, P.y - y); if (d < bd) { bd = d; best = q; } }
+    return best;
+  }
+  function clampDrag(k, x, y) {
+    var r = k >> 1, l = g.lim[r];
+    x = Math.max(4, Math.min(W - 4, x)); y = Math.max(4, Math.min(H - 4, y));
+    if (l) { var O = pegXY(g.pos[k ^ 1]), mx = Math.sqrt(l) * L.s + L.sp * 0.12, dx = x - O.x, dy = y - O.y, d = Math.hypot(dx, dy); if (d > mx) { x = O.x + dx / d * mx; y = O.y + dy / d * mx; drag.strain = Math.min(1, (d - mx) / L.sp); } else drag.strain = 0; }
+    return { x: x, y: y };
+  }
+  function busy() { return !!drag || Object.keys(anims).length > 0 || ending; }
+  function down(e) {
+    if (!g || ending || sheetOpen() || drag) return;
+    S.unlock(); e.preventDefault();
+    var p = local(e), k = knobHit(p);
+    if (k >= 0 && !anims[k]) {
+      if (KN.pinned(g, k)) { shakes[k] = now(); S.nope(); toast('That end is pinned in place'); sel = -1; return; }
+      if (KN.outOfMoves(g)) { outOfMoves(); return; }
+      drag = { k: k, pid: e.pointerId, x: pegXY(g.pos[k]).x, y: pegXY(g.pos[k]).y, sx: p.x, sy: p.y, ox: pegXY(g.pos[k]).x - p.x, oy: pegXY(g.pos[k]).y - p.y, moved: false, lx: p.x, ly: p.y, lt: now(), strain: 0, wasSel: sel === k };
+      if (sel >= 0 && sel !== k) sel = -1;
+      try { cv.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
+      g.z.splice(g.z.indexOf(k >> 1), 1); g.z.push(k >> 1);
+      S.lift(); return;
+    }
+    if (sel >= 0) {
+      var q = pegHit(p);
+      if (q >= 0) { tryMove(sel, q); return; }
+      sel = -1;
+    }
+  }
+  function moveEv(e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    e.preventDefault();
+    var p = local(e);
+    if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 7) drag.moved = true;
+    if (!drag.moved) return;
+    var c = clampDrag(drag.k, p.x + drag.ox * 0.5, p.y + drag.oy * 0.5), t = now(), sp = Math.hypot(c.x - drag.lx, c.y - drag.ly) / Math.max(8, t - drag.lt);
+    drag.x = c.x; drag.y = c.y; drag.lx = c.x; drag.ly = c.y; drag.lt = t;
+    if (sp > 0.05) S.creak(Math.min(1, sp));
+  }
+  function up(e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    var d = drag, k = d.k; drag = null;
+    if (!d.moved) { // a tap: pick this knob (tap a peg next), or put it down again
+      sel = d.wasSel ? -1 : k; if (sel < 0) S.back(); return;
+    }
+    var q = e.type === 'pointercancel' ? -1 : snapPeg(k, d.x, d.y);
+    if (q >= 0 && q !== g.pos[k]) { doMove(k, q, { x: d.x, y: d.y }); return; }
+    // back to where it was
+    anims[k] = { fx: d.x, fy: d.y, t0: now(), dur: 200 }; S.back();
+    if (q < 0) { var near = pegHit({ x: d.x, y: d.y }, L.sp * 0.6); if (near >= 0 && near !== g.pos[k]) whyNot(k, near); }
+  }
+  function whyNot(k, p) {
+    var c = KN.canMove(g, k, p);
+    if (c === 'far') toast('Too far: this rope only stretches so far');
+    else if (c === 'taken') toast('That peg is taken');
+    else if (c === 'limit') outOfMoves();
+  }
+  function tryMove(k, p) {
+    var c = KN.canMove(g, k, p);
+    if (c === 'same') { sel = -1; S.back(); return; }
+    if (c === 'taken') { var o = KN.knobAt(g, p); if (o >= 0 && !KN.pinned(g, o)) { sel = o; S.lift(); return; } toast('That peg is taken'); S.nope(); return; }
+    if (c === 'far') { shakes[k] = now(); S.nope(); toast('Too far: this rope only stretches so far'); return; }
+    if (c === 'limit') { outOfMoves(); return; }
+    if (c) { S.nope(); return; }
+    var P = pegXY(g.pos[k]); doMove(k, p, { x: P.x, y: P.y, glide: true });
+  }
+  function doMove(k, p, from) {
+    if (!KN.move(g, k, p)) return false;
+    sel = -1; stats.moves++; saveStats(); lastMoveT = now();
+    anims[k] = { fx: from.x, fy: from.y, t0: now(), dur: from.glide ? 330 : 140, glide: !!from.glide, onEnd: function () { S.seat(); } };
+    evalState(false); save(); renderInfo();
+    if (KN.solved(g)) { win(); return true; }
+    if (KN.outOfMoves(g)) setTimeout(function () { if (g && !ending && KN.outOfMoves(g)) outOfMoves(); }, 600);
+    return true;
+  }
+
+  // ================= helpers =================
+  function undo() {
+    if (!g || ending || sheetOpen()) return;
+    if (drag) return;
+    if (!g.hist.length) { toast('Nothing to undo'); S.nope(); return; }
+    var k = g.hist[g.hist.length - 1][0], P = knobXY(k, now());
+    KN.undo(g); sel = -1; delete anims[k];
+    anims[k] = { fx: P.x, fy: P.y, t0: now(), dur: 240, glide: true, onEnd: function () { S.seat(); } };
+    stats.undos++; saveStats(); S.undo(); evalState(false); save(); renderInfo();
+  }
+  // the next move of a shortest solution from here: the level's own solution while you are on it, else the exact
+  // search (a node budget), else a quick solution, else the way back (undo your last move)
+  function hintMove() {
+    var e = entryFor(levelNo), sol = KN.solOf(e), st = KN.create(e[0]);
+    for (var i = 0; i <= sol.length; i++) {
+      if (st.pos.join(',') === g.pos.join(',')) return i < sol.length ? sol[i] : null;
+      if (i < sol.length) st.pos[sol[i][0]] = sol[i][1];
+    }
+    var ex = KN.solveState(g.spec, g.pos, g.lim, g.pins, { maxNodes: 20000, maxDepth: 30 });
+    if (ex && ex.moves.length) return ex.moves[0];
+    var q = KN.quickSolve(g.spec, g.pos, g.lim, g.pins, g.used + 1, 40);
+    if (q && q.length) return q[0];
+    if (g.hist.length) { var h = g.hist[g.hist.length - 1]; if (!KN.canMove(g, h[0], h[1])) return [h[0], h[1]]; }
+    return null;
+  }
+  function hint() {
+    if (!g || ending || sheetOpen() || drag) return;
+    if (g.hints >= MAXHINTS) { toast('No hints left on this level'); S.nope(); return; }
+    if (KN.outOfMoves(g)) { outOfMoves(); return; }
+    var m = hintMove();
+    if (!m) { toast('No hint here. Try Undo or Restart'); S.nope(); return; }
+    g.hints++; stats.hints++; saveStats(); S.hint(); hintT = now();
+    var P = pegXY(g.pos[m[0]]); g.z.splice(g.z.indexOf(m[0] >> 1), 1); g.z.push(m[0] >> 1);
+    doMove(m[0], m[1], { x: P.x, y: P.y, glide: true });
+    if (!ending) toast('Hint used: one star less on this level');
+  }
+  function restart() {
+    if (!g) return; KN.restart(g); g.level = levelNo; ending = false; resetFx(); stats.restarts++; saveStats();
+    evalState(true); save(); layout(); renderInfo();
+  }
+  // the move limit ran out: Continue with more moves after a house ad (twice per try), Undo, or Restart
+  var MAXCONT = 2;
+  function outOfMoves() {
+    if (!g || ending || isOpen('ovEnd')) return;
+    sel = -1; S.nope();
+    var bonus = KN.bonusFor(g.base || g.limit), left = MAXCONT - g.conts, btns = [];
+    if (left > 0) btns.push({ label: 'Continue +' + bonus + ' moves', sub: 'watch an ad' + (left === 1 ? ' · last one' : ''), red: true, go: function () {
+      showAd(function () { if (!g || ending) return; var b = KN.addMoves(g); stats.conts++; saveStats(); save(); renderInfo(); toast('+' + b + ' moves. Keep untangling!'); });
+    } });
+    if (g.hist.length) btns.push({ label: 'Undo last move', sub: 'gives the move back', go: undo });
+    btns.push({ label: 'Restart', red: left <= 0, go: function () { restart(); } });
+    showCard('Out of moves', 'All <b>' + g.limit + '</b> moves are used and some ropes are still tangled.' + (left > 0 ? '' : ' No more Continues on this try.'), btns);
+  }
+  function win() {
+    if (ending) return;
+    ending = true; store.del('game'); drag = null; sel = -1;
+    var n = levelNo, best = g.best || 1, st = KN.stars(best, g.used, g.hints), prev = meta.stars[n] || 0;
+    if (st > prev) { stats.stars += st - prev; meta.stars[n] = st; }
+    if (st === 3 && prev < 3) stats.three++;
+    stats.cleared++; saveStats();
+    meta.finished++; meta.level = n + 1; saveMeta();
+    winT = now() + 160;
+    setTimeout(function () { S.win(); for (var i = 0; i < 90; i++) confetti(); }, 160);
+    for (var k = 0; k < g.pos.length; k++) (function (k) { setTimeout(function () { S.pop(k % 12); var P = pegXY(g.pos[k]); for (var q = 0; q < 6; q++) parts.push({ x: P.x, y: P.y, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4 - 1, life: 34, t: 0, c: KA.COLORS[(k >> 1) % 12][0], r: 2 + Math.random() * 2.5, g: 0.08 }); }, 260 + k * 45); })(k);
+    var used = g.used, hints = g.hints, lim = g.limit;
+    setTimeout(function () {
+      var txt = 'Untangled in <b>' + used + '</b> move' + (used === 1 ? '' : 's') + '. Best: ' + best + '.' + (hints ? ' (' + hints + ' hint' + (hints > 1 ? 's' : '') + ')' : '') +
+        (st < 3 && !hints && used > best ? ' Can you do it in ' + best + '?' : '') + (n === KN.BANK.length ? ' That was the last built-in level; new ones are made on the phone from here on, forever.' : '');
+      showCard(['Untangled!', 'Nicely done!', 'All free!', 'Knot a problem!'][n % 4], txt, [
+        { label: 'Next level', red: true, go: function () { between(function () { startLevel(n + 1); }); } },
+        { label: 'Play again', go: function () { startLevel(n); } }], st);
+      for (var s2 = 0; s2 < st; s2++) (function (s2) { setTimeout(function () { S.star(s2); }, 250 + s2 * 150); })(s2);
+      if (n + 1 > KN.BANK.length) setTimeout(function () { entryFor(n + 1); }, 400); // make the next level while the card shows
+    }, 1500);
+  }
+
+  // ================= drawing =================
+  function draw(t, dt) {
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
+    if (g) { cx.save(); cx.beginPath(); cx.rect(0, 0, W, Math.max(0, L.top - 6)); cx.clip(); }
+    KA.fxDraw(cx, W, H, dt, t / 1000);
+    if (!g) return;
+    cx.restore();
+    var ts = t / 1000, act = drag ? drag.k : sel;
+    // reach and targets for the picked knob
+    if (act >= 0) {
+      var r0 = act >> 1, l = g.lim[r0], O = pegXY(g.pos[act ^ 1]);
+      if (l) {
+        var rad = Math.sqrt(l) * L.s;
+        cx.save(); cx.fillStyle = dark() ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.35)'; cx.beginPath(); cx.arc(O.x, O.y, rad + L.kr * 0.7, 0, Math.PI * 2); cx.fill();
+        cx.setLineDash([6, 6]); cx.lineDashOffset = -ts * 20; cx.strokeStyle = KA.COLORS[r0 % 12][1]; cx.globalAlpha = 0.7; cx.lineWidth = 2; cx.stroke(); cx.restore();
+      }
+      var snap = drag && drag.moved ? snapPeg(act, drag.x, drag.y) : -1;
+      for (var q = 0; q < B.n; q++) {
+        if (g.pos.indexOf(q) >= 0) continue;
+        var P = pegXY(q), ok = validPeg(act, q);
+        if (ok) {
+          var pulse = 0.5 + 0.5 * Math.sin(ts * 5 + q);
+          cx.fillStyle = q === snap ? 'rgba(80,220,120,.55)' : 'rgba(80,220,120,' + (0.18 + 0.12 * pulse) + ')';
+          cx.beginPath(); cx.arc(P.x, P.y, q === snap ? L.kr * 1.15 : L.pr * 1.9, 0, Math.PI * 2); cx.fill();
+          if (q === snap) { cx.strokeStyle = 'rgba(255,255,255,.9)'; cx.lineWidth = 2; cx.stroke(); }
+        } else if (l) { cx.fillStyle = 'rgba(30,40,60,.28)'; cx.beginPath(); cx.arc(P.x, P.y, L.pr * 1.25, 0, Math.PI * 2); cx.fill(); }
+      }
+    }
+    // ropes in draw order (the last moved on top)
+    var order = g.z.slice(); if (act >= 0) { order.splice(order.indexOf(act >> 1), 1); order.push(act >> 1); }
+    var wigA = winT && t > winT ? Math.max(0, 1 - (t - winT) / 1400) : 0, overUnder = collinear(order), knobs = [];
+    order.forEach(function (r) {
+      var a = knobXY(2 * r, t), b = knobXY(2 * r + 1, t), moving = (drag && drag.k >> 1 === r) || anims[2 * r] || anims[2 * r + 1];
+      var isFree = free[r] && !moving, tense = !free[r] && !moving;
+      var pts, fT = freeT[r] ? Math.max(0, 1 - (t - freeT[r]) / 700) : 0;
+      if (isFree && sag[r] > 0) {
+        var sw = sag[r] * (0.9 + 0.1 * Math.sin(ts * 1.4 + r * 1.7));
+        pts = curve(a, b, sw, 18, wigA ? function (u) { return Math.sin(u * Math.PI * 4 - t / 70 + r) * L.sp * 0.07 * wigA; } : (fT ? function (u) { return Math.sin(u * Math.PI * 3 - t / 60) * L.sp * 0.05 * fT; } : null));
+      } else if (isFree && (wigA || fT)) {
+        pts = curve(a, b, 0, 18, function (u) { return Math.sin(u * Math.PI * 4 - t / 70 + r) * L.sp * 0.06 * Math.max(wigA, fT); });
+      } else pts = [[a.x, a.y], [b.x, b.y]];
+      if (!moving && pts.length === 2 && overUnder[r]) { var od = sagDir(a, b), ow = L.rw * 1.05 * overUnder[r]; pts = [[a.x + od.nx * ow, a.y + od.ny * ow], [b.x + od.nx * ow, b.y + od.ny * ow]]; }
+      if (pts.length === 2) { // straight: split so the stripes and highlight have points to follow
+        var sp = []; for (var i = 0; i <= 8; i++) sp.push([a.x + (b.x - a.x) * i / 8, a.y + (b.y - a.y) * i / 8]); pts = sp;
+      }
+      var strain = drag && drag.k >> 1 === r ? drag.strain : 0;
+      KA.rope(cx, pts, L.rw * (tense ? 0.92 : 1) * (1 - 0.15 * strain), r, { free: isFree, tense: tense || strain > 0.2, glow: fT, phase: isFree ? ts * 0.15 : 0 });
+      if (g.lim[r]) { KA.ferrule(cx, a.x, a.y, b.x, b.y, L.rw, L.kr * 1.55); KA.ferrule(cx, b.x, b.y, a.x, a.y, L.rw, L.kr * 1.55); }
+      knobs.push([r, a, b, isFree, fT]);
+    });
+    // knobs above every rope (a knob is never hidden under a rope), the picked one last
+    knobs.forEach(function (kn) {
+      var r = kn[0], a = kn[1], b = kn[2], isFree = kn[3], fT = kn[4];
+      for (var e2 = 0; e2 < 2; e2++) {
+        var k = 2 * r + e2, Pk = e2 ? b : a, o = { sym: settings.symbols, pinned: KN.pinned(g, k) };
+        if (k === act) o.lift = drag && drag.moved ? 1 : 0.6 + 0.2 * Math.sin(ts * 6);
+        if (Pk.lift) o.lift = Math.max(o.lift || 0, Pk.lift);
+        if (isFree && fT) o.glow = fT;
+        var sx = 0; if (shakes[k] && t - shakes[k] < 320) sx = Math.sin((t - shakes[k]) / 25) * L.kr * 0.25 * (1 - (t - shakes[k]) / 320);
+        if (winT && t > winT + 100 + k * 45 && t < winT + 100 + k * 45 + 380) o.pop = 1 + 0.35 * Math.sin((t - winT - 100 - k * 45) / 380 * Math.PI);
+        KA.knob(cx, Pk.x + sx, Pk.y, L.kr, r, o);
+      }
+    });
+    drawParts();
+  }
+  // two ropes lying along one line would hide each other: the lower one is drawn a little to the side
+  function collinear(order) {
+    var out = {}, X = B.px, Y = B.py;
+    for (var i = 0; i < order.length; i++) for (var j = i + 1; j < order.length; j++) {
+      var r = order[i], q = order[j]; if (!(M[r] >> q & 1)) continue;
+      var a = g.pos[2 * r], b = g.pos[2 * r + 1], c = g.pos[2 * q], d = g.pos[2 * q + 1];
+      var c1 = (X[b] - X[a]) * (Y[c] - Y[a]) - (Y[b] - Y[a]) * (X[c] - X[a]), c2 = (X[b] - X[a]) * (Y[d] - Y[a]) - (Y[b] - Y[a]) * (X[d] - X[a]);
+      if (c1 === 0 && c2 === 0) out[r] = (out[r] || 0) + 1;
+    }
+    return out;
+  }
+  // ================= particles =================
+  function confetti() { parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.4, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, life: 170, t: 0, c: KA.COLORS[Math.floor(Math.random() * 12)][0], r: 3 + Math.random() * 3, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, flake: true, g: 0.03 }); }
+  function stepParts() { parts = parts.filter(function (p) { p.t++; p.x += p.vx; p.y += p.vy; p.vy += p.g || 0.12; if (p.flake) { p.vx *= 0.985; p.rot += p.vr; } return p.t < p.life && p.y < H + 20; }); }
+  function drawParts() {
+    parts.forEach(function (p) {
+      cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c;
+      if (p.flake) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); }
+      else { cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, Math.PI * 2); cx.fill(); }
+    });
+    cx.globalAlpha = 1;
+  }
+
+  // ================= loop =================
+  var lastT = 0;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(60, t - lastT) : 16; lastT = t;
+    stepParts(); draw(t, dt);
+  }
+
+  // ================= info, cards, sheets =================
+  function renderInfo() {
+    if (!g) return;
+    var nf = free.filter(Boolean).length, pm = $('pillMoves');
+    $('pillLevel').innerHTML = '<small>Level</small>' + fmt(levelNo) + '<span class="bar"><b style="width:' + Math.round(100 * nf / Math.max(1, g.R)) + '%"></b></span>';
+    if (g.limit) {
+      var left = KN.movesLeft(g);
+      pm.innerHTML = '<small>Moves left</small>' + Math.max(0, left) + '<i> / ' + g.limit + '</i>';
+      pm.classList.toggle('warn', left > 0 && left <= 2); pm.classList.toggle('out', left <= 0);
+    } else {
+      pm.innerHTML = '<small>Moves · best ' + (g.best || '?') + '</small>' + g.used;
+      pm.classList.remove('warn'); pm.classList.remove('out');
+    }
+    $('hintCnt').textContent = MAXHINTS - g.hints; $('btnHint').disabled = g.hints >= MAXHINTS;
+    $('btnUndo').disabled = !g.hist.length;
+  }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2300); }
+  function showCard(title, html, buttons, stars) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#kn-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    $('endStars').innerHTML = stars ? [0, 1, 2].map(function (i) { return KA.starSVG(i < stars); }).join('') : '';
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) { var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      if (b.sub) { var sm = document.createElement('small'); sm.textContent = b.sub; el.appendChild(sm); } el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; }
+    next();
+  }
+  // ---- twist tips: one line the first time each twist shows up ----
+  var TIPS = {
+    limit: ['Short ropes', 'A rope with metal clamps can only stretch so far. While you drag one of its ends, the ring shows how far it reaches.'],
+    pin: ['Pinned ends', 'A knob with a steel bolt is pinned: it can’t move. Untangle around it by moving the other ropes (or its other end).'],
+    clusters: ['Several boards', 'Now the pegs come in separate boards. Ropes reach across from one board to another: same rules.'],
+    movelimit: ['Move limit', 'From here on, each level has a move limit (top). It is a little more than the best solution. Undo gives a move back.']
+  };
+  var tipQueue = [];
+  function tipsFor() {
+    if (!g) return;
+    tipQueue = [];
+    if (g.lim.some(function (x) { return x; })) tipQueue.push('limit');
+    if (g.pins.length) tipQueue.push('pin');
+    if (B.clusters.length > 1) tipQueue.push('clusters');
+    if (g.limit) tipQueue.push('movelimit');
+    tipQueue = tipQueue.filter(function (k) { return !meta.tips[k]; });
+    nextTip();
+  }
+  function tipPic(k) {
+    var c = $('tipPic'), x = c.getContext('2d'), d = 2; c.width = 240 * d; c.height = 120 * d; x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, 240, 120);
+    var sp = 40, kr = sp * 0.28, rw = sp * 0.2, dk = dark();
+    function pg(px, py) { KA.peg(x, px, py, sp * 0.12, dk); }
+    function rp(a, b, c2, o) { var pts = []; for (var i = 0; i <= 10; i++) pts.push([a[0] + (b[0] - a[0]) * i / 10, a[1] + (b[1] - a[1]) * i / 10 + (o && o.sag ? Math.sin(Math.PI * i / 10) * o.sag : 0)]); KA.rope(x, pts, rw, c2, o || {}); }
+    if (k === 'clusters') {
+      KA.panel(x, 14, 18, 92, 84, 14, dk); KA.panel(x, 134, 18, 92, 84, 14, dk);
+      [[40, 44], [80, 44], [40, 80], [80, 80], [160, 44], [200, 44], [160, 80], [200, 80]].forEach(function (p) { pg(p[0], p[1]); });
+      rp([80, 44], [160, 80], 1, { free: true, sag: 6 }); rp([40, 80], [80, 80], 3, { free: true, sag: 3 });
+      KA.knob(x, 80, 44, kr, 1, {}); KA.knob(x, 160, 80, kr, 1, {}); KA.knob(x, 40, 80, kr, 3, {}); KA.knob(x, 80, 80, kr, 3, {});
+      return;
+    }
+    KA.panel(x, 14, 14, 212, 92, 16, dk);
+    for (var i2 = 0; i2 < 5; i2++) for (var j2 = 0; j2 < 2; j2++) pg(40 + i2 * 40, 40 + j2 * 40);
+    if (k === 'limit') {
+      x.save(); x.setLineDash([5, 5]); x.strokeStyle = KA.COLORS[0][1]; x.lineWidth = 2; x.beginPath(); x.arc(80, 80, 57, 0, Math.PI * 2); x.stroke(); x.restore();
+      rp([80, 80], [120, 40], 0, {}); KA.ferrule(x, 80, 80, 120, 40, rw, kr * 1.55); KA.ferrule(x, 120, 40, 80, 80, rw, kr * 1.55);
+      KA.knob(x, 80, 80, kr, 0, { pinned: false }); KA.knob(x, 120, 40, kr, 0, { lift: 1 });
+      x.fillStyle = 'rgba(30,40,60,.3)'; [[200, 40], [200, 80], [160, 80]].forEach(function (p) { x.beginPath(); x.arc(p[0], p[1], 6, 0, Math.PI * 2); x.fill(); });
+    } else if (k === 'pin') {
+      rp([40, 40], [160, 80], 4, { tense: true }); rp([120, 40], [80, 80], 2, { tense: true });
+      KA.knob(x, 40, 40, kr, 4, { pinned: true }); KA.knob(x, 160, 80, kr, 4, {}); KA.knob(x, 120, 40, kr, 2, {}); KA.knob(x, 80, 80, kr, 2, {});
+    } else {
+      rp([40, 40], [200, 40], 6, { free: true, sag: 6 }); rp([40, 80], [160, 80], 5, { free: true, sag: 5 });
+      KA.knob(x, 40, 40, kr, 6, {}); KA.knob(x, 200, 40, kr, 6, {}); KA.knob(x, 40, 80, kr, 5, {}); KA.knob(x, 160, 80, kr, 5, {});
+    }
+  }
+  function nextTip() {
+    if (!tipQueue.length || !meta.seen) return;
+    var k = tipQueue.shift(); meta.tips[k] = 1; saveMeta();
+    $('tipTitle').textContent = 'New: ' + TIPS[k][0]; $('tipText').textContent = TIPS[k][1];
+    tipPic(k); $('ovTip').classList.add('show');
+  }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Drag a knob</b> (the ball at the end of a rope) to an <b>empty peg</b>. The rope stretches after your finger and the knob snaps onto the nearest free peg. You can also <b>tap a knob</b>, then tap a peg.',
+      '<b>Untangle every rope:</b> no two ropes may cross. A rope that crosses nothing <b>relaxes and glows</b>; a crossed rope is pulled tight.',
+      'A rope also counts as crossed when it <b>touches another rope’s knob</b> (it runs over that peg). Ropes may pass over empty pegs.',
+      'Fewer moves, more stars: <b>3 stars</b> for the best number of moves (shown at the top), 2 for close to it. Every level can be done in its best.',
+      'Helpers: <b>Undo</b> (as often as you like, gives the move back), <b>Hint</b> (moves one knob along a shortest way; 3 per level, each costs a star), <b>Restart</b>.',
+      'It gets harder: more ropes, bigger boards, <b>short ropes</b> (metal clamps: they only stretch so far), <b>pinned ends</b> (a steel bolt: they can’t move), <b>several boards</b>, and from level 30 a <b>move limit</b>.',
+      'Settings: <b>Knob symbols</b> put a small shape on every knob, so colours are easy to tell apart.',
+      '300 levels are built in, then new ones are made on the phone, without end.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var lv = Object.keys(meta.stars).length;
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + fmt(stats.cleared) + '</b><span>Levels untangled</span></div><div class="tile"><b>' + fmt(stats.stars) + '</b><span>Stars</span></div><div class="tile"><b>' + fmt(stats.three) + '</b><span>3-star levels</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.moves) + '</b><span>Moves</span></div><div class="tile"><b>' + fmt(stats.freed) + '</b><span>Ropes freed</span></div><div class="tile"><b>' + fmt(stats.undos) + '</b><span>Undos</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.hints) + '</b><span>Hints</span></div><div class="tile"><b>' + fmt(stats.restarts) + '</b><span>Restarts</span></div><div class="tile"><b>' + fmt(meta.level) + '</b><span>Next level</span></div></div>' +
+      '<p class="statsnote">' + fmt(lv) + ' different levels finished' + (stats.conts ? ' · ' + fmt(stats.conts) + ' Continues' : '') + '</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnStats', 'btnSettings'], info: function () {
+      if (!g) return '';
+      var nf = free.filter(Boolean).length, st = meta.stars[g.level];
+      return '<b>Level ' + fmt(g.level) + '</b> · ' + nf + ' of ' + g.R + ' ropes free · ' + g.used + ' move' + (g.used === 1 ? '' : 's') + (g.limit ? ' of ' + g.limit : '') + ' (best ' + g.best + ')' + (st ? ' · ' + '★★★'.slice(0, st) : '') + ' · ' + KA.SCENES[sceneNo].name;
+    } });
+    Goobs.themePicker($('themes'));
+    Goobs.onTheme(function () { drawBg(); KA.fxInit(sceneNo, W, H, Goobs.theme(), Goobs.skin()); });
+    cv = $('cv'); cx = cv.getContext('2d'); bg = $('bg'); bx = bg.getContext('2d');
+    cv.addEventListener('pointerdown', down);
+    cv.addEventListener('pointermove', moveEv);
+    cv.addEventListener('pointerup', up);
+    cv.addEventListener('pointercancel', up);
+    cv.addEventListener('lostpointercapture', function (e) { if (drag && e.pointerId === drag.pid) up({ pointerId: e.pointerId, type: 'pointercancel' }); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('btnRestart').addEventListener('click', function () { if (!g || ending) return; if (g.hist.length || g.hints) showCard('Restart this level?', 'The ropes go back to where they started.', [{ label: 'Restart', red: true, go: restart }, { label: 'Keep playing', go: function () {} }]); });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnHint').addEventListener('click', hint);
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); nextTip(); } }
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('pillLevel').addEventListener('click', openHelp);
+    function closeTip() { $('ovTip').classList.remove('show'); setTimeout(nextTip, 200); }
+    $('btnTip').addEventListener('click', closeTip);
+    $('ovTip').addEventListener('click', function (e) { if (e.target === this) closeTip(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setMusic').checked = settings.music;
+    $('setMusic').addEventListener('change', function () { settings.music = this.checked; saveSettings(); S.setMusic(settings.music); });
+    $('setSymbols').checked = settings.symbols;
+    $('setSymbols').addEventListener('change', function () { settings.symbols = this.checked; saveSettings(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe($('stagewrap')); ro.observe(document.querySelector('.toolbar')); ro.observe(document.querySelector('.top')); }
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); if (settings.music) S.setMusic(true);
+    fit();
+    if (!load()) startLevel(meta.level);
+    fit();
+    if (!meta.seen) openHelp();
+    requestAnimationFrame(frame);
+    window.__knReady = true;
+    Goobs.markPlayed('knotty');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Knotty ' + (v.knotty || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  // hook for automated tests
+  window.__knotty = { get g() { return g; }, get L() { return L; }, get FR() { return FR; }, get sag() { return sag; }, get free() { return free; }, KN: KN,
+    startLevel: startLevel, undo: undo, hint: hint, restart: restart, outOfMoves: outOfMoves, ending: function () { return ending; }, busy: busy,
+    meta: function () { return meta; }, stats: function () { return stats; }, sel: function () { return sel; },
+    // client coordinates of knob k / peg p
+    knob: function (k) { var P = pegXY(g.pos[k]), r = cv.getBoundingClientRect(); return { x: r.left + P.x, y: r.top + P.y }; },
+    peg: function (p) { var P = pegXY(p), r = cv.getBoundingClientRect(); return { x: r.left + P.x, y: r.top + P.y }; },
+    // a shortest solution from here (the level's own while on it, else the exact search)
+    solution: function () {
+      var e = entryFor(levelNo), sol = KN.solOf(e), st = KN.create(e[0]);
+      for (var i = 0; i <= sol.length; i++) { if (st.pos.join(',') === g.pos.join(',')) return sol.slice(i); if (i < sol.length) st.pos[sol[i][0]] = sol[i][1]; }
+      var ex = KN.solveState(g.spec, g.pos, g.lim, g.pins, { maxNodes: 2000000, maxDepth: 30 }); return ex ? ex.moves : null;
+    } };
+  init();
+})();
+</script>
+</body>
+</html>

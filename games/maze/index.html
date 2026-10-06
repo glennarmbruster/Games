@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Cheese Chase</title>
+<style>
+/* Cheese Chase styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand svg { border-radius: 10px; }
+.brand h1 { font-size: 21px; }
+.info .mid .of { color: var(--muted); font-weight: 600; }
+
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; align-items: center; justify-content: center; }
+.stage { position: relative; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); background: #17121f; touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+
+.ready {
+  position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(14,18,40,.74); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); color: #fff; text-align: center; padding: 18px;
+}
+.ready.show { display: flex; }
+.ready h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.3px; }
+.ready p { margin: 0; color: #d6daf2; font-size: 15px; line-height: 1.4; max-width: 280px; }
+.ready .go { min-height: 52px; width: 200px; flex: none; }
+.ready .or { font-size: 13px; color: #c3c8e6; }
+.ready .cast { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; max-width: 300px; }
+.ready .cast div { display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: 800; color: #e6e9fb; gap: 3px; }
+.ready .cast canvas { width: 40px; height: 40px; }
+.ready .cast small { font-weight: 600; color: #aab1d6; font-size: 11px; }
+.ready.compact { gap: 8px; }
+.ready.compact .cast { display: none; }
+
+/* joystick */
+.joy { display: none; width: 160px; height: 160px; flex: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.joy.show { display: block; }
+.joy svg { width: 100%; height: 100%; display: block; }
+.joy .ring { fill: var(--surface); stroke: var(--line); stroke-width: 2; }
+.joy .arr { fill: var(--muted); transition: fill .05s; }
+.joy .arr.on { fill: var(--accent); }
+.joy .knob { fill: #ffc53d; stroke: #b07a00; stroke-width: 3; transition: transform .05s; transform-origin: 60px 60px; }
+@media (max-height: 700px) { .joy { width: 132px; height: 132px; } }
+.cardicon svg { border-radius: 16px; }
+@media (max-width: 385px) { .brand h1 { font-size: 19px; } }
+
+/* full screen (Goobs.fullscreen, 2026-09-29): Pause sits in the top row as a round button (icon only) */
+html.gg-fs .top #btnPause span { display: none; }
+html.gg-fs .top #btnPause:disabled { opacity: .4; }
+html.gg-fs .stagewrap { width: calc(100% + 16px); margin: 0 -8px; }
+@media (min-height: 780px) { html.gg-fs .joy { width: 176px; height: 176px; } }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="cc-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#241a2c"/>
+<path d="M8 30 H40 V14 M92 30 H60 V14 M8 70 H30 V86 M92 70 H70 V86" stroke="#c98a4b" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#ffd66b"><rect x="60" y="47" width="6" height="6" rx="1.6"/><rect x="74" y="47" width="6" height="6" rx="1.6"/><rect x="88" y="47" width="6" height="6" rx="1.6"/></g>
+<g transform="translate(36 50)"><path d="M-22 4 q-10 4 -14 -6" stroke="#f3a5b8" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse rx="17" ry="12" fill="#b9c0d4"/><circle cx="-4" cy="-12" r="7" fill="#b9c0d4"/><circle cx="-4" cy="-12" r="4" fill="#f3a5b8"/><circle cx="8" cy="-10" r="7" fill="#b9c0d4"/><circle cx="8" cy="-10" r="4" fill="#f3a5b8"/><circle cx="17" cy="1" r="3" fill="#ff7aa0"/><circle cx="8" cy="-2" r="2.4" fill="#1b1f33"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#cc-logo"/></svg>
+      <h1>Cheese Chase</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="ready" id="ready"></div>
+    </div>
+  </div>
+
+  <!-- joystick (Settings); swiping anywhere works either way -->
+  <div class="joy" id="joy" aria-label="Joystick">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="58" class="ring"/>
+      <path class="arr" data-d="0" d="M60 14 L76 36 H44 Z"/><path class="arr" data-d="2" d="M60 106 L44 84 H76 Z"/>
+      <path class="arr" data-d="1" d="M14 60 L36 44 V76 Z"/><path class="arr" data-d="3" d="M106 60 L84 76 V44 Z"/>
+      <circle cx="60" cy="60" r="16" class="knob" id="knob"/>
+    </svg>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnPause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg><span>Pause</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Joystick<small>A joystick under the maze (on at first). Swiping anywhere works either way.</small></div>
+        <span class="switch"><input type="checkbox" id="setPad"><span></span></span></label>
+      <label class="row"><div>Sound<small>Nibbles, meows and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Cheese Chase</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Cheese Chase records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Cheese Chase logic: the 1980 maze-chase arcade rules on our own maze, with our own mouse and cats.
+   Positions are in maze pixels (8 per tile, tile centers at 8k + 4). One tick() = one frame at 60 Hz. Runs in Node. */
+var CC = (function () {
+  'use strict';
+  // Our own maze (left half; the right half is its mirror). # wall, . crumb, o big cheese, space open, T tunnel,
+  // - cat-basket door, G inside the basket. Checked by tools/check.js: symmetric, one tile wide, no dead ends, all connected.
+  var HALF = [
+    '##############', '#.....#.......', '#.###.#.####.#', '#o###.#.####.#', '#.............', '#.##.#####.###', '#.##.#####.###',
+    '#....##.......', '####.##.###.##', '####.##.###.##', '####.##       ', '####.##.#.###-', '####.##.#.#GGG', 'TTTT.     #GGG',
+    '####.##.#.#GGG', '####.##.#.####', '####.##       ', '####.##.######', '####.##.######', '#.............', '#.###.#####.##',
+    '#.###.#####.##', '#o..#........ ', '###.#.##.#####', '###.#.##.#####', '#...#....#....', '#.########.#.#', '#.########.#.#',
+    '#.########.#.#', '#.............', '##############'
+  ];
+  var ROWS = HALF.map(function (r) { return r + r.split('').reverse().join(''); });
+  var TW = 28, TH = ROWS.length, T = 8;
+  var DX = [0, -1, 0, 1], DY = [-1, 0, 1, 0]; // up, left, down, right (also the tie order)
+  var HOME_X = 14 * T, DOOR_Y = 10 * T + 4, HOUSE_Y = 13 * T + 4, START_Y = 22 * T + 4, FRUIT_Y = 16 * T + 4;
+  var BASE = 75.75757625 / 60;                 // pixels per frame at 100% speed
+  var NAMES = ['Ginger', 'Rosie', 'Misty', 'Pudding'];
+  var SCATTER = [[25, -3], [2, -3], [27, 33], [0, 33]];
+  var RED_ZONE = function (tx, ty) { return (ty === 10 || ty === 22) && tx >= 11 && tx <= 16; }; // cats can't turn up here (scatter/chase)
+
+  function tileAt(tx, ty) {
+    if (ty < 0 || ty >= TH) return '#';
+    tx = ((tx % TW) + TW) % TW;
+    return ROWS[ty][tx];
+  }
+  function open(tx, ty) { var c = tileAt(tx, ty); return c === '.' || c === 'o' || c === ' ' || c === 'T'; }
+  function tunnel(tx, ty) { return tileAt(tx, ty) === 'T'; }
+
+  // ---------- the level tables ----------
+  function speeds(level) {
+    if (level === 1) return { pac: 80, pacF: 90, cat: 75, catF: 50, catT: 40 };
+    if (level <= 4) return { pac: 90, pacF: 95, cat: 85, catF: 55, catT: 45 };
+    if (level <= 20) return { pac: 100, pacF: 100, cat: 95, catF: 60, catT: 50 };
+    return { pac: 90, pacF: 90, cat: 95, catF: 95, catT: 50 };
+  }
+  function elroy(level) { // [dots left for step 1, speed], [for step 2, speed]
+    var d = level === 1 ? 20 : level === 2 ? 30 : level <= 5 ? 40 : level <= 8 ? 50 : level <= 11 ? 60 : level <= 14 ? 80 : level <= 18 ? 100 : 120;
+    var sp = level === 1 ? [80, 85] : level <= 4 ? [90, 95] : [100, 105];
+    return [[d, sp[0]], [d / 2, sp[1]]];
+  }
+  var FRIGHT = [6, 5, 4, 3, 2, 5, 2, 2, 1, 5, 2, 1, 1, 3, 1, 1, 0, 1];
+  var FLASHES = [5, 5, 5, 5, 5, 5, 5, 5, 3, 5, 5, 3, 3, 5, 3, 3, 0, 3];
+  function frightFrames(level) { return (level <= FRIGHT.length ? FRIGHT[level - 1] : 0) * 60; }
+  function flashes(level) { return level <= FLASHES.length ? FLASHES[level - 1] : 0; }
+  function modeTimes(level) { // scatter/chase lengths in frames, then chase for good
+    var s = 60;
+    if (level === 1) return [7 * s, 20 * s, 7 * s, 20 * s, 5 * s, 20 * s, 5 * s];
+    if (level <= 4) return [7 * s, 20 * s, 7 * s, 20 * s, 5 * s, 1033 * s, 1];
+    return [5 * s, 20 * s, 5 * s, 20 * s, 5 * s, 1037 * s, 1];
+  }
+  var BONUS = [['berry', 100], ['strawberry', 300], ['corn', 500], ['corn', 500], ['apple', 700], ['apple', 700], ['grapes', 1000], ['grapes', 1000],
+    ['cupcake', 2000], ['cupcake', 2000], ['pie', 3000], ['pie', 3000], ['cheese', 5000]];
+  function bonusFor(level) { return BONUS[Math.min(level, BONUS.length) - 1]; }
+  function houseDots(level) { return level === 1 ? [0, 0, 30, 60] : level === 2 ? [0, 0, 0, 50] : [0, 0, 0, 0]; }
+
+  // ---------- random (seeded) ----------
+  function rnd(s) { var t = (s.seed = (s.seed + 0x6D2B79F5) | 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+
+  // ---------- state ----------
+  function create(seed) {
+    var s = { seed: (seed >>> 0) || 1, level: 1, score: 0, lives: 3, extra: false, ev: [], over: false, t: 0, fresh: true };
+    newLevel(s);
+    return s;
+  }
+  function newLevel(s) {
+    s.dots = []; s.dotsLeft = 0; s.eaten = 0;
+    for (var y = 0; y < TH; y++) for (var x = 0; x < TW; x++) {
+      var c = ROWS[y][x], v = c === '.' ? 1 : c === 'o' ? 2 : 0;
+      if ((y === 22) && (x === 13 || x === 14)) v = 0;
+      s.dots.push(v); if (v) s.dotsLeft++;
+    }
+    s.total = s.dotsLeft;
+    s.fruit = null; s.fruitsShown = 0;
+    s.catDots = [0, 0, 0, 0];
+    s.globalDots = -1;           // after a lost life the cats leave by a shared crumb count
+    resetActors(s);
+  }
+  function resetActors(s) {
+    s.pac = { x: HOME_X, y: START_Y, dir: 1, want: 1, moving: true, anim: 0, pause: 0 };
+    s.cats = [0, 1, 2, 3].map(function (i) {
+      var inside = i > 0;
+      return { i: i, x: i === 0 ? HOME_X : i === 1 ? HOME_X : i === 2 ? HOME_X - 16 : HOME_X + 16, y: inside ? HOUSE_Y : DOOR_Y,
+        dir: i === 0 ? 1 : i === 1 ? 2 : 0, state: inside ? 'house' : 'active', fright: false, anim: 0, reverse: false };
+    });
+    s.modeStep = 0; s.modeT = 0; s.scatter = true;
+    s.frightT = 0; s.chain = 0;
+    s.idle = 0;                  // frames since the mouse last ate a crumb (lets cats out of the basket)
+    s.phase = 'ready'; s.phaseT = 0;
+    s.pop = null;
+    s.elroyOn = true;
+  }
+  function tileOf(a) { return [Math.floor(((a.x % (TW * T)) + TW * T) % (TW * T) / T), Math.floor(a.y / T)]; }
+
+  // ---------- moving along the maze ----------
+  // step an actor px pixels; at each tile center call decide(tx, ty) -> the direction to leave by (or -1 to stop)
+  function advance(a, px, decide) {
+    var guard = 0;
+    while (px > 1e-6 && guard++ < 4) {
+      var tx = Math.floor(a.x / T), ty = Math.floor(a.y / T), cx = tx * T + 4, cy = ty * T + 4;
+      var ahead = (cx - a.x) * DX[a.dir] + (cy - a.y) * DY[a.dir]; // distance to this tile's center, if still ahead
+      if (ahead < -1e-6) { // past the center: head to the next tile's center
+        ahead += T; tx += DX[a.dir]; ty += DY[a.dir]; cx = tx * T + 4; cy = ty * T + 4;
+      }
+      if (ahead > px + 1e-6) { a.x += DX[a.dir] * px; a.y += DY[a.dir] * px; break; }
+      a.x = cx; a.y = cy; px -= ahead;
+      wrap(a);
+      var nd = decide(Math.floor(a.x / T), Math.floor(a.y / T));
+      if (nd < 0) { a.moving = false; return; }
+      a.dir = nd;
+      if (px <= 1e-6) break;
+      // nudge past the center so the next loop measures from here
+      var st = Math.min(px, 0.001); a.x += DX[a.dir] * st; a.y += DY[a.dir] * st; px -= st;
+    }
+    wrap(a);
+  }
+  function wrap(a) { var w = TW * T; if (a.x < -T) a.x += w; else if (a.x >= w + T) a.x -= w; }
+
+  // ---------- the mouse ----------
+  function pacTick(s) {
+    var p = s.pac, sp = speeds(s.level);
+    if (p.pause > 0) { p.pause--; return; }
+    var pct = s.frightT > 0 ? sp.pacF : sp.pac, px = pct / 100 * BASE;
+    var t = tileOf(p);
+    // turning straight back works any time
+    if (p.want === (p.dir + 2) % 4) { p.dir = p.want; p.moving = true; }
+    // a turn that's open: take it at the center, or a little before it (cutting the corner, like the original)
+    if (p.want !== p.dir && p.want !== (p.dir + 2) % 4) {
+      var cx = t[0] * T + 4, cy = t[1] * T + 4, ahead = (cx - p.x) * DX[p.dir] + (cy - p.y) * DY[p.dir];
+      if (Math.abs(ahead) <= 4 && open(t[0] + DX[p.want], t[1] + DY[p.want])) { p.x = cx; p.y = cy; p.dir = p.want; p.moving = true; }
+    }
+    if (!p.moving) { if (open(t[0] + DX[p.dir], t[1] + DY[p.dir])) p.moving = true; else return; }
+    advance(p, px, function (tx, ty) {
+      if (p.want !== p.dir && open(tx + DX[p.want], ty + DY[p.want])) return p.want;
+      if (open(tx + DX[p.dir], ty + DY[p.dir])) return p.dir;
+      return -1;
+    });
+    p.anim++;
+    eat(s);
+  }
+  function eat(s) {
+    var t = tileOf(s.pac), k = t[1] * TW + t[0], v = s.dots[k];
+    if (v) {
+      s.dots[k] = 0; s.dotsLeft--; s.eaten++; s.idle = 0;
+      if (v === 1) { add(s, 10); s.pac.pause = 1; s.ev.push({ t: 'crumb' }); }
+      else { add(s, 50); s.pac.pause = 3; power(s); s.ev.push({ t: 'cheese' }); }
+      houseCount(s);
+      if (s.eaten === 70 || s.eaten === 170) { var b = bonusFor(s.level); s.fruit = { kind: b[0], pts: b[1], t: 560 + Math.floor(rnd(s) * 40) }; s.ev.push({ t: 'fruitShow' }); }
+      if (s.dotsLeft === 0) { s.phase = 'clear'; s.phaseT = 0; s.ev.push({ t: 'clear' }); }
+    }
+    if (s.fruit && t[1] === 16 && (t[0] === 13 || t[0] === 14)) {
+      add(s, s.fruit.pts); s.pop = { x: HOME_X, y: FRUIT_Y, text: String(s.fruit.pts), t: 120 }; s.ev.push({ t: 'fruit', pts: s.fruit.pts, kind: s.fruit.kind }); s.fruit = null;
+    }
+  }
+  function add(s, n) {
+    s.score += n;
+    if (!s.extra && s.score >= 10000) { s.extra = true; s.lives++; s.ev.push({ t: 'extra' }); }
+  }
+  function power(s) {
+    var f = frightFrames(s.level);
+    s.chain = 0;
+    s.cats.forEach(function (c) {
+      if (c.state === 'eaten' || c.state === 'entering') return;
+      if (c.state === 'active') c.reverse = true;
+      if (f > 0) c.fright = true;
+    });
+    s.frightT = f;
+  }
+
+  // ---------- the cat basket: who comes out when ----------
+  function houseCount(s) {
+    if (s.globalDots >= 0) {
+      s.globalDots++;
+      var lim = [0, 7, 17, 32];
+      for (var i = 1; i < 4; i++) if (s.cats[i].state === 'house' && s.globalDots === lim[i]) { release(s, i); }
+      if (s.cats[3].state === 'house' && s.globalDots >= 32) { s.globalDots = -1; }
+      return;
+    }
+    var n = firstHome(s); if (n < 0) return;
+    s.catDots[n]++;
+  }
+  function firstHome(s) { for (var i = 1; i < 4; i++) if (s.cats[i].state === 'house') return i; return -1; }
+  function release(s, i) { var c = s.cats[i]; if (c.state === 'house') { c.state = 'leaving'; if (i === 3) s.elroyOn = true; } }
+  function houseTick(s) {
+    s.idle++;
+    var n = firstHome(s); if (n < 0) return;
+    if (s.globalDots < 0 && s.catDots[n] >= houseDots(s.level)[n]) { release(s, n); return; }
+    if (s.idle >= (s.level < 5 ? 240 : 180)) { s.idle = 0; release(s, n); }
+  }
+
+  // ---------- the cats ----------
+  function target(s, c) {
+    var p = tileOf(s.pac), d = s.pac.dir;
+    if (c.state === 'eaten') return [13, 10];
+    var elroyMode = c.i === 0 && s.elroyOn && s.dotsLeft <= elroy(s.level)[0][0];
+    if (s.scatter && !elroyMode) return SCATTER[c.i];
+    if (c.i === 0) return p;
+    if (c.i === 1) { var a = [p[0] + DX[d] * 4, p[1] + DY[d] * 4]; if (d === 0) a[0] -= 4; return a; }  // (the original's overflow when facing up, kept)
+    if (c.i === 2) {
+      var q = [p[0] + DX[d] * 2, p[1] + DY[d] * 2]; if (d === 0) q[0] -= 2;
+      var g = tileOf(s.cats[0]); return [q[0] * 2 - g[0], q[1] * 2 - g[1]];
+    }
+    var dx = p[0] - tileOf(c)[0], dy = p[1] - tileOf(c)[1];
+    return dx * dx + dy * dy > 64 ? p : SCATTER[3];
+  }
+  function catSpeed(s, c) {
+    var sp = speeds(s.level), t = tileOf(c);
+    if (c.state === 'eaten' || c.state === 'entering') return 1.9;
+    if (c.state === 'house' || c.state === 'leaving') return 0.5 * BASE;
+    if (tunnel(t[0], t[1])) return sp.catT / 100 * BASE;
+    if (c.fright) return sp.catF / 100 * BASE;
+    if (c.i === 0 && s.elroyOn) { var e = elroy(s.level); if (s.dotsLeft <= e[1][0]) return e[1][1] / 100 * BASE; if (s.dotsLeft <= e[0][0]) return e[0][1] / 100 * BASE; }
+    return sp.cat / 100 * BASE;
+  }
+  function catTick(s, c) {
+    var px = catSpeed(s, c);
+    c.anim++;
+    if (c.state === 'house') { // bob up and down in the basket
+      c.y += (c.dir === 0 ? -1 : 1) * px;
+      if (c.y <= HOUSE_Y - 4) { c.y = HOUSE_Y - 4; c.dir = 2; } else if (c.y >= HOUSE_Y + 4) { c.y = HOUSE_Y + 4; c.dir = 0; }
+      return;
+    }
+    if (c.state === 'leaving') { // to the middle, then up through the door
+      if (Math.abs(c.x - HOME_X) > px) { c.x += c.x < HOME_X ? px : -px; c.dir = c.x < HOME_X ? 3 : 1; return; }
+      c.x = HOME_X;
+      if (c.y > DOOR_Y + px) { c.y -= px; c.dir = 0; return; }
+      c.y = DOOR_Y; c.state = 'active'; c.dir = 1; c.reverse = false;
+      return;
+    }
+    if (c.state === 'entering') { // down through the door, then back out
+      var hx = c.i === 2 ? HOME_X - 16 : c.i === 3 ? HOME_X + 16 : HOME_X;
+      if (Math.abs(c.x - HOME_X) > px && c.y <= DOOR_Y) { c.x += c.x < HOME_X ? px : -px; return; }
+      if (c.y < HOUSE_Y) { c.x = HOME_X; c.y = Math.min(HOUSE_Y, c.y + px); c.dir = 2; return; }
+      if (Math.abs(c.x - hx) > px) { c.x += c.x < hx ? px : -px; return; }
+      c.x = hx; c.state = 'leaving'; c.fright = false;
+      return;
+    }
+    if (c.reverse) { c.reverse = false; c.dir = (c.dir + 2) % 4; }
+    advance(c, px, function (tx, ty) {
+      if (c.state === 'eaten' && ty === 10 && (tx === 13 || tx === 14)) { c.state = 'entering'; return c.dir; }
+      var back = (c.dir + 2) % 4, opts = [];
+      for (var d = 0; d < 4; d++) {
+        if (d === back) continue;
+        if (!open(tx + DX[d], ty + DY[d])) continue;
+        if (d === 0 && !c.fright && c.state === 'active' && RED_ZONE(tx, ty)) continue;
+        opts.push(d);
+      }
+      if (!opts.length) return back;
+      if (c.fright && c.state === 'active') {
+        var r = Math.floor(rnd(s) * 4);
+        for (var k = 0; k < 4; k++) { var dd = (r + k) % 4; if (opts.indexOf(dd) >= 0) return dd; }
+      }
+      var tg = target(s, c), best = opts[0], bd = Infinity;
+      opts.forEach(function (o) { var nx = tx + DX[o] - tg[0], ny = ty + DY[o] - tg[1], dist = nx * nx + ny * ny; if (dist < bd) { bd = dist; best = o; } });
+      return best;
+    });
+    if (c.state === 'entering') { c.x = Math.round(c.x); }
+  }
+  function modeTick(s) {
+    if (s.frightT > 0) {
+      s.frightT--;
+      if (s.frightT === 0) { s.cats.forEach(function (c) { c.fright = false; }); s.ev.push({ t: 'frightEnd' }); }
+      return;          // the scatter/chase clock stops while the cats are scared
+    }
+    var mt = modeTimes(s.level);
+    if (s.modeStep >= mt.length) return;
+    if (++s.modeT >= mt[s.modeStep]) {
+      s.modeT = 0; s.modeStep++; s.scatter = s.modeStep % 2 === 0 && s.modeStep < mt.length;
+      s.cats.forEach(function (c) { if (c.state === 'active') c.reverse = true; });
+    }
+  }
+  function collide(s) {
+    var p = tileOf(s.pac);
+    for (var i = 0; i < 4; i++) {
+      var c = s.cats[i]; if (c.state !== 'active') continue;
+      var t = tileOf(c);
+      if (t[0] !== p[0] || t[1] !== p[1]) continue;
+      if (c.fright) {
+        c.fright = false; c.state = 'eaten';
+        var pts = [200, 400, 800, 1600][Math.min(3, s.chain)]; s.chain++;
+        add(s, pts);
+        s.pop = { x: c.x, y: c.y, text: String(pts), t: 60 };
+        s.phase = 'bop'; s.phaseT = 0; s.bopCat = i;
+        s.ev.push({ t: 'bop', pts: pts, cat: i });
+        return;
+      }
+      if (s.god) continue;
+      s.phase = 'dying'; s.phaseT = 0; s.ev.push({ t: 'caught', cat: i });
+      return;
+    }
+  }
+
+  // ---------- one frame ----------
+  function tick(s, want) {
+    if (s.over) return;
+    s.t++;
+    if (want != null && want >= 0) s.pac.want = want;
+    if (s.pop && --s.pop.t <= 0) s.pop = null;
+    var ph = s.phase;
+    if (ph === 'ready') { if (++s.phaseT >= (s.fresh ? 240 : 120)) { s.phase = 'play'; s.fresh = false; s.ev.push({ t: 'go' }); } return; }
+    if (ph === 'bop') { // a short stop after bopping a cat; bells keep moving home
+      s.cats.forEach(function (c) { if (c.state === 'eaten' || c.state === 'entering') catTick(s, c); });
+      if (++s.phaseT >= 60) s.phase = 'play';
+      return;
+    }
+    if (ph === 'dying') {
+      s.phaseT++;
+      if (s.phaseT === 60) s.ev.push({ t: 'die' });
+      if (s.phaseT >= 60 + 110) {
+        s.lives--;
+        if (s.lives <= 0) { s.over = true; s.phase = 'over'; s.ev.push({ t: 'over' }); return; }
+        resetActors(s); s.globalDots = 0; s.elroyOn = false;
+      }
+      return;
+    }
+    if (ph === 'clear') {
+      if (++s.phaseT >= 60 + 120) { s.level++; newLevel(s); s.ev.push({ t: 'level', level: s.level }); }
+      return;
+    }
+    // play
+    modeTick(s);
+    houseTick(s);
+    pacTick(s);
+    if (s.phase !== 'play') return;
+    collide(s); if (s.phase !== 'play') return;
+    for (var i = 0; i < 4; i++) { catTick(s, s.cats[i]); }
+    collide(s);
+    if (s.fruit && --s.fruit.t <= 0) s.fruit = null;
+  }
+  function takeEvents(s) { var e = s.ev; s.ev = []; return e; }
+  function frightLeft(s) { return s.frightT; }
+
+  return {
+    ROWS: ROWS, TW: TW, TH: TH, T: T, DX: DX, DY: DY, NAMES: NAMES, HOME_X: HOME_X, FRUIT_Y: FRUIT_Y, START_Y: START_Y, DOOR_Y: DOOR_Y,
+    create: create, tick: tick, takeEvents: takeEvents, open: open, tileAt: tileAt, tileOf: tileOf, flashes: flashes, frightFrames: frightFrames,
+    bonusFor: bonusFor, speeds: speeds, target: target, frightLeft: frightLeft
+  };
+})();
+if (typeof module !== 'undefined') module.exports = CC;
+</script>
+<script>
+/* Cheese Chase sounds: synthesized with Web Audio (no audio files). */
+var CCSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, siren = null, sirenGain = null;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  var nib = 0;
+  // a soft background hum that rises as the maze empties, and wobbles while the cats are scared
+  function hum(level, scared) {
+    var a = ctx(); if (!a) { stopHum(); return; }
+    if (!siren) {
+      siren = a.createOscillator(); sirenGain = a.createGain(); siren.type = 'triangle';
+      var lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 3; lg.gain.value = 40; lfo.connect(lg); lg.connect(siren.frequency); lfo.start();
+      siren.lfo = lfo; sirenGain.gain.value = 0; siren.connect(sirenGain); sirenGain.connect(master); siren.start();
+    }
+    var t = a.currentTime;
+    siren.frequency.setTargetAtTime(scared ? 180 : 260 + level * 160, t, 0.2);
+    siren.lfo.frequency.setTargetAtTime(scared ? 9 : 3 + level * 2, t, 0.2);
+    sirenGain.gain.setTargetAtTime(0.035, t, 0.1);
+  }
+  function stopHum() { if (sirenGain && ac) sirenGain.gain.setTargetAtTime(0, ac.currentTime, 0.05); }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); else stopHum(); },
+    unlock: function () { if (on) ctx(); },
+    crumb: function () { if (!on) return; nib = 1 - nib; tone('square', nib ? 520 : 440, nib ? 600 : 380, 0.05, 0.07); },
+    cheese: function () { if (on) { tone('triangle', 330, 660, 0.18, 0.2); tone('triangle', 494, 988, 0.2, 0.12, 0.05); } },
+    bop: function () { if (on) { tone('square', 200, 1400, 0.28, 0.12); tone('triangle', 1568, 0, 0.12, 0.15, 0.22); } },
+    fruit: function () { if (on) [880, 1175, 1568].forEach(function (f, i) { tone('triangle', f, 0, 0.1, 0.2, i * 0.05); }); },
+    extra: function () { if (on) [784, 988, 1175, 1568, 1976].forEach(function (f, i) { tone('square', f, 0, 0.12, 0.08, i * 0.08); }); },
+    caught: function () { if (on) { stopHum(); tone('sawtooth', 700, 120, 0.9, 0.16); tone('square', 900, 90, 1.1, 0.06, 0.2); } },
+    start: function () { if (!on) return; [523, 659, 784, 659, 784, 1047, 988, 784, 880, 1047].forEach(function (f, i) { tone('triangle', f, 0, 0.18, 0.2, i * 0.16); }); },
+    clear: function () { if (on) { stopHum(); [784, 988, 1175, 1568].forEach(function (f, i) { tone('triangle', f, 0, 0.16, 0.22, i * 0.09); }); } },
+    over: function () { if (!on) return; stopHum(); [392, 349, 311, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.32, 0.28, i * 0.2); }); },
+    hum: hum, stopHum: stopHum,
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) tone('square', 300, 200, 0.07, 0.1); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Cheese Chase app: drawing, swipes and joystick, the fixed 60 Hz loop, saves, stats and house ads. */
+(function () {
+  'use strict';
+  var S = CCSound, TW = CC.TW, TH = CC.TH, STEP = 1000 / 60;
+  var CAT_COLORS = ['#ff7a45', '#ff7eb6', '#4fd6e0', '#c39bff'];
+  var CAT_BLURB = ['chases you', 'heads you off', 'hard to read', 'shy'];
+  var WALLS = [['#9a6232', '#e3a765'], ['#128383', '#52e3d2'], ['#7d2c93', '#e285ff'], ['#2e7a3b', '#86e67f'], ['#b8434f', '#ff9aa4']]; // pantry wood, teal, plum, green, berry
+
+  // ================= storage =================
+  var store = Goobs.store('maze');
+  var settings = { sound: false, adEvery: 3, pad: true };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { games: 0, best: 0, bestLevel: 0, crumbs: 0, cats: 0, bonus: 0, levels: 0, ms: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+
+  // ================= game state =================
+  // phase: 'ready' (start panel), 'run', 'paused', 'over'
+  var s = null, phase = 'ready', acc = 0, lastT = 0, want = -1, counted = { crumbs: 0, cats: 0, bonus: 0, levels: 0 };
+  function newGame() {
+    s = CC.create(newSeed()); CC.takeEvents(s);
+    phase = 'ready'; acc = 0; want = -1; counted = { crumbs: 0, cats: 0, bonus: 0, levels: 0 };
+    store.del('run');
+    renderAll();
+  }
+  function saveRun() {
+    if (s && (phase === 'run' || phase === 'paused') && !s.over) store.set('run', { s: s, c: counted });
+    else store.del('run');
+  }
+  function resumeRun() {
+    var r = store.get('run', null);
+    if (!r || !r.s || r.s.over || !Array.isArray(r.s.dots) || r.s.dots.length !== TW * TH) return false;
+    s = r.s; counted = r.c || counted; s.ev = []; phase = 'paused'; acc = 0;
+    renderAll();
+    return true;
+  }
+  function begin() {
+    if (!s || phase !== 'ready') return;
+    phase = 'run'; lastT = performance.now(); acc = 0;
+    S.unlock(); S.start();
+    renderReady(); renderTools();
+  }
+  function pause() { if (phase !== 'run') return; phase = 'paused'; S.stopHum(); saveRun(); renderReady(); renderTools(); }
+  function resume() { if (phase !== 'paused') return; phase = 'run'; lastT = performance.now(); acc = 0; renderReady(); renderTools(); }
+
+  // ================= loop =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!s) return;
+    var dt = Math.min(100, t - lastT); lastT = t;
+    if (phase === 'run' && !sheetOpen()) {
+      acc += dt;
+      var guard = 0;
+      while (acc >= STEP && guard++ < 6) { acc -= STEP; CC.tick(s, want); events(); if (phase !== 'run') break; }
+      if (s.t % 15 === 0) { if (s.phase === 'play') S.hum(1 - s.dotsLeft / s.total, s.frightT > 0); else S.stopHum(); }
+    }
+    draw();
+  }
+  function events() {
+    CC.takeEvents(s).forEach(function (e) {
+      if (e.t === 'crumb') { S.crumb(); counted.crumbs++; renderInfo(); }
+      else if (e.t === 'cheese') { S.cheese(); renderInfo(); }
+      else if (e.t === 'bop') { S.bop(); counted.cats++; renderInfo(); }
+      else if (e.t === 'fruit') { S.fruit(); counted.bonus++; renderInfo(); }
+      else if (e.t === 'extra') { S.extra(); }
+      else if (e.t === 'caught') { S.caught(); }
+      else if (e.t === 'clear') { S.clear(); counted.levels++; }
+      else if (e.t === 'level') { renderInfo(); saveRun(); }
+      else if (e.t === 'over') { phase = 'over'; S.over(); setTimeout(gameOver, 900); }
+    });
+  }
+
+  // ================= drawing =================
+  var cv, cx, c = 12, k = 1.5, dpr = 1, wallsImg = null, wallsKey = '';
+  function fit() {
+    var wrap = $('stagewrap').getBoundingClientRect(), maxW = Math.min(wrap.width - 4, 620), maxH = wrap.height;
+    c = Math.max(6, Math.floor(Math.min(maxW / TW, maxH / (TH + 2)) * 2) / 2);
+    k = c / 8;
+    var st = $('stage'), w = c * TW, h = c * (TH + 2);
+    st.style.width = w + 'px'; st.style.height = h + 'px';
+    $('ready').classList.toggle('compact', h < 380);
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    wallsImg = null;
+  }
+  function rr(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  function isWall(x, y) { if (x < 0 || x >= TW || y < 0 || y >= TH) return false; return CC.ROWS[y][x] === '#'; }
+  // the walls: solid rounded blocks with a bright rim, drawn once per size and color
+  function buildWalls(pal, white) {
+    var g = document.createElement('canvas'); g.width = Math.round(TW * c * dpr); g.height = Math.round(TH * c * dpr);
+    var x = g.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // walls as rounded tubes joining the centers of neighboring wall tiles (solid blocks filled in), drawn twice:
+    // wide in the rim color, then narrower in the fill color
+    function pass(width, color) {
+      x.strokeStyle = color; x.fillStyle = color; x.lineWidth = width; x.lineCap = 'round';
+      x.beginPath();
+      for (var ty = 0; ty < TH; ty++) for (var tx = 0; tx < TW; tx++) {
+        if (!isWall(tx, ty)) continue;
+        var px = tx * c + c / 2, py = ty * c + c / 2;
+        x.moveTo(px, py); x.lineTo(px + 0.01, py);
+        if (isWall(tx + 1, ty)) { x.moveTo(px, py); x.lineTo(px + c, py); }
+        if (isWall(tx, ty + 1)) { x.moveTo(px, py); x.lineTo(px, py + c); }
+      }
+      x.stroke();
+      for (var qy = 0; qy < TH - 1; qy++) for (var qx = 0; qx < TW - 1; qx++)
+        if (isWall(qx, qy) && isWall(qx + 1, qy) && isWall(qx, qy + 1) && isWall(qx + 1, qy + 1)) x.fillRect(qx * c + c / 2 - 0.5, qy * c + c / 2 - 0.5, c + 1, c + 1);
+    }
+    pass(c * 0.78, white ? '#ffffff' : pal[1]);
+    pass(c * 0.5, white ? '#dfe4ff' : pal[0]);
+    // the cat basket: a woven floor and its door
+    var hx = 11 * c, hy = 12 * c;
+    x.fillStyle = 'rgba(255,200,120,.08)'; x.fillRect(hx, hy, 6 * c, 3 * c);
+    x.fillStyle = white ? '#fff' : '#f0b36b'; rr(x, 13 * c - c * 0.1, 11 * c + c * 0.38, 2 * c + c * 0.2, c * 0.26, c * 0.1); x.fill();
+    return g;
+  }
+  function P(v) { return v * k; } // maze pixels -> screen
+  function draw() {
+    if (!cx || !s) return;
+    var now = performance.now(), W = TW * c, H = (TH + 2) * c;
+    cx.fillStyle = '#17121f'; cx.fillRect(0, 0, W, H);
+    var pal = WALLS[(s.level - 1) % WALLS.length], flash = s.phase === 'clear' && s.phaseT > 60 && Math.floor((s.phaseT - 60) / 14) % 2 === 0;
+    var key = pal[0] + flash + c + dpr;
+    if (!wallsImg || wallsKey !== key) { wallsImg = buildWalls(pal, flash); wallsKey = key; }
+    cx.drawImage(wallsImg, 0, 0, W, TH * c);
+    // crumbs and big cheeses
+    var blink = Math.floor(now / 220) % 2;
+    for (var y = 0; y < TH; y++) for (var x = 0; x < TW; x++) {
+      var v = s.dots[y * TW + x]; if (!v) continue;
+      var px = x * c + c / 2, py = y * c + c / 2;
+      if (v === 1) { cx.fillStyle = '#ffd66b'; var d = Math.max(2, c * 0.26); rr(cx, px - d / 2, py - d / 2, d, d, d * 0.3); cx.fill(); }
+      else if (s.phase !== 'play' || blink || phase !== 'run') cheese(px, py, c * 0.95);
+    }
+    // the bonus snack
+    if (s.fruit) snack(s.fruit.kind, P(CC.HOME_X), P(CC.FRUIT_Y), c * 1.5);
+    var ph = s.phase;
+    // cats
+    s.cats.forEach(function (ct, i) {
+      if (ph === 'dying' && s.phaseT >= 60) return;
+      if (ph === 'clear') return;
+      if (ph === 'bop' && s.bopCat === i) return;
+      drawCat(ct, now);
+    });
+    // the mouse
+    if (!(ph === 'bop') && !(ph === 'dying' && s.phaseT > 170)) drawMouse(now);
+    // points pop-up
+    if (s.pop) { cx.fillStyle = '#7fe8ff'; cx.font = '900 ' + Math.round(c * 1.1) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(s.pop.text, P(s.pop.x), P(s.pop.y)); }
+    // READY / GAME OVER
+    cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.font = '900 ' + Math.round(c * 1.35) + 'px -apple-system, system-ui, sans-serif';
+    if (ph === 'ready' && phase === 'run') { cx.fillStyle = '#ffd66b'; cx.fillText('Ready!', P(CC.HOME_X), P(CC.FRUIT_Y)); }
+    if (ph === 'over') { cx.fillStyle = '#ff5d6e'; cx.fillText('GAME OVER', P(CC.HOME_X), P(CC.FRUIT_Y)); }
+    // bottom row: spare lives on the left, snacks for recent levels on the right
+    var by = TH * c + c;
+    for (var l = 0; l < Math.min(6, s.lives - (ph === 'ready' || ph === 'over' ? 0 : 1)); l++) mouseIcon(c * 1.4 + l * c * 2.1, by, c * 0.9);
+    for (var j = 0; j < 7; j++) { var lv = s.level - j; if (lv < 1) break; snack(CC.bonusFor(lv)[0], W - c * 1.4 - j * c * 2.1, by, c * 1.5); }
+  }
+  function cheese(x, y, size) { // a wedge of cheese with holes
+    cx.save(); cx.translate(x, y);
+    cx.fillStyle = '#ffc53d'; cx.beginPath(); cx.moveTo(-size * 0.5, size * 0.35); cx.lineTo(size * 0.5, size * 0.35); cx.lineTo(size * 0.5, -size * 0.1); cx.lineTo(-size * 0.5, -size * 0.35); cx.closePath(); cx.fill();
+    cx.fillStyle = '#ffe28a'; cx.beginPath(); cx.moveTo(-size * 0.5, -size * 0.35); cx.lineTo(size * 0.5, -size * 0.1); cx.lineTo(size * 0.5, -size * 0.02); cx.lineTo(-size * 0.5, -size * 0.25); cx.closePath(); cx.fill();
+    cx.fillStyle = '#d99a14'; [[-0.2, 0.12, 0.09], [0.18, 0.15, 0.07], [0.3, 0.02, 0.05]].forEach(function (h) { cx.beginPath(); cx.arc(h[0] * size, h[1] * size, h[2] * size, 0, Math.PI * 2); cx.fill(); });
+    cx.restore();
+  }
+  function snack(kind, x, y, size) {
+    cx.save(); cx.translate(x, y); var r = size / 2;
+    function circ(a, b, rad, col) { cx.fillStyle = col; cx.beginPath(); cx.arc(a * r, b * r, rad * r, 0, Math.PI * 2); cx.fill(); }
+    function leaf(a, b, col) { cx.fillStyle = col || '#3fbf5a'; cx.beginPath(); cx.ellipse(a * r, b * r, r * 0.32, r * 0.14, -0.5, 0, Math.PI * 2); cx.fill(); }
+    if (kind === 'berry') { circ(-0.28, 0.2, 0.38, '#e8354a'); circ(0.3, 0.25, 0.38, '#e8354a'); cx.strokeStyle = '#3fbf5a'; cx.lineWidth = r * 0.12; cx.beginPath(); cx.moveTo(-0.28 * r, -0.1 * r); cx.quadraticCurveTo(0, -0.8 * r, 0.3 * r, -0.08 * r); cx.stroke(); }
+    else if (kind === 'strawberry') { cx.fillStyle = '#ff3b5c'; cx.beginPath(); cx.moveTo(-0.6 * r, -0.3 * r); cx.quadraticCurveTo(0, -0.55 * r, 0.6 * r, -0.3 * r); cx.quadraticCurveTo(0.5 * r, 0.5 * r, 0, 0.8 * r); cx.quadraticCurveTo(-0.5 * r, 0.5 * r, -0.6 * r, -0.3 * r); cx.fill(); leaf(-0.2, -0.45); leaf(0.2, -0.45); cx.fillStyle = '#ffe28a'; [[-0.2, 0], [0.2, 0.05], [0, 0.35]].forEach(function (d) { cx.fillRect(d[0] * r, d[1] * r, r * 0.1, r * 0.1); }); }
+    else if (kind === 'corn') { cx.fillStyle = '#ffd23f'; cx.beginPath(); cx.ellipse(0, 0.05 * r, r * 0.3, r * 0.7, 0, 0, Math.PI * 2); cx.fill(); leaf(-0.3, 0.3, '#5fcf5f'); leaf(0.3, 0.3, '#5fcf5f'); }
+    else if (kind === 'apple') { circ(0, 0.12, 0.62, '#ff5a3c'); circ(-0.2, -0.05, 0.16, 'rgba(255,255,255,.4)'); cx.strokeStyle = '#7a4a1a'; cx.lineWidth = r * 0.12; cx.beginPath(); cx.moveTo(0, -0.45 * r); cx.lineTo(0.1 * r, -0.8 * r); cx.stroke(); leaf(0.3, -0.62); }
+    else if (kind === 'grapes') { [[-0.3, -0.3], [0.3, -0.3], [0, -0.3], [-0.15, 0.05], [0.15, 0.05], [0, 0.4]].forEach(function (d) { circ(d[0], d[1] + 0.1, 0.26, '#9b5cf0'); }); leaf(0.2, -0.7); }
+    else if (kind === 'cupcake') { cx.fillStyle = '#4db5ff'; cx.beginPath(); cx.moveTo(-0.5 * r, 0.05 * r); cx.lineTo(0.5 * r, 0.05 * r); cx.lineTo(0.35 * r, 0.75 * r); cx.lineTo(-0.35 * r, 0.75 * r); cx.fill(); circ(0, -0.1, 0.5, '#ff9ecf'); circ(0, -0.6, 0.16, '#e8354a'); }
+    else if (kind === 'pie') { cx.fillStyle = '#e0a060'; cx.beginPath(); cx.moveTo(-0.75 * r, 0.1 * r); cx.lineTo(0.75 * r, 0.1 * r); cx.lineTo(0.55 * r, 0.6 * r); cx.lineTo(-0.55 * r, 0.6 * r); cx.fill(); cx.fillStyle = '#f2c48a'; cx.beginPath(); cx.ellipse(0, 0.1 * r, 0.75 * r, 0.35 * r, 0, Math.PI, 0); cx.fill(); cx.strokeStyle = '#b06a2a'; cx.lineWidth = r * 0.08; cx.beginPath(); cx.moveTo(-0.3 * r, -0.1 * r); cx.lineTo(-0.1 * r, 0); cx.moveTo(0.1 * r, -0.15 * r); cx.lineTo(0.3 * r, -0.05 * r); cx.stroke(); }
+    else cheese(0, 0, size * 0.95);
+    cx.restore();
+  }
+  function mouseIcon(x, y, size) { cx.save(); cx.translate(x, y); drawMouseBody(size / 0.9 * 0.9, 3, 0, false); cx.restore(); }
+  // the mouse, facing its direction (0 up, 1 left, 2 down, 3 right)
+  function drawMouse(now) {
+    var p = s.pac, x = P(p.x), y = P(p.y);
+    cx.save(); cx.translate(x, y);
+    var d = p.dir, step = (s.phase === 'play' && p.moving && phase === 'run') ? p.anim : 0;
+    if (s.phase === 'dying' && s.phaseT >= 60) {
+      var q = (s.phaseT - 60) / 110; cx.rotate(q * Math.PI * 6); cx.scale(1 - q * 0.9, 1 - q * 0.9);
+      if (q > 0.85) { cx.restore(); poof(x, y, (q - 0.85) / 0.15); return; }
+    }
+    drawMouseBody(c, d, step, true);
+    cx.restore();
+  }
+  function poof(x, y, q) { cx.strokeStyle = 'rgba(255,255,255,' + (1 - q) + ')'; cx.lineWidth = 2; for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4, r1 = c * (0.3 + q), r2 = c * (0.6 + q * 1.2); cx.beginPath(); cx.moveTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1); cx.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2); cx.stroke(); } }
+  function drawMouseBody(size, d, step, legs) {
+    var r = size * 0.72;
+    // face right, then turn: left mirrors so it stays upright
+    if (d === 1) cx.scale(-1, 1); else if (d === 0) cx.rotate(-Math.PI / 2); else if (d === 2) cx.rotate(Math.PI / 2);
+    var wig = Math.sin(step * 0.5);
+    cx.strokeStyle = '#f3a5b8'; cx.lineWidth = Math.max(1.2, r * 0.12); cx.lineCap = 'round';
+    cx.beginPath(); cx.moveTo(-r * 0.9, 0); cx.quadraticCurveTo(-r * 1.5, -r * 0.2 + wig * r * 0.3, -r * 1.65, r * 0.25 + wig * r * 0.2); cx.stroke();
+    if (legs) { cx.fillStyle = '#f3a5b8'; var f = Math.sin(step * 0.6) * r * 0.25; [[-0.35, 1], [0.35, -1]].forEach(function (l) { cx.beginPath(); cx.ellipse(l[0] * r + f * l[1], r * 0.62, r * 0.18, r * 0.1, 0, 0, Math.PI * 2); cx.fill(); cx.beginPath(); cx.ellipse(l[0] * r - f * l[1], -r * 0.62, r * 0.18, r * 0.1, 0, 0, Math.PI * 2); cx.fill(); }); }
+    cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.ellipse(-r * 0.15, 0, r * 0.85, r * 0.62, 0, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = '#d7dcea'; cx.beginPath(); cx.ellipse(-r * 0.25, r * 0.1, r * 0.5, r * 0.34, 0, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.moveTo(r * 0.35, -r * 0.45); cx.quadraticCurveTo(r * 1.25, -r * 0.1, r * 1.05, 0); cx.quadraticCurveTo(r * 1.25, r * 0.1, r * 0.35, r * 0.45); cx.closePath(); cx.fill();
+    [[-1, 0.45], [1, 0.45]].forEach(function (e) { cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.arc(r * 0.3, e[0] * r * 0.5, r * 0.34, 0, Math.PI * 2); cx.fill(); cx.fillStyle = '#f3a5b8'; cx.beginPath(); cx.arc(r * 0.3, e[0] * r * 0.5, r * 0.2, 0, Math.PI * 2); cx.fill(); });
+    cx.fillStyle = '#ff7aa0'; cx.beginPath(); cx.arc(r * 1.08, 0, r * 0.14, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = '#1b1f33'; cx.beginPath(); cx.arc(r * 0.7, -r * 0.18, r * 0.1, 0, Math.PI * 2); cx.arc(r * 0.7, r * 0.18, r * 0.1, 0, Math.PI * 2); cx.fill();
+  }
+  // a cat: a round head with ears, paws and a swishing tail (scared: pale blue with a wobbly mouth; bopped: just its bell going home)
+  function drawCat(ct, now) {
+    var x = P(ct.x), y = P(ct.y), r = c * 0.78;
+    cx.save(); cx.translate(x, y);
+    if (ct.state === 'eaten' || ct.state === 'entering') {
+      cx.fillStyle = '#e8354a'; rr(cx, -r * 0.55, -r * 0.62, r * 1.1, r * 0.22, r * 0.1); cx.fill();
+      cx.fillStyle = '#ffcf3d'; cx.beginPath(); cx.arc(0, -r * 0.05, r * 0.42, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = '#b07a00'; cx.fillRect(-r * 0.3, r * 0.05, r * 0.6, r * 0.07); cx.beginPath(); cx.arc(0, r * 0.2, r * 0.08, 0, Math.PI * 2); cx.fill();
+      cx.restore(); return;
+    }
+    var scared = ct.fright, left = s.frightT, fl = CC.flashes(s.level);
+    var white = scared && left < fl * 28 && Math.floor(left / 14) % 2 === 0;
+    var col = scared ? (white ? '#eef1ff' : '#7f95ff') : CAT_COLORS[ct.i], dark = scared ? (white ? '#b8c2ff' : '#4a5fd6') : shade(CAT_COLORS[ct.i], -0.3);
+    var sw = Math.sin((ct.anim || 0) * 0.15);
+    // tail
+    cx.strokeStyle = dark; cx.lineWidth = r * 0.22; cx.lineCap = 'round';
+    cx.beginPath(); cx.moveTo(r * 0.5, r * 0.55); cx.quadraticCurveTo(r * 1.2, r * 0.5, r * (1.05 + 0.15 * sw), -r * 0.05); cx.stroke();
+    // paws
+    cx.fillStyle = dark; cx.beginPath(); cx.ellipse(-r * 0.35, r * 0.72, r * 0.24, r * 0.16, 0, 0, Math.PI * 2); cx.ellipse(r * 0.35, r * 0.72, r * 0.24, r * 0.16, 0, 0, Math.PI * 2); cx.fill();
+    // ears
+    cx.fillStyle = col;
+    [[-1], [1]].forEach(function (e) { var sx = e[0]; cx.beginPath(); cx.moveTo(sx * r * 0.78, -r * 0.1); cx.lineTo(sx * r * 0.68, -r * 0.98); cx.lineTo(sx * r * 0.12, -r * 0.6); cx.closePath(); cx.fill(); });
+    cx.fillStyle = scared ? 'rgba(255,255,255,.35)' : '#ffb3c7';
+    [[-1], [1]].forEach(function (e) { var sx = e[0]; cx.beginPath(); cx.moveTo(sx * r * 0.62, -r * 0.3); cx.lineTo(sx * r * 0.6, -r * 0.78); cx.lineTo(sx * r * 0.3, -r * 0.55); cx.closePath(); cx.fill(); });
+    // head
+    cx.fillStyle = col; cx.beginPath(); cx.ellipse(0, 0, r * 0.82, r * 0.72, 0, 0, Math.PI * 2); cx.fill();
+    if (!scared && ct.i === 0) { cx.fillStyle = dark; [[-0.15, -0.62], [0.15, -0.62], [0, -0.68]].forEach(function (st) { cx.fillRect(st[0] * r - r * 0.05, st[1] * r, r * 0.1, r * 0.22); }); }
+    if (!scared && ct.i === 3) { cx.fillStyle = '#fff5e6'; cx.beginPath(); cx.ellipse(0, r * 0.3, r * 0.45, r * 0.3, 0, 0, Math.PI * 2); cx.fill(); }
+    if (scared) {
+      cx.fillStyle = white ? '#6a78d8' : '#fff'; cx.beginPath(); cx.arc(-r * 0.3, -r * 0.1, r * 0.12, 0, Math.PI * 2); cx.arc(r * 0.3, -r * 0.1, r * 0.12, 0, Math.PI * 2); cx.fill();
+      cx.strokeStyle = white ? '#6a78d8' : '#fff'; cx.lineWidth = r * 0.08; cx.beginPath();
+      for (var i = 0; i <= 6; i++) { var mx = -r * 0.42 + i * r * 0.14, my = r * 0.3 + (i % 2 ? -1 : 1) * r * 0.07; if (i) cx.lineTo(mx, my); else cx.moveTo(mx, my); }
+      cx.stroke();
+    } else {
+      var lx = CC.DX[ct.dir] * r * 0.1, ly = CC.DY[ct.dir] * r * 0.1;
+      cx.fillStyle = '#fff'; cx.beginPath(); cx.ellipse(-r * 0.3, -r * 0.1, r * 0.2, r * 0.23, 0, 0, Math.PI * 2); cx.ellipse(r * 0.3, -r * 0.1, r * 0.2, r * 0.23, 0, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = '#1b1f33'; cx.beginPath(); cx.ellipse(-r * 0.3 + lx, -r * 0.1 + ly, r * 0.09, r * 0.15, 0, 0, Math.PI * 2); cx.ellipse(r * 0.3 + lx, -r * 0.1 + ly, r * 0.09, r * 0.15, 0, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = '#ff7aa0'; cx.beginPath(); cx.moveTo(-r * 0.09, r * 0.15); cx.lineTo(r * 0.09, r * 0.15); cx.lineTo(0, r * 0.26); cx.closePath(); cx.fill();
+      cx.strokeStyle = 'rgba(30,30,50,.55)'; cx.lineWidth = Math.max(1, r * 0.04);
+      cx.beginPath(); [[1, -0.05], [1, 0.08], [-1, -0.05], [-1, 0.08]].forEach(function (w) { cx.moveTo(w[0] * r * 0.25, r * 0.25); cx.lineTo(w[0] * r * 0.95, r * (0.2 + w[1])); }); cx.stroke();
+    }
+    cx.restore();
+  }
+  function shade(hex, kk) { var n = parseInt(hex.slice(1), 16), f = function (v) { return Math.max(0, Math.min(255, Math.round(v * (1 + kk)))); }; return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; }
+
+  // ================= input: swipes anywhere, arrow keys, the joystick =================
+  var sw = null;
+  function input(d) {
+    if (!s || sheetOpen()) return;
+    S.unlock();
+    if (phase === 'ready') { want = d; begin(); return; }
+    if (phase === 'paused') { resume(); }
+    want = d;
+  }
+  function onDown(e) {
+    if (e.target.closest('button, .overlay, .top, .toolbar, .joy')) return;
+    sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  }
+  function onMove(e) {
+    if (!sw || e.pointerId !== sw.id) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 16) return;
+    input(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 1) : (dy > 0 ? 2 : 0));
+    sw.x = e.clientX; sw.y = e.clientY;
+  }
+  function onUp(e) { if (sw && e.pointerId === sw.id) sw = null; }
+  function joystick() {
+    var el = $('joy'), id = null;
+    function dirFrom(e) {
+      var r = el.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.08) return -1;
+      return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 1) : (dy > 0 ? 2 : 0);
+    }
+    function show(d) {
+      Array.prototype.forEach.call(el.querySelectorAll('.arr'), function (a) { a.classList.toggle('on', +a.dataset.d === d); });
+      var off = [[0, -9], [-9, 0], [0, 9], [9, 0]][d] || [0, 0];
+      $('knob').style.transform = 'translate(' + off[0] + 'px,' + off[1] + 'px)';
+    }
+    function set(e) { var d = dirFrom(e); show(d); if (d >= 0) input(d); }
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); id = e.pointerId; try { el.setPointerCapture(id); } catch (err) { /* ignore */ } set(e); });
+    el.addEventListener('pointermove', function (e) { if (e.pointerId === id) set(e); });
+    function up(e) { if (e.pointerId === id) { id = null; show(-1); } }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  }
+
+  // ================= info, panels, tools =================
+  function renderInfo() {
+    if (!s) return;
+    $('info').innerHTML = '<div><div class="lbl">Score</div><div class="big">' + fmt(s.score) + '</div></div>' +
+      '<div style="text-align:center"><div class="lbl">Level</div><div class="mid">' + s.level + '</div></div>' +
+      '<div class="right"><div class="lbl">High score</div><div class="mid">' + fmt(Math.max(stats.best, s.score)) + '</div></div>';
+  }
+  function renderTools() {
+    var p = $('btnPause'), paused = phase === 'paused';
+    p.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    p.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-' + (paused ? 'play' : 'pause') + '"/></svg><span>' + (paused ? 'Resume' : 'Pause') + '</span>';
+    p.disabled = !(phase === 'run' || phase === 'paused');
+  }
+  function castIcon(i) {
+    var cvv = document.createElement('canvas'), d = Math.min(3, window.devicePixelRatio || 1);
+    cvv.width = cvv.height = 40 * d;
+    var saveCx = cx, saveC = c, saveK = k;
+    cx = cvv.getContext('2d'); cx.setTransform(d, 0, 0, d, 0, 0); c = 22; k = c / 8;
+    drawCat({ i: i, x: 20 / k, y: 23 / k, dir: 2, state: 'active', fright: false, anim: 0 }, 0);
+    cx = saveCx; c = saveC; k = saveK;
+    return cvv;
+  }
+  function renderReady() {
+    var r = $('ready');
+    if (phase === 'paused') {
+      r.innerHTML = '<h2>Paused</h2><p>Level ' + s.level + ' &middot; ' + fmt(s.score) + ' points</p><button class="btn red go" id="btnGo">Resume</button><p class="or">or swipe to keep going</p>';
+      r.classList.add('show'); $('btnGo').addEventListener('click', resume); return;
+    }
+    if (phase !== 'ready') { r.classList.remove('show'); return; }
+    r.innerHTML = '<h2>Cheese Chase</h2><p>Eat every crumb. A big cheese makes the cats scared for a moment: catch them then!</p><div class="cast" id="cast"></div>' +
+      '<button class="btn red go" id="btnGo">Start</button><p class="or">or just swipe' + (stats.best ? ' &middot; high score ' + fmt(stats.best) : '') + '</p>';
+    r.classList.add('show');
+    CC.NAMES.forEach(function (n, i) { var d = document.createElement('div'); d.appendChild(castIcon(i)); d.appendChild(document.createTextNode(n)); var sm = document.createElement('small'); sm.textContent = CAT_BLURB[i]; d.appendChild(sm); $('cast').appendChild(d); });
+    $('btnGo').addEventListener('click', begin);
+  }
+  function renderAll() { renderInfo(); renderTools(); renderReady(); draw(); }
+
+  // ================= end of a game =================
+  function record() {
+    stats.games++; stats.crumbs += counted.crumbs; stats.cats += counted.cats; stats.bonus += counted.bonus; stats.levels += counted.levels;
+    stats.ms += Math.round(s.t * STEP);
+    var nb = false;
+    if (s.score > stats.best) { stats.best = s.score; nb = true; }
+    if (s.level > stats.bestLevel) stats.bestLevel = s.level;
+    saveStats(); meta.finished++; saveMeta(); store.del('run');
+    counted = { crumbs: 0, cats: 0, bonus: 0, levels: 0 };
+    return nb;
+  }
+  function gameOver() {
+    var nb = record();
+    showCard('Game over', 'Score <b>' + fmt(s.score) + '</b> &middot; level ' + s.level + (nb && s.score ? '<br><span class="newbest">New high score!</span>' : '<br>High score: ' + fmt(stats.best)),
+      [{ label: 'Play again', red: true, go: function () { between(newGame); } }]);
+    renderTools(); renderInfo();
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#cc-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return;
+    }
+    next();
+  }
+
+  // ================= sheets =================
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Cheese Chase';
+    $('helpList').innerHTML = [
+      '<b>Swipe</b> anywhere to steer the mouse: up, down, left or right. Swipe a turn early and the mouse takes it at the next corner. Prefer a stick? Turn on the <b>joystick</b> in Settings.',
+      'Eat every <b>crumb</b> (10 points) to clear the level. The four <b>big cheeses</b> (50) make the cats scared for a few seconds: they turn blue and run. Catch them for 200, 400, 800, then 1,600. When they flash, time’s nearly up. A caught cat’s bell rolls home to the basket and the cat comes back.',
+      'Four cats, four ways: <b>Ginger</b> chases you, and gets faster when few crumbs are left. <b>Rosie</b> heads you off. <b>Misty</b> is hard to read (she works with Ginger). <b>Pudding</b> is shy: close up, she wanders off. Every so often they all break off and go to their corners.',
+      'A <b>snack</b> shows up twice a level below the basket, for a short time: 100 points on level 1, up to 5,000 later.',
+      'You have 3 lives and get one more at 10,000 points. The tunnels at the sides take you across, and slow the cats down.',
+      'Each level is faster and the cats stay scared for less time. Pause any time; a game in progress is saved.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.best) + '</b><span>High score</span></div><div class="tile"><b>' + (stats.bestLevel || '–') + '</b><span>Best level</span></div><div class="tile"><b>' + stats.games + '</b><span>Games</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.crumbs) + '</b><span>Crumbs</span></div><div class="tile"><b>' + fmt(stats.cats) + '</b><span>Cats caught</span></div><div class="tile"><b>' + fmt(stats.levels) + '</b><span>Levels cleared</span></div></div>' +
+      '<p class="version">' + fmt(stats.bonus) + ' snacks &middot; ' + Math.round(stats.ms / 60000) + ' min played</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function syncPad() { $('setPad').checked = settings.pad; $('joy').classList.toggle('show', settings.pad); requestAnimationFrame(function () { fit(); draw(); }); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { pause(); if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    document.addEventListener('touchmove', function (e) { if (sw) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) {
+      var d = { ArrowUp: 0, ArrowLeft: 1, ArrowDown: 2, ArrowRight: 3 }[e.key];
+      if (d !== undefined) { e.preventDefault(); input(d); }
+      else if (e.key === ' ' || e.key === 'p') { e.preventDefault(); if (phase === 'run') pause(); else if (phase === 'paused') resume(); else if (phase === 'ready') begin(); }
+    });
+    joystick();
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { pause(); saveRun(); Goobs.home(); });
+    $('btnPause').addEventListener('click', function () { if (phase === 'run') pause(); else if (phase === 'paused') resume(); });
+    $('btnNew').addEventListener('click', function () {
+      if (phase === 'run') pause();
+      if (phase === 'paused' && s.score > 0) {
+        showCard('Start over?', 'This game ends now with ' + fmt(s.score) + ' points.', [
+          { label: 'Start over', red: true, go: function () { record(); between(newGame); } },
+          { label: 'Keep playing', go: function () {} }]);
+        return;
+      }
+      newGame();
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    // full screen (2026-09-29): Pause moves up to the top row as a round button; How to, Restart, Stats and Settings live
+    // in the Menu (the empty toolbar hides itself), so the board gets the toolbar's height. The game pauses while it is open.
+    var pb = $('btnPause'); pb.className = 'iconbtn'; pb.setAttribute('aria-label', 'Pause');
+    $('btnSound').parentNode.insertBefore(pb, $('btnSound'));
+    Goobs.fullscreen({
+      menu: ['btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { return s ? 'Level <b>' + s.level + '</b> &middot; high score <b>' + fmt(Math.max(stats.best, s.score)) + '</b>' : ''; },
+      onOpen: function () { pause(); }
+    });
+    $('btnHelp').addEventListener('click', function () { pause(); openHelp(); });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setPad').addEventListener('change', function () { settings.pad = this.checked; saveSettings(); syncPad(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) new ResizeObserver(function () { fit(); draw(); }).observe($('stagewrap'));
+    window.addEventListener('resize', function () { fit(); draw(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); saveRun(); } });
+    window.addEventListener('pagehide', function () { pause(); saveRun(); });
+    syncSound(); syncAds(); syncPad();
+    fit();
+    if (!resumeRun()) newGame();
+    if (!meta.seen) openHelp();
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+    Goobs.markPlayed('maze');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); saveRun(); },
+      onVersions: function (v) { $('version').textContent = 'Cheese Chase ' + (v.maze || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__cc = { get s() { return s; }, get phase() { return phase; }, input: input, begin: begin, pause: pause, newGame: newGame, stats: function () { return stats; }, CC: CC };
+
+  init();
+})();
+</script>
+</body>
+</html>

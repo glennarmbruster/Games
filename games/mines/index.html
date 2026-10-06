@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Mine Meadow can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__mmReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eef7e6;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Mine Meadow didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('mines.game'); localStorage.removeItem('mines.meta'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__mmReady) fail('It took too long to start.'); }, 6000);
+})();
+</script>
+<title>Mine Meadow</title>
+<style>
+/* Mine Meadow styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand svg { border-radius: 10px; }
+.brand h1 { font-size: 21px; }
+.modes button { font-size: 15px; }
+.info .big small { font-size: 16px; color: var(--muted); }
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; align-items: center; justify-content: center; }
+.stage { position: relative; border-radius: 14px; overflow: hidden; background: #cfe9b8; box-shadow: var(--shadow); touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.toast { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); max-width: 90%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.8); color: #fff; font-weight: 700; font-size: 14px; padding: 7px 13px; border-radius: 14px; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.zoomhint { position: absolute; right: 8px; top: 8px; background: rgba(20,24,36,.6); color: #fff; font-weight: 800; font-size: 12px; padding: 5px 9px; border-radius: 12px; pointer-events: none; display: none; }
+.zoomhint.show { display: block; }
+.tool.mode.flag { background: #e8354a; color: #fff; border-color: transparent; }
+.cardicon svg { border-radius: 16px; }
+@media (max-width: 385px) { .brand h1 { font-size: 19px; } .modes button { font-size: 14px; } }
+
+/* ---------- full screen (1.1.0; Glenn: "I would like all the games full screen") ----------
+   Goobs.fullscreen() puts the page edge to edge with 8px gutters; the meadow still reaches 2px past them so a Beginner
+   board keeps its 42px squares. How to, Stats and Settings live in the Menu sheet. */
+html.gg-fs .stagewrap { width: calc(100% + 12px); margin: 0 -6px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="mm-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#e8f6e0"/>
+<g><rect x="12" y="12" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/>
+<rect x="12" y="38" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="38" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="38" width="24" height="24" rx="5" fill="#6cc24a"/>
+<rect x="12" y="64" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="64" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="64" y="64" width="24" height="24" rx="5" fill="#6cc24a"/></g>
+<g font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="17" text-anchor="middle"><text x="50" y="30" fill="#2459c4">1</text><text x="76" y="30" fill="#15905c">2</text><text x="50" y="56" fill="#d6283a">3</text></g>
+<path d="M72 44 v14 M72 44 l9 4 -9 4" stroke="#7a4a1a" stroke-width="2" fill="#e8354a" stroke-linejoin="round"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4"/><path d="M6 4h11l-2.5 4L17 12H6" fill="currentColor" fill-opacity=".25"/></g></symbol>
+<symbol id="i-shovel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10l6-6M18 2l4 4"/><path d="M13 7l4 4-5.5 5.5a4 4 0 0 1-5.6 0l-2.4-2.4 1.5-1.5a4 4 0 0 1 0-.6L11 7z" fill="currentColor" fill-opacity=".2"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#mm-logo"/></svg>
+      <h1>Mine Meadow</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="beginner">Beginner</button>
+    <button data-mode="intermediate">Middle</button>
+    <button data-mode="expert">Expert</button>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+      <div class="zoomhint" id="zoomhint">Pinch out to see it all</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool mode" id="btnMode"><svg viewBox="0 0 24 24"><use href="#i-shovel"/></svg><span>Dig</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New game</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>No guessing<small>Every board can be cleared by reasoning alone, never a coin flip. Off: mines fall anywhere, like the original.</small></div>
+        <span class="switch"><input type="checkbox" id="setNoGuess"><span></span></span></label>
+      <label class="row"><div>Hold to flag<small>Press and hold a square to plant or lift a flag (the Dig/Flag button works either way).</small></div>
+        <span class="switch"><input type="checkbox" id="setHold"><span></span></span></label>
+      <label class="row"><div>Sound<small>Soft digs, pops and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Mine Meadow</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Mine Meadow records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Mine Meadow logic: Minesweeper. The three classic sizes, a safe first dig, flood-opening blanks, flags, chording,
+   and boards that can be solved without guessing (checked by a solver that only uses sure deductions). Runs in Node. */
+var MM = (function () {
+  'use strict';
+  // the classic sizes (Expert is 30 x 16; here it stands upright, 16 wide and 30 tall)
+  var LEVELS = { beginner: { w: 9, h: 9, n: 10, name: 'Beginner' }, intermediate: { w: 16, h: 16, n: 40, name: 'Intermediate' }, expert: { w: 16, h: 30, n: 99, name: 'Expert' } };
+  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function nbrs(w, h, i) {
+    var x = i % w, y = (i / w) | 0, out = [];
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; var nx = x + dx, ny = y + dy;
+      if (nx >= 0 && ny >= 0 && nx < w && ny < h) out.push(ny * w + nx);
+    }
+    return out;
+  }
+  // a new game; mines are placed on the first dig
+  function create(level, opts) {
+    var L = LEVELS[level] || LEVELS.beginner;
+    return { level: level, w: L.w, h: L.h, n: L.n, mine: null, num: null, state: new Array(L.w * L.h).fill(0), // 0 hidden, 1 open, 2 flag
+      started: false, over: false, won: false, boom: -1, ms: 0, noGuess: !opts || opts.noGuess !== false, seed: (opts && opts.seed) >>> 0 || 1, digs: 0 };
+  }
+  function place(g, first) {
+    var R = rng(g.seed), size = g.w * g.h, tries = 0;
+    var safe = {}; safe[first] = 1; nbrs(g.w, g.h, first).forEach(function (k) { safe[k] = 1; });
+    while (true) {
+      tries++;
+      var mine = new Array(size).fill(0), cells = [];
+      for (var i = 0; i < size; i++) if (!safe[i]) cells.push(i);
+      for (var k = cells.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = cells[k]; cells[k] = cells[j]; cells[j] = t; }
+      for (var m = 0; m < g.n; m++) mine[cells[m]] = 1;
+      var num = numbers(g.w, g.h, mine);
+      if (!g.noGuess || tries > 4000 || solvable(g.w, g.h, g.n, mine, num, first)) { g.mine = mine; g.num = num; g.tries = tries; return; }
+    }
+  }
+  function numbers(w, h, mine) { return mine.map(function (v, i) { if (v) return -1; var c = 0; nbrs(w, h, i).forEach(function (k) { c += mine[k]; }); return c; }); }
+
+  // ---------- the solver: can the board be cleared from the first dig with sure steps only? ----------
+  function solvable(w, h, total, mine, num, first) {
+    var size = w * h, st = new Int8Array(size); // 0 unknown, 1 open, 2 known mine
+    var open = function (i) {
+      var stack = [i];
+      while (stack.length) { var c = stack.pop(); if (st[c] === 1) continue; st[c] = 1; if (num[c] === 0) nbrs(w, h, c).forEach(function (k) { if (st[k] === 0) stack.push(k); }); }
+    };
+    open(first);
+    var changed = true, guard = 0;
+    while (changed && guard++ < 1000) {
+      changed = false;
+      // rule 1: a number whose hidden neighbours are all mines, or whose mines are all found
+      var cons = [];
+      for (var i = 0; i < size; i++) {
+        if (st[i] !== 1 || num[i] <= 0) continue;
+        var hid = [], flagged = 0;
+        nbrs(w, h, i).forEach(function (k) { if (st[k] === 0) hid.push(k); else if (st[k] === 2) flagged++; });
+        if (!hid.length) continue;
+        var need = num[i] - flagged;
+        if (need === hid.length) { hid.forEach(function (k) { st[k] = 2; }); changed = true; }
+        else if (need === 0) { hid.forEach(function (k) { if (st[k] === 0) open(k); }); changed = true; }
+        else cons.push({ cells: hid, n: need });
+      }
+      if (changed) continue;
+      // rule 2: one number's hidden cells inside another's (the difference must hold the difference in mines)
+      for (var a = 0; a < cons.length && !changed; a++) for (var b = 0; b < cons.length && !changed; b++) {
+        if (a === b) continue;
+        var A = cons[a], B = cons[b];
+        if (A.cells.length >= B.cells.length) continue;
+        if (!A.cells.every(function (c) { return B.cells.indexOf(c) >= 0; })) continue;
+        var rest = B.cells.filter(function (c) { return A.cells.indexOf(c) < 0; }), dn = B.n - A.n;
+        if (dn === 0) { rest.forEach(function (k) { if (st[k] === 0) open(k); }); changed = true; }
+        else if (dn === rest.length) { rest.forEach(function (k) { st[k] = 2; }); changed = true; }
+      }
+      if (changed) continue;
+      // rule 3: overlapping numbers (A has more mines than fit outside B -> some must be in the overlap)
+      for (var a2 = 0; a2 < cons.length && !changed; a2++) for (var b2 = 0; b2 < cons.length && !changed; b2++) {
+        if (a2 === b2) continue;
+        var P = cons[a2], Q = cons[b2];
+        var both = P.cells.filter(function (c) { return Q.cells.indexOf(c) >= 0; }); if (!both.length) continue;
+        var pOnly = P.cells.filter(function (c) { return both.indexOf(c) < 0; }), qOnly = Q.cells.filter(function (c) { return both.indexOf(c) < 0; });
+        // mines in the overlap are at least P.n - |pOnly| and at most min(|both|, Q.n)
+        var minBoth = P.n - pOnly.length;
+        if (minBoth > 0 && minBoth === Q.n) { qOnly.forEach(function (k) { if (st[k] === 0) { open(k); changed = true; } }); }
+        if (!changed && P.n - Math.min(both.length, Q.n) === pOnly.length && pOnly.length) { pOnly.forEach(function (k) { if (st[k] === 0) { st[k] = 2; changed = true; } }); }
+      }
+      if (changed) continue;
+      // the mine count: once every mine is known, the rest is safe; if the hidden cells equal the mines left, all are mines
+      var known = 0, unknown = [];
+      for (var q = 0; q < size; q++) { if (st[q] === 2) known++; else if (st[q] === 0) unknown.push(q); }
+      if (unknown.length && known === total) { unknown.forEach(function (k) { open(k); }); changed = true; }
+      else if (unknown.length && unknown.length === total - known) { unknown.forEach(function (k) { st[k] = 2; }); changed = true; }
+    }
+    for (var z = 0; z < size; z++) if (!mine[z] && st[z] !== 1) return false;
+    return true;
+  }
+
+  // ---------- play ----------
+  function flood(g, i) {
+    var stack = [i], opened = 0;
+    while (stack.length) {
+      var c = stack.pop();
+      if (g.state[c] !== 0) continue;
+      g.state[c] = 1; opened++;
+      if (g.num[c] === 0) nbrs(g.w, g.h, c).forEach(function (k) { if (g.state[k] === 0) stack.push(k); });
+    }
+    return opened;
+  }
+  function checkWin(g) {
+    for (var i = 0; i < g.state.length; i++) if (!g.mine[i] && g.state[i] !== 1) return false;
+    g.over = true; g.won = true;
+    for (var k = 0; k < g.state.length; k++) if (g.mine[k]) g.state[k] = 2; // flag the rest, like the original
+    return true;
+  }
+  // dig a cell: returns { opened, boom, won }
+  function dig(g, i) {
+    if (g.over || g.state[i] !== 0) return { opened: 0 };
+    if (!g.started) { place(g, i); g.started = true; }
+    g.digs++;
+    if (g.mine[i]) { g.over = true; g.boom = i; return { opened: 0, boom: true }; }
+    var n = flood(g, i);
+    return { opened: n, won: checkWin(g) };
+  }
+  function flag(g, i) {
+    if (g.over || g.state[i] === 1) return false;
+    g.state[i] = g.state[i] === 2 ? 0 : 2;
+    return true;
+  }
+  // tap an open number with that many flags around it: open everything else around it
+  function chord(g, i) {
+    if (g.over || g.state[i] !== 1 || g.num[i] <= 0) return { opened: 0 };
+    var nb = nbrs(g.w, g.h, i), flags = 0;
+    nb.forEach(function (k) { if (g.state[k] === 2) flags++; });
+    if (flags !== g.num[i]) return { opened: 0, short: true };
+    var opened = 0, boom = false;
+    nb.forEach(function (k) {
+      if (g.state[k] !== 0 || boom) return;
+      if (g.mine[k]) { g.over = true; g.boom = k; boom = true; return; }
+      opened += flood(g, k);
+    });
+    if (boom) return { opened: opened, boom: true };
+    return { opened: opened, won: checkWin(g) };
+  }
+  function flagsUsed(g) { var n = 0; g.state.forEach(function (v) { if (v === 2) n++; }); return n; }
+  return { LEVELS: LEVELS, create: create, dig: dig, flag: flag, chord: chord, flagsUsed: flagsUsed, nbrs: nbrs, solvable: solvable, numbers: numbers, place: place };
+})();
+if (typeof module !== 'undefined') module.exports = MM;
+</script>
+<script>
+/* Mine Meadow sounds: synthesized with Web Audio (no audio files). */
+var MMSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    dig: function (n) { if (!on) return; noise(700 + Math.min(n, 30) * 30, 2, 0.06, 0.3); if (n > 3) tone('triangle', 660, 990, 0.12, 0.08, 0.02); },
+    flag: function (on2) { if (on) { tone('square', on2 ? 880 : 520, 0, 0.05, 0.08); noise(2600, 4, 0.03, 0.15); } },
+    boom: function () { if (!on) return; noise(120, 0.7, 0.7, 1.2); tone('sawtooth', 160, 40, 0.6, 0.25); },
+    nope: function () { if (on) tone('sine', 300, 220, 0.1, 0.1); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, i === 4 ? 0.6 : 0.18, 0.26, i * 0.1); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Mine Meadow app: drawing the meadow, taps (dig, flag, chord), hold to flag, pinch to zoom and drag to look
+   around, the timer, saves, stats and house ads. */
+(function () {
+  'use strict';
+  var S = MMSound;
+  var NUMC = ['', '#2459c4', '#15905c', '#d6283a', '#1d2a8a', '#8a1c1c', '#138a8a', '#1b1f33', '#6b7080'];
+
+  // ================= storage =================
+  var store = Goobs.store('mines');
+  var settings = { sound: false, adEvery: 3, noGuess: true, hold: true };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { level: 'beginner', seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (!MM.LEVELS[meta.level]) meta.level = 'beginner';
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  Object.keys(MM.LEVELS).forEach(function (l) { var o = stats[l] || (stats[l] = {}); ['played', 'won', 'best', 'streak', 'maxStreak'].forEach(function (k) { if (typeof o[k] !== 'number') o[k] = 0; }); });
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); } // the clock stops while the Menu is open too
+  function clock(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+
+  // ================= game =================
+  var g = null, flagMode = false, lastTick = 0, ending = null;
+  function newGame(level) {
+    g = MM.create(level || meta.level, { noGuess: settings.noGuess, seed: newSeed() });
+    meta.level = g.level; saveMeta();
+    ending = null; view = { s: 1, x: 0, y: 0 };
+    save(); fit(); renderAll();
+  }
+  function save() { if (g && g.started && !g.over) store.set('game', g); else store.del('game'); }
+  function load() {
+    var r = store.get('game', null);
+    if (!r || !MM.LEVELS[r.level] || r.over || !r.started || !Array.isArray(r.state)) return false;
+    var L = MM.LEVELS[r.level], size = L.w * L.h;
+    if (r.w !== L.w || r.h !== L.h || r.state.length !== size || !Array.isArray(r.mine) || r.mine.length !== size || !Array.isArray(r.num) || r.num.length !== size || typeof r.ms !== 'number') { store.del('game'); return false; }
+    g = r; meta.level = g.level; return true;
+  }
+  function tick() {
+    var now = performance.now();
+    if (g && g.started && !g.over && !sheetOpen() && !document.hidden) g.ms += Math.min(1000, now - lastTick);
+    lastTick = now;
+  }
+  setInterval(function () { tick(); var el = $('clock'); if (el && g) el.textContent = clock(g.ms); }, 250);
+
+  function act(i, how) { // how: 'dig' | 'flag'
+    if (!g || g.over || ending || sheetOpen()) return;
+    S.unlock();
+    var st = g.state[i];
+    if (st === 1) { // an open number: chord
+      var c = MM.chord(g, i);
+      if (c.short) { S.nope(); toast('Flag ' + g.num[i] + ' mine' + (g.num[i] === 1 ? '' : 's') + ' around it first'); return; }
+      after(c, i); return;
+    }
+    if (how === 'flag') { MM.flag(g, i); S.flag(g.state[i] === 2); save(); renderInfo(); draw(); return; }
+    if (st === 2) { S.nope(); toast('That square has a flag: lift it first'); return; }
+    if (!g.started) lastTick = performance.now();
+    after(MM.dig(g, i), i);
+  }
+  function after(r, i) {
+    if (r.boom) { S.boom(); lose(); }
+    else if (r.opened) S.dig(r.opened);
+    if (r.won) win();
+    save(); renderInfo(); draw();
+  }
+  function lose() {
+    // show the mines one after another from the one you hit
+    var mines = [], bx = g.boom % g.w, by = (g.boom / g.w) | 0;
+    g.mine.forEach(function (v, k) { if (v && k !== g.boom) mines.push(k); });
+    mines.sort(function (a, b) { var da = Math.hypot(a % g.w - bx, ((a / g.w) | 0) - by), db = Math.hypot(b % g.w - bx, ((b / g.w) | 0) - by); return da - db; });
+    ending = { t: performance.now(), shown: mines, lose: true };
+    record(false);
+    var dur = Math.min(1600, mines.length * 25) + 700;
+    anim(dur);
+    setTimeout(function () {
+      showCard('Boom!', MM.LEVELS[g.level].name + ' &middot; ' + clock(g.ms) + '<br>' + openedPct() + '% of the meadow cleared.', [
+        { label: 'Try again', red: true, go: function () { between(function () { newGame(g.level); }); } }, { label: 'Look at the board', go: function () {} }]);
+    }, dur);
+  }
+  function win() {
+    ending = { t: performance.now(), win: true };
+    var nb = record(true), st = stats[g.level];
+    S.win(); anim(900);
+    setTimeout(function () {
+      showCard('Cleared!', MM.LEVELS[g.level].name + ' in <b>' + clock(g.ms) + '</b>' + (nb ? '<br><span class="newbest">Best time!</span>' : '<br>Best: ' + clock(st.best)) + (st.streak > 1 ? '<br><small>' + st.streak + ' wins in a row</small>' : ''), [
+        { label: 'Play again', red: true, go: function () { between(function () { newGame(g.level); }); } }, { label: 'Look at the board', go: function () {} }]);
+    }, 900);
+  }
+  function record(won) {
+    var st = stats[g.level], nb = false;
+    st.played++;
+    if (won) { st.won++; st.streak++; st.maxStreak = Math.max(st.maxStreak, st.streak); if (!st.best || g.ms < st.best) { st.best = Math.round(g.ms); nb = true; } }
+    else st.streak = 0;
+    saveStats(); meta.finished++; saveMeta(); store.del('game');
+    return nb;
+  }
+  function openedPct() { var o = 0, safe = g.w * g.h - g.n; g.state.forEach(function (v, k) { if (v === 1 && !g.mine[k]) o++; }); return Math.round(o / safe * 100); }
+
+  // ================= drawing =================
+  var cv, cx, dpr = 1, cell = 30, VW = 0, VH = 0, view = { s: 1, x: 0, y: 0 };
+  var fitKey = '', fitTries = 0;
+  function fit() {
+    if (!g || !cv) return;
+    var wrap = $('stagewrap').getBoundingClientRect(), maxW = wrap.width - 4, maxH = wrap.height;
+    // the page can report no size for a moment while it opens (seen on iPhone): wait for real room
+    if (!(maxW > 40 && maxH > 40)) { if (fitTries++ < 120) requestAnimationFrame(fit); return; }
+    fitTries = 0;
+    var d = Math.min(3, window.devicePixelRatio || 1), key = Math.round(maxW) + 'x' + Math.round(maxH) + ':' + g.w + 'x' + g.h + '@' + d;
+    if (key === fitKey) { clampView(); draw(); return; }
+    fitKey = key;
+    // as big as fits across; a tall board (Expert) shrinks to fit the full-screen height when its squares stay at least
+    // 20px (pinch to zoom in), otherwise it keeps 22px squares and scrolls up and down with a drag
+    var fitH = maxH / g.h;
+    cell = Math.max(12, Math.floor(Math.min(maxW / g.w, 46, fitH >= 20 ? fitH : Math.max(fitH, 22))));
+    VW = Math.max(40, Math.min(maxW, cell * g.w)); VH = Math.max(40, Math.min(maxH, cell * g.h));
+    var st = $('stage'); st.style.width = VW + 'px'; st.style.height = VH + 'px';
+    dpr = d;
+    while (dpr > 1 && VW * VH * dpr * dpr > 4e6) dpr -= 0.5; // keep the canvas well inside iPhone limits
+    cv.width = Math.round(VW * dpr); cv.height = Math.round(VH * dpr);
+    clampView(); draw();
+  }
+  function clampView() {
+    view.s = Math.max(1, Math.min(2.6, view.s));
+    var W = g.w * cell * view.s, H = g.h * cell * view.s;
+    view.x = W <= VW ? (VW - W) / 2 : Math.min(0, Math.max(VW - W, view.x));
+    view.y = H <= VH ? (VH - H) / 2 : Math.min(0, Math.max(VH - H, view.y));
+    var zh = $('zoomhint'); if (zh) zh.classList.toggle('show', view.s > 1.01);
+  }
+  function rr(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+  var animUntil = 0;
+  function anim(ms) { animUntil = Math.max(animUntil, performance.now() + ms); requestAnimationFrame(loop); }
+  function loop() { draw(); if (performance.now() < animUntil) requestAnimationFrame(loop); }
+  function draw() {
+    if (!cx || !g) return;
+    var now = performance.now(), c = cell, pad = Math.max(1, c * 0.06), r = c * 0.18;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.fillStyle = '#cfe9b8'; cx.fillRect(0, 0, VW, VH);
+    cx.setTransform(dpr * view.s, 0, 0, dpr * view.s, dpr * view.x, dpr * view.y);
+    // which mines the ending shows so far
+    var shownMines = {};
+    if (ending && ending.lose) { var k = Math.floor((now - ending.t) / 25); ending.shown.slice(0, k).forEach(function (m) { shownMines[m] = 1; }); shownMines[g.boom] = 1; }
+    cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.font = '900 ' + Math.round(c * 0.6) + 'px -apple-system, system-ui, sans-serif';
+    for (var y = 0; y < g.h; y++) for (var x = 0; x < g.w; x++) {
+      var i = y * g.w + x, st = g.state[i], px = x * c, py = y * c;
+      if (st === 1) { // dug: sand, and the number
+        cx.fillStyle = (x + y) % 2 ? '#f1e2c4' : '#ecdbb8'; cx.fillRect(px, py, c, c);
+        var n = g.num[i]; if (n > 0) { cx.fillStyle = NUMC[n]; cx.fillText(n, px + c / 2, py + c * 0.54); }
+        continue;
+      }
+      // grass
+      cx.fillStyle = (x + y) % 2 ? '#7ccf5a' : '#72c451'; cx.fillRect(px, py, c, c);
+      cx.fillStyle = 'rgba(255,255,255,.18)'; cx.fillRect(px, py, c, Math.max(1, c * 0.1));
+      cx.fillStyle = 'rgba(0,0,0,.08)'; cx.fillRect(px, py + c - Math.max(1, c * 0.08), c, Math.max(1, c * 0.08));
+      var isMine = g.mine && g.mine[i];
+      if (g.over && isMine && (shownMines[i] || !ending || !ending.lose || (now - ending.t) > 2500)) {
+        if (g.won || st === 2) { flagAt(px, py, c); continue; }
+        if (i === g.boom) { cx.fillStyle = '#e8354a'; cx.fillRect(px, py, c, c); }
+        mineAt(px, py, c);
+        continue;
+      }
+      if (st === 2) {
+        flagAt(px, py, c);
+        if (g.over && !g.won && !isMine) { cx.strokeStyle = '#d6283a'; cx.lineWidth = c * 0.1; cx.beginPath(); cx.moveTo(px + c * 0.2, py + c * 0.2); cx.lineTo(px + c * 0.8, py + c * 0.8); cx.moveTo(px + c * 0.8, py + c * 0.2); cx.lineTo(px + c * 0.2, py + c * 0.8); cx.stroke(); }
+      }
+    }
+    // a thin grid line where grass meets sand
+    cx.strokeStyle = 'rgba(80,110,40,.25)'; cx.lineWidth = 1 / view.s;
+    cx.beginPath();
+    for (var yy = 0; yy < g.h; yy++) for (var xx = 0; xx < g.w; xx++) {
+      var a = g.state[yy * g.w + xx] === 1;
+      if (xx + 1 < g.w && a !== (g.state[yy * g.w + xx + 1] === 1)) { cx.moveTo((xx + 1) * c, yy * c); cx.lineTo((xx + 1) * c, (yy + 1) * c); }
+      if (yy + 1 < g.h && a !== (g.state[(yy + 1) * g.w + xx] === 1)) { cx.moveTo(xx * c, (yy + 1) * c); cx.lineTo((xx + 1) * c, (yy + 1) * c); }
+    }
+    cx.stroke();
+    if (press && press.hold && press.i >= 0) { // the hold-to-flag ring
+      var q = Math.min(1, (now - press.t0) / HOLD), hx = (press.i % g.w + 0.5) * c, hy = (((press.i / g.w) | 0) + 0.5) * c;
+      cx.strokeStyle = 'rgba(232,53,74,.9)'; cx.lineWidth = c * 0.1; cx.beginPath(); cx.arc(hx, hy, c * 0.42, -Math.PI / 2, -Math.PI / 2 + q * Math.PI * 2); cx.stroke();
+    }
+  }
+  function flagAt(px, py, c) {
+    cx.strokeStyle = '#6b3f16'; cx.lineWidth = Math.max(1.5, c * 0.08); cx.lineCap = 'round';
+    cx.beginPath(); cx.moveTo(px + c * 0.36, py + c * 0.2); cx.lineTo(px + c * 0.36, py + c * 0.8); cx.stroke();
+    cx.fillStyle = '#e8354a'; cx.beginPath(); cx.moveTo(px + c * 0.38, py + c * 0.2); cx.lineTo(px + c * 0.78, py + c * 0.36); cx.lineTo(px + c * 0.38, py + c * 0.52); cx.closePath(); cx.fill();
+    cx.fillStyle = 'rgba(0,0,0,.15)'; cx.beginPath(); cx.ellipse(px + c * 0.4, py + c * 0.8, c * 0.2, c * 0.06, 0, 0, Math.PI * 2); cx.fill();
+  }
+  function mineAt(px, py, c) {
+    var mx = px + c / 2, my = py + c / 2, rad = c * 0.24;
+    cx.strokeStyle = '#1b1f33'; cx.lineWidth = Math.max(1.5, c * 0.08); cx.lineCap = 'round';
+    cx.beginPath(); for (var a = 0; a < 4; a++) { var an = a * Math.PI / 4; cx.moveTo(mx + Math.cos(an) * rad * 1.5, my + Math.sin(an) * rad * 1.5); cx.lineTo(mx - Math.cos(an) * rad * 1.5, my - Math.sin(an) * rad * 1.5); } cx.stroke();
+    cx.fillStyle = '#1b1f33'; cx.beginPath(); cx.arc(mx, my, rad, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,.7)'; cx.beginPath(); cx.arc(mx - rad * 0.35, my - rad * 0.35, rad * 0.25, 0, Math.PI * 2); cx.fill();
+  }
+
+  // ================= touch: tap, hold to flag, drag to look around, pinch to zoom =================
+  var ptrs = {}, press = null, HOLD = 380;
+  function local(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  function cellAt(p) { var x = Math.floor((p[0] - view.x) / view.s / cell), y = Math.floor((p[1] - view.y) / view.s / cell); return x >= 0 && y >= 0 && x < g.w && y < g.h ? y * g.w + x : -1; }
+  function onDown(e) {
+    if (!g) return;
+    ptrs[e.pointerId] = local(e);
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1) {
+      var p = ptrs[e.pointerId], i = cellAt(p);
+      press = { kind: 'one', start: p, moved: false, vx: view.x, vy: view.y, t0: performance.now(), i: i, hold: false, done: false };
+      if (settings.hold && i >= 0 && g.state[i] !== 1 && !g.over) {
+        press.hold = true; anim(HOLD + 50);
+        press.timer = setTimeout(function () { if (press && !press.moved && !press.done) { press.done = true; press.hold = false; act(press.i, 'flag'); } }, HOLD);
+      }
+    } else if (ids.length === 2) {
+      if (press && press.timer) clearTimeout(press.timer);
+      var a = ptrs[ids[0]], b = ptrs[ids[1]];
+      press = { kind: 'pinch', d0: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, s0: view.s, m0: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], vx: view.x, vy: view.y };
+    }
+  }
+  function onMove(e) {
+    if (!ptrs[e.pointerId] || !press) return;
+    ptrs[e.pointerId] = local(e);
+    var ids = Object.keys(ptrs);
+    if (press.kind === 'one' && ids.length === 1) {
+      var p = ptrs[ids[0]], dx = p[0] - press.start[0], dy = p[1] - press.start[1];
+      if (!press.moved && Math.hypot(dx, dy) > 9) { press.moved = true; press.hold = false; if (press.timer) clearTimeout(press.timer); }
+      if (press.moved) { view.x = press.vx + dx; view.y = press.vy + dy; clampView(); draw(); }
+    } else if (press.kind === 'pinch' && ids.length >= 2) {
+      var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      var ns = Math.max(1, Math.min(2.6, press.s0 * d / press.d0)), wx = (press.m0[0] - press.vx) / press.s0, wy = (press.m0[1] - press.vy) / press.s0;
+      view.s = ns; view.x = m[0] - wx * ns; view.y = m[1] - wy * ns; clampView(); draw();
+    }
+  }
+  function onUp(e) {
+    if (!ptrs[e.pointerId]) return;
+    var p = ptrs[e.pointerId]; delete ptrs[e.pointerId];
+    if (press && press.kind === 'one') {
+      if (press.timer) clearTimeout(press.timer);
+      if (!press.moved && !press.done) { var i = cellAt(p); if (i >= 0) act(i, flagMode ? 'flag' : 'dig'); }
+      press.hold = false; draw();
+    }
+    if (!Object.keys(ptrs).length) press = null; else if (press && press.kind === 'pinch') press = { kind: 'none' };
+  }
+
+  // ================= info and sheets =================
+  function renderInfo() {
+    if (!g) return;
+    var left = g.n - MM.flagsUsed(g);
+    $('info').innerHTML = '<div><div class="lbl">Mines left</div><div class="big">' + left + '</div></div>' +
+      '<div style="text-align:center"><div class="lbl">Best</div><div class="mid">' + (stats[g.level].best ? clock(stats[g.level].best) : '–') + '</div></div>' +
+      '<div class="right"><div class="lbl">Time</div><div class="mid" id="clock">' + clock(g.ms) + '</div></div>';
+    Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === g.level); });
+  }
+  function syncMode() {
+    var b = $('btnMode');
+    b.classList.toggle('flag', flagMode);
+    b.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-' + (flagMode ? 'flag' : 'shovel') + '"/></svg><span>' + (flagMode ? 'Flag' : 'Dig') + '</span>';
+  }
+  function renderAll() { renderInfo(); syncMode(); draw(); }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 1600); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#mm-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return;
+    }
+    next();
+  }
+  function openHelp() {
+    $('helpTitle').textContent = 'How to play Mine Meadow';
+    $('helpList').innerHTML = [
+      'Mines are hidden under the grass. <b>Dig</b> up every square that <b>doesn’t</b> have one. Dig a mine and the game is over.',
+      'A dug square shows how many mines touch it (sides and corners). A blank touches none, so everything around it opens by itself.',
+      '<b>Flag</b> squares you know are mines: <b>press and hold</b> one, or switch the <b>Dig/Flag</b> button and tap. Tap a flag again (hold or Flag mode) to lift it.',
+      'Tap a <b>number</b> that already has that many flags around it to dig all its other neighbors at once.',
+      'Your first dig is always safe and opens an area. With <b>No guessing</b> on (Settings), every board can be solved by reasoning, never luck.',
+      '<b>Beginner</b> 9×9 with 10 mines, <b>Middle</b> 16×16 with 40, <b>Expert</b> 16×30 with 99 (drag to scroll). Pinch to zoom in on small squares. Best times are kept.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var h = '';
+    Object.keys(MM.LEVELS).forEach(function (l) {
+      var st = stats[l];
+      h += '<div class="themelabel">' + MM.LEVELS[l].name + '</div><div class="tiles"><div class="tile"><b>' + (st.best ? clock(st.best) : '–') + '</b><span>Best time</span></div>' +
+        '<div class="tile"><b>' + st.won + '/' + st.played + '</b><span>Cleared</span></div><div class="tile"><b>' + st.maxStreak + '</b><span>Best run</span></div></div>';
+    });
+    $('statsBody').innerHTML = h;
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function inGame() { return g && g.started && !g.over; }
+  function init() {
+    Goobs.themePicker($('themes'));
+    // full screen: How to, Stats and Settings move into the Menu sheet; Dig/Flag and New game stay under the meadow
+    Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'], info: function () {
+      if (!g) return '';
+      return '<b>' + MM.LEVELS[g.level].name + '</b> \u00b7 ' + g.w + '\u00d7' + g.h + ' \u00b7 ' + g.n + ' mines' + (g.started && !g.over ? ' \u00b7 clock paused at ' + clock(g.ms) : '');
+    } });
+    cv = $('cv'); cx = cv.getContext('2d');
+    cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove); cv.addEventListener('pointerup', onUp);
+    cv.addEventListener('pointercancel', function (e) { delete ptrs[e.pointerId]; if (press && press.timer) clearTimeout(press.timer); press = null; draw(); });
+    cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { tick(); save(); Goobs.home(); });
+    $('btnMode').addEventListener('click', function () { flagMode = !flagMode; syncMode(); });
+    $('btnNew').addEventListener('click', function () {
+      if (inGame()) { showCard('Start over?', 'This board counts as not cleared.', [{ label: 'New game', red: true, go: function () { record(false); between(function () { newGame(g.level); }); } }, { label: 'Keep playing', go: function () {} }]); return; }
+      between(function () { newGame(g.level); });
+    });
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || b.dataset.mode === g.level) return;
+      var l = b.dataset.mode;
+      if (inGame()) { showCard('Leave this board?', 'It counts as not cleared.', [{ label: 'Leave it', red: true, go: function () { record(false); newGame(l); } }, { label: 'Keep playing', go: function () {} }]); return; }
+      newGame(l);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnHelp').addEventListener('click', openHelp);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setNoGuess').checked = settings.noGuess; $('setHold').checked = settings.hold;
+    $('setNoGuess').addEventListener('change', function () { settings.noGuess = this.checked; saveSettings(); if (g && !g.started) g.noGuess = settings.noGuess; });
+    $('setHold').addEventListener('change', function () { settings.hold = this.checked; saveSettings(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    var fitQ = 0, refit = function () { if (fitQ) return; fitQ = requestAnimationFrame(function () { fitQ = 0; fit(); }); };
+    if (window.ResizeObserver) new ResizeObserver(refit).observe($('stagewrap'));
+    window.addEventListener('resize', refit);
+    window.addEventListener('orientationchange', function () { setTimeout(refit, 300); });
+    document.addEventListener('visibilitychange', function () { tick(); if (document.hidden) save(); });
+    window.addEventListener('pagehide', function () { tick(); save(); });
+    syncSound(); syncAds();
+    try { if (!load()) newGame(meta.level); else { fit(); renderAll(); } }
+    catch (e) { store.del('game'); g = null; newGame('beginner'); } // a bad save never keeps the game from opening
+    if (!meta.seen) openHelp();
+    lastTick = performance.now();
+    Goobs.markPlayed('mines');
+    Goobs.initUpdates({ beforeReload: function () { tick(); save(); }, onVersions: function (v) { $('version').textContent = 'Mine Meadow ' + (v.mines || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    window.__mmReady = true;
+  }
+
+  // hook for automated tests
+  window.__mm = { get g() { return g; }, act: act, MM: MM, stats: function () { return stats; }, newGame: newGame, cellPos: function (i) { return [view.x + (i % g.w + 0.5) * cell * view.s, view.y + (((i / g.w) | 0) + 0.5) * cell * view.s]; }, get view() { return view; } };
+
+  init();
+})();
+</script>
+</body>
+</html>

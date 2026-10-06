@@ -1,0 +1,74 @@
+[
+  {
+    "key": "shoals",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Create a single portrait 2:3 photograph, Underwater in sunlit tropical shallows. Clear turquoise water, shafts of natural sunlight, pale rippled sand at the bottom, low coral and small rocks at the extreme lower corners. Open quiet blue water in the middle. Sophisticated real nature photography, convincing texture and lighting, not illustration or cartoon. Composition: visual interest mainly at outside edges and bottom 15%; large uncluttered central area for bright moving game pieces. No text, UI, borders, people, large animals or game objects. Entire photograph full bleed."
+  },
+  {
+    "key": "kelp",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Create a single portrait 2:3 photograph, Underwater in a California kelp forest. Tall realistic golden green kelp around left and right edges, sunlight filtering through clear green water, quiet open water in the center, sand and stones below. Sophisticated real nature photography, convincing texture and lighting, not illustration or cartoon. Composition: visual interest mainly at outside edges and bottom 15%; large uncluttered central area for bright moving game pieces. No text, UI, borders, people, large animals or game objects. Entire photograph full bleed."
+  },
+  {
+    "key": "coral",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Create a single portrait 2:3 photograph, Underwater coral garden, colorful natural corals clustered around the lower corners, azure water and beautiful subtle surface caustics. Open blue water in the middle. Sophisticated real nature photography, convincing texture and lighting, not illustration or cartoon. Composition: visual interest mainly at outside edges and bottom 15%; large uncluttered central area for bright moving game pieces. No text, UI, borders, people, large animals or game objects. Entire photograph full bleed."
+  },
+  {
+    "key": "wreck",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. Underwater shipwreck cove. Weathered wooden wreck bow confined to bottom-right edge, barnacled timbers along bottom, deep blue clear water, pale shafts of surface light, mysterious but inviting. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "moon",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. Underwater in a moonlit lagoon. Silver-blue shafts from a full moon through the water surface, deep midnight blue open water center, pale sand and a few corals along the bottom corners. Dim yet readable. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "ember",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. Underwater volcanic reef. Charcoal basalt around bottom corners, a subtle warm amber glow from small volcanic vents at the lower edges, deep slate blue open water center, faint sun shafts from above. Realistic ocean photography, not a fantasy lava ocean. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "meadow",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. Rolling green meadow hills beneath a pale blue sky with distant mountains. A mature oak tree frames only the far left, wildflowers in the bottom corners. Soft late afternoon light, horizon low. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "beach",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. A tropical beach at sunset. Pink peach clouds and warm sun reflected in calm water, palms at the extreme outer edges, golden sand at bottom. Serene uncluttered sky and water middle, horizon in lower half. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "maple",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade game photographic background. Single portrait 2:3 photograph. Autumn maple woods framing a sunlit clearing. Amber red leaves mainly at the top corners and outer sides, golden grassy clearing and quiet misty depth in the middle. Actual detailed forest photography. Convincing natural materials, atmospheric depth and real lighting. Visual interest at the outside edges and bottom 15%, large uncluttered central area for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "jungle",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Tropical jungle lagoon with a thin waterfall at the far right edge, glossy green rainforest leaves framing outer corners, open misty green-blue water in the center and a few stones below. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "blossom",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Japanese cherry blossom garden in spring, real pink blossom branches framing only outer sides and top corners, quiet reflective pond and distant low green hills in the center, a small stone lantern bottom-left. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "tide",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Rocky coastal tide pools at blue hour, wet stones and delicate sea anemones in the bottom corners, calm open blue ocean and misty pale sky in center, low horizon. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "light",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. A white coastal lighthouse confined to the far left edge on a grassy headland, distant blue ocean and open softly clouded sky, warm late-afternoon sun, coastal grasses at bottom. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "snow",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Snowy pine forest surrounding an open clearing, snow-laden trees along outer edges, still pale-blue misty center, real powder snow in foreground and soft sunrise light. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "fire",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Fireflies in a grassy valley at twilight, dark tree silhouettes around outer edges, a few warm small firefly lights among grass at the bottom, wide open deep blue-violet sky and still valley center. Photographically believable long exposure. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "deck",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. A luxury ship's open teak promenade at night under stars. Polished brass rails run along outer edges, a few warm deck lamps, open dark ocean and navy sky across center, quiet teak foreground. No furniture in the center. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "canyon",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Southwestern sandstone canyon at dusk. Beautiful layered red cliffs at the outer sides, distant purple mesas and broad peach-violet sky across the center. Dry rock and sparse sage at bottom. Warm raking light. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  },
+  {
+    "key": "volcano",
+    "prompt": "Use case: photorealistic-natural. Asset: offline arcade photographic background. Single portrait 2:3 photograph. Tropical volcanic island viewed across a still dark lagoon at dusk. Distant smoking volcanic peak offset to the far right, tiny orange glow near summit, palms at extreme left, basalt at bottom corners, open violet sky and reflecting water in center. Convincing real-world textures and light. Quiet negative space across central 60% for moving game pieces. No cartoon, illustration, text, UI, borders, people or game objects. Full bleed."
+  }
+]

@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Skee-Hop</title>
+<style>
+/* Skee-Hop styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100%; min-height: 0; }
+.brand h1 { font-size: 22px; white-space: nowrap; }
+.brand svg { border-radius: 9px; }
+
+.info .big { font-size: 32px; }
+.info .sub { font-size: 12px; font-weight: 700; color: var(--muted); text-align: right; margin-top: 2px; letter-spacing: .3px; }
+
+.stage { position: relative; width: 100%; flex: 1; min-height: 240px; border-radius: 20px; background: #1b1f33; box-shadow: var(--shadow); overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+/* heads-up: balls left and the Survival target */
+.hud { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
+.balls { display: flex; gap: 4px; padding: 6px 8px; border-radius: 14px; background: rgba(10,12,24,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.balls i { width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #e3dccb 60%, #b9ae96); box-shadow: 0 1px 2px rgba(0,0,0,.4); transition: opacity .3s, transform .3s; }
+.balls i.used { opacity: .18; transform: scale(.75); }
+.balls i.now { box-shadow: 0 0 0 2px #ffd23f, 0 1px 2px rgba(0,0,0,.4); }
+.goal { min-width: 0; padding: 5px 10px; border-radius: 14px; background: rgba(10,12,24,.55); color: #fff; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); font-size: 12px; font-weight: 800; letter-spacing: .3px; display: none; }
+.goal.show { display: block; }
+.goal .gbar { width: 110px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); margin-top: 4px; overflow: hidden; }
+.goal .gbar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ffd23f, #ff8a3d); transition: width .35s; }
+.goal.met .gbar i { background: linear-gradient(90deg, #3ccf8e, #9cf0c0); }
+
+.bonuschip { position: absolute; left: 50%; top: 50px; transform: translateX(-50%); padding: 4px 11px; border-radius: 14px; background: #ffd23f; color: #3a2a00; font-weight: 900; font-size: 13px; letter-spacing: .3px; box-shadow: 0 4px 14px rgba(255,210,63,.45); pointer-events: none; display: none; white-space: nowrap; animation: chip 1s ease-in-out infinite alternate; }
+.bonuschip.show { display: block; }
+@keyframes chip { 0% { transform: translateX(-50%) scale(1); } 100% { transform: translateX(-50%) scale(1.07); } }
+
+.tiltchip { position: absolute; right: 10px; top: 52px; display: none; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 16px; border: 0; background: rgba(255,255,255,.92); color: #1b2130; font-weight: 800; font-size: 13px; box-shadow: var(--shadow-sm); }
+.tiltchip.show { display: flex; }
+.tiltchip svg { width: 18px; height: 18px; }
+
+.flickhint { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); display: none; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; color: #fff; font-weight: 800; font-size: 15px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+.flickhint.show { display: flex; }
+.flickhint .finger { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 0 6px rgba(255,255,255,.25); animation: flick 1.6s ease-in-out infinite; }
+@keyframes flick { 0%, 20% { transform: translateY(40px); opacity: 0; } 35% { opacity: 1; } 70% { transform: translateY(-60px); opacity: 1; } 85%, 100% { transform: translateY(-80px); opacity: 0; } }
+
+.toast { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); max-width: 86%; width: max-content; text-align: center; padding: 8px 16px; border-radius: 16px; background: rgba(10,12,24,.72); color: #fff; font-weight: 800; font-size: 16px; line-height: 1.3; pointer-events: none; opacity: 0; transition: opacity .25s; }
+.toast.show { opacity: 1; }
+
+.pops { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.pop { position: absolute; transform: translate(-50%, -50%); font-weight: 900; font-size: 30px; color: #fff; white-space: nowrap; text-shadow: 0 2px 0 rgba(0,0,0,.55), 0 0 14px rgba(0,0,0,.35); animation: popup 1.3s ease-out forwards; }
+.pop small { display: block; text-align: center; font-size: 15px; color: #ffd23f; }
+.pop.big { font-size: 40px; color: #ffd23f; }
+@keyframes popup { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); } 70% { opacity: 1; transform: translate(-50%, -110%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
+
+.loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; color: #fff; font-weight: 800; background: #1b1f33; }
+.loading.hide { display: none; }
+
+.tool.on { color: var(--accent); }
+.cardicon svg { border-radius: 16px; }
+.tiles2 + .tiles2 { margin-top: 8px; }
+.sectlbl { font-size: 12px; font-weight: 800; color: var(--muted); letter-spacing: .6px; text-transform: uppercase; margin: 14px 2px 8px; }
+.sectlbl:first-child { margin-top: 2px; }
+
+/* Full screen (1.2.0, Glenn: "every game full screen", Cindy: "it's too small"): the lane fills the whole phone, the
+   buttons and counters float on it (the kit's html.gg-fs-over). The camera frames the whole machine in the free space
+   (render.js fitFrame), so nothing gets cropped whatever the screen shape. */
+html.gg-fs-over .stage { position: fixed; inset: 0; border-radius: 0; box-shadow: none; min-height: 0; }
+.scorepill { position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 6px); transform: translateX(-50%); height: 44px; box-sizing: border-box;
+  display: flex; align-items: baseline; justify-content: center; gap: 7px; padding: 0 16px; line-height: 44px; font-size: 24px; font-weight: 900; }
+.scorepill small { font-size: 12px; font-weight: 800; color: #6b7080; letter-spacing: .2px; }
+html.gg-fs-over .hud { top: calc(env(safe-area-inset-top, 0px) + 58px); }
+.balls i { width: 15px; height: 15px; }
+html.gg-fs-over .bonuschip { top: calc(env(safe-area-inset-top, 0px) + 96px); }
+html.gg-fs-over .tiltchip { top: calc(env(safe-area-inset-top, 0px) + 96px); }
+html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }
+.sbprobe { position: fixed; left: 0; bottom: 0; width: 1px; height: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
+/* the mode tabs live in the Menu sheet */
+.ggmenu .modes { margin: 4px 0 2px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="sh-logo" viewBox="0 0 100 100"><defs><linearGradient id="shg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a5c"/><stop offset="1" stop-color="#7a3cff"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#shg)"/>
+<g fill="none" stroke-width="4"><circle cx="50" cy="40" r="26" stroke="#ffd23f"/><circle cx="50" cy="40" r="17" stroke="#ff8fd8"/><circle cx="50" cy="40" r="8" stroke="#4dd4ff"/></g>
+<circle cx="50" cy="40" r="3.5" fill="#fff"/><circle cx="17" cy="16" r="5" fill="none" stroke="#fff" stroke-width="3"/><circle cx="83" cy="16" r="5" fill="none" stroke="#fff" stroke-width="3"/>
+<path d="M50 94 Q46 78 50 70" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="3 4"/><circle cx="50" cy="86" r="7" fill="#fff"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-tilt" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5" transform="rotate(14 12 12)"/><path d="M3 9a9 9 0 0 0 0 6M21 9a9 9 0 0 1 0 6"/></g></symbol>
+</defs></svg>
+
+<div class="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#sh-logo"/></svg>
+      <h1>Skee-Hop</h1>
+    </button>
+    <div class="ggpill scorepill" id="info"></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="classic">Classic</button>
+    <button data-mode="survival">Survival</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="hud">
+      <div class="balls" id="balls" aria-label="Balls left"></div>
+      <div class="goal" id="goal"></div>
+    </div>
+    <div class="bonuschip" id="bonusChip"></div>
+    <button class="tiltchip" id="tiltChip"><svg viewBox="0 0 24 24"><use href="#i-tilt"/></svg><span>Tap to allow tilt</span></button>
+    <div class="flickhint" id="flickHint"><div class="finger"></div><span>Flick up to roll</span></div>
+    <div class="toast" id="toast"></div>
+    <div class="pops" id="pops"></div>
+    <div class="loading" id="loading">Setting up the lanes&hellip;</div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnTilt"><svg viewBox="0 0 24 24"><use href="#i-tilt"/></svg><span id="tiltLabel">Tilt off</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New game</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Roll rumble, clunks and bells. Follows the silent switch.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <div class="row"><div>Flick power<small>3 is normal. Lower it if your balls fly too far, raise it if they fall short.</small></div>
+        <div class="stepper"><button id="powLess" aria-label="Less power">&minus;</button><b id="power">3</b><button id="powMore" aria-label="More power">+</button></div></div>
+      <label class="row"><div>Tilt steering<small>Tilt the phone to nudge the ball while it&rsquo;s in the air. The game works fine without it.</small></div>
+        <span class="switch"><input type="checkbox" id="setTilt"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games and rounds. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games and Survival rounds.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Skee-Hop</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Skee-Hop record</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody">
+      <ol class="helplist">
+        <li>Put your finger on the lane, slide left or right to line up, then <b>flick up</b>. The ball rolls down the lane, <b>hops</b> off the ramp and lands in the rings.</li>
+        <li><b>Flick speed is distance.</b> Too soft and it drops short; too hard and it hits the back net. The <b>direction</b> of your flick aims it.</li>
+        <li>A <b>curved swipe</b> puts a little spin on the ball so it curls on the lane.</li>
+        <li>Rings score <b>10 to 50</b> from the outside in. The two small corner pockets are worth <b>100</b>.</li>
+        <li>A ball that rolls back to you is free: roll it again.</li>
+        <li><b>Classic:</b> 9 balls, go for your best score.</li>
+        <li><b>Survival:</b> beat the round&rsquo;s target with 9 balls to move on to a new machine. One spot flashes each ball &mdash; land there for <b>5&times;</b>.</li>
+        <li><b>Tilt</b> (optional, in Settings): tilt the phone to nudge the ball while it&rsquo;s flying.</li>
+      </ol>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Motion permission -->
+<div class="overlay center" id="ovTilt">
+  <div class="card" role="dialog">
+    <div class="cardicon"><svg viewBox="0 0 24 24" style="width:54px;height:54px;color:var(--accent)"><use href="#i-tilt"/></svg></div>
+    <h2>Tilt steering</h2>
+    <p>Your iPhone asks before a game can read how the phone is tilted. Tap <b>Allow</b> here, then <b>Allow</b> again when iPhone asks.</p>
+    <div class="actions"><button class="btn red" id="btnTiltAllow">Allow</button><button class="btn" id="btnTiltCancel">Not now</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Skee-Hop engine (no DOM, no three.js): the lane, the ramp jump, the ring board, and the game rules.
+   World units: x = right, y = up, z = away from the player. The ball starts near z = 0.
+   Physics is hand-written and stepped at a fixed 240 Hz, so it plays the same on every phone. */
+var SH = (function () {
+  'use strict';
+
+  // ---------- the machine ----------
+  var G = 9.8;                    // gravity
+  var RB = 0.1;                   // ball radius
+  var HALF = 1.1;                 // half width of lane and board (walls at x = +-HALF)
+  var LZ = 6.0;                   // lane length (flat, y = 0)
+  var START = 2.75;               // where the ball sits before a roll
+  var RL = 0.5, RA = 50 * Math.PI / 180; // ramp length and launch angle
+  var RR = RL / Math.sin(RA), RH = RR * (1 - Math.cos(RA)); // ramp arc radius and height
+  var TH = 27 * Math.PI / 180;    // board tilt
+  var B0 = { y: RH - 0.05, z: LZ + RL }; // board front edge
+  var SB = 3.2;                   // board length along the slope
+  var ST = [0, Math.sin(TH), Math.cos(TH)], SN = [0, Math.cos(TH), -Math.sin(TH)]; // up-slope and board normal
+  var BACKZ = B0.z + SB * Math.cos(TH), TOPY = B0.y + SB * Math.sin(TH); // back wall
+  var CEIL = 2.7;                 // mesh cage over the board
+  var SLIP = 0.25;                // the outer barrier (front lip) along the slope
+  var LIPH = 0.07;                // ring lip height
+  var CS = 1.95;                  // ring center along the slope
+  var R50 = 0.2, R40 = 0.44, R30 = 0.68, R20 = 0.92; // ring radii
+  var POCKET = { x: 0.88, s: 2.74, r: 0.13 };        // the two 100 pockets (x = +-0.86)
+  var RINGS = [R50, R40, R30, R20];
+  var LIPS = [{ x: 0, s: CS, r: R50, zone: '50' }, { x: 0, s: CS, r: R40 }, { x: 0, s: CS, r: R30 }, { x: 0, s: CS, r: R20 },
+    { x: -POCKET.x, s: POCKET.s, r: POCKET.r, zone: '100L', pocket: true }, { x: POCKET.x, s: POCKET.s, r: POCKET.r, zone: '100R', pocket: true }];
+
+  // zones: key, points, and where its hole is (board x, s)
+  var ZONES = {
+    '10': { pts: 10, hole: null },
+    '20': { pts: 20, hole: [0, CS - (R30 + R20) / 2] },
+    '30': { pts: 30, hole: [0, CS - (R40 + R30) / 2] },
+    '40': { pts: 40, hole: [0, CS - (R50 + R40) / 2] },
+    '50': { pts: 50, hole: [0, CS] },
+    '100L': { pts: 100, hole: [-POCKET.x, POCKET.s] },
+    '100R': { pts: 100, hole: [POCKET.x, POCKET.s] }
+  };
+
+  function rampY(z) { var u = Math.min(RL, Math.max(0, z - LZ)); return RR - Math.sqrt(RR * RR - u * u); }
+  function boardPoint(x, s, h) { // board coords -> world [x, y, z]
+    h = h || 0;
+    return [x, B0.y + s * ST[1] + h * SN[1], B0.z + s * ST[2] + h * SN[2]];
+  }
+  function toBoard(p) { // world -> [x, s, h] (h = height of the ball's bottom above the board)
+    var dy = p[1] - B0.y, dz = p[2] - B0.z;
+    return [p[0], dy * ST[1] + dz * ST[2], dy * SN[1] + dz * SN[2] - RB];
+  }
+  function zoneAt(x, s) {
+    var d = Math.hypot(x, s - CS);
+    if (Math.hypot(Math.abs(x) - POCKET.x, s - POCKET.s) < POCKET.r) return x < 0 ? '100L' : '100R';
+    if (d < R50) return '50';
+    if (d < R40) return '40';
+    if (d < R30) return '30';
+    if (d < R20) return '20';
+    return '10';
+  }
+
+  // ---------- a roll ----------
+  // flick: { x0 (start x), speed, angle (radians, + = right), spin (-1..1, curls the ball on the lane) }
+  function newBall(f) {
+    var sp = Math.max(0.5, f.speed), a = Math.max(-0.3, Math.min(0.3, f.angle || 0));
+    return {
+      p: [Math.max(-HALF + RB, Math.min(HALF - RB, f.x0 || 0)), RB, START],
+      v: [sp * Math.sin(a), 0, sp * Math.cos(a)],
+      spin: Math.max(-1, Math.min(1, f.spin || 0)),
+      phase: 'lane', t: 0, rest: 0, air: 0, zone: null, sink: null, lipHop: {}, peak: 0, hops: 0
+    };
+  }
+  var DT = 1 / 240;
+
+  function wallsX(b, ev) {
+    if (b.p[0] > HALF - RB && b.v[0] > 0) { b.p[0] = HALF - RB; b.v[0] *= -0.5; ev.push({ t: 'wall', v: Math.abs(b.v[0]) }); }
+    if (b.p[0] < -HALF + RB && b.v[0] < 0) { b.p[0] = -HALF + RB; b.v[0] *= -0.5; ev.push({ t: 'wall', v: Math.abs(b.v[0]) }); }
+  }
+  // the ball drops into a hole: it keeps its speed toward the hole's middle for a moment, then falls through
+  function capture(b, zone, ev, where) {
+    b.phase = 'sink'; b.zone = zone; b.sinkT = 0;
+    var bs = toBoard(b.p), hole = ZONES[zone].hole;
+    var tx = hole ? hole[0] : Math.max(-HALF + 0.2, Math.min(HALF - 0.2, bs[0])), ts = hole ? hole[1] : SLIP + 0.09;
+    b.sink = { x: bs[0], s: Math.max(0, bs[1]), h: Math.max(0, bs[2]), tx: tx, ts: ts, how: where || 'roll' };
+    ev.push({ t: 'capture', zone: zone, pts: ZONES[zone].pts });
+  }
+  // it didn't make it: roll it back down the board and the ramp to the player, like a real alley
+  var ARC = RR * RA, U_RAMP = LZ - START, U_BOARD = U_RAMP + ARC;
+  function trackPos(u, x) {
+    if (u <= U_RAMP) return [x, RB, START + u];
+    if (u <= U_BOARD) { var ph = (u - U_RAMP) / RR; return [x, RR * (1 - Math.cos(ph)) + RB * Math.cos(ph), LZ + RR * Math.sin(ph) - RB * Math.sin(ph)]; }
+    var q = boardPoint(x, Math.max(0, u - U_BOARD), 0); return [x, q[1] + RB * SN[1], q[2] + RB * SN[2]];
+  }
+  function rollback(b, ev, why) {
+    var u;
+    if (b.p[2] <= LZ) u = b.p[2] - START;
+    else if (b.p[2] < B0.z) u = U_RAMP + Math.min(ARC, RR * Math.asin(Math.min(1, (b.p[2] - LZ) / RR)));
+    else u = U_BOARD + Math.max(0, toBoard(b.p)[1]);
+    b.phase = 'back'; b.backT = 0; b.bu = Math.max(0, u); b.bv = Math.min(0, b.v[2] * 0.3); b.bx = b.p[0];
+    ev.push({ t: 'rollback', why: why });
+  }
+
+  // one physics step; tilt = [tx, tz] in -1..1 (only used in the air)
+  function step1(b, tilt, ev) {
+    b.t += DT;
+    var p = b.p, v = b.v;
+    if (b.phase === 'lane') {
+      // rolling on the lane: a little friction, spin curls it
+      var sp = Math.hypot(v[0], v[2]);
+      var dec = 0.02 * G * DT;
+      if (sp > dec) { v[0] -= v[0] / sp * dec; v[2] -= v[2] / sp * dec; }
+      v[0] += b.spin * 1.1 * DT;
+      p[0] += v[0] * DT; p[2] += v[2] * DT; p[1] = RB;
+      wallsX(b, ev);
+      if (v[2] <= 0.05 || b.t > 8) { rollback(b, ev, 'short'); return; }
+      if (p[2] >= LZ) { b.phase = 'ramp'; b.e0 = v[2] * v[2]; ev.push({ t: 'ramp' }); }
+      return;
+    }
+    if (b.phase === 'ramp') {
+      // climbing the curved ramp: forward speed drops as it rises
+      var y = rampY(p[2]), e = b.e0 * 0.985 - 2 * G * y;
+      if (e <= 0.04) { rollback(b, ev, 'ramp'); return; }
+      var along = Math.sqrt(e), u = Math.min(RL, p[2] - LZ), ang = Math.asin(Math.min(1, u / RR));
+      v[2] = along * Math.cos(ang); v[1] = along * Math.sin(ang);
+      p[0] += v[0] * DT; p[2] += v[2] * DT; p[1] = rampY(p[2]) + RB;
+      wallsX(b, ev);
+      if (p[2] >= LZ + RL) {
+        var s2 = Math.sqrt(Math.max(0, e));
+        v[0] *= 0.9; v[1] = s2 * Math.sin(RA); v[2] = s2 * Math.cos(RA);
+        b.phase = 'air'; b.air = 0;
+        ev.push({ t: 'launch', v: s2 });
+      }
+      return;
+    }
+    if (b.phase === 'sink') {
+      // slides the last bit into the hole's middle (quickly), then falls through it
+      var k2 = b.sink;
+      b.sinkT += DT;
+      var pull = Math.min(1, DT * 16);
+      k2.x += (k2.tx - k2.x) * pull; k2.s += (k2.ts - k2.s) * pull;
+      k2.h = b.sinkT < 0.05 ? k2.h * 0.8 : k2.h - 0.5 * G * (b.sinkT - 0.05) * DT * 2;
+      var sp3 = boardPoint(k2.x, k2.s, k2.h); p[0] = sp3[0]; p[1] = sp3[1] + RB * SN[1]; p[2] = sp3[2] + RB * SN[2];
+      if (k2.h < -RB * 2.6) { b.phase = 'done'; ev.push({ t: 'done' }); }
+      return;
+    }
+    if (b.phase === 'back') { // rolls back down the board and the ramp, then home along the lane
+      b.backT += DT;
+      var slope = b.bu > U_BOARD ? Math.sin(TH) : b.bu > U_RAMP ? Math.sin((b.bu - U_RAMP) / RR) : 0;
+      b.bv -= G * slope * DT * 0.72; // rolling, not sliding
+      if (b.bu <= U_RAMP) { // on the lane: ease to a stop right at the start line
+        var cap = Math.sqrt(2 * 4.5 * Math.max(0, b.bu)) + 0.05;
+        b.bv = -Math.max(Math.min(-b.bv, cap), Math.min(3.4, cap));
+      }
+      b.bu += b.bv * DT;
+      b.bx *= 1 - DT * 0.3;
+      var tp = trackPos(Math.max(0, b.bu), b.bx); p[0] = tp[0]; p[1] = tp[1]; p[2] = tp[2];
+      if (b.bu <= 0.002 || b.backT > 5) { b.phase = 'done'; ev.push({ t: 'done' }); }
+      return;
+    }
+    if (b.phase !== 'air' && b.phase !== 'board') return;
+
+    // ---- free ball: gravity, tilt nudges in the air ----
+    v[1] -= G * DT;
+    if (b.phase === 'air' && tilt) { v[0] += tilt[0] * 2.4 * DT; v[2] += tilt[1] * 2.8 * DT; }
+    p[0] += v[0] * DT; p[1] += v[1] * DT; p[2] += v[2] * DT;
+    if (p[1] > b.peak) b.peak = p[1];
+    wallsX(b, ev);
+    if (p[1] > CEIL - RB && v[1] > 0) { p[1] = CEIL - RB; v[1] *= -0.2; v[2] *= 0.7; ev.push({ t: 'wall', v: Math.abs(v[1]) }); }
+    if (p[2] > BACKZ - RB && v[2] > 0) { p[2] = BACKZ - RB; v[2] *= -0.12; v[1] *= 0.6; ev.push({ t: 'back', v: Math.abs(v[2]) }); }
+    if (p[2] < B0.z - 0.05) { // fell back over the ramp
+      rollback(b, ev, 'short'); return;
+    }
+
+    // ---- board contact ----
+    var bc = toBoard(p), x = bc[0], s = bc[1], h = bc[2];
+    var vs = v[1] * ST[1] + v[2] * ST[2], vn = v[1] * SN[1] + v[2] * SN[2];
+    var landed = false;
+    if (h < 0) {
+      // push out of the board, bounce a little, and roll
+      p[1] -= h * SN[1]; p[2] -= h * SN[2]; h = 0;
+      if (vn < 0) {
+        var eN = vn < -0.6 ? 0.33 : 0;
+        if (b.phase === 'air' || vn < -0.7) { landed = true; ev.push({ t: 'land', v: -vn, x: x, s: s }); }
+        var dv = -(1 + eN) * vn;
+        v[1] += dv * SN[1]; v[2] += dv * SN[2];
+        if (landed) { v[0] *= 0.9; var vs0 = v[1] * ST[1] + v[2] * ST[2]; v[1] -= 0.1 * vs0 * ST[1]; v[2] -= 0.1 * vs0 * ST[2]; }
+        vn = eN ? -eN * vn : 0;
+      }
+      if (b.phase === 'air') b.phase = 'board';
+    }
+    var onBoard = h < 0.012;
+    if (onBoard) {
+      // rolling friction along the board
+      vs = v[1] * ST[1] + v[2] * ST[2];
+      var spd = Math.hypot(v[0], vs), fr = 0.14 * G * Math.cos(TH) * DT;
+      if (spd > fr) { var f = fr / spd; v[0] -= v[0] * f; v[1] -= vs * f * ST[1]; v[2] -= vs * f * ST[2]; }
+    }
+
+    // below the outer barrier: it rolls back to you
+    if (s < SLIP - 0.02 && h < LIPH) {
+      if (b.phase === 'board' || landed) { rollback(b, ev, 'barrier'); return; }
+    }
+    // straight into a hole from the air
+    if (landed) {
+      var zl = zoneAt(x, s);
+      if ((zl === '100L' || zl === '100R') && Math.hypot(Math.abs(x) - POCKET.x, s - POCKET.s) < POCKET.r - 0.025) { capture(b, zl, ev, 'drop'); return; }
+      if (zl === '50' && Math.hypot(x, s - CS) < R50 - 0.03) { capture(b, '50', ev, 'drop'); return; }
+    }
+    if (h < LIPH) {
+      // lips: the four rings around the ring center, and a guard ring around each 100 pocket
+      var c = Math.sqrt(Math.max(0, RB * RB - Math.pow(RB - LIPH + h, 2)));
+      for (var r = 0; r < LIPS.length; r++) {
+        var L = LIPS[r], R = L.r, dx = x - L.x, ds = s - L.s, d = Math.hypot(dx, ds) || 1e-6;
+        if (Math.abs(d - R) >= c) { b.lipHop[r] = 0; continue; }
+        if (b.lipHop[r]) continue;
+        vs = v[1] * ST[1] + v[2] * ST[2];
+        var side = d > R ? 1 : -1, nx = dx / d, ns = ds / d, vr = v[0] * nx + vs * ns;
+        if (vr * side >= 0) continue; // moving away from this lip
+        var sp2 = Math.hypot(v[0], vs);
+        if (L.zone === '50' && side > 0 && sp2 < 2.4) { capture(b, '50', ev, 'roll'); return; } // rolls into the 50 cup
+        if (Math.abs(vr) > (side > 0 ? 3.1 : 2.3)) { // hops over the lip (harder going in than out)
+          if (L.pocket && side > 0) { capture(b, L.zone, ev, 'roll'); return; } // over the guard and into the 100
+          b.lipHop[r] = 1; b.hops++;
+          var cut = 0.3 * vr;
+          v[0] -= cut * nx; v[1] -= cut * ns * ST[1]; v[2] -= cut * ns * ST[2];
+          var up = 0.22 * Math.abs(vr); v[1] += up * SN[1]; v[2] += up * SN[2];
+          ev.push({ t: 'lip', v: Math.abs(vr), hop: true });
+        } else { // bounces off the lip
+          var dvr = -(1 + 0.35) * vr;
+          v[0] += dvr * nx; v[1] += dvr * ns * ST[1]; v[2] += dvr * ns * ST[2];
+          var nd = R + side * c; x = Math.max(-HALF + RB, Math.min(HALF - RB, L.x + nx * nd)); s = L.s + ns * nd;
+          var np = boardPoint(x, s, h); p[0] = np[0]; p[1] = np[1] + RB * SN[1]; p[2] = np[2] + RB * SN[2];
+          if (Math.abs(vr) > 0.5) ev.push({ t: 'lip', v: Math.abs(vr) });
+        }
+      }
+      // the outer barrier holds balls in from above
+      if (s > SLIP && s - SLIP < c) {
+        vs = v[1] * ST[1] + v[2] * ST[2];
+        if (vs < 0) {
+          {
+            var dv2 = -(1 + 0.3) * vs; v[1] += dv2 * ST[1]; v[2] += dv2 * ST[2];
+            var np2 = boardPoint(x, SLIP + c, h); p[0] = np2[0]; p[1] = np2[1] + RB * SN[1]; p[2] = np2[2] + RB * SN[2];
+            if (-vs > 0.5) ev.push({ t: 'lip', v: -vs });
+          }
+        }
+      }
+      // anything that ends up inside a pocket's guard drops in
+      if (Math.hypot(Math.abs(x) - POCKET.x, s - POCKET.s) < POCKET.r - 0.02) { capture(b, x < 0 ? '100L' : '100R', ev, 'roll'); return; }
+      // the back of the board: bounce off the top edge
+      if (s > SB - RB && vs > 0) { var dv3 = -(1 + 0.35) * vs; v[1] += dv3 * ST[1]; v[2] += dv3 * ST[2]; }
+    }
+    // settling: each ring's floor dips toward its hole at the bottom of the ring, so a ball rolls round to it and
+    // drops in; outside the rings it rolls down to the 10 slot along the front.
+    if (onBoard) {
+      var vs2 = v[1] * ST[1] + v[2] * ST[2], spd2 = Math.hypot(v[0], vs2);
+      b.rest = spd2 < 0.3 ? b.rest + DT : 0;
+      var zr = zoneAt(x, s);
+      if (zr === '10') {
+        if (s < SLIP + 0.17 && spd2 < 1.6) { capture(b, '10', ev); return; }
+      } else if (ZONES[zr].hole) {
+        var hx = ZONES[zr].hole[0] - x, hs = ZONES[zr].hole[1] - s, dh = Math.hypot(hx, hs);
+        if (dh < 0.3 && spd2 < 2.2) { var pa = 3.2 * DT * Math.min(1, (0.3 - dh) / 0.12 + 0.4) / (dh || 1); v[0] += hx * pa; v[1] += hs * pa * ST[1]; v[2] += hs * pa * ST[2]; }
+        if (dh < 0.07 || (dh < 0.11 && spd2 < 0.9)) { capture(b, zr, ev); return; }
+      }
+      if (b.rest > 0.9) { capture(b, zr, ev); return; } // wedged somewhere: count the ring it's in
+    }
+    if (b.t > 12) { // safety: never leave a ball stuck
+      if (s >= SLIP) capture(b, zoneAt(x, s), ev); else rollback(b, ev, 'stuck');
+    }
+  }
+  // advance by dt seconds (fixed substeps); returns events
+  function step(b, dt, tilt) {
+    var ev = [], n = Math.max(1, Math.min(40, Math.round(dt / DT)));
+    for (var i = 0; i < n && b.phase !== 'done'; i++) step1(b, tilt, ev);
+    return ev;
+  }
+  // position while rolling back (for drawing): along the lane back to the start
+  function backPos(b) { return b.p.slice(); }
+  // run a whole roll without drawing (tests, bots)
+  function simulate(f, tilt) {
+    var b = newBall(f), ev = [], all = [];
+    for (var i = 0; i < 240 * 20 && b.phase !== 'done'; i++) { ev = []; step1(b, tilt, ev); all = all.concat(ev); }
+    var cap = all.filter(function (e) { return e.t === 'capture'; })[0];
+    return { zone: cap ? cap.zone : null, back: !cap, ball: b, events: all };
+  }
+
+  // ---------- themes (all original) ----------
+  var THEMES = [
+    { id: 'classic', name: 'Arcade Classic', sky: ['#1b1f33', '#2c3252'], cab: '#8a2a2a', trim: '#f2c14e', lane: '#c98d4d', laneB: '#a86e37', board: '#23283d',
+      rings: ['#ffd23f', '#ff8a3d', '#ff4d6d', '#b86bff', '#4dd4ff'], pocket: '#ff4d6d', ball: '#f4f1ea', glow: '#ffd23f' },
+    { id: 'midway', name: 'Midway Lights', sky: ['#2a1036', '#5b2150'], cab: '#c0392b', trim: '#ffe066', lane: '#d9a45f', laneB: '#b67d3c', board: '#2b1733',
+      rings: ['#ffe066', '#ffb03a', '#ff5e5b', '#ff8fd8', '#7ef0c9'], pocket: '#ffe066', ball: '#ffffff', glow: '#ffb03a' },
+    { id: 'neon', name: 'Neon Night', sky: ['#07061a', '#1a1047'], cab: '#141432', trim: '#39f3ff', lane: '#6b4b8a', laneB: '#4c3368', board: '#0c0b24',
+      rings: ['#39f3ff', '#ff3df2', '#8b5bff', '#3dff8b', '#fff23d'], pocket: '#ff3df2', ball: '#e9f9ff', glow: '#39f3ff' },
+    { id: 'pier', name: 'Beach Pier', sky: ['#5ec8f2', '#ffd9a0'], cab: '#1f8fb3', trim: '#ffffff', lane: '#e2c18f', laneB: '#c9a36b', board: '#15506b',
+      rings: ['#ffffff', '#ffd166', '#ff8c61', '#4ee1c1', '#ffe8b0'], pocket: '#ff8c61', ball: '#ffef9e', glow: '#ffd166' },
+    { id: 'lodge', name: 'Ski Lodge', sky: ['#8fb4d9', '#e8f1fb'], cab: '#3c5a3a', trim: '#e8e1d0', lane: '#b88457', laneB: '#8f5e36', board: '#1d3040',
+      rings: ['#e8f7ff', '#9ad7ff', '#ff6b6b', '#ffd36b', '#9cf0c0'], pocket: '#ff6b6b', ball: '#ffffff', glow: '#9ad7ff' },
+    { id: 'space', name: 'Space Deck', sky: ['#020410', '#0d1638'], cab: '#2a3148', trim: '#8fe3ff', lane: '#5b6378', laneB: '#434a5c', board: '#0a1022',
+      rings: ['#8fe3ff', '#b28bff', '#ff7ad9', '#7affc1', '#ffe27a'], pocket: '#7affc1', ball: '#dfe8ff', glow: '#8fe3ff' },
+    { id: 'candy', name: 'Candy Shop', sky: ['#ffd1e8', '#fff0c9'], cab: '#ff6fa8', trim: '#ffffff', lane: '#f0c89a', laneB: '#dca774', board: '#6b2e5a',
+      rings: ['#ffffff', '#ffe36e', '#7fe3c5', '#8fc6ff', '#ffb0d9'], pocket: '#7fe3c5', ball: '#fff4fb', glow: '#ffe36e' }
+  ];
+
+  // ---------- game rules ----------
+  var BALLS = 9;
+  function target(round) { return 150 + 30 * (round - 1); }
+  function themeFor(game) { return game.mode === 'classic' ? THEMES[0] : THEMES[1 + (game.round - 1) % 6]; }
+  var BONUS = ['20', '20', '30', '30', '40', '40', '50', '50', '100L', '100R'];
+  function pickBonus(rand) { return BONUS[Math.floor((rand || Math.random)() * BONUS.length)]; }
+  function newGame(mode) {
+    var g = { mode: mode, score: 0, ball: 0, round: 1, roundScore: 0, balls: [], hundreds: 0, bonusHits: 0, done: false, startedAt: Date.now() };
+    if (mode === 'survival') { g.target = target(1); g.bonus = pickBonus(); } else g.bonus = null;
+    return g;
+  }
+  // score one ball; returns { pts, bonus, roundOver, passed, gameOver }
+  function scoreBall(g, zone) {
+    var base = ZONES[zone].pts, bonus = !!g.bonus && g.bonus === zone, pts = base * (bonus ? 5 : 1);
+    g.score += pts; g.roundScore += pts; g.ball++; g.balls.push(pts);
+    if (base === 100) g.hundreds++;
+    if (bonus) g.bonusHits++;
+    var out = { pts: pts, base: base, bonus: bonus, roundOver: false, passed: false, gameOver: false };
+    if (g.ball >= BALLS) {
+      out.roundOver = true;
+      if (g.mode === 'survival') { out.passed = g.roundScore >= g.target; out.gameOver = !out.passed; }
+      else out.gameOver = true;
+      if (out.gameOver) g.done = true;
+    } else if (g.mode === 'survival') g.bonus = pickBonus();
+    return out;
+  }
+  function nextRound(g) {
+    g.round++; g.ball = 0; g.roundScore = 0; g.balls = []; g.target = target(g.round); g.bonus = pickBonus();
+  }
+
+  return {
+    G: G, RB: RB, HALF: HALF, LZ: LZ, START: START, RL: RL, RA: RA, RH: RH, TH: TH, B0: B0, SB: SB, ST: ST, SN: SN, BACKZ: BACKZ, TOPY: TOPY, CEIL: CEIL,
+    SLIP: SLIP, LIPH: LIPH, CS: CS, RINGS: RINGS, POCKET: POCKET, ZONES: ZONES, THEMES: THEMES, BALLS: BALLS,
+    rampY: rampY, boardPoint: boardPoint, toBoard: toBoard, zoneAt: zoneAt, newBall: newBall, step: step, backPos: backPos, simulate: simulate,
+    target: target, themeFor: themeFor, newGame: newGame, scoreBall: scoreBall, nextRound: nextRound, pickBonus: pickBonus
+  };
+})();
+if (typeof module !== 'undefined') module.exports = SH;
+</script>
+<script>
+/* Skee-Hop drawing with three.js (passed in, loaded from /shared). The camera sits behind the lane and glides up after a rolling ball.
+   The machine is built from SH's measurements so what you see matches the physics exactly. */
+var SHRender = (function () {
+  'use strict';
+  function create(THREE, canvas) {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    // iOS can drop the 3D context after a long time in the background: rebuild the machine when it comes back
+    if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
+    canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); });
+    canvas.addEventListener('webglcontextrestored', function () { if (theme) build(theme); resize(); });
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(46, 1, 0.1, 60);
+    var W = 1, H = 1;
+
+    // ---------- helpers ----------
+    function V(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+    function mat(color, o) {
+      o = o || {};
+      return new THREE.MeshStandardMaterial({ color: color, roughness: o.rough != null ? o.rough : 0.6, metalness: o.metal || 0,
+        emissive: o.emissive || 0x000000, emissiveIntensity: o.ei != null ? o.ei : 1, map: o.map || null, transparent: !!o.transparent,
+        opacity: o.opacity != null ? o.opacity : 1, side: o.side || THREE.FrontSide });
+    }
+    // a flat quad from 4 world corners (p00 near-left, p10 near-right, p01 far-left, p11 far-right), facing `up`
+    function quad(p00, p10, p01, p11, up, material) {
+      var g = new THREE.BufferGeometry(), pos = [].concat(p00, p10, p01, p11);
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 1, 1], 2));
+      var a = V(p10).sub(V(p00)), b = V(p01).sub(V(p00)), n = a.clone().cross(b);
+      g.setIndex(n.dot(V(up)) > 0 ? [0, 1, 2, 2, 1, 3] : [0, 2, 1, 2, 3, 1]);
+      g.computeVertexNormals();
+      return new THREE.Mesh(g, material);
+    }
+    function canvasTex(w, h, draw) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      draw(c.getContext('2d'), w, h);
+      var t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      return t;
+    }
+    function shade(hex, k) { // lighten (k > 0) or darken (k < 0) a hex color
+      var c = new THREE.Color(hex);
+      if (k > 0) c.lerp(new THREE.Color(0xffffff), k); else c.multiplyScalar(1 + k);
+      return '#' + c.getHexString();
+    }
+
+    // ---------- lights ----------
+    var hemi = new THREE.HemisphereLight(0xffffff, 0x404050, 1.1); scene.add(hemi);
+    var sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-2, 6, -3); scene.add(sun);
+    var glowLight = new THREE.PointLight(0xffd23f, 3, 5, 1.6); glowLight.position.set(0, 2.2, 8.2); scene.add(glowLight);
+
+    var H2 = SH.HALF, LZ = SH.LZ, RL = SH.RL, B0 = SH.B0, SB = SH.SB, TH = SH.TH;
+    // physics x is mirrored for display so that +x (the ball's right) shows on the right of the screen
+    var group = new THREE.Group(); group.scale.x = -1; scene.add(group);
+    var theme = null, parts = {};
+
+    // board frame: local x = world x, local y = up the slope, local z = out of the board (toward the player)
+    var boardG = new THREE.Group();
+    boardG.matrixAutoUpdate = false;
+    (function () {
+      var X = new THREE.Vector3(1, 0, 0), Y = V(SH.ST), Z = X.clone().cross(Y); // right-handed
+      var m = new THREE.Matrix4().makeBasis(X, Y, Z); m.setPosition(B0.z !== undefined ? new THREE.Vector3(0, B0.y, B0.z) : 0);
+      boardG.matrix.copy(m);
+    })();
+    // does local +z point out of the board? (it should point along SN)
+    var outSign = (function () { var Z = new THREE.Vector3(1, 0, 0).cross(V(SH.ST)); return Z.dot(V(SH.SN)) > 0 ? 1 : -1; })();
+    function bz(h) { return h * outSign; }
+    group.add(boardG);
+
+    // ---------- build the machine (again on theme change) ----------
+    function clear() {
+      [group, boardG].forEach(function (g) {
+        for (var i = g.children.length - 1; i >= 0; i--) {
+          var o = g.children[i];
+          if (o === boardG) continue;
+          g.remove(o);
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+        }
+      });
+    }
+    function laneTexture(t) {
+      return canvasTex(256, 1024, function (x, w, h) {
+        var planks = 8;
+        for (var i = 0; i < planks; i++) {
+          var gr = x.createLinearGradient(0, 0, 0, h);
+          var base = i % 2 ? t.lane : shade(t.lane, -0.06);
+          gr.addColorStop(0, base); gr.addColorStop(1, shade(base, 0.08));
+          x.fillStyle = gr; x.fillRect(i * w / planks, 0, w / planks, h);
+          x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 2; x.beginPath(); x.moveTo(i * w / planks, 0); x.lineTo(i * w / planks, h); x.stroke();
+        }
+        // wood grain
+        x.globalAlpha = 0.12; x.strokeStyle = t.laneB;
+        for (var k = 0; k < 90; k++) { var gx = (k * 37) % w, gy = (k * 113) % h; x.lineWidth = 1 + (k % 3); x.beginPath(); x.moveTo(gx, gy); x.bezierCurveTo(gx + 4, gy + 40, gx - 4, gy + 80, gx + 2, gy + 140); x.stroke(); }
+        x.globalAlpha = 1;
+        // arrows and dots (aiming marks); canvas top = far end of the lane
+        x.fillStyle = shade(t.laneB, -0.25);
+        for (var a = 0; a < 5; a++) {
+          var ax = w * (0.18 + a * 0.16), ay = h * 0.36 + Math.abs(a - 2) * 22;
+          x.beginPath(); x.moveTo(ax, ay - 16); x.lineTo(ax + 8, ay + 6); x.lineTo(ax - 8, ay + 6); x.closePath(); x.fill();
+        }
+        for (var d = 0; d < 7; d++) { x.beginPath(); x.arc(w * (0.14 + d * 0.12), h * 0.5, 4, 0, 7); x.fill(); }
+        // start line
+        x.fillStyle = t.trim; x.fillRect(0, h * (1 - (SH.START - 0.25) / SH.LZ), w, 6);
+      });
+    }
+    function boardTexture(t) {
+      var PX = 256; // pixels per unit
+      var w = Math.round(2 * H2 * PX), h = Math.round(SB * PX);
+      return canvasTex(w, h, function (x) {
+        function P(bx, bs) { return [(bx + H2) * PX, (SB - bs) * PX]; }
+        var gr = x.createLinearGradient(0, 0, 0, h);
+        gr.addColorStop(0, shade(t.board, 0.12)); gr.addColorStop(1, shade(t.board, -0.15));
+        x.fillStyle = gr; x.fillRect(0, 0, w, h);
+        // rings: filled bands, darker toward the center
+        var c = P(0, SH.CS), radii = [SH.RINGS[3], SH.RINGS[2], SH.RINGS[1], SH.RINGS[0]];
+        radii.forEach(function (r, i) {
+          x.beginPath(); x.arc(c[0], c[1], r * PX, 0, Math.PI * 2);
+          x.fillStyle = shade(t.board, -0.08 - i * 0.07); x.fill();
+        });
+        // holes at the bottom of each ring band
+        ['20', '30', '40'].forEach(function (z) {
+          var hp = SH.ZONES[z].hole, q = P(hp[0], hp[1]);
+          x.beginPath(); x.ellipse(q[0], q[1], 0.105 * PX, 0.075 * PX, 0, 0, Math.PI * 2); x.fillStyle = '#07070c'; x.fill();
+        });
+        var q50 = P(0, SH.CS);
+        var g50 = x.createRadialGradient(q50[0], q50[1], 4, q50[0], q50[1], SH.RINGS[0] * PX);
+        g50.addColorStop(0, '#000'); g50.addColorStop(1, '#15151f');
+        x.beginPath(); x.arc(q50[0], q50[1], SH.RINGS[0] * PX - 4, 0, Math.PI * 2); x.fillStyle = g50; x.fill();
+        [-1, 1].forEach(function (sd) {
+          var pk = P(sd * SH.POCKET.x, SH.POCKET.s);
+          x.beginPath(); x.arc(pk[0], pk[1], SH.POCKET.r * PX - 3, 0, Math.PI * 2); x.fillStyle = '#05050a'; x.fill();
+        });
+        // the 10 trough along the bottom
+        var tb = P(0, SH.SLIP + 0.02), tt = P(0, SH.SLIP + 0.2);
+        x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(12, tt[1], w - 24, tb[1] - tt[1]);
+        // numbers
+        x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 ' + Math.round(0.13 * PX) + 'px system-ui, -apple-system, sans-serif';
+        function label(txt, bx, bs, col) { var q = P(bx, bs); x.fillStyle = 'rgba(0,0,0,.5)'; x.fillText(txt, q[0] + 2, q[1] + 3); x.fillStyle = col; x.fillText(txt, q[0], q[1]); }
+        label('20', 0, SH.CS + (SH.RINGS[2] + SH.RINGS[3]) / 2, t.rings[1]);
+        label('30', 0, SH.CS + (SH.RINGS[1] + SH.RINGS[2]) / 2, t.rings[2]);
+        label('40', 0, SH.CS + (SH.RINGS[0] + SH.RINGS[1]) / 2, t.rings[3]);
+        label('50', 0, SH.CS, t.rings[4]);
+        label('10', -0.7, SH.SLIP + 0.42, t.rings[0]); label('10', 0.7, SH.SLIP + 0.42, t.rings[0]);
+        x.font = '900 ' + Math.round(0.1 * PX) + 'px system-ui, -apple-system, sans-serif';
+        label('100', -SH.POCKET.x, SH.POCKET.s - 0.24, t.pocket); label('100', SH.POCKET.x, SH.POCKET.s - 0.24, t.pocket);
+      });
+    }
+    function marqueeTexture(t) {
+      return canvasTex(1024, 256, function (x, w, h) {
+        var gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, shade(t.cab, 0.1)); gr.addColorStop(1, shade(t.cab, -0.3));
+        x.fillStyle = gr; x.fillRect(0, 0, w, h);
+        for (var i = 0; i < 26; i++) { // bulbs
+          var bx = 20 + i * (w - 40) / 25;
+          [18, h - 18].forEach(function (by) { x.beginPath(); x.arc(bx, by, 7, 0, 7); x.fillStyle = i % 2 ? t.glow : '#fff6d8'; x.fill(); });
+        }
+        x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.font = 'italic 900 128px system-ui, -apple-system, sans-serif';
+        x.lineWidth = 14; x.strokeStyle = 'rgba(0,0,0,.55)'; x.strokeText('SKEE-HOP', w / 2, h / 2 + 6);
+        x.fillStyle = t.trim; x.fillText('SKEE-HOP', w / 2, h / 2 + 4);
+        x.fillStyle = 'rgba(255,255,255,.45)'; x.fillText('SKEE-HOP', w / 2, h / 2);
+      });
+    }
+    function skyTexture(t) {
+      return canvasTex(64, 512, function (x, w, h) {
+        var gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, t.sky[0]); gr.addColorStop(1, t.sky[1]);
+        x.fillStyle = gr; x.fillRect(0, 0, w, h);
+      });
+    }
+    function ballTexture(t) {
+      return canvasTex(256, 128, function (x, w, h) {
+        x.fillStyle = t.ball; x.fillRect(0, 0, w, h);
+        x.fillStyle = shade(t.glow, -0.1); x.fillRect(0, h * 0.44, w, h * 0.12);
+        x.fillStyle = 'rgba(0,0,0,.08)'; for (var i = 0; i < w; i += 32) x.fillRect(i, 0, 3, h);
+      });
+    }
+
+    var ringMats = [], ringMeshes = {}, zoneGlow = {}, ball = null, shadow = null, sparks = [];
+    function build(t) {
+      clear(); theme = t; ringMats = []; ringMeshes = {}; zoneGlow = {};
+      scene.background = skyTexture(t);
+      glowLight.color.set(t.glow);
+      // lane
+      var lane = quad([-H2, 0, 0], [H2, 0, 0], [-H2, 0, LZ], [H2, 0, LZ], [0, 1, 0], mat(0xffffff, { map: laneTexture(t), rough: 0.35 }));
+      group.add(lane);
+      // floor around the machine (below everything)
+      var floor = quad([-8, -0.4, -4], [8, -0.4, -4], [-8, -0.4, 16], [8, -0.4, 16], [0, 1, 0], mat(shade(t.sky[0], -0.4), { rough: 1 }));
+      group.add(floor);
+      // ramp: a curved sheet
+      (function () {
+        var n = 14, pos = [], idx = [], uv = [];
+        for (var i = 0; i <= n; i++) {
+          var z = LZ + RL * i / n, y = SH.rampY(z);
+          pos.push(-H2, y, z, H2, y, z); uv.push(0, i / n, 1, i / n);
+          if (i < n) { var a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+        }
+        var g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        g.setIndex(idx); g.computeVertexNormals();
+        var m = new THREE.Mesh(g, mat(shade(t.laneB, -0.2), { rough: 0.4, metal: 0.2, side: THREE.DoubleSide }));
+        group.add(m);
+        // ramp front lip strip
+        var lip = new THREE.Mesh(new THREE.BoxGeometry(2 * H2, 0.03, 0.05), mat(t.trim, { emissive: t.trim, ei: 0.35 }));
+        lip.position.set(0, SH.RH + 0.01, LZ + RL); group.add(lip);
+      })();
+      // board with its painted rings
+      var bp = function (x, s, h) { return SH.boardPoint(x, s, h || 0); };
+      var board = quad(bp(-H2, 0), bp(H2, 0), bp(-H2, SB), bp(H2, SB), SH.SN, mat(0xffffff, { map: boardTexture(t), rough: 0.55 }));
+      group.add(board);
+      // front wall under the board (fills the gap below the ramp)
+      group.add(quad([-H2, -0.4, LZ + RL], [H2, -0.4, LZ + RL], [-H2, B0.y, LZ + RL], [H2, B0.y, LZ + RL], [0, 0, -1], mat(shade(t.cab, -0.35))));
+      // lips: glowing rings on the board
+      var tube = 0.022;
+      SH.RINGS.forEach(function (R, i) {
+        var col = t.rings[4 - i];
+        var m = mat(col, { emissive: col, ei: 0.9, rough: 0.3 });
+        var tor = new THREE.Mesh(new THREE.TorusGeometry(R, tube, 8, 72), m);
+        tor.position.set(0, SH.CS, bz(SH.LIPH * 0.6)); boardG.add(tor);
+        ringMats.push(m); ringMeshes[['50', '40', '30', '20'][i]] = tor;
+      });
+      [-1, 1].forEach(function (sd) {
+        var m = mat(t.pocket, { emissive: t.pocket, ei: 1, rough: 0.3 });
+        var tor = new THREE.Mesh(new THREE.TorusGeometry(SH.POCKET.r, tube, 8, 40), m);
+        tor.position.set(sd * SH.POCKET.x, SH.POCKET.s, bz(SH.LIPH * 0.6)); boardG.add(tor);
+        ringMats.push(m); ringMeshes[sd < 0 ? '100L' : '100R'] = tor;
+      });
+      // bonus glow overlays (one per zone, hidden until that zone is the 5x)
+      function glowMesh(geo, px, ps) {
+        var m = new THREE.MeshBasicMaterial({ color: t.glow, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+        var me = new THREE.Mesh(geo, m); me.position.set(px, ps, bz(0.006)); boardG.add(me); return me;
+      }
+      var R = SH.RINGS;
+      zoneGlow['50'] = glowMesh(new THREE.CircleGeometry(R[0], 48), 0, SH.CS);
+      zoneGlow['40'] = glowMesh(new THREE.RingGeometry(R[0], R[1], 64), 0, SH.CS);
+      zoneGlow['30'] = glowMesh(new THREE.RingGeometry(R[1], R[2], 64), 0, SH.CS);
+      zoneGlow['20'] = glowMesh(new THREE.RingGeometry(R[2], R[3], 72), 0, SH.CS);
+      zoneGlow['100L'] = glowMesh(new THREE.CircleGeometry(SH.POCKET.r + 0.05, 32), -SH.POCKET.x, SH.POCKET.s);
+      zoneGlow['100R'] = glowMesh(new THREE.CircleGeometry(SH.POCKET.r + 0.05, 32), SH.POCKET.x, SH.POCKET.s);
+      // outer barrier
+      var bar = new THREE.Mesh(new THREE.BoxGeometry(2 * H2, 0.03, SH.LIPH + 0.02), mat(t.trim, { emissive: t.trim, ei: 0.4, rough: 0.3 }));
+      bar.position.set(0, SH.SLIP, bz((SH.LIPH + 0.02) / 2)); boardG.add(bar);
+      // cabinet: side rails along the lane, tall side panels by the board, back wall with the marquee
+      var cabM = mat(t.cab, { rough: 0.45 }), trimM = mat(t.trim, { emissive: t.trim, ei: 0.45, rough: 0.3 });
+      [-1, 1].forEach(function (sd) {
+        var rail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.34, LZ + RL + 0.1), cabM);
+        rail.position.set(sd * (H2 + 0.07), 0.12, (LZ + RL) / 2 - 0.05); group.add(rail);
+        var strip = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, LZ + RL + 0.1), trimM);
+        strip.position.set(sd * (H2 + 0.07), 0.3, (LZ + RL) / 2 - 0.05); group.add(strip);
+        // side panel shaped to the cabinet
+        var shape = new THREE.Shape();
+        shape.moveTo(LZ - 0.2, -0.4); shape.lineTo(SH.BACKZ + 0.15, -0.4); shape.lineTo(SH.BACKZ + 0.15, SH.CEIL + 0.9);
+        shape.lineTo(SH.BACKZ - 0.6, SH.CEIL + 0.9); shape.lineTo(LZ + RL, 0.9); shape.lineTo(LZ - 0.2, 0.3); shape.closePath();
+        var sg = new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
+        var side = new THREE.Mesh(sg, cabM);
+        side.rotation.y = -Math.PI / 2; side.position.set(sd * (H2 + 0.02) + (sd > 0 ? 0.1 : 0), 0, 0); group.add(side);
+        // glowing edge on the side panel
+        var e1 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, Math.hypot(SH.BACKZ - 0.6 - LZ - RL, SH.CEIL)), trimM);
+        e1.position.set(sd * (H2 + 0.07), (0.9 + SH.CEIL + 0.9) / 2, (LZ + RL + SH.BACKZ - 0.6) / 2);
+        e1.rotation.x = -Math.atan2(SH.CEIL, SH.BACKZ - 0.6 - LZ - RL); group.add(e1);
+      });
+      var back = quad([-H2 - 0.1, SH.TOPY - 0.05, SH.BACKZ], [H2 + 0.1, SH.TOPY - 0.05, SH.BACKZ], [-H2 - 0.1, SH.CEIL + 0.9, SH.BACKZ], [H2 + 0.1, SH.CEIL + 0.9, SH.BACKZ], [0, 0, -1], mat(shade(t.board, -0.3)));
+      group.add(back);
+      var mq = quad([-H2 - 0.1, SH.CEIL - 0.05, SH.BACKZ - 0.02], [H2 + 0.1, SH.CEIL - 0.05, SH.BACKZ - 0.02], [-H2 - 0.1, SH.CEIL + 0.5, SH.BACKZ - 0.02], [H2 + 0.1, SH.CEIL + 0.5, SH.BACKZ - 0.02], [0, 0, -1],
+        mat(0xffffff, { map: marqueeTexture(t), emissive: 0xffffff, ei: 0.25, rough: 0.5 }));
+      mq.material.emissiveMap = mq.material.map; group.add(mq);
+      // cage bars over the board
+      for (var cb = 0; cb < 3; cb++) {
+        var zz = LZ + RL + 0.5 + cb * 0.9, bar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 2 * H2, 6), mat(0xb8bcc8, { metal: 0.6, rough: 0.3 }));
+        bar2.rotation.z = Math.PI / 2; bar2.position.set(0, Math.min(SH.CEIL + 0.02, 0.9 + (zz - LZ - RL) * SH.CEIL / (SH.BACKZ - 0.6 - LZ - RL) + 0.05), zz); group.add(bar2);
+      }
+      // the ball and its shadow
+      var bt = ballTexture(t);
+      ball = new THREE.Mesh(new THREE.SphereGeometry(SH.RB, 28, 18), mat(0xffffff, { map: bt, rough: 0.25, metal: 0.05 }));
+      group.add(ball);
+      var shTex = canvasTex(64, 64, function (x, w, h) {
+        var g = x.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = g; x.fillRect(0, 0, w, h);
+      });
+      shadow = new THREE.Mesh(new THREE.PlaneGeometry(SH.RB * 3, SH.RB * 3), new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false }));
+      group.add(shadow);
+      sparks = [];
+    }
+
+    // ---------- camera ----------
+    // Home: behind the lane. While a ball is rolling the camera glides up the lane after it (and back after).
+    var camView = null, camCur = null, camGoal = null, homeCam = new THREE.PerspectiveCamera(33, 1, 0.1, 60), lastCamT = 0;
+    // On a tall full-screen phone the camera backs off and rises (1.2.0): the lane then runs further down the screen and
+    // the board comes out bigger, instead of the lane's near end using up all the width. Older, wider stages keep the old spot.
+    function homeView() {
+      if (camView) return camView;
+      var k = Math.max(0, Math.min(1, (0.7 - W / H) / 0.24));
+      return { pos: [0, 3.0 + 2.2 * k, -3.2 - 3.3 * k], look: [0, 0.75, 6.9], fov: 33 };
+    }
+    function goalFor(p) {
+      var h = homeView();
+      if (!p) return { pos: h.pos.slice(), look: h.look.slice() };
+      var k = Math.max(0, Math.min(1, (p[2] - 3.0) / 4.2)); k = k * k * (3 - 2 * k);
+      return { pos: [h.pos[0], h.pos[1] + 0.3 * k, h.pos[2] + 2.9 * k], look: [h.look[0], h.look[1] + 0.45 * k, h.look[2] + 0.7 * k] };
+    }
+    // Full screen (1.2.0): the canvas fills the whole phone, so a fixed fov would crop the lane on a tall screen. From the home
+    // spot we measure where the whole machine lands (the lane at the start line, the rails, the board and the marquee) and
+    // pick a frame that fits all of it into the free space between the counters at the top and a strip at the bottom
+    // (an off-center frame, so the camera keeps its pose and the machine looks the same, just as big as the screen allows).
+    var marg = { top: 0, bottom: 0, side: 0 }, frameK = { tanV: Math.tan(16.5 * Math.PI / 180), cx: 0, cy: 0 }, v3 = new THREE.Vector3();
+    function fitPts() {
+      var R = H2 + 0.14, z0 = SH.START - 0.2;
+      return [[-H2, 0, z0], [H2, 0, z0], [-R, 0.3, z0 + 0.4], [R, 0.3, z0 + 0.4], [-H2, SH.TOPY, SH.BACKZ], [H2, SH.TOPY, SH.BACKZ],
+        [-H2 - 0.1, SH.CEIL + 0.5, SH.BACKZ], [H2 + 0.1, SH.CEIL + 0.5, SH.BACKZ]];
+    }
+    function fitFrame() {
+      homeCam.updateMatrixWorld(); homeCam.matrixWorldInverse.copy(homeCam.matrixWorld).invert();
+      var ax0 = 1e9, ax1 = -1e9, ay0 = 1e9, ay1 = -1e9;
+      fitPts().forEach(function (q) {
+        v3.set(q[0], q[1], q[2]).applyMatrix4(homeCam.matrixWorldInverse); var d = Math.max(0.2, -v3.z);
+        ax0 = Math.min(ax0, v3.x / d); ax1 = Math.max(ax1, v3.x / d); ay0 = Math.min(ay0, v3.y / d); ay1 = Math.max(ay1, v3.y / d);
+      });
+      var asp = W / H, yb = -1 + 2 * marg.bottom / H, yt = 1 - 2 * marg.top / H, xs = 1 - 2 * marg.side / W;
+      if (yt - yb < 0.4) { yb = -0.8; yt = 0.8; } // a tiny canvas (loading, rotated): just keep a sane frame
+      var tanV = Math.max((ay1 - ay0) / (yt - yb), (ax1 - ax0) / (2 * xs * asp));
+      frameK = { tanV: tanV, cx: (ax0 + ax1) / 2, cy: (ay0 + ay1) / 2 - (yt + yb) / 2 * tanV };
+    }
+    function applyFrame(cam) {
+      var n = cam.near, k = frameK, tw = k.tanV * W / H;
+      cam.projectionMatrix.makePerspective(n * (k.cx - tw), n * (k.cx + tw), n * (k.cy + k.tanV), n * (k.cy - k.tanV), n, cam.far);
+      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    }
+    function place() {
+      camera.aspect = W / H; homeCam.aspect = W / H;
+      var v = homeView();
+      camera.fov = v.fov; homeCam.fov = v.fov;
+      if (!camCur) camCur = goalFor(null);
+      camera.position.set(camCur.pos[0], camCur.pos[1], camCur.pos[2]);
+      camera.lookAt(camCur.look[0], camCur.look[1], camCur.look[2]);
+      homeCam.position.set(v.pos[0], v.pos[1], v.pos[2]); homeCam.lookAt(v.look[0], v.look[1], v.look[2]); homeCam.updateMatrixWorld();
+      applyFrame(camera); applyFrame(homeCam);
+    }
+    function follow(p) { camGoal = goalFor(p); }
+    function moveCam(now) {
+      if (!camGoal) return false;
+      var dt = lastCamT ? Math.min(0.1, (now - lastCamT) / 1000) : 0.016; lastCamT = now;
+      var k = 1 - Math.exp(-dt * 3.2), far = 0;
+      for (var i = 0; i < 3; i++) {
+        camCur.pos[i] += (camGoal.pos[i] - camCur.pos[i]) * k; camCur.look[i] += (camGoal.look[i] - camCur.look[i]) * k;
+        far = Math.max(far, Math.abs(camGoal.pos[i] - camCur.pos[i]), Math.abs(camGoal.look[i] - camCur.look[i]));
+      }
+      place();
+      return far > 0.002;
+    }
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      if (!camGoal) camCur = null; // not following a ball yet: start from the home spot for this screen shape
+      place(); fitFrame(); place();
+      dirty = 3;
+    }
+
+    // ---------- the ball ----------
+    var last = null, q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+    function setBall(p, visible, sinking) {
+      ball.visible = visible; shadow.visible = visible && !sinking;
+      if (!visible) { last = null; return; }
+      var np = V(p);
+      if (last) { // roll it
+        var d = np.clone().sub(last), len = d.length();
+        if (len > 1e-5 && len < 1) { var axis = up.clone().cross(d).normalize(); q.setFromAxisAngle(axis, len / SH.RB); ball.quaternion.premultiply(q); }
+      }
+      last = np;
+      ball.position.copy(np);
+      // shadow on the surface under the ball
+      var sp;
+      if (p[2] < LZ) { sp = [p[0], 0.002, p[2]]; shadow.rotation.set(-Math.PI / 2, 0, 0); }
+      else if (p[2] < LZ + RL && p[1] < SH.RH + SH.RB * 2) { sp = [p[0], SH.rampY(p[2]) + 0.003, p[2]]; shadow.rotation.set(-Math.PI / 2 + Math.atan((SH.rampY(p[2] + 0.01) - SH.rampY(p[2])) / 0.01), 0, 0); }
+      else { var bc = SH.toBoard(p); sp = SH.boardPoint(bc[0], Math.max(0, Math.min(SB, bc[1])), 0.003); shadow.rotation.set(-Math.PI / 2 + TH, 0, 0); var k = Math.max(0.3, 1 - bc[2] * 0.8); shadow.scale.set(k, k, k); shadow.material.opacity = k; }
+      if (p[2] < LZ + RL) { shadow.scale.set(1, 1, 1); shadow.material.opacity = 1; }
+      shadow.position.set(sp[0], sp[1], sp[2]);
+      dirty = 2;
+    }
+    function resetSpin() { ball.quaternion.identity(); ball.rotateY(Math.PI / 2); last = null; }
+
+    // ---------- bonus flash and hit flashes ----------
+    var bonus = null, flashes = {};
+    function setBonus(z) { bonus = z; dirty = 2; }
+    function flash(zone) { flashes[zone] = performance.now(); dirty = 2; }
+    function animate(now) {
+      var busy = false;
+      Object.keys(zoneGlow).forEach(function (z) {
+        var o = 0, f = flashes[z];
+        if (bonus === z) { o = 0.22 + 0.2 * Math.sin(now / 140); busy = true; }
+        if (f) { var k = (now - f) / 700; if (k < 1) { o = Math.max(o, 0.7 * (1 - k)); busy = true; } else delete flashes[z]; }
+        zoneGlow[z].material.opacity = o;
+        var tor = ringMeshes[z];
+        if (tor) tor.material.emissiveIntensity = 0.9 + o * 3;
+      });
+      glowLight.intensity = 2.6 + (bonus ? 0.8 * Math.sin(now / 140) : 0);
+      return busy;
+    }
+
+    // ---------- drawing ----------
+    var dirty = 3;
+    var tick = 0;
+    function render(now, force) {
+      var busy = animate(now || performance.now());
+      if (moveCam(now || performance.now())) { busy = true; dirty = Math.max(dirty, 1); }
+      if (!force && !busy && dirty <= 0) return false;
+      if (!force && dirty <= 0 && (++tick & 1)) return false; // only the lights are moving: 30 fps is plenty
+      renderer.render(scene, camera);
+      if (dirty > 0) dirty--;
+      return true;
+    }
+    function project(p) {
+      group.updateMatrixWorld();
+      var v = group.localToWorld(V(p)).project(camera);
+      return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H];
+    }
+    function holeWorld(zone) {
+      var h = SH.ZONES[zone].hole;
+      return h ? SH.boardPoint(h[0], h[1], 0.02) : SH.boardPoint(0, SH.SLIP + 0.1, 0.02);
+    }
+    // finger x on screen -> lane x at the start line
+    function projectHome(p) {
+      group.updateMatrixWorld();
+      var v = group.localToWorld(V(p)).project(homeCam);
+      return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H];
+    }
+    function laneXAt(clientX) {
+      var r = canvas.getBoundingClientRect();
+      if (Math.abs(r.width - W) > 0.5 || Math.abs(r.height - H) > 0.5) resize();
+      var a = projectHome([-1, SH.RB, SH.START]), b = projectHome([1, SH.RB, SH.START]);
+      var t = ((clientX - r.left) - a[0]) / (b[0] - a[0]);
+      return -1 + 2 * t;
+    }
+
+    return {
+      build: build, resize: resize, render: render, setBall: setBall, resetSpin: resetSpin, setBonus: setBonus, flash: flash,
+      project: project, holeWorld: holeWorld, laneXAt: laneXAt, follow: follow, touch: function () { dirty = 2; }, renderer: renderer, camera: camera,
+      view: function (pos, look, fov) { camView = { pos: pos, look: look, fov: fov }; camCur = goalFor(null); camGoal = null; place(); fitFrame(); place(); dirty = 3; },
+      margins: function (m) { marg = m; resize(); }
+    };
+  }
+  return { create: create };
+})();
+</script>
+<script>
+/* Skee-Hop sounds: all made with Web Audio (no audio files). They follow the iPhone's silent switch. */
+var SHSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, rum = null, noiseBuf = null;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function noiseBuffer(a) {
+    if (noiseBuf) return noiseBuf;
+    var n = a.sampleRate * 2, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0), last = 0;
+    for (var i = 0; i < n; i++) { last = last * 0.96 + (Math.random() * 2 - 1) * 0.2; d[i] = last; } // soft brown-ish noise
+    noiseBuf = b; return b;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function thump(freq, gain, len, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    s.buffer = noiseBuffer(a); f.type = 'lowpass'; f.frequency.value = freq;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random()); s.stop(t + len + 0.05);
+  }
+  function bell(f, delay, gain) { // a few inharmonic partials
+    [1, 2.4, 3.9, 5.4].forEach(function (k, i) { tone('sine', f * k, 0, 0.9 - i * 0.15, (gain || 0.18) / (i + 1), delay); });
+  }
+  // continuous roll rumble while the ball is on the wood
+  function rumble(level) {
+    var a = ctx();
+    if (!a) { if (rum) stopRumble(); return; }
+    if (!rum) {
+      var s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+      s.buffer = noiseBuffer(a); s.loop = true; f.type = 'lowpass'; f.frequency.value = 180; f.Q.value = 3; g.gain.value = 0;
+      s.connect(f); f.connect(g); g.connect(master); s.start();
+      rum = { s: s, f: f, g: g };
+    }
+    var t = a.currentTime;
+    rum.g.gain.setTargetAtTime(Math.min(0.9, level * 0.9), t, 0.05);
+    rum.f.frequency.setTargetAtTime(120 + level * 260, t, 0.08);
+  }
+  function stopRumble() {
+    if (!rum) return;
+    var r = rum; rum = null;
+    try { r.g.gain.setTargetAtTime(0, ac.currentTime, 0.04); r.s.stop(ac.currentTime + 0.3); } catch (e) { /* ignore */ }
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); else stopRumble(); },
+    unlock: function () { if (on) ctx(); },
+    rumble: rumble, stopRumble: stopRumble,
+    release: function () { thump(400, 0.5, 0.12); },
+    ramp: function () { thump(700, 0.45, 0.1); tone('triangle', 180, 320, 0.12, 0.05); },
+    land: function (v) { thump(260, Math.min(0.9, 0.2 + v * 0.18), 0.18); },
+    lip: function (v) { tone('square', 900 + Math.random() * 300, 0, 0.05, Math.min(0.08, 0.02 + v * 0.02)); thump(1400, Math.min(0.4, v * 0.1), 0.05); },
+    wall: function (v) { thump(500, Math.min(0.6, 0.15 + v * 0.1), 0.1); },
+    clunk: function (pts) { // ball drops into a hole; higher score, brighter clunk
+      thump(220, 0.9, 0.25); tone('sine', 90, 55, 0.25, 0.25);
+      var f = 330 + pts * 5;
+      tone('triangle', f, 0, 0.18, 0.12, 0.12); if (pts >= 40) tone('triangle', f * 1.5, 0, 0.2, 0.1, 0.22);
+    },
+    bonus: function () { bell(880, 0.1, 0.22); bell(1175, 0.28, 0.2); bell(1568, 0.46, 0.2); },
+    hundred: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone('square', f, 0, 0.16, 0.06, 0.12 + i * 0.09); }); bell(2093, 0.5, 0.12); },
+    back: function () { tone('sine', 300, 140, 0.35, 0.08); },
+    round: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.12, i * 0.1); }); },
+    over: function () { [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.35, 0.12, i * 0.16); }); },
+    ding: function () { tone('sine', 1320, 0, 0.18, 0.12); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Skee-Hop app: flick input, the game loop, modes, saving, stats, sounds, tilt and house ads.
+   SHApp.start(THREE) is called by the module script once three.js has loaded from /shared. */
+var SHApp = (function () {
+  'use strict';
+  var S = SHSound, started = false;
+
+  // ================= storage =================
+  var store = Goobs.store('skeehop');
+  var settings = { sound: false, adEvery: 3, tilt: false, power: 3 };
+  var POWER = [0, 0.8, 0.9, 1, 1.12, 1.25]; // flick power setting 1..5 (3 = normal)
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    settings.power = Math.min(5, Math.max(1, settings.power | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'classic', seenHelp: false, flicked: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  function modeStats() { return { best: 0, games: 0, total: 0, balls: 0 }; }
+  if (!stats.classic) stats.classic = modeStats();
+  if (!stats.survival) stats.survival = modeStats();
+  ['hundreds', 'bonusHits', 'fifties', 'bestRound', 'rollbacks'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function icon(id) { return '<svg viewBox="0 0 100 100"><use href="#' + id + '"/></svg>'; }
+  function overlayOpen() { return FS.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovTilt') || GoobsAds.isOpen(); }
+  // Full screen (1.2.0): the kit floats the back button, the score and Sound / Menu over the lane. How to, Stats,
+  // Settings, Tilt and New game move into the Menu sheet with the Classic / Survival tabs; the ball waits while it's open.
+  var FS = Goobs.fullscreen({
+    overlay: true,
+    menu: ['btnHelp', 'btnStats', 'btnSettings', 'btnTilt', 'btnNew'],
+    info: function () {
+      if (!game) return '';
+      var t = SH.themeFor(game);
+      return (game.mode === 'classic' ? 'Classic · 9 balls' : 'Survival · Round ' + game.round) + ' · <b>' + t.name + '</b>';
+    }
+  });
+  FS.list.parentNode.insertBefore(document.getElementById('modes'), FS.list);
+  // the free space for the camera frame: below the balls / target counters, above the home bar
+  var probe = document.createElement('div'); probe.className = 'sbprobe'; document.body.appendChild(probe);
+  var fitRq = 0;
+  function fitMargins() {
+    fitRq = 0;
+    if (!R3) return;
+    var sr = $('stage').getBoundingClientRect(), hb = Math.max($('balls').getBoundingClientRect().bottom, $('goal').getBoundingClientRect().bottom);
+    R3.margins({ top: Math.max(60, hb - sr.top + 10), bottom: probe.offsetHeight + 14, side: 6 });
+  }
+  function refit() { if (!fitRq) fitRq = requestAnimationFrame(fitMargins); }
+  var ZNAME = { '20': 'the 20 ring', '30': 'the 30 ring', '40': 'the 40 ring', '50': 'the 50 cup', '100L': 'the left 100', '100R': 'the right 100' };
+
+  // ================= state =================
+  var fitSurv = null, R3 = null, game = null, ball = null, aimX = 0, themeId = null;
+  var phase = 'aim'; // aim | rolling | card
+  function keyFor(mode) { return 'game.' + mode; }
+  function saveGame() { if (game && !game.done) store.set(keyFor(game.mode), game); }
+  function loadGame(mode, fresh) {
+    var saved = !fresh && store.get(keyFor(mode), null);
+    if (saved && !saved.done && saved.mode === mode && saved.ball >= SH.BALLS) {
+      // closed on the "round cleared" card: carry on with the next round; a finished Classic game starts fresh
+      if (mode === 'survival' && saved.roundScore >= saved.target) SH.nextRound(saved); else saved = null;
+    }
+    game = saved && !saved.done && saved.mode === mode ? saved : SH.newGame(mode);
+    meta.mode = mode; saveMeta();
+    ball = null; phase = 'aim';
+    applyTheme();
+    renderAll();
+    saveGame();
+  }
+  function applyTheme() {
+    var t = SH.themeFor(game);
+    if (t.id !== themeId) { themeId = t.id; R3.build(t); R3.resize(); }
+    R3.setBonus(game.bonus || null);
+    placeAimBall();
+  }
+  function placeAimBall() { R3.resetSpin(); R3.setBall([aimX, SH.RB, SH.START], true); }
+
+  // ================= HUD =================
+  function renderInfo() {
+    // the score pill in the top row; the mode and machine name are in the Menu sheet (and on the marquee)
+    var st = stats[game.mode];
+    $('info').innerHTML = fmt(game.score) + '<small>Best ' + fmt(st.best) + '</small>';
+    FS.refresh();
+  }
+  function renderBalls() {
+    var h = '';
+    for (var i = 0; i < SH.BALLS; i++) h += '<i class="' + (i < game.ball ? 'used' : i === game.ball ? 'now' : '') + '"></i>';
+    $('balls').innerHTML = h;
+    var g = $('goal');
+    if (game.mode === 'survival') {
+      var pct = Math.min(100, Math.round(100 * game.roundScore / game.target));
+      g.className = 'goal show' + (game.roundScore >= game.target ? ' met' : '');
+      g.innerHTML = 'Round ' + game.round + ' · ' + fmt(game.roundScore) + ' / ' + fmt(game.target) + '<div class="gbar"><i style="width:' + pct + '%"></i></div>';
+    } else g.className = 'goal';
+    if (R3 && (game.mode === 'survival') !== fitSurv) { fitSurv = game.mode === 'survival'; refit(); } // the target pill is taller than the balls: refit
+    var chip = $('bonusChip');
+    if (game.bonus && !game.done) { chip.textContent = '5× on ' + ZNAME[game.bonus]; chip.classList.add('show'); }
+    else chip.classList.remove('show');
+  }
+  function renderModes() {
+    Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === game.mode); });
+  }
+  function renderAll() { renderInfo(); renderBalls(); renderModes(); syncTilt(); }
+  var toastT = 0;
+  function toast(msg, ms) {
+    var el = $('toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, ms || 1300);
+  }
+  function popAt(world, html, big) {
+    var p = R3.project(world), el = document.createElement('div');
+    el.className = 'pop' + (big ? ' big' : ''); el.innerHTML = html;
+    el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px';
+    $('pops').appendChild(el);
+    setTimeout(function () { el.remove(); }, 1400);
+  }
+
+  // ================= flick input =================
+  var touch = null;
+  function stageRect() { return $('cv').getBoundingClientRect(); }
+  function clampAim(x) { return Math.max(-SH.HALF + SH.RB + 0.04, Math.min(SH.HALF - SH.RB - 0.04, x)); }
+  function onDown(e) {
+    S.unlock();
+    if (phase !== 'aim' || overlayOpen() || !game || game.done || touch) return;
+    var r = stageRect();
+    touch = { id: e.pointerId, pts: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], y0: e.clientY, locked: false, lockAt: 0, h: r.height };
+    try { $('cv').setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
+    aimX = clampAim(R3.laneXAt(e.clientX)); placeAimBall();
+  }
+  function onMove(e) {
+    if (!touch || e.pointerId !== touch.id) return;
+    var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    if (!evs.length) evs = [e];
+    evs.forEach(function (c) { touch.pts.push({ x: c.clientX, y: c.clientY, t: c.timeStamp || e.timeStamp }); });
+    if (touch.pts.length > 240) touch.pts.splice(0, touch.pts.length - 240);
+    if (!touch.locked) {
+      if (touch.y0 - e.clientY > 18) { touch.locked = true; touch.lockAt = touch.pts.length - 1; } // the flick has started: the ball's spot is fixed
+      else { aimX = clampAim(R3.laneXAt(e.clientX)); placeAimBall(); }
+    }
+  }
+  function onUp(e) {
+    if (!touch || e.pointerId !== touch.id) return;
+    var tc = touch; touch = null;
+    if (settings.tilt && !tiltLive) askTiltQuietly(); // a finger lift counts as a tap for iOS permission
+    var pts = tc.pts, end = pts[pts.length - 1];
+    if (e.clientY != null) end = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+    // speed from the last ~90 ms of the swipe
+    var i0 = pts.length - 1;
+    while (i0 > 0 && end.t - pts[i0 - 1].t <= 90) i0--;
+    var p0 = pts[Math.max(0, Math.min(i0, pts.length - 2))] || pts[0];
+    var dt = Math.max(12, end.t - p0.t), dy = p0.y - end.y;
+    var total = pts[0].y - end.y;
+    if (total < 30 || dy < 8) return; // not a flick
+    var vyn = dy / dt * 1000 / tc.h; // screen heights per second
+    var speed = Math.max(2, Math.min(13, 2.25 * vyn * POWER[settings.power]));
+    // aim from the whole upward stroke
+    var s0 = pts[tc.lockAt] || pts[0], dx = end.x - s0.x, dyy = Math.max(1, s0.y - end.y);
+    var angle = Math.max(-0.26, Math.min(0.26, Math.atan2(dx, dyy) * 0.55));
+    // spin from how much the swipe bows away from a straight line
+    var L2 = dx * dx + dyy * dyy, best = 0;
+    for (var k = tc.lockAt; k < pts.length; k++) {
+      var cr = dx * (pts[k].y - s0.y) - (-dyy) * (pts[k].x - s0.x);
+      if (Math.abs(cr) > Math.abs(best)) best = cr;
+    }
+    var spin = Math.max(-1, Math.min(1, -best / L2 * 6));
+    if (Math.abs(spin) < 0.12) spin = 0;
+    launch(speed, angle, spin);
+  }
+  function launch(speed, angle, spin) {
+    if (phase !== 'aim') return;
+    ball = SH.newBall({ x0: aimX, speed: speed, angle: angle, spin: spin });
+    ball.flick = { speed: speed, angle: angle, spin: spin };
+    phase = 'rolling';
+    tiltBase = tiltNow ? tiltNow.slice() : null;
+    S.release();
+    if (!meta.flicked) { meta.flicked = true; saveMeta(); $('flickHint').classList.remove('show'); }
+  }
+
+  // ================= tilt =================
+  var tiltLive = false, tiltGranted = false, tiltNow = null, tiltBase = null;
+  function onOrient(e) {
+    if (e.gamma == null) return;
+    tiltLive = true; tiltNow = [e.gamma, e.beta];
+    $('tiltChip').classList.remove('show');
+  }
+  function needsPermission() { return typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'; }
+  function listenTilt() { window.removeEventListener('deviceorientation', onOrient); window.addEventListener('deviceorientation', onOrient); }
+  function askTilt(cb) { // must run inside a tap
+    if (!needsPermission()) { listenTilt(); if (cb) cb(true); return; }
+    DeviceOrientationEvent.requestPermission().then(function (r) {
+      if (r === 'granted') { tiltGranted = true; listenTilt(); if (cb) cb(true); } else if (cb) cb(false);
+    }).catch(function () { if (cb) cb(false); });
+  }
+  function askTiltQuietly() { if (!needsPermission()) { listenTilt(); return; } askTilt(function () {}); }
+  function tiltVec() {
+    if (!settings.tilt || !tiltLive || !tiltNow || !tiltBase) return null;
+    var gx = (tiltNow[0] - tiltBase[0]) / 22, gz = (tiltBase[1] - tiltNow[1]) / 22;
+    return [Math.max(-1, Math.min(1, gx)), Math.max(-1, Math.min(1, gz))];
+  }
+  function syncTilt() {
+    $('setTilt').checked = settings.tilt;
+    $('tiltLabel').textContent = settings.tilt ? 'Tilt on' : 'Tilt off';
+    $('btnTilt').classList.toggle('on', settings.tilt);
+    $('tiltChip').classList.toggle('show', settings.tilt && !tiltLive && !tiltGranted && needsPermission());
+  }
+  function setTilt(on) {
+    if (!on) { settings.tilt = false; saveSettings(); window.removeEventListener('deviceorientation', onOrient); tiltLive = false; syncTilt(); return; }
+    if (!needsPermission()) { settings.tilt = true; saveSettings(); listenTilt(); syncTilt(); toast('Tilt is on'); return; }
+    $('ovTilt').classList.add('show');
+  }
+
+  // ================= the loop =================
+  var lastT = 0, rumbleOn = false;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0.016;
+    lastT = now;
+    if (phase === 'rolling' && ball && !overlayOpen() && !document.hidden) {
+      var ev = SH.step(ball, dt, tiltVec());
+      ev.forEach(handle);
+      if (ball) {
+        if (ball.phase === 'back') R3.setBall(SH.backPos(ball), true);
+        else if (ball.phase !== 'done') R3.setBall(ball.p, true, ball.phase === 'sink');
+        R3.follow(ball.phase === 'back' || ball.phase === 'done' ? null : ball.p);
+        var onWood = ball.phase === 'lane' || ball.phase === 'ramp' || ball.phase === 'board' || ball.phase === 'back';
+        var sp = ball.phase === 'back' ? Math.abs(ball.bv || 0) : Math.hypot(ball.v[0], ball.v[1], ball.v[2]);
+        if (onWood) { S.rumble(Math.min(1, sp / 9) * (ball.phase === 'board' ? 0.5 : 1)); rumbleOn = true; }
+        else if (rumbleOn) { S.stopRumble(); rumbleOn = false; }
+      }
+    } else if (rumbleOn) { S.stopRumble(); rumbleOn = false; }
+    if (phase !== 'rolling' || !ball) R3.follow(null);
+    R3.render(now);
+  }
+  var pending = null; // the scored result waiting for the ball to finish sinking
+  function handle(e) {
+    if (e.t === 'ramp') S.ramp();
+    else if (e.t === 'land') S.land(e.v);
+    else if (e.t === 'lip') S.lip(e.v);
+    else if (e.t === 'wall' || e.t === 'back') S.wall(e.v);
+    else if (e.t === 'capture') {
+      var res = SH.scoreBall(game, e.zone);
+      res.zone = e.zone;
+      stats[game.mode].balls++;
+      if (res.base === 100) stats.hundreds++;
+      if (res.base === 50) stats.fifties++;
+      if (res.bonus) stats.bonusHits++;
+      S.clunk(res.base);
+      if (res.bonus) setTimeout(S.bonus, 150); else if (res.base === 100) setTimeout(S.hundred, 100);
+      R3.flash(e.zone);
+      popAt(R3.holeWorld(e.zone), '+' + res.pts + (res.bonus ? '<small>5× bonus!</small>' : res.base === 100 ? '<small>corner pocket!</small>' : ''), res.bonus || res.base === 100);
+      pending = res;
+      renderInfo(); renderBalls();
+      saveGame(); saveStats();
+    } else if (e.t === 'rollback') {
+      stats.rollbacks++;
+      S.back();
+      toast(e.why === 'short' || e.why === 'ramp' ? 'Too short — roll it again' : 'It rolled back — free ball');
+    } else if (e.t === 'done') {
+      var res2 = pending; pending = null;
+      ball = null;
+      if (!res2) { phase = 'aim'; placeAimBall(); return; } // rolled back: same ball again
+      afterBall(res2);
+    }
+  }
+  function afterBall(res) {
+    if (!res.roundOver) {
+      phase = 'aim';
+      R3.setBonus(game.bonus || null);
+      renderBalls();
+      setTimeout(placeAimBall, 120);
+      return;
+    }
+    phase = 'card';
+    if (game.mode === 'classic') return endClassic();
+    if (res.passed) return roundCleared();
+    return endSurvival();
+  }
+
+  // ================= end of a game / round =================
+  function showCard(iconId, title, html, buttons) {
+    $('cardIcon').innerHTML = iconId ? icon(iconId) : '';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions');
+    box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function recordGame(g) {
+    var st = stats[g.mode], newBest = g.score > st.best;
+    st.games++; st.total += g.score;
+    if (newBest) st.best = g.score;
+    if (g.mode === 'survival' && g.round - 1 > stats.bestRound) stats.bestRound = g.round - 1;
+    meta.finished++;
+    store.del(keyFor(g.mode));
+    saveStats(); saveMeta();
+    return newBest;
+  }
+  function avg(st) { return st.games ? Math.round(st.total / st.games) : 0; }
+  function endClassic() {
+    var g = game, newBest = recordGame(g), st = stats.classic;
+    S.over();
+    setTimeout(function () {
+      showCard('sh-logo', newBest && st.games > 1 ? 'New best!' : 'Nice rolling!', 'You scored <b>' + fmt(g.score) + '</b>' + (g.hundreds ? ' with ' + g.hundreds + ' corner pocket' + (g.hundreds > 1 ? 's' : '') : '') + '.' +
+        '<br>Best ' + fmt(st.best) + ' · average ' + fmt(avg(st)) + ' over ' + st.games + ' game' + (st.games > 1 ? 's' : '') + '.' + (newBest && st.games > 1 ? '<br><span class="newbest">New best score</span>' : ''), [
+        { label: 'Play again', red: true, go: function () { between(function () { loadGame('classic', true); }); } },
+        { label: 'Try Survival', go: function () { between(function () { loadGame('survival'); }); } }]);
+    }, 700);
+  }
+  function roundCleared() {
+    var g = game, next = SH.themeFor({ mode: 'survival', round: g.round + 1 });
+    S.round();
+    meta.finished++; saveMeta();
+    setTimeout(function () {
+      showCard('sh-logo', 'Round ' + g.round + ' cleared!', 'You rolled <b>' + fmt(g.roundScore) + '</b> (target ' + fmt(g.target) + '). Total ' + fmt(g.score) + '.' +
+        '<br>Next up: <b>' + next.name + '</b>, target ' + fmt(SH.target(g.round + 1)) + '.', [
+        { label: 'Next round', red: true, go: function () {
+          between(function () { SH.nextRound(game); saveGame(); phase = 'aim'; applyTheme(); renderAll(); toast(next.name + ' · Round ' + game.round, 1500); });
+        } }]);
+    }, 800);
+  }
+  function endSurvival() {
+    var g = game, newBest = recordGame(g), cleared = g.round - 1;
+    S.over();
+    setTimeout(function () {
+      showCard('sh-logo', 'Out of balls', 'Round ' + g.round + ': ' + fmt(g.roundScore) + ' of ' + fmt(g.target) + ' needed.' +
+        '<br>You cleared <b>' + cleared + ' round' + (cleared === 1 ? '' : 's') + '</b> for a total of <b>' + fmt(g.score) + '</b>.' +
+        '<br>Best ' + fmt(stats.survival.best) + ' · most rounds ' + stats.bestRound + '.' + (newBest && stats.survival.games > 1 ? '<br><span class="newbest">New best score</span>' : ''), [
+        { label: 'Play again', red: true, go: function () { between(function () { loadGame('survival', true); }); } },
+        { label: 'Classic', go: function () { between(function () { loadGame('classic'); }); } }]);
+    }, 700);
+  }
+
+  // ================= ads (only between games and rounds) =================
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.lip(1); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next();
+      showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= sheets =================
+  function renderStats() {
+    var c = stats.classic, s = stats.survival;
+    $('statsBody').innerHTML =
+      '<div class="sectlbl">Classic</div>' +
+      '<div class="tiles2"><div class="tile2"><b>' + fmt(c.best) + '</b><span>Best score</span></div>' +
+      '<div class="tile2"><b>' + fmt(avg(c)) + '</b><span>Average</span></div>' +
+      '<div class="tile2"><b>' + fmt(c.games) + '</b><span>Games</span></div></div>' +
+      '<div class="sectlbl">Survival</div>' +
+      '<div class="tiles2"><div class="tile2"><b>' + fmt(s.best) + '</b><span>Best score</span></div>' +
+      '<div class="tile2"><b>' + stats.bestRound + '</b><span>Most rounds</span></div>' +
+      '<div class="tile2"><b>' + fmt(s.games) + '</b><span>Games</span></div></div>' +
+      '<div class="tiles2"><div class="tile2"><b>' + fmt(avg(s)) + '</b><span>Average</span></div>' +
+      '<div class="tile2"><b>' + fmt(stats.bonusHits) + '</b><span>5× bonuses</span></div>' +
+      '<div class="tile2"><b>' + fmt(stats.hundreds) + '</b><span>100 pockets</span></div></div>' +
+      '<p class="version">' + fmt(c.balls + s.balls) + ' balls scored · ' + fmt(stats.fifties) + ' in the 50 cup · ' + fmt(stats.rollbacks) + ' rolled back</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncPower() { $('power').textContent = settings.power; }
+  function syncAds() {
+    $('setAds').checked = Goobs.adsOn();
+    $('adEvery').textContent = settings.adEvery;
+    $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+  }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function start(THREE) {
+    if (started) return;
+    started = true;
+    Goobs.themePicker($('themes'));
+    try { R3 = SHRender.create(THREE, $('cv')); }
+    catch (e) { $('loading').textContent = 'This phone couldn’t start the 3D lanes (' + (e && e.message || 'WebGL') + ').'; return; }
+    var cv = $('cv');
+    cv.addEventListener('pointerdown', onDown);
+    cv.addEventListener('pointermove', onMove);
+    cv.addEventListener('pointerup', onUp);
+    cv.addEventListener('pointercancel', function () { touch = null; });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
+    $('btnNew').addEventListener('click', function () {
+      if (phase === 'rolling') return;
+      if (game.done || (!game.ball && game.round === 1)) { loadGame(game.mode, true); return; }
+      showCard('sh-logo', 'Start a new game?', game.mode === 'survival' ? 'This Survival run ends here and doesn\u2019t count toward your record.' : 'This game ends here and doesn\u2019t count toward your record.', [
+        { label: 'New game', red: true, go: function () { loadGame(game.mode, true); } }, { label: 'Keep rolling', go: function () {} }]);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var bt = e.target.closest('button');
+      if (!bt) return;
+      FS.close();
+      if (bt.dataset.mode === game.mode || phase === 'rolling') return;
+      saveGame();
+      loadGame(bt.dataset.mode);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('btnHelp', 'ovHelp', 'btnCloseHelp');
+    $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    // tilt: the switch, the toolbar button, the permission card and the "tap to allow" chip
+    $('setTilt').addEventListener('change', function () { var on = this.checked; if (on) { this.checked = false; $('ovSettings').classList.remove('show'); } setTilt(on); });
+    $('btnTilt').addEventListener('click', function () { setTilt(!settings.tilt); });
+    $('btnTiltCancel').addEventListener('click', function () { $('ovTilt').classList.remove('show'); syncTilt(); });
+    $('btnTiltAllow').addEventListener('click', function () {
+      $('ovTilt').classList.remove('show');
+      askTilt(function (ok) {
+        settings.tilt = ok; saveSettings(); syncTilt();
+        toast(ok ? 'Tilt is on — tilt to nudge the ball in the air' : 'Motion wasn’t allowed, so tilt stays off', 2200);
+      });
+    });
+    $('tiltChip').addEventListener('click', function () { askTilt(function (ok) { if (!ok) toast('Motion wasn’t allowed', 1800); syncTilt(); }); });
+    if (settings.tilt && !needsPermission()) listenTilt();
+
+    window.addEventListener('resize', refit);
+    if (window.ResizeObserver) new ResizeObserver(refit).observe($('stage'));
+    document.addEventListener('visibilitychange', function () { if (document.hidden) saveGame(); else { lastT = 0; R3.resize(); } });
+    window.addEventListener('pagehide', saveGame);
+    $('powLess').addEventListener('click', function () { settings.power = Math.max(1, settings.power - 1); saveSettings(); syncPower(); });
+    $('powMore').addEventListener('click', function () { settings.power = Math.min(5, settings.power + 1); saveSettings(); syncPower(); });
+    syncSound(); syncAds(); syncPower();
+
+    loadGame(meta.mode === 'survival' ? 'survival' : 'classic');
+    fitMargins();
+    $('loading').classList.add('hide');
+    if (!meta.flicked) $('flickHint').classList.add('show');
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    requestAnimationFrame(frame);
+    Goobs.markPlayed('skeehop');
+    Goobs.initUpdates({
+      beforeReload: saveGame,
+      onVersions: function (v) { $('version').textContent = 'Skee-Hop ' + (v.skeehop || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__sh = { get game() { return game; }, get ball() { return ball; }, get phase() { return phase; }, launch: function (sp, a, s) { launch(sp, a || 0, s || 0); },
+    meta: function () { return meta; }, stats: function () { return stats; }, load: loadGame, R3: function () { return R3; }, aim: function (x) { aimX = x; placeAimBall(); } };
+
+  return { start: start, started: function () { return started; } };
+})();
+</script>
+<script type="module">
+import * as THREE from '../../shared/three.module.min.js';
+SHApp.start(THREE);
+</script>
+<script>
+// if the 3D library can't load (first visit while offline), say so instead of showing a blank lane
+setTimeout(function () { if (!window.SHApp || !SHApp.started()) { var l = document.getElementById('loading'); if (l) l.textContent = 'Couldn\u2019t load the 3D lanes. Connect to the internet once and reopen.'; } }, 6000);
+</script>
+</body>
+</html>

@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#4c9be6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Lido Deck can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__dkReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#f4f5f9;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Lido Deck didn’t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('deck.game_shuffle'); localStorage.removeItem('deck.game_corn'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__dkReady) fail('It took too long to start.'); }, 8000);
+})();
+</script>
+<title>Lido Deck</title>
+<style>
+/* Lido Deck: the 3D deck fills the phone edge to edge; the scoreboard floats at the top, the overhead view of the
+   scoring end on the right, messages over the deck. Touches go to the deck except on buttons. */
+html, body { height: 100%; }
+body { background: #8fc6ee; overflow: hidden; }
+#cv3 { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; z-index: 0; }
+#swipe { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-events: none; }
+.app button { pointer-events: auto; }
+
+/* the scoreboard: you on the left, the other side on the right */
+.scorebd { position: fixed; z-index: 7; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 50%; transform: translateX(-50%); width: min(430px, calc(100vw - 116px)); height: 52px; display: flex; align-items: stretch; justify-content: center;
+  pointer-events: none; background: rgba(255,255,255,.93); border-radius: 18px; box-shadow: 0 3px 12px rgba(0,0,0,.18); color: #142847; overflow: hidden; }
+.scorebd .sd { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "nm nm" "pts left"; grid-template-rows: 18px 1fr; align-items: center; column-gap: 6px; padding: 3px 7px 3px 9px; transition: background .25s; }
+.scorebd #sd1 { grid-template-columns: 1fr auto; grid-template-areas: "nm nm" "left pts"; padding: 3px 9px 3px 7px; }
+.scorebd .nm { grid-area: nm; display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; font-weight: 800; letter-spacing: -.2px; }
+.scorebd #sd1 .nm { justify-content: flex-end; }
+.scorebd .nm b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scorebd .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 2px rgba(0,0,0,.25); }
+.scorebd #sd0 .dot { background: #e8453c; }
+.scorebd #sd1 .dot { background: #2f6fd6; }
+.scorebd .pts { grid-area: pts; font-size: 24px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.scorebd .left { grid-area: left; display: flex; gap: 3px; height: 10px; align-items: center; }
+.scorebd #sd1 .left { justify-content: flex-end; }
+.scorebd .left i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .25; }
+.scorebd #sd0 .left i.on { background: #e8453c; border-color: #e8453c; opacity: 1; }
+.scorebd #sd1 .left i.on { background: #2f6fd6; border-color: #2f6fd6; opacity: 1; }
+.scorebd .sd.turn { background: #fff4c4; }
+.scorebd .mid { flex: none; width: 34px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10px; line-height: 1.1; font-weight: 800; color: #6a7a92; border-left: 1px solid #e3e8ef; border-right: 1px solid #e3e8ef; }
+.scorebd.solo #sd1, .scorebd.solo .mid { display: none; }
+
+
+.framechip { position: fixed; z-index: 6; left: calc(env(safe-area-inset-left, 0px) + 10px); top: calc(env(safe-area-inset-top, 0px) + 66px); max-width: calc(100vw - 130px);
+  background: rgba(14,32,60,.66); color: #fff; font-weight: 800; font-size: 13px; padding: 5px 10px; border-radius: 12px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.framechip:empty { display: none; }
+.framechip b { color: #ffe27a; }
+/* the overhead view of the scoring end (drawn in 2D) */
+.inset { position: fixed; z-index: 6; right: calc(env(safe-area-inset-right, 0px) + 10px); top: calc(env(safe-area-inset-top, 0px) + 66px); width: 96px; height: 190px;
+  border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,.28); pointer-events: none; background: #b98352; }
+.inset.corn { height: 168px; }
+
+.msg { position: fixed; left: 0; right: 0; top: 33%; text-align: center; pointer-events: none; z-index: 6; font-family: var(--round); font-weight: 900; font-size: 44px; letter-spacing: .5px; color: #fff;
+  text-shadow: 0 3px 0 rgba(0,0,0,.3), 0 0 22px rgba(0,60,140,.55); opacity: 0; transform: scale(.7); transition: opacity .2s, transform .25s cubic-bezier(.2,1.6,.4,1); padding: 0 12px; }
+.msg.show { opacity: 1; transform: scale(1); }
+.msg small { display: block; font-size: 19px; font-weight: 800; letter-spacing: 0; margin-top: 4px; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.msg.big { color: #ffe27a; }
+.msg.bad { color: #ffd1cc; text-shadow: 0 3px 0 rgba(0,0,0,.3), 0 0 22px rgba(200,40,30,.6); }
+.msg.cool { color: #bff3ff; }
+.msg.mid { font-size: 32px; }
+.tip { position: fixed; left: 50%; top: 58%; transform: translateX(-50%); width: max-content; max-width: 90vw; text-align: center; pointer-events: none; z-index: 5;
+  background: rgba(14,32,60,.7); color: #fff; font-weight: 700; font-size: 14px; line-height: 1.3; padding: 8px 14px; border-radius: 14px; transition: opacity .3s; }
+.tip.hide { opacity: 0; }
+.turn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); z-index: 5; pointer-events: none; display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.92); color: #142847; font-weight: 800; font-size: 15px; padding: 8px 15px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,.2); white-space: nowrap; max-width: 92vw; transition: opacity .25s; }
+.turn:empty, .turn.hide { opacity: 0; }
+.turn i { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 2px rgba(0,0,0,.25); }
+.turn small { font-weight: 700; color: #6a7a92; font-size: 13px; }
+.power { position: fixed; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 62px); z-index: 5; pointer-events: none; background: rgba(14,32,60,.7); color: #ffe27a; font-weight: 800; font-size: 14px; padding: 6px 11px; border-radius: 12px; opacity: 0; transition: opacity .3s; }
+.power.show { opacity: 1; }
+.loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 17px; pointer-events: none; z-index: 4; text-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.loading.hide { display: none; }
+
+/* the Menu's game tabs */
+.ggmenu .modes { margin: 4px 0 4px; }
+.modes { display: none; }
+.ggmenu .modes, .modes.cardmodes { display: flex; }
+.modes.cardmodes { margin: -6px 0 12px; }
+#ovStart h2 { display: none; }
+
+/* the opponent picker */
+.startnote { color: var(--muted); font-size: 14px; margin: -2px 0 10px; }
+.opps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+.opps button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  padding: 8px 14px; text-align: left; font: inherit; cursor: pointer; }
+.opps button:active { transform: scale(.98); }
+.opps button .av { font-style: normal; width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 17px; }
+.opps button .av svg { width: 22px; height: 22px; }
+.opps button span { display: flex; flex-direction: column; min-width: 0; }
+.opps button b { font-size: 16px; font-weight: 800; }
+.opps button small { font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.25; }
+.opps button em { margin-left: auto; font-style: normal; font-size: 12px; font-weight: 800; color: var(--muted); flex: none; }
+.opps .lv1 .av { background: #2bb673; } .opps .lv2 .av { background: #f2a516; } .opps .lv3 .av { background: #d9452f; }
+.opps .two .av { background: #5a54f0; } .opps .prac .av { background: #1aa0b8; }
+.opps h3 { margin: 6px 2px 0; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; text-align: left; }
+
+/* sheets */
+.row.col { flex-direction: column; align-items: stretch; }
+.seg { display: flex; gap: 3px; background: var(--surface-2); border-radius: 12px; padding: 3px; flex: none; }
+.seg button { min-width: 50px; height: 36px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-weight: 800; font-size: 15px; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.names { display: flex; gap: 8px; margin-top: 8px; }
+.names input { flex: 1; min-width: 0; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 16px; font-weight: 700; padding: 0 12px; }
+.endscore { font-size: 50px; font-weight: 900; color: var(--ink); line-height: 1; margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
+.endscore i { font-style: normal; color: var(--muted); font-weight: 700; margin: 0 6px; }
+.endnote { color: var(--muted); font-size: 15px; margin: 0 0 10px; }
+.frames { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 0 0 12px; }
+.frames span b { color: var(--muted); font-weight: 800; margin-right: 2px; }
+.frames span { font-size: 12px; font-weight: 800; background: var(--surface-2); border-radius: 8px; padding: 3px 6px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stsec { font-size: 15px; font-weight: 800; margin: 10px 2px 6px; color: var(--ink); }
+.stnote { color: var(--muted); font-size: 13px; margin: 2px 2px 8px; }
+.vs { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0 0 8px; }
+.vs td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.vs td:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) { .scorebd .pts { font-size: 21px; } .scorebd .nm { font-size: 12px; } .msg { font-size: 38px; } }
+/* the New game card on short phones: tighter, and it scrolls if it still doesn't fit */
+#ovStart .card { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+@media (max-height: 720px) {
+  #ovStart .card { padding: 14px 14px 12px; }
+  .opps { gap: 6px; }
+  .opps button { min-height: 50px; padding: 5px 12px; }
+  .opps button .av { width: 32px; height: 32px; font-size: 15px; }
+  .opps button small { font-size: 11.5px; }
+  .opps h3 { margin-top: 2px; }
+  .startnote { margin-bottom: 6px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="dk-logo" viewBox="0 0 100 100"><defs><linearGradient id="dkS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b8fe0"/><stop offset=".55" stop-color="#9fd3f5"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#dkS)"/>
+<rect y="50" width="100" height="50" fill="#b98352"/><path d="M0 58h100M0 68h100M0 80h100M0 93h100" stroke="#6b4426" stroke-width="1.6"/>
+<path d="M36 100L44 44h12l8 56z" fill="#efe4cc"/><path d="M50 50l-5 12h10z" fill="none" stroke="#20406e" stroke-width="1.8"/><path d="M43.5 70h13" stroke="#20406e" stroke-width="1.8"/>
+<ellipse cx="50" cy="84" rx="9" ry="4.2" fill="#a8302a"/><ellipse cx="50" cy="82.6" rx="9" ry="4.2" fill="#e8453c"/>
+<g transform="translate(76 30)"><circle r="15" fill="#ff5a1f"/><circle r="8" fill="url(#dkS)"/><path d="M0-15v7M0 8v7M-15 0h7M8 0h7" stroke="#fff" stroke-width="5.5"/><circle r="15" fill="none" stroke="#efe2c4" stroke-width="1.6"/></g>
+<rect x="9" y="22" width="22" height="13" rx="2.5" fill="#2f6fd6" transform="rotate(-12 20 28)"/></symbol>
+<symbol id="i-restart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></g></symbol>
+<symbol id="i-two" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M2.5 20c.5-3.6 3-5.6 6-5.6s5.5 2 6 5.6M14.5 14.6c3 .1 5.2 1.8 6 5.4"/></g></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></g></symbol>
+</defs></svg>
+
+<canvas id="cv3"></canvas>
+<canvas id="swipe"></canvas>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#dk-logo"/></svg>
+      <h1>Lido Deck</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnNew" aria-label="New game"><svg viewBox="0 0 24 24"><use href="#i-restart"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+  <!-- the scoreboard: both sides, their points and the pieces they have left this frame -->
+  <div class="scorebd" id="scorebd">
+    <div class="sd" id="sd0"><div class="nm"><i class="dot"></i><b id="nm0">You</b></div><div class="pts" id="pt0">0</div><div class="left" id="lf0"></div></div>
+    <div class="mid" id="mid">to 75</div>
+    <div class="sd" id="sd1"><div class="nm"><b id="nm1">Sunny</b><i class="dot"></i></div><div class="pts" id="pt1">0</div><div class="left" id="lf1"></div></div>
+  </div>
+  <div class="framechip" id="framechip"></div>
+  <canvas class="inset" id="inset" width="96" height="190"></canvas>
+  <div class="msg" id="msg"></div>
+  <div class="tip" id="tip"></div>
+  <div class="turn" id="turn"></div>
+  <div class="power" id="power"></div>
+  <div class="loading" id="loading">Setting up the deck…</div>
+</div>
+
+<!-- the two games (moved into the Menu sheet) -->
+<div class="modes" id="modes">
+  <button data-mode="shuffle">Shuffleboard</button>
+  <button data-mode="corn">Cornhole</button>
+</div>
+
+<!-- who to play: the phone (three levels), two players, or practice -->
+<div class="overlay center" id="ovStart">
+  <div class="card" role="dialog" aria-label="New game">
+    <div class="modes cardmodes" id="cardModes"><button data-mode="shuffle">Shuffleboard</button><button data-mode="corn">Cornhole</button></div>
+    <h2 id="startTitle">Shuffleboard</h2>
+    <div class="startnote" id="startNote"></div>
+    <div class="opps" id="opps"></div>
+    <div class="actions" id="startActions"></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your deck records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <label class="row"><div>Sound<small>Sliding discs, clacks, bag thuds, a cheer for the big ones, the ship's horn.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <div class="row"><div>Shuffleboard game to<small>Points to win. Counts from the next new game.</small></div>
+        <div class="seg" id="segTarget"><button data-t="50">50</button><button data-t="75">75</button></div></div>
+      <label class="row"><div>Aim line<small>A dashed line showing where you're aiming.</small></div>
+        <span class="switch"><input type="checkbox" id="setAim"><span></span></span></label>
+      <div class="row col"><div>Two-player names<small>For pass-and-play games.</small></div>
+        <div class="names"><input id="name0" maxlength="12" autocomplete="off" aria-label="Player 1 name"><input id="name1" maxlength="12" autocomplete="off" aria-label="Player 2 name"></div></div>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">2</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Lido Deck</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Game over / confirm -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon"><svg viewBox="0 0 100 100"><use href="#dk-logo"/></svg></div>
+    <h2 id="endTitle"></h2>
+    <div id="endText"></div>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Lido Deck logic: deck shuffleboard and cornhole, the rules, the physics and the phone's players. No drawing here; the
+   same file runs in Node for tools/check.mjs, so the bots, the checks and the game all use exactly this physics.
+   Units are meters and seconds. x runs across (+x to the player's right as they look down the court), z runs away
+   from the player, y up.
+
+   SHUFFLEBOARD (DK.SB): a deck court 6 ft wide and 52 ft long. Discs (6 in across) are set behind the near baseline
+   and pushed with the cue toward the scoring triangle at the far end: 10 at the tip, then 8 | 8, 7 | 7 and "10 OFF"
+   at the base, on the far baseline. A disc counts only if it lies completely inside an area, clear of every line.
+   A disc that stops short of the far dead line, past the far baseline, or off the court is dead and taken away.
+   Discs are drawn in 3D but slide in 2D: our own circle physics (steady sliding friction, disc-to-disc bounces with a
+   little rub that spins them). It is small, exact and fast, so a bot can try hundreds of pushes before it shoots.
+
+   CORNHOLE (DK.CH): boards 2 x 4 ft, front edge 3.5 in high, back 12 in, a 6 in hole centered 9 in from the top,
+   27 ft apart (front edge to front edge). The bag flies a real arc, lands flat (no bounce to speak of; a landing
+   kills most of its speed, as a soft corn bag does), slides on the slope with high friction, stops, falls off an
+   edge, drops in the hole, or gets pushed. An honest simpler model than a full rigid-body engine, chosen on purpose:
+   bags are soft circles on the board plane (they push each other, pile on top of one another, hang on the hole's
+   lip and slip in), flights and falls are 3D. It never tunnels (every step checks the path), and it is fast enough
+   for the bots to simulate every candidate throw. */
+var DK = (function () {
+  'use strict';
+  var FT = 0.3048, IN = 0.0254, GR = 9.81, DT = 1 / 240;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function rng(seed) { var s = (Math.abs(seed | 0) % 2147483646) + 1; return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+  function gauss(r) { var u = 1 - r(), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function now() { return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(); }
+
+  // =====================================================================================================
+  // SHUFFLEBOARD
+  // =====================================================================================================
+  var SB = {
+    L: 52 * FT, W: 6 * FT, HALF: 3 * FT, R: 3 * IN, LINE: 0.75 * IN,
+    NEAR_BASE: 6.5 * FT,           // the near baseline; discs are set behind it
+    ZSTART: 1.80,                  // where a disc sits before the push
+    XMAX: 0.74,                    // how far to the side a disc may be set
+    ZD: 33.5 * FT,                 // far dead line: a disc must get past it
+    ZA: 35 * FT, Z10: 38 * FT, Z8: 41 * FT, Z7: 44 * FT, ZB: 45.5 * FT,   // triangle tip, band lines, far baseline
+    DECEL: 0.58,                   // sliding friction on the painted court (m/s^2): about 10 m from 3.4 m/s
+    DECEL_OFF: 2.6,                // on the teak beside the court (rougher)
+    E: 0.82, MU: 0.12,             // disc-disc bounce and rub
+    SPIN_DEC: 3.0
+  };
+  SB.M = SB.R + SB.LINE / 2;       // a disc's center must stay this far from every line to count
+  var KS = (SB.ZB - SB.ZA) / Math.hypot(SB.HALF, SB.ZB - SB.ZA);   // turns "inside the triangle by dx" into a distance
+  function hw(z) { return SB.HALF * (z - SB.ZA) / (SB.ZB - SB.ZA); }
+  SB.hw = hw;
+  // the area a disc at (x, z) scores: 10, 8, 7, -10 (10 OFF) or 0 (touching a line, or outside the triangle)
+  SB.zone = function (x, z) {
+    var m = SB.M, ax = Math.abs(x);
+    if ((hw(z) - ax) * KS < m) return 0;
+    if (z < SB.Z10 - m) return 10;
+    if (z > SB.Z10 + m && z < SB.Z8 - m) return ax > m ? 8 : 0;
+    if (z > SB.Z8 + m && z < SB.Z7 - m) return ax > m ? 7 : 0;
+    if (z > SB.Z7 + m && z < SB.ZB - m) return -10;
+    return 0;
+  };
+  // why a resting disc is out of play (or null): off the court, past the far baseline, short of the far dead line
+  SB.judge = function (d) {
+    if (d.off || Math.abs(d.x) > SB.HALF || d.z > SB.L) return 'off';
+    if (d.z > SB.ZB) return 'long';
+    if (d.z < SB.ZD) return 'short';
+    return null;
+  };
+  SB.score = function (discs) {
+    var s = [0, 0];
+    discs.forEach(function (d) { if (!d.dead) s[d.side] += SB.zone(d.x, d.z); });
+    return s;
+  };
+  function sbCopy(d) { return { id: d.id, side: d.side, x: d.x, z: d.z, vx: d.vx || 0, vz: d.vz || 0, w: d.w || 0, a: d.a || 0, off: !!d.off, dead: d.dead || null }; }
+  SB.sim = function (discs) { return { d: discs.map(sbCopy), t: 0, ev: [], moving: false }; };
+  SB.speedFor = function (dist) { return Math.sqrt(2 * SB.DECEL * Math.max(0, dist)); };
+  SB.push = function (sim, id, v, ang) {
+    var d = sim.d.filter(function (q) { return q.id === id; })[0];
+    d.vx = v * Math.sin(ang); d.vz = v * Math.cos(ang); d.w = 0; sim.moving = true; sim.t = 0;
+    return d;
+  };
+  // one step (1/240 s): slide, then disc-disc contacts
+  SB.step = function (sim) {
+    var a = sim.d, n = a.length, i, j, p, q, moving = false, D = 2 * SB.R;
+    for (i = 0; i < n; i++) {
+      p = a[i]; if (p.dead) continue;
+      if (p.vx || p.vz) {
+        var sp = Math.sqrt(p.vx * p.vx + p.vz * p.vz), dec = (p.off ? SB.DECEL_OFF : SB.DECEL) * DT;
+        if (sp <= dec) { p.vx = 0; p.vz = 0; }
+        else { var k = (sp - dec) / sp; p.vx *= k; p.vz *= k; }
+        p.x += p.vx * DT; p.z += p.vz * DT;
+        if (!p.off && (Math.abs(p.x) > SB.HALF || p.z > SB.L)) p.off = true;   // slid off the court onto the deck
+      }
+      if (p.w) { var wd = SB.SPIN_DEC * DT; p.w = Math.abs(p.w) <= wd ? 0 : p.w - (p.w > 0 ? wd : -wd); p.a += p.w * DT; }
+    }
+    for (i = 0; i < n; i++) {
+      p = a[i]; if (p.dead || p.off) continue;
+      var pm = p.vx || p.vz;
+      for (j = i + 1; j < n; j++) {
+        q = a[j]; if (q.dead || q.off) continue;
+        if (!pm && !q.vx && !q.vz) continue;              // two resting discs never need a check
+        var dx = q.x - p.x, dz = q.z - p.z, d2 = dx * dx + dz * dz;
+        if (d2 >= D * D || d2 === 0) continue;
+        var dd = Math.sqrt(d2), nx = dx / dd, nz = dz / dd, tx = -nz, tz = nx;
+        var ov = (D - dd) / 2; p.x -= nx * ov; p.z -= nz * ov; q.x += nx * ov; q.z += nz * ov;
+        var rvx = q.vx - p.vx, rvz = q.vz - p.vz, vn = rvx * nx + rvz * nz;
+        if (vn < 0) {
+          var J = -(1 + SB.E) * vn / 2;
+          p.vx -= J * nx; p.vz -= J * nz; q.vx += J * nx; q.vz += J * nz;
+          // the rub at the contact: equal discs, so a sixth of the sideways slip (capped by friction); it sets them spinning
+          var vt = rvx * tx + rvz * tz - (q.w + p.w) * SB.R, Jt = clamp(-vt / 6, -SB.MU * J, SB.MU * J);
+          p.vx -= Jt * tx; p.vz -= Jt * tz; q.vx += Jt * tx; q.vz += Jt * tz;
+          p.w -= 2 * Jt / SB.R; q.w -= 2 * Jt / SB.R;
+          if (sim.ev.length < 200) sim.ev.push({ t: sim.t, k: 'clack', p: J, i: p.id, j: q.id });
+        }
+        pm = p.vx || p.vz;
+      }
+    }
+    for (i = 0; i < n; i++) if (!a[i].dead && (a[i].vx || a[i].vz)) { moving = true; break; }
+    sim.moving = moving; sim.t += DT;
+  };
+  SB.run = function (sim, maxT) { var lim = maxT || 20; while (sim.t < lim) { SB.step(sim); if (!sim.moving) break; } return sim; };
+  // the push from a swipe: finger speed f (screen heights a second at the end of the swipe) and the swipe's tilt
+  // (radians, + to the right). Aim help: a phone can't read a finger's speed precisely, so the push is gentle on
+  // the finger in the placing range (the travel grows with f^0.4: a swipe 20% faster goes about 7% further, where
+  // a real push would go 44% further), and steeper above it, for hits. A straight-ish swipe (within 2.6 degrees)
+  // goes straight.
+  SB.F_REF = 2.0; SB.D_REF = 9.45;
+  SB.fromSwipe = function (f, tilt) {
+    var r = Math.max(0.05, f / SB.F_REF), D = r <= 1.8 ? SB.D_REF * Math.pow(r, 0.4) : SB.D_REF * Math.pow(1.8, 0.4) * Math.pow(r / 1.8, 1.8);
+    var v = clamp(SB.speedFor(D), 1.0, 6.5);
+    var t = Math.abs(tilt) < 0.045 ? 0 : (tilt - (tilt > 0 ? 0.045 : -0.045)) * 0.16;
+    return { v: v, ang: clamp(t, -0.12, 0.12), power: Math.min(99, Math.round(50 * r)) };
+  };
+
+  // =====================================================================================================
+  // CORNHOLE
+  // =====================================================================================================
+  var CH = {
+    BW: 2 * FT, BL: 4 * FT, FRONT_H: 3.5 * IN, BACK_H: 12 * IN, HOLE_R: 3 * IN, HOLE_W: 4 * FT - 9 * IN,
+    ZF: 27 * FT,                   // the far board's front edge (the near board's front edge is the foul line, z = 0)
+    BAG: 6 * IN, TH: 0.034,        // a bag 6 in square, about 1.3 in thick lying down
+    RB: 0.068,                     // bags push each other as circles this size (a little smaller than the bag: soft edges)
+    Y0: 0.70, Z0: 0.0,             // where the hand lets go
+    ELEV: 33 * Math.PI / 180,      // the throw's rise
+    XBOX: [0.40, 0.85],            // the pitcher's boxes beside the near board (either side)
+    MU_IMP: 0.72,                  // a landing kills tangential speed up to this share of its downward speed
+    MU_K: 0.45, MU_S: 0.58,        // bag on the board, sliding and holding
+    MU_BB: 0.5,                    // bag on bag (fabric on fabric: a bag can ride up over a blocker)
+    E_BB: 0.12,                    // bag-bag bounce
+    PUSH: 0.35,                    // a bag landing on another shoves it this share of the speed it loses
+    STACK_D: 0.105, STACK_OFF: 0.10,
+    LIP: 0.05, SAG: 0.75,          // a bag hanging over the hole's edge sags toward it (more the further it hangs)
+    MU_DECK: 0.75
+  };
+  CH.SIN = (CH.BACK_H - CH.FRONT_H) / CH.BL; CH.COS = Math.sqrt(1 - CH.SIN * CH.SIN);
+  CH.ZH = CH.ZF + CH.HOLE_W * CH.COS; CH.YH = CH.FRONT_H + CH.HOLE_W * CH.SIN;
+  CH.ZBACK = CH.ZF + CH.BL * CH.COS;
+  // board coordinates (u across, w up the slope from the front edge) to the world (on the top surface)
+  CH.toWorld = function (u, w, h) { h = h || 0; return { x: u, y: CH.FRONT_H + w * CH.SIN + h * CH.COS, z: CH.ZF + w * CH.COS - h * CH.SIN }; };
+  function boardOf(x, y, z) { var ry = y - CH.FRONT_H, rz = z - CH.ZF; return { u: x, w: ry * CH.SIN + rz * CH.COS, h: ry * CH.COS - rz * CH.SIN }; }
+  CH.boardOf = boardOf;
+  function onBoard(u, w) { return Math.abs(u) <= CH.BW / 2 && w >= 0 && w <= CH.BL; }
+  function holeDist(u, w) { return Math.hypot(u, w - CH.HOLE_W); }
+  CH.holeDist = holeDist;
+  CH.points = function (b) { return b.st === 'hole' ? 3 : b.st === 'board' ? 1 : 0; };
+  CH.tally = function (bags) {
+    var p = [0, 0], h = [0, 0], o = [0, 0];
+    bags.forEach(function (b) { var v = CH.points(b); p[b.side] += v; if (v === 3) h[b.side]++; if (v === 1) o[b.side]++; });
+    return { pts: p, holes: h, board: o };
+  };
+  function chCopy(b) {
+    var c = {}; for (var k in b) c[k] = b[k];
+    c.vx = c.vx || 0; c.vy = c.vy || 0; c.vz = c.vz || 0; c.vu = c.vu || 0; c.vw = c.vw || 0; c.top = c.top == null ? -1 : c.top;
+    c.yaw = c.yaw || 0; c.spin = c.spin || 0; c.ht = c.ht || 0; return c;
+  }
+  CH.sim = function (bags) { return { b: bags.map(chCopy), t: 0, ev: [], moving: false }; };
+  // the throw: from the box at x0, a horizontal distance D (to where it would come down at mid-board height), and an
+  // aim offset (radians) from the line to the hole
+  CH.aimBase = function (x0) { return Math.atan2(-x0, CH.ZH - CH.Z0); };
+  CH.speedFor = function (D) {
+    var a = CH.ELEV, yl = CH.FRONT_H + 0.45 * (CH.BACK_H - CH.FRONT_H) + CH.TH / 2, c = Math.cos(a);
+    var den = 2 * c * c * (CH.Y0 - yl + D * Math.tan(a));
+    return den > 0 ? Math.sqrt(GR * D * D / den) : 3;
+  };
+  CH.throwBag = function (sim, id, x0, v, aim, spin) {
+    var b = sim.b.filter(function (q) { return q.id === id; })[0];
+    var psi = CH.aimBase(x0) + aim, h = v * Math.cos(CH.ELEV);
+    b.st = 'fly'; b.x = x0; b.y = CH.Y0; b.z = CH.Z0;
+    b.vx = h * Math.sin(psi); b.vz = h * Math.cos(psi); b.vy = v * Math.sin(CH.ELEV);
+    b.spin = spin == null ? 7 : spin; b.yaw = 0; b.air = false; b.top = -1; b.ht = 0; b.why = null;
+    sim.moving = true; sim.t = 0; sim.thrown = id;
+    return b;
+  };
+  function byId(sim, id) { for (var i = 0; i < sim.b.length; i++) if (sim.b[i].id === id) return sim.b[i]; return null; }
+  // a bag comes down on the board top at board point (u, w) with world velocity v
+  function land(sim, b, c, vx, vy, vz) {
+    var vn = vy * CH.COS - vz * CH.SIN, vw = vy * CH.SIN + vz * CH.COS, vu = vx;
+    var dh = holeDist(c.u, c.w);
+    sim.ev.push({ t: sim.t, k: 'land', p: Math.min(1, -vn / 7), on: 'board', id: b.id });
+    if (dh < CH.HOLE_R - 0.012) { b.st = 'hole'; b.air = true; b.u = c.u; b.w = c.w; b.ht = 0; b.vu = vu * 0.2; b.vw = vw * 0.2; sim.ev.push({ t: sim.t, k: 'hole', id: b.id, air: true }); return; }
+    // the landing: the corn soaks up the fall; friction during the hit takes off sideways speed in proportion
+    var sp = Math.hypot(vu, vw), loss = CH.MU_IMP * Math.max(0, -vn), under = null, best = CH.STACK_D;
+    sim.b.forEach(function (q) { if (q !== b && q.st === 'board' && q.top < 0) { var d = Math.hypot(q.u - c.u, q.w - c.w); if (d < best) { best = d; under = q; } } });
+    if (under) loss *= 0.85;   // (the bag underneath gives a little, so the one on top keeps a bit more of its slide)
+    var after = Math.max(0, sp - loss), k = sp > 0 ? after / sp : 0;
+    if (under) {   // it came down on another bag: it stays on top (for now) and shoves the one underneath
+      var lost = sp - after;
+      if (sp > 0) { under.vu += CH.PUSH * lost * vu / sp; under.vw += CH.PUSH * lost * vw / sp; under.moving = true; }
+      b.top = under.id; sim.ev.push({ t: sim.t, k: 'land', p: 0.4, on: 'bag', id: b.id });
+    } else b.top = -1;
+    b.st = 'board'; b.u = c.u; b.w = c.w; b.vu = vu * k; b.vw = vw * k; b.ht = 0;
+  }
+  // gravity along the slope plus the sag into the hole for a bag hanging over its edge
+  function pull(b) {
+    var fu = 0, fw = -GR * CH.SIN;
+    if (b.top < 0) {
+      var dh = holeDist(b.u, b.w);
+      if (dh < CH.HOLE_R + CH.LIP && dh > 1e-6) {
+        var s = CH.SAG * GR * clamp(1 - (dh - CH.HOLE_R) / CH.LIP, 0, 1);
+        fu += -s * b.u / dh; fw += s * (CH.HOLE_W - b.w) / dh;
+      }
+    }
+    return [fu, fw];
+  }
+  // slide one bag on the board (velocity relative to what it rests on)
+  function slide(b, base) {
+    var mu = base ? CH.MU_BB : CH.MU_K, bu = base ? base.vu : 0, bw = base ? base.vw : 0;
+    var ru = b.vu - bu, rw = b.vw - bw, f = pull(b), sp = Math.hypot(ru, rw), fr = mu * GR * CH.COS;
+    if (sp < 0.015) {
+      // at rest (relative): it stays put unless the pull beats static friction
+      var fm = Math.hypot(f[0], f[1]), hold = (base ? CH.MU_BB : CH.MU_S) * GR * CH.COS;
+      if (fm <= hold) { ru = 0; rw = 0; }
+      else { ru += (f[0] - fr * f[0] / fm) * DT; rw += (f[1] - fr * f[1] / fm) * DT; }
+    } else {
+      ru += f[0] * DT; rw += f[1] * DT;
+      var nsp = Math.hypot(ru, rw), dec = fr * DT;
+      if (nsp <= dec) { ru = 0; rw = 0; } else { ru *= (nsp - dec) / nsp; rw *= (nsp - dec) / nsp; }
+    }
+    b.vu = ru + bu; b.vw = rw + bw;
+    b.u += b.vu * DT; b.w += b.vw * DT;
+    if (b.vu || b.vw) b.yaw += (b.vu * 0.6 - b.vw * 0.0) * DT;
+  }
+  function fallFrom(sim, b, why) {
+    var p = CH.toWorld(b.u, b.w, CH.TH / 2 + b.ht);
+    b.st = 'fall'; b.x = p.x; b.y = p.y; b.z = p.z;
+    b.vx = b.vu; b.vz = b.vw * CH.COS; b.vy = b.vw * CH.SIN - 0.3; b.top = -1; b.why = why || 'off';
+    sim.ev.push({ t: sim.t, k: 'off', id: b.id });
+  }
+  CH.step = function (sim) {
+    var A = sim.b, n = A.length, i, j, b, moving = false;
+    for (i = 0; i < n; i++) {
+      b = A[i];
+      if (b.st === 'fly' || b.st === 'fall') {
+        var px = b.x, py = b.y, pz = b.z;
+        // (the exact arc over the step, so the landing spot doesn't drift with the step size)
+        b.x += b.vx * DT; b.y += b.vy * DT - 0.5 * GR * DT * DT; b.z += b.vz * DT; b.vy -= GR * DT; b.yaw += b.spin * DT;
+        moving = true;
+        if (b.st === 'fly') {
+          // the board top: did the bag's underside cross it this step, over the board?
+          var c0 = boardOf(px, py, pz), c1 = boardOf(b.x, b.y, b.z), half = CH.TH / 2;
+          if (c0.h > half && c1.h <= half) {
+            var k = (c0.h - half) / (c0.h - c1.h), cu = c0.u + (c1.u - c0.u) * k, cw = c0.w + (c1.w - c0.w) * k;
+            if (onBoard(cu, cw)) { land(sim, b, { u: cu, w: cw }, b.vx, b.vy, b.vz); continue; }
+          }
+          // the board's front face (a low throw into the front edge)
+          if (pz < CH.ZF && b.z >= CH.ZF && b.y < CH.FRONT_H + half && Math.abs(b.x) < CH.BW / 2 + 0.03) {
+            b.z = CH.ZF - 0.01; b.vz = -0.2 * b.vz; b.vx *= 0.5; b.st = 'fall'; b.why = 'short';
+            sim.ev.push({ t: sim.t, k: 'land', p: 0.5, on: 'front', id: b.id });
+          }
+          // under the board (came in from the side, low): it hits the frame and drops
+          var cb = boardOf(b.x, b.y, b.z);
+          if (b.st === 'fly' && cb.h < half && onBoard(cb.u, cb.w) && cb.h > -0.3) { b.st = 'fall'; b.vx *= 0.3; b.vz *= -0.2; b.why = 'off'; }
+        }
+        if (b.y <= CH.TH / 2) {   // the deck
+          b.y = CH.TH / 2;
+          sim.ev.push({ t: sim.t, k: 'land', p: Math.min(1, -b.vy / 7), on: 'deck', id: b.id });
+          b.st = 'deck'; b.vy = 0; b.vx *= 0.35; b.vz *= 0.35; b.spin *= 0.3;
+          if (!b.why) b.why = b.z < CH.ZF ? 'short' : b.z > CH.ZBACK ? 'long' : 'wide';
+        }
+      } else if (b.st === 'deck') {
+        var sp = Math.hypot(b.vx, b.vz);
+        if (sp > 0) {
+          moving = true;
+          var dec = CH.MU_DECK * GR * DT;
+          if (sp <= dec) { b.vx = 0; b.vz = 0; } else { b.vx *= (sp - dec) / sp; b.vz *= (sp - dec) / sp; }
+          var nz = b.z + b.vz * DT;
+          // the board's front face and sides stop a bag sliding on the deck
+          if (Math.abs(b.x) < CH.BW / 2 + 0.07 && b.z <= CH.ZF - 0.07 && nz > CH.ZF - 0.07) { nz = CH.ZF - 0.07; b.vz = 0; }
+          b.x += b.vx * DT; b.z = nz; b.yaw += b.spin * DT; b.spin *= 0.98;
+        }
+      } else if (b.st === 'hole') {
+        if (b.ht > -0.25) { moving = true; b.ht -= DT * 1.6; b.u += (0 - b.u) * 0.08; b.w += (CH.HOLE_W - b.w) * 0.08; }
+      }
+    }
+    // bags on the board: the ones lying on the board first, then the ones on top of them (they ride along)
+    for (var pass = 0; pass < 3; pass++) {
+      for (i = 0; i < n; i++) {
+        b = A[i]; if (b.st !== 'board') continue;
+        var base = b.top >= 0 ? byId(sim, b.top) : null;
+        if (base && base.st !== 'board') { base = null; b.top = -1; }
+        var depth = base ? (base.top >= 0 ? 2 : 1) : 0;
+        if (depth !== pass) continue;
+        slide(b, base);
+        if (base && Math.hypot(b.u - base.u, b.w - base.w) > CH.STACK_OFF) b.top = -1;   // slid off the bag it was on
+        if (b.vu || b.vw) moving = true;
+      }
+    }
+    // bag against bag on the board (not a bag and the one it lies on)
+    var D = 2 * CH.RB;
+    for (i = 0; i < n; i++) {
+      var p = A[i]; if (p.st !== 'board') continue;
+      for (j = i + 1; j < n; j++) {
+        var q = A[j]; if (q.st !== 'board' || p.top === q.id || q.top === p.id) continue;
+        if (p.top >= 0 && p.top === q.top) continue;
+        var du = q.u - p.u, dw = q.w - p.w, d2 = du * du + dw * dw;
+        if (d2 >= D * D || d2 === 0) continue;
+        if (!p.vu && !p.vw && !q.vu && !q.vw && d2 > (D - 0.03) * (D - 0.03)) continue;   // soft bags may rest a little overlapped
+        var dd = Math.sqrt(d2), nu = du / dd, nw = dw / dd, ov = Math.min(0.004, (D - dd) / 2);
+        p.u -= nu * ov; p.w -= nw * ov; q.u += nu * ov; q.w += nw * ov;
+        var vn = (q.vu - p.vu) * nu + (q.vw - p.vw) * nw;
+        if (vn < 0) {
+          var J = -(1 + CH.E_BB) * vn / 2;
+          p.vu -= J * nu; p.vw -= J * nw; q.vu += J * nu; q.vw += J * nw;
+          if (J > 0.05 && sim.ev.length < 200) sim.ev.push({ t: sim.t, k: 'bump', p: J, i: p.id, j: q.id });
+          moving = true;
+        }
+      }
+    }
+    // the hole and the edges
+    for (i = 0; i < n; i++) {
+      b = A[i]; if (b.st !== 'board') continue;
+      if (b.top < 0) {
+        var spd = Math.hypot(b.vu, b.vw), skim = clamp((spd - 1.2) * 0.02, 0, 0.03);
+        if (holeDist(b.u, b.w) < CH.HOLE_R - skim) { b.st = 'hole'; b.ht = 0; sim.ev.push({ t: sim.t, k: 'hole', id: b.id }); moving = true; continue; }
+      }
+      if (!onBoard(b.u, b.w)) { fallFrom(sim, b, b.w < 0 ? 'short' : 'off'); moving = true; }
+    }
+    // a bag whose support left (fell in or off) now lies on the board itself
+    for (i = 0; i < n; i++) { b = A[i]; if (b.st === 'board' && b.top >= 0) { var s2 = byId(sim, b.top); if (!s2 || s2.st !== 'board') b.top = -1; } }
+    // the height a bag is drawn at: on top of another bag, by how much they overlap
+    for (i = 0; i < n; i++) {
+      b = A[i]; if (b.st !== 'board') continue;
+      var h = 0;
+      if (b.top >= 0) { var s3 = byId(sim, b.top), od = Math.hypot(b.u - s3.u, b.w - s3.w); h = CH.TH * clamp(1 - od / (CH.BAG * 1.05), 0.15, 1) + (s3.ht || 0); }
+      b.ht = h;
+    }
+    sim.moving = moving; sim.t += DT;
+  };
+  CH.run = function (sim, maxT) { var lim = maxT || 12; while (sim.t < lim) { CH.step(sim); if (!sim.moving) break; } return sim; };
+  // a throw from a swipe (same aim help as the push in shuffleboard)
+  CH.F_REF = 2.0; CH.D_REF = 9.15;
+  CH.fromSwipe = function (f, tilt) {
+    var r = Math.max(0.05, f / CH.F_REF), D = r <= 1.5 ? CH.D_REF * Math.pow(r, 0.35) : CH.D_REF * Math.pow(1.5, 0.35) * Math.pow(r / 1.5, 0.9);
+    // (no straight-swipe dead zone here: a straight swipe already heads for the hole, so the finger's own wobble
+    // is what keeps the hole hard)
+    var t = Math.abs(tilt) < 0.012 ? 0 : (tilt - (tilt > 0 ? 0.012 : -0.012)) * 0.12;
+    return { v: CH.speedFor(clamp(D, 3, 16)), aim: clamp(t, -0.1, 0.1), power: Math.min(99, Math.round(50 * r)), D: D };
+  };
+
+  // =====================================================================================================
+  // THE MATCH (both games share it)
+  // =====================================================================================================
+  var BOTS = {
+    easy: { name: 'Sunny', blurb: 'Easygoing, here for the sunshine' },
+    medium: { name: 'Skipper', blurb: 'A steady hand on deck' },
+    hard: { name: 'Commodore', blurb: 'Hasn’t lost a frame since the maiden voyage' }
+  };
+  function newGame(mode, opp, opts) {
+    opts = opts || {};
+    var G = {
+      v: 1, mode: mode, opp: opp, target: mode === 'shuffle' ? (opts.target === 50 ? 50 : 75) : 21,
+      names: opts.names || ['You', opp === 'two' ? 'Player 2' : opp === 'practice' ? '' : BOTS[opp] ? BOTS[opp].name : '?'],
+      score: [0, 0], frame: 1, first: 0, shot: 0, pieces: [], hist: [], nextId: 1,
+      seed: opts.seed != null ? opts.seed : Math.floor(Math.random() * 1e9),
+      xs: mode === 'shuffle' ? [0.25, -0.25] : [0.55, -0.55],
+      over: false, winner: -1,
+      gs: { shots: [0, 0], best: [0, 0], tens: [0, 0], kitchens: [0, 0], offs: [0, 0], holes: [0, 0], swish: [0, 0], four: [0, 0], raw: [0, 0] }
+    };
+    return G;
+  }
+  function perFrame(G) { return G.opp === 'practice' ? 4 : 8; }
+  function shooter(G) { return G.opp === 'practice' ? 0 : (G.first + G.shot) % 2; }
+  // pieces a side still has to play this frame
+  function left(G, side) {
+    if (G.opp === 'practice') return side === 0 ? 4 - G.shot : 0;
+    var done = 0; for (var k = 0; k < G.shot; k++) if ((G.first + k) % 2 === side) done++;
+    return 4 - done;
+  }
+  // the frame's (or inning's) points as things stand: shuffleboard counts both sides' discs; cornhole cancels
+  function framePoints(G, pieces) {
+    pieces = pieces || G.pieces;
+    if (G.mode === 'shuffle') return SB.score(pieces);
+    var t = CH.tally(pieces), a = t.pts[0], b = t.pts[1];
+    if (G.opp === 'practice') return [a, 0];
+    return a > b ? [a - b, 0] : [0, b - a];
+  }
+  function rawPoints(G, pieces) { return G.mode === 'shuffle' ? SB.score(pieces || G.pieces) : CH.tally(pieces || G.pieces).pts; }
+  // the frame is over: add it up, decide who goes first next, and whether the game is over
+  function endFrame(G) {
+    var pts = framePoints(G), raw = rawPoints(G);
+    G.score[0] += pts[0]; G.score[1] += pts[1];
+    G.hist.push({ pts: pts, raw: raw });
+    if (G.mode === 'corn') {
+      var t = CH.tally(G.pieces);
+      for (var s = 0; s < 2; s++) { G.gs.holes[s] += t.holes[s]; G.gs.raw[s] += t.pts[s]; if (t.holes[s] === 4) G.gs.four[s]++; }
+    } else {
+      G.pieces.forEach(function (d) { if (!d.dead && SB.zone(d.x, d.z) === 10) G.gs.tens[d.side]++; });
+    }
+    G.gs.best[0] = Math.max(G.gs.best[0], raw[0]); G.gs.best[1] = Math.max(G.gs.best[1], raw[1]);
+    var wasFirst = G.first;
+    if (G.opp !== 'practice') {
+      if (G.mode === 'shuffle') G.first = 1 - G.first;                    // the lead alternates frame by frame
+      else if (pts[0] !== pts[1]) G.first = pts[0] > pts[1] ? 0 : 1;      // the side that scored throws first
+      var top = Math.max(G.score[0], G.score[1]);
+      if (top >= G.target && G.score[0] !== G.score[1]) { G.over = true; G.winner = G.score[0] > G.score[1] ? 0 : 1; }
+    }
+    G.frame++; G.shot = 0; G.pieces = [];
+    return { pts: pts, raw: raw, over: G.over, winner: G.winner, wasFirst: wasFirst };
+  }
+
+  // ---------- one shot, the same way for the game, the bots' practice runs and the checks ----------
+  // prepare: a copy of the court with the new disc (or bag) and the push (or throw) applied; the caller steps it
+  // (the game in real time, the checks all at once); commit: what happened, and the game moves on
+  function prepare(G, shot) {
+    var side = shooter(G), id = G.nextId, sim;
+    if (G.mode === 'shuffle') {
+      sim = SB.sim(G.pieces.concat([{ id: id, side: side, x: clamp(shot.x0, -SB.XMAX, SB.XMAX), z: SB.ZSTART }]));
+      SB.push(sim, id, shot.v, shot.ang);
+    } else {
+      sim = CH.sim(G.pieces.concat([{ id: id, side: side, st: 'hand' }]));
+      CH.throwBag(sim, id, shot.x0, shot.v, shot.aim, shot.spin);
+    }
+    return { sim: sim, id: id, side: side, shot: shot };
+  }
+  function stepShot(G, pr) { if (G.mode === 'shuffle') SB.step(pr.sim); else CH.step(pr.sim); }
+  function runShot(G, pr) { if (G.mode === 'shuffle') SB.run(pr.sim); else CH.run(pr.sim); }
+  function commit(G, pr) {
+    var side = pr.side, opp = 1 - side, out = { side: side, id: pr.id, knocked: [], pushedIn: [], kitchen: [], frameDone: false };
+    var before = {};
+    G.pieces.forEach(function (p) { before[p.id] = G.mode === 'shuffle' ? SB.zone(p.x, p.z) : p.st; });
+    if (G.mode === 'shuffle') {
+      var keep = [];
+      pr.sim.d.forEach(function (d) {
+        var why = SB.judge(d), z = why ? null : SB.zone(d.x, d.z);
+        if (d.id === pr.id) { out.mine = why || z; out.why = why; out.zone = z; }
+        else if (why) { out.knocked.push({ side: d.side, why: why }); if (d.side === opp) G.gs.offs[side]++; }
+        else if (z === -10 && before[d.id] !== -10) { out.kitchen.push(d.side); if (d.side === opp) G.gs.kitchens[side]++; }
+        if (!why) keep.push({ id: d.id, side: d.side, x: d.x, z: d.z, a: d.a });
+      });
+      G.pieces = keep;
+    } else {
+      var kept = [];
+      pr.sim.b.forEach(function (b) {
+        var alive = b.st === 'board' || b.st === 'hole';
+        if (b.id === pr.id) { out.mine = b.st === 'hole' ? (b.air ? 'swish' : 'hole') : b.st === 'board' ? 'board' : (b.why || 'off'); if (b.air && b.st === 'hole') G.gs.swish[side]++; }
+        else if (before[b.id] === 'board' && b.st === 'hole') out.pushedIn.push(b.side);
+        else if (before[b.id] === 'board' && !alive) out.knocked.push({ side: b.side, why: 'off' });
+        if (alive) kept.push({ id: b.id, side: b.side, st: b.st, u: b.u, w: b.w, top: b.top, yaw: b.yaw, ht: b.st === 'hole' ? -0.25 : b.ht, air: !!b.air });
+      });
+      // a bag can only lie on a bag that is still there
+      kept.forEach(function (b) { if (b.top >= 0 && !kept.some(function (q) { return q.id === b.top && q.st === 'board'; })) b.top = -1; });
+      G.pieces = kept;
+    }
+    G.nextId++; G.shot++; G.xs[side] = pr.shot.x0; G.gs.shots[side]++;
+    out.frameDone = G.shot >= perFrame(G);
+    out.now = framePoints(G);
+    return out;
+  }
+
+  // =====================================================================================================
+  // THE PHONE'S PLAYERS
+  // =====================================================================================================
+  // A bot lists candidate shots, plays each one out with the real physics on a copy of the court, scores what it
+  // sees, then plays the best few again several times with its own aiming noise and picks the best average. Then it
+  // shoots with that noise (Easy wobbles a lot, Hard very little). plan() returns an object whose next(ms) works for
+  // about that long and returns true when the shot is chosen, so the phone stays smooth while it thinks.
+  var LEVELS = {
+    // (tuned with tools/check.mjs: a person's finger is about as steady as Medium; Hard aims better and thinks wider)
+    shuffle: {
+      easy: { sv: 0.05, sa: 0.018, top: 4, k: 2, slop: 0.4, xs: [0], wide: false },
+      medium: { sv: 0.026, sa: 0.009, top: 10, k: 6, slop: 0.05, xs: [-0.6, -0.3, 0, 0.3, 0.6], wide: true },
+      hard: { sv: 0.02, sa: 0.007, top: 14, k: 8, slop: 0, xs: [-0.6, -0.3, 0, 0.3, 0.6], wide: true }
+    },
+    corn: {
+      easy: { sv: 0.042, sa: 0.022, top: 4, k: 2, slop: 0.4, wide: false },
+      medium: { sv: 0.028, sa: 0.013, top: 8, k: 5, slop: 0.1, wide: true },
+      hard: { sv: 0.021, sa: 0.0105, top: 14, k: 8, slop: 0, wide: true }
+    }
+  };
+  // shuffleboard: how good the court is for `me` after a shot (the frame score, and how exposed the scoring discs are
+  // to the shots still to come)
+  function sbEval(discs, me, myLeft, oppLeft) {
+    var live = discs.filter(function (d) { return !d.dead; }), s = [0, 0];
+    live.forEach(function (d) { s[d.side] += SB.zone(d.x, d.z); });
+    var val = s[me] - s[1 - me];
+    live.forEach(function (d) {
+      var v = SB.zone(d.x, d.z); if (v <= 0) return;
+      var guarded = live.some(function (o) { return o !== d && o.z < d.z - 0.05 && o.z > SB.ZD - 0.2 && Math.abs(o.x - d.x) < 2 * SB.R * 0.95; });
+      if (d.side === me && oppLeft > 0) val -= v * (guarded ? 0.12 : 0.36) * (oppLeft >= 2 ? 1.15 : 1);
+      if (d.side !== me && myLeft > 0) val += v * (guarded ? 0.05 : 0.22);
+    });
+    // a guard in front of my scoring disc is worth a little on its own
+    return val;
+  }
+  function chEval(bags, me, myLeft, oppLeft) {
+    var t = CH.tally(bags), val = t.pts[me] - t.pts[1 - me];
+    bags.forEach(function (b) {
+      if (b.st !== 'board') return;
+      var dh = holeDist(b.u, b.w), inFront = b.w < CH.HOLE_W - 0.1 && b.w > CH.HOLE_W - 0.55 && Math.abs(b.u) < 0.13;
+      if (b.side === me) {
+        if (dh < 0.16) val += myLeft > 0 ? 0.25 : 0.1;          // a hanger I can push in later
+        if (inFront && oppLeft > 0) val += 0.2;                  // a blocker
+      } else if (dh < 0.16 && oppLeft > 0) val -= 0.35;
+    });
+    return val;
+  }
+  function plan(G, level) {
+    var mode = G.mode, me = shooter(G), L = LEVELS[mode][level] || LEVELS[mode].medium;
+    var r = rng(G.seed + G.frame * 977 + G.shot * 31 + me * 7);
+    var myLeft = left(G, me) - 1, oppLeft = G.opp === 'practice' ? 0 : left(G, 1 - me);
+    var cands = [], id = G.nextId;
+    if (mode === 'shuffle') {
+      var targets = [[0, 11.30], [0, 11.15], [0, 11.44], [0.2, 12.04], [-0.2, 12.04], [0.32, 12.95], [-0.32, 12.95]];
+      if (L.wide) targets.push([0, 10.42], [0.17, 10.5], [-0.17, 10.5], [0.12, 11.9], [-0.12, 11.9], [0.24, 12.2], [-0.24, 12.2]);
+      var xs = L.xs.slice(); if (xs.indexOf(G.xs[me]) < 0 && level !== 'easy') xs.push(G.xs[me]);
+      xs.forEach(function (x0) {
+        targets.forEach(function (t) { var dz = t[1] - SB.ZSTART, dx = t[0] - x0; cands.push({ x0: x0, v: SB.speedFor(Math.hypot(dx, dz)), ang: Math.atan2(dx, dz) }); });
+        G.pieces.forEach(function (d) {
+          if (d.dead || d.z < SB.ZD - 0.3) return;
+          var offs = L.wide ? [-0.05, 0, 0.05] : [0], extra = L.wide ? [0.25, 1.4, 3.5] : [1.6];
+          offs.forEach(function (o) { extra.forEach(function (e) {
+            var dx = d.x + o - x0, dz = d.z - SB.ZSTART, dist = Math.hypot(dx, dz);
+            cands.push({ x0: x0, v: SB.speedFor(dist + e), ang: Math.atan2(dx, dz), hit: true });
+          }); });
+        });
+      });
+    } else {
+      var x0c = G.xs[me];
+      var us = L.wide ? [-0.2, -0.13, -0.065, 0, 0.065, 0.13, 0.2] : [-0.1, 0, 0.1];
+      var ws = []; for (var w = -0.1; w <= 1.16; w += L.wide ? 0.07 : 0.14) ws.push(w);
+      us.forEach(function (u) { ws.forEach(function (w) {
+        var p = CH.toWorld(u, w), dx = p.x - x0c, dz = p.z - CH.Z0;
+        cands.push({ x0: x0c, v: CH.speedFor(Math.hypot(dx, dz)), aim: Math.atan2(dx, dz) - CH.aimBase(x0c) });
+      }); });
+    }
+    function play(c, nv, na) {
+      if (mode === 'shuffle') {
+        var pieces = G.pieces.concat([{ id: id, side: me, x: c.x0, z: SB.ZSTART }]), sim = SB.sim(pieces);
+        SB.push(sim, id, c.v * (1 + nv), c.ang + na); SB.run(sim);
+        sim.d.forEach(function (d) { if (SB.judge(d)) d.dead = true; });
+        return sbEval(sim.d, me, myLeft, oppLeft);
+      }
+      var bags = G.pieces.concat([{ id: id, side: me, st: 'hand' }]), s2 = CH.sim(bags);
+      CH.throwBag(s2, id, c.x0, c.v * (1 + nv), c.aim + na); CH.run(s2);
+      return chEval(s2.b, me, myLeft, oppLeft);
+    }
+    var phase = 0, i = 0, top = null, out = null;
+    var obj = {
+      result: null, tried: 0,
+      next: function (ms) {
+        var t0 = now();
+        while (!out) {
+          if (phase === 0) {
+            if (i < cands.length) { cands[i].v0 = play(cands[i], 0, 0); i++; obj.tried++; }
+            else {
+              cands.sort(function (a, b) { return b.v0 - a.v0; });
+              top = cands.slice(0, L.top); top.forEach(function (c) { c.sum = 0; c.n = 0; });
+              phase = 1; i = 0;
+            }
+          } else {
+            if (i < top.length * L.k) {
+              var c = top[i % top.length];
+              c.sum += play(c, gauss(r) * L.sv, gauss(r) * L.sa); c.n++; i++; obj.tried++;
+            } else {
+              top.sort(function (a, b) { return b.sum / b.n - a.sum / a.n; });
+              var pick = top[0];
+              if (L.slop && r() < L.slop) pick = top[Math.floor(r() * Math.min(top.length, 5))];
+              // the shot as the bot actually makes it: with its own wobble
+              out = { x0: pick.x0, v: pick.v * (1 + gauss(r) * L.sv), want: pick.sum / pick.n, hit: !!pick.hit };
+              if (mode === 'shuffle') out.ang = pick.ang + gauss(r) * L.sa; else out.aim = pick.aim + gauss(r) * L.sa;
+              obj.result = out;
+            }
+          }
+          if (ms != null && now() - t0 > ms) break;
+        }
+        return !!out;
+      }
+    };
+    return obj;
+  }
+
+  var API = {
+    FT: FT, IN: IN, DT: DT, SB: SB, CH: CH, BOTS: BOTS, LEVELS: LEVELS, rng: rng, gauss: gauss, clamp: clamp,
+    newGame: newGame, perFrame: perFrame, shooter: shooter, left: left, framePoints: framePoints, rawPoints: rawPoints, endFrame: endFrame,
+    prepare: prepare, stepShot: stepShot, runShot: runShot, commit: commit,
+    plan: plan, sbEval: sbEval, chEval: chEval
+  };
+  return API;
+})();
+if (typeof module !== 'undefined') module.exports = DK;
+</script>
+<script>
+/* Lido Deck sounds: synthesized with Web Audio (no audio files). The hiss of a disc sliding on the court (it follows
+   the discs' speed), the cue's tap, discs clacking, the whoosh of a thrown bag, thuds on the board and the deck, the
+   hollow drop in the hole, a little crowd cheer, the ship's horn at the start of a game. Off until switched on. */
+var DKSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, noiseBuf = null, hiss = null, lastClack = 0;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay, type, f1) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    s.buffer = noiseBuf; f.type = type || 'bandpass'; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
+    if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + Math.min(0.03, dur / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05);
+  }
+  return {
+    set: function (v) { on = !!v; if (!on) this.hissStop(); },
+    unlock: function () { ctx(); },
+    // a disc sliding: a soft hiss that follows how fast the discs are going (0..1)
+    hissStart: function () {
+      var a = ctx(); if (!a || hiss) return;
+      var s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), f2 = a.createBiquadFilter(), g2 = a.createGain();
+      s.buffer = noiseBuf; s.loop = true; f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.7; g.gain.value = 0.0001;
+      f2.type = 'lowpass'; f2.frequency.value = 260; g2.gain.value = 0.0001;
+      s.connect(f); f.connect(g); g.connect(master); s.connect(f2); f2.connect(g2); g2.connect(master); s.start();
+      hiss = { s: s, f: f, g: g, g2: g2 };
+    },
+    hissLevel: function (v) {
+      if (!hiss || !ac) return; var t = ac.currentTime;
+      hiss.g.gain.setTargetAtTime(0.0001 + 0.16 * v, t, 0.06); hiss.g2.gain.setTargetAtTime(0.0001 + 0.22 * v, t, 0.06);
+      hiss.f.frequency.setTargetAtTime(1600 + 2200 * v, t, 0.08);
+    },
+    hissStop: function () {
+      if (!hiss || !ac) { hiss = null; return; } var h = hiss, t = ac.currentTime; hiss = null;
+      h.g.gain.setTargetAtTime(0.0001, t, 0.08); h.g2.gain.setTargetAtTime(0.0001, t, 0.08);
+      setTimeout(function () { try { h.s.stop(); } catch (e) { /* ignore */ } }, 600);
+    },
+    push: function () { tone('triangle', 520, 300, 0.07, 0.18); noise(1500, 2, 0.05, 0.18); },
+    // discs knocking: a hard bright click, louder for a harder hit
+    clack: function (p) {
+      var t = Date.now(); if (t - lastClack < 40) return; lastClack = t;
+      var l = Math.max(0.15, Math.min(1, p / 2.5)), f = 1900 + Math.random() * 500;
+      noise(f * 1.4, 4, 0.045, 0.5 * l); tone('triangle', f, f * 0.7, 0.07, 0.22 * l);
+    },
+    whoosh: function () { noise(500, 1.2, 0.35, 0.16, 0, 'bandpass', 1400); },
+    // a bag landing: on the board a deep wooden thump, on another bag a soft puff, on the deck a dull thud
+    thud: function (on2, p) {
+      var l = Math.max(0.25, Math.min(1, p || 0.6));
+      if (on2 === 'board') { tone('sine', 120, 60, 0.2, 0.55 * l); noise(420, 1, 0.14, 0.4 * l, 0, 'lowpass'); tone('triangle', 230, 170, 0.09, 0.15 * l); }
+      else if (on2 === 'bag') { noise(320, 0.8, 0.12, 0.35, 0, 'lowpass'); }
+      else if (on2 === 'front') { tone('sine', 150, 90, 0.12, 0.4); noise(900, 1.5, 0.08, 0.3); }
+      else { tone('sine', 90, 55, 0.16, 0.35 * l); noise(300, 0.8, 0.12, 0.3 * l, 0, 'lowpass'); }
+    },
+    bump: function (p) { noise(380, 0.9, 0.09, Math.min(0.35, 0.12 + p * 0.3), 0, 'lowpass'); },
+    hole: function () { tone('sine', 95, 48, 0.32, 0.6); noise(240, 1, 0.25, 0.35, 0.03, 'lowpass'); noise(800, 2, 0.08, 0.12, 0.12); },
+    // the crowd at the pool: a swell of voices (shaped noise) and a whistle for the big ones
+    cheer: function (big) {
+      var a = ctx(); if (!a) return;
+      var dur = big ? 1.8 : 1.1;
+      [700, 1100, 1700, 2500].forEach(function (f, i) { noise(f, 1.4, dur - i * 0.1, (big ? 0.16 : 0.1) / (1 + i * 0.3), Math.random() * 0.06); });
+      for (var k = 0; k < (big ? 5 : 2); k++) { var f0 = 500 + Math.random() * 600; tone('sawtooth', f0, f0 * 1.15, 0.18, 0.02, 0.1 + Math.random() * 0.5); }
+      if (big) { tone('sine', 1500, 2600, 0.22, 0.09, 0.15); tone('sine', 2600, 1700, 0.3, 0.08, 0.38); }
+    },
+    aww: function () { noise(500, 1, 0.9, 0.1, 0, 'bandpass', 260); tone('sine', 320, 220, 0.5, 0.05); },
+    // the ship's horn, deep and long (two notes a fifth apart, through a soft filter)
+    horn: function () {
+      var a = ctx(); if (!a) return;
+      var t = a.currentTime, f = a.createBiquadFilter(), g = a.createGain();
+      f.type = 'lowpass'; f.frequency.value = 520; f.Q.value = 2; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.32, t + 0.25); g.gain.setValueAtTime(0.32, t + 1.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+      f.connect(g); g.connect(master);
+      [87.3, 130.8].forEach(function (fr) { var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.connect(f); o.start(t); o.stop(t + 1.8); });
+    },
+    win: function () { [392, 523.3, 659.3, 784, 1046.5].forEach(function (f, i) { tone('triangle', f, 0, 0.4, 0.15, i * 0.1); }); },
+    lose: function () { [523.3, 440, 392, 329.6].forEach(function (f, i) { tone('triangle', f, 0, 0.35, 0.12, i * 0.13); }); },
+    ding: function () { tone('triangle', 880, 0, 0.18, 0.12); tone('triangle', 1318.5, 0, 0.22, 0.09, 0.06); }
+  };
+})();
+</script>
+<script>
+/* Lido Deck scene (three.js): the sunny open pool deck of an original cruise ship, the MS Goobs Mariner. Teak planks,
+   a deck shuffleboard court (cream paint, navy lines, both scoring triangles), a cornhole lane beside it (two painted
+   boards with real holes), glass railings with a teak handrail, life rings with the ship's name, the pool with its
+   ladder, loungers and striped umbrellas at the stern, the sea with the ship's wake, a summer sky with clouds.
+   Everything is drawn here from shapes and canvas textures (no image files).
+   Coordinates: the game's (x across, +x to the player's right; z away from the player; y up) map to the world as
+   (x + lane offset, y, -z), so the camera looks down -z and nothing is mirrored.
+   DKScene.build(THREE, canvas, DK) returns what the app needs; the app moves the camera. */
+var DKScene = (function () {
+  'use strict';
+  function build(T, canvas, DK) {
+    var SB = DK.SB, CH = DK.CH;
+    var CX = -2.8;                                   // the cornhole lane's middle, to the left of the court
+    var R = (function (s) { return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; })(20261001);
+    function rnd(a, b) { return a + (b - a) * R(); }
+    function tex(w, h, draw, srgb) { var c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); var t = new T.CanvasTexture(c); if (srgb !== false) t.colorSpace = T.SRGBColorSpace; t.anisotropy = 8; return t; }
+    function W(mode, x, y, z) { return new T.Vector3(x + (mode === 'corn' ? CX : 0), y, -z); }
+
+    // ---------------- renderer, camera, lights ----------------
+    var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+    var scene = new T.Scene(), HAZE = new T.Color('#b9dcf3');
+    scene.fog = new T.Fog(HAZE, 140, 1100);
+    var camera = new T.PerspectiveCamera(40, 1, 0.05, 2500);
+    scene.add(new T.HemisphereLight(0xf0f6ff, 0xc79a6a, 1.05));
+    var sun = new T.DirectionalLight(0xfff1dc, 1.7); sun.position.set(7, 12, 9); sun.target.position.set(-1, 0, -8); scene.add(sun); scene.add(sun.target);
+    var fill = new T.DirectionalLight(0xbfe0ff, 0.35); fill.position.set(-6, 5, -12); scene.add(fill);
+    // soft reflections from a simple bright sky (the discs, the boards' paint and the railings' glass pick it up)
+    try {
+      var env = new T.Scene(); env.background = new T.Color('#9fd0f2');
+      var envGround = new T.Mesh(new T.PlaneGeometry(60, 60), new T.MeshBasicMaterial({ color: 0xb98a5c })); envGround.rotation.x = -Math.PI / 2; envGround.position.y = -2; env.add(envGround);
+      var envSun = new T.Mesh(new T.SphereGeometry(3, 12, 8), new T.MeshBasicMaterial({ color: 0xffffff })); envSun.position.set(14, 20, 16); env.add(envSun);
+      var pm = new T.PMREMGenerator(renderer); scene.environment = pm.fromScene(env, 0.04).texture; pm.dispose();
+      if ('environmentIntensity' in scene) scene.environmentIntensity = 0.55;
+    } catch (e) { /* reflections are only a nicety */ }
+
+    // ---------------- sky, sea, wake ----------------
+    var skyTex = tex(4, 512, function (x, w, h) {
+      var g = x.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#1a66c9'); g.addColorStop(0.3, '#3f92e2'); g.addColorStop(0.44, '#86c4f2'); g.addColorStop(0.5, '#c4e3f8'); g.addColorStop(0.52, '#b9dcf3'); g.addColorStop(1, '#3d78a8');
+      x.fillStyle = g; x.fillRect(0, 0, w, h);
+    });
+    var sky = new T.Mesh(new T.SphereGeometry(1800, 32, 16), new T.MeshBasicMaterial({ map: skyTex, side: T.BackSide, fog: false, depthWrite: false }));
+    sky.renderOrder = -10; scene.add(sky);
+    // clouds: soft puffs on canvas, standing far off around the horizon
+    var cloudTex = tex(256, 128, function (x, w, h) {
+      for (var i = 0; i < 26; i++) {
+        var cx = rnd(40, w - 40), cy = rnd(60, 96) - Math.abs(cx - w / 2) * 0.12, r = rnd(16, 38);
+        var g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(0.6, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+      }
+      x.globalCompositeOperation = 'source-atop'; var sh = x.createLinearGradient(0, 40, 0, h); sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(170,190,215,.55)'); x.fillStyle = sh; x.fillRect(0, 0, w, h);
+    });
+    var clouds = [];
+    [[-0.6, 0.06, 1], [0.25, 0.09, 0.8], [0.55, 0.05, 1.2], [-0.2, 0.13, 0.7], [0.95, 0.07, 0.9], [-1.1, 0.1, 1], [2.6, 0.06, 1.1], [-2.4, 0.08, 1]].forEach(function (c) {
+      var m = new T.Sprite(new T.SpriteMaterial({ map: cloudTex, fog: false, depthWrite: false, transparent: true, opacity: 0.92 }));
+      var a = c[0] - Math.PI / 2, d = 1300;
+      m.position.set(Math.cos(a) * d, Math.tan(c[1]) * d + 20, Math.sin(a) * d); m.scale.set(520 * c[2], 260 * c[2], 1); m.renderOrder = -9;
+      scene.add(m); clouds.push(m);
+    });
+    var SEA_Y = -18;
+    var seaTex = tex(256, 256, function (x, w, h) {
+      x.fillStyle = '#1f6fa8'; x.fillRect(0, 0, w, h);
+      for (var i = 0; i < 220; i++) {
+        var px = rnd(0, w), py = rnd(0, h), l = rnd(6, 22);
+        x.strokeStyle = R() < 0.5 ? 'rgba(140,210,255,' + rnd(0.15, 0.4).toFixed(2) + ')' : 'rgba(10,60,110,' + rnd(0.15, 0.35).toFixed(2) + ')';
+        x.lineWidth = rnd(1, 2.2); x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + l / 2, py - 2, px + l, py); x.stroke();
+      }
+    });
+    seaTex.wrapS = seaTex.wrapT = T.RepeatWrapping; seaTex.repeat.set(260, 260);
+    var sea = new T.Mesh(new T.PlaneGeometry(5000, 5000), new T.MeshBasicMaterial({ map: seaTex, color: 0xb8d8ee }));
+    sea.rotation.x = -Math.PI / 2; sea.position.y = SEA_Y; scene.add(sea);
+    // the wake: a widening band of foam behind the stern
+    var wakeTex = tex(128, 512, function (x, w, h) {
+      for (var i = 0; i < 900; i++) {
+        var py = rnd(0, h), spread = 0.22 + 0.7 * (py / h), px = w / 2 + (R() - 0.5) * w * spread;
+        var a = (1 - py / h) * 0.55 + 0.1;
+        x.fillStyle = 'rgba(255,255,255,' + (a * rnd(0.3, 1)).toFixed(2) + ')'; x.beginPath(); x.ellipse(px, py, rnd(1, 4), rnd(2, 8), 0, 0, 7); x.fill();
+      }
+    });
+    var wakeGeo = new T.PlaneGeometry(1, 1, 1, 1);
+    (function () { var p = wakeGeo.attributes.position; for (var i = 0; i < p.count; i++) { var y = p.getY(i); p.setX(i, p.getX(i) * (y > 0 ? 300 : 18)); } })();
+    var wake = new T.Mesh(wakeGeo, new T.MeshBasicMaterial({ map: wakeTex, transparent: true, depthWrite: false, opacity: 0.85 }));
+    wake.rotation.x = -Math.PI / 2; wake.scale.set(1, 900, 1); wake.position.set(-2, SEA_Y + 0.05, -26 - 450); scene.add(wake);
+
+    // ---------------- the deck ----------------
+    var DX0 = -13, DX1 = 3.4, DZ0 = -24, DZ1 = 8;
+    var teakTex = tex(512, 512, function (x, w, h) {
+      var pw = 32;   // one plank (12 cm) per 32 px; the texture covers 2 m
+      for (var i = 0; i < w / pw; i++) {
+        var y0 = -rnd(0, 256);
+        while (y0 < h) {
+          var len = rnd(180, 380), tone = rnd(-1, 1);
+          x.fillStyle = 'rgb(' + Math.round(186 + tone * 14) + ',' + Math.round(132 + tone * 11) + ',' + Math.round(84 + tone * 9) + ')';
+          x.fillRect(i * pw, y0, pw, len);
+          for (var g = 0; g < 12; g++) { x.fillStyle = 'rgba(110,64,30,' + rnd(0.05, 0.16).toFixed(2) + ')'; x.fillRect(i * pw + rnd(1, pw - 2), y0 + rnd(0, len), 1, rnd(20, 90)); }
+          x.fillStyle = '#2a1d14'; x.fillRect(i * pw, y0 + len - 2, pw, 2);    // butt joint
+          y0 += len;
+        }
+        x.fillStyle = '#2a1d14'; x.fillRect(i * pw + pw - 2.5, 0, 2.5, h);   // the caulking seams
+      }
+    });
+    teakTex.wrapS = teakTex.wrapT = T.RepeatWrapping; teakTex.repeat.set(0.5, 0.5);   // (UVs are in meters: 2 m a texture)
+    var teakMat = new T.MeshStandardMaterial({ map: teakTex, roughness: 0.78, metalness: 0 });
+    // the deck: one sheet with the pool cut out of it (shape x = world x, shape y = -world z)
+    var PX0 = -11.6, PX1 = -5.2, PZ0 = -17.5, PZ1 = -3.5, PD = 1.4;
+    var deckShape = new T.Shape(); deckShape.moveTo(DX0, -DZ1); deckShape.lineTo(DX1, -DZ1); deckShape.lineTo(DX1, -DZ0); deckShape.lineTo(DX0, -DZ0); deckShape.closePath();
+    var poolHole = new T.Path(); poolHole.moveTo(PX0, -PZ1); poolHole.lineTo(PX0, -PZ0); poolHole.lineTo(PX1, -PZ0); poolHole.lineTo(PX1, -PZ1); poolHole.closePath(); deckShape.holes.push(poolHole);
+    var deckGeo = new T.ShapeGeometry(deckShape); deckGeo.rotateX(-Math.PI / 2);
+    var deck = new T.Mesh(deckGeo, teakMat); scene.add(deck);
+    // the hull's white side below the deck edge (seen past the railings) and a varnished edge board
+    var hullMat = new T.MeshStandardMaterial({ color: 0xf4f6f8, roughness: 0.55 });
+    var hullR = new T.Mesh(new T.BoxGeometry(0.3, 18.5, DZ1 - DZ0 + 0.3), hullMat); hullR.position.set(DX1 + 0.15, -9.25, (DZ0 + DZ1) / 2); scene.add(hullR);
+    var hullS = new T.Mesh(new T.BoxGeometry(DX1 - DX0 + 0.3, 18.5, 0.3), hullMat); hullS.position.set((DX0 + DX1) / 2, -9.25, DZ0 - 0.15); scene.add(hullS);
+    var stripeMat = new T.MeshStandardMaterial({ color: 0x1f3d6b, roughness: 0.5 });
+    var stR = new T.Mesh(new T.BoxGeometry(0.32, 0.5, DZ1 - DZ0 + 0.34), stripeMat); stR.position.set(DX1 + 0.15, -1.4, (DZ0 + DZ1) / 2); scene.add(stR);
+    var stS = new T.Mesh(new T.BoxGeometry(DX1 - DX0 + 0.34, 0.5, 0.32), stripeMat); stS.position.set((DX0 + DX1) / 2, -1.4, DZ0 - 0.15); scene.add(stS);
+
+    // ---------------- railings (glass panels between white posts, teak handrail) ----------------
+    var postMat = new T.MeshStandardMaterial({ color: 0xf2f4f6, roughness: 0.35, metalness: 0.3 });
+    var railMat = new T.MeshStandardMaterial({ color: 0x9a5a2c, roughness: 0.4 });
+    var glassMat = new T.MeshStandardMaterial({ color: 0xbfeaff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.22, depthWrite: false });
+    function railing(x0, z0, x1, z1) {
+      var len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(len / 1.6)), ang = Math.atan2(x1 - x0, z1 - z0);
+      var posts = new T.InstancedMesh(new T.CylinderGeometry(0.028, 0.028, 1.05, 8), postMat, n + 1), m4 = new T.Matrix4();
+      for (var i = 0; i <= n; i++) { m4.makeTranslation(x0 + (x1 - x0) * i / n, 0.525, z0 + (z1 - z0) * i / n); posts.setMatrixAt(i, m4); }
+      scene.add(posts);
+      var rail = new T.Mesh(new T.BoxGeometry(0.1, 0.06, len + 0.1), railMat); rail.position.set((x0 + x1) / 2, 1.08, (z0 + z1) / 2); rail.rotation.y = ang; scene.add(rail);
+      var glass = new T.Mesh(new T.BoxGeometry(0.012, 0.86, len), glassMat); glass.position.set((x0 + x1) / 2, 0.55, (z0 + z1) / 2); glass.rotation.y = ang; glass.renderOrder = 2; scene.add(glass);
+      var low = new T.Mesh(new T.BoxGeometry(0.04, 0.04, len), postMat); low.position.set((x0 + x1) / 2, 0.1, (z0 + z1) / 2); low.rotation.y = ang; scene.add(low);
+    }
+    railing(DX1 - 0.12, DZ1, DX1 - 0.12, DZ0 + 0.12);
+    railing(DX1 - 0.12, DZ0 + 0.12, DX0, DZ0 + 0.12);
+
+    // ---------------- life rings with the ship's name ----------------
+    var ringTex = tex(512, 512, function (x, w, h) {
+      var cx = w / 2, cy = h / 2, ro = 246, ri = 132;
+      for (var q = 0; q < 8; q++) {
+        x.fillStyle = q % 2 ? '#ffffff' : '#ff5a1f';
+        x.beginPath(); x.arc(cx, cy, ro, q * Math.PI / 4 - Math.PI / 8, (q + 1) * Math.PI / 4 - Math.PI / 8); x.arc(cx, cy, ri, (q + 1) * Math.PI / 4 - Math.PI / 8, q * Math.PI / 4 - Math.PI / 8, true); x.closePath(); x.fill();
+      }
+      var g = x.createRadialGradient(cx, cy, ri, cx, cy, ro); g.addColorStop(0, 'rgba(0,0,0,.22)'); g.addColorStop(0.35, 'rgba(255,255,255,.12)'); g.addColorStop(0.7, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.25)');
+      x.fillStyle = g; x.beginPath(); x.arc(cx, cy, ro, 0, 7); x.arc(cx, cy, ri, 0, 7, true); x.fill();
+      // the grab line, looped around the ring at four places
+      x.strokeStyle = '#efe2c4'; x.lineWidth = 9; x.beginPath(); x.arc(cx, cy, ro - 6, 0, 7); x.stroke();
+      [0.25, 0.75, 1.25, 1.75].forEach(function (a) { x.save(); x.translate(cx, cy); x.rotate(a * Math.PI); x.fillStyle = '#efe2c4'; x.fillRect(ri - 6, -9, ro - ri + 10, 18); x.restore(); });
+      // the ship's name round the top, the home port round the bottom (an original ship)
+      function arcText(t, r, a0, up) {
+        x.save(); x.translate(cx, cy); x.font = '900 48px Georgia, serif'; x.fillStyle = '#12305e'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        var total = 0, ws = t.split('').map(function (c) { var m = x.measureText(c).width + 3; total += m; return m; }), a = a0 - (up ? 1 : -1) * total / r / 2;
+        t.split('').forEach(function (c, i) {
+          var da = ws[i] / r; a += (up ? 1 : -1) * da / 2;
+          x.save(); x.rotate(a); x.translate(0, up ? -r : r); if (!up) x.rotate(Math.PI); x.rotate(up ? 0 : Math.PI); x.fillText(c, 0, 0); x.restore();
+          a += (up ? 1 : -1) * da / 2;
+        });
+        x.restore();
+      }
+      arcText('GOOBS MARINER', (ro + ri) / 2, 0, true);
+      arcText('LIDO DECK', (ro + ri) / 2, Math.PI, false);
+    });
+    var ringMat = new T.MeshStandardMaterial({ map: ringTex, transparent: true, alphaTest: 0.5, roughness: 0.5, side: T.DoubleSide });
+    function lifeRing(x, y, z, ry) {
+      var g = new T.Group();
+      var face = new T.Mesh(new T.CircleGeometry(0.38, 48), ringMat); face.position.z = 0.03; g.add(face);
+      var tor = new T.Mesh(new T.TorusGeometry(0.29, 0.085, 10, 36), new T.MeshStandardMaterial({ color: 0xff5a1f, roughness: 0.5 })); g.add(tor);
+      g.position.set(x, y, z); g.rotation.y = ry || 0; scene.add(g); return g;
+    }
+    lifeRing(1.6, 0.62, DZ0 + 0.22, 0);
+    lifeRing(-4.6, 0.62, DZ0 + 0.22, 0);
+    lifeRing(DX1 - 0.24, 0.62, -6.5, -Math.PI / 2);
+
+    // ---------------- the pool ----------------
+    var tileTex = tex(256, 256, function (x, w, h) {
+      x.fillStyle = '#2aa7d8'; x.fillRect(0, 0, w, h);
+      for (var i = 0; i < 16; i++) for (var j = 0; j < 16; j++) { x.fillStyle = 'rgba(255,255,255,' + rnd(0.0, 0.12).toFixed(2) + ')'; x.fillRect(i * 16 + 1, j * 16 + 1, 14, 14); }
+      x.strokeStyle = 'rgba(230,250,255,.55)'; x.lineWidth = 1.2; for (var k = 0; k <= 16; k++) { x.beginPath(); x.moveTo(k * 16, 0); x.lineTo(k * 16, h); x.stroke(); x.beginPath(); x.moveTo(0, k * 16); x.lineTo(w, k * 16); x.stroke(); }
+    });
+    tileTex.wrapS = tileTex.wrapT = T.RepeatWrapping;
+    var poolMat = new T.MeshStandardMaterial({ map: tileTex, roughness: 0.4 });
+    (function () {
+      var bw = PX1 - PX0, bl = PZ1 - PZ0;
+      var floorT = tileTex.clone(); floorT.needsUpdate = true; floorT.repeat.set(bw / 2, bl / 2);
+      var fl = new T.Mesh(new T.PlaneGeometry(bw, bl), new T.MeshStandardMaterial({ map: floorT, roughness: 0.4, color: 0x9fdcff })); fl.rotation.x = -Math.PI / 2; fl.position.set((PX0 + PX1) / 2, -PD, (PZ0 + PZ1) / 2); scene.add(fl);
+      [[PX0, (PZ0 + PZ1) / 2, Math.PI / 2, bl], [PX1, (PZ0 + PZ1) / 2, -Math.PI / 2, bl], [(PX0 + PX1) / 2, PZ0, 0, bw], [(PX0 + PX1) / 2, PZ1, Math.PI, bw]].forEach(function (s) {
+        var t2 = tileTex.clone(); t2.needsUpdate = true; t2.repeat.set(s[3] / 2, PD / 2);
+        var wl = new T.Mesh(new T.PlaneGeometry(s[3], PD), new T.MeshStandardMaterial({ map: t2, roughness: 0.4 })); wl.position.set(s[0], -PD / 2, s[1]); wl.rotation.y = s[2]; scene.add(wl);
+      });
+      // the coping: a white stone rim
+      var cop = new T.MeshStandardMaterial({ color: 0xf3f0e8, roughness: 0.7 });
+      [[PX0 - 0.2, (PZ0 + PZ1) / 2, 0.4, bl + 0.8], [PX1 + 0.2, (PZ0 + PZ1) / 2, 0.4, bl + 0.8], [(PX0 + PX1) / 2, PZ0 - 0.2, bw, 0.4], [(PX0 + PX1) / 2, PZ1 + 0.2, bw, 0.4]].forEach(function (c) {
+        var m = new T.Mesh(new T.BoxGeometry(c[2], 0.06, c[3]), cop); m.position.set(c[0], 0.03, c[1]); scene.add(m);
+      });
+      // the ladder: two chrome rails bent over the edge
+      var curve = new T.CatmullRomCurve3([new T.Vector3(0, -0.9, 0.12), new T.Vector3(0, 0.0, 0.1), new T.Vector3(0, 0.75, -0.1), new T.Vector3(0, 0.75, -0.35), new T.Vector3(0, 0.0, -0.45)]);
+      var chrome = new T.MeshStandardMaterial({ color: 0xe9eef2, roughness: 0.12, metalness: 0.95 });
+      [-0.25, 0.25].forEach(function (o) { var lr = new T.Mesh(new T.TubeGeometry(curve, 24, 0.022, 8), chrome); lr.position.set(PX1 + 0.02, 0, -8 + o); lr.rotation.y = -Math.PI / 2; scene.add(lr); });
+    })();
+    var waterTex = tex(256, 256, function (x, w, h) {
+      x.fillStyle = '#4cc6ea'; x.fillRect(0, 0, w, h);
+      x.lineCap = 'round';
+      for (var i = 0; i < 90; i++) {
+        x.strokeStyle = 'rgba(225,250,255,' + rnd(0.18, 0.5).toFixed(2) + ')'; x.lineWidth = rnd(1, 3);
+        var px = rnd(0, w), py = rnd(0, h); x.beginPath(); x.moveTo(px, py); x.bezierCurveTo(px + rnd(-20, 20), py + rnd(-20, 20), px + rnd(-20, 20), py + rnd(-20, 20), px + rnd(-30, 30), py + rnd(-30, 30)); x.stroke();
+      }
+    });
+    waterTex.wrapS = waterTex.wrapT = T.RepeatWrapping; waterTex.repeat.set(3, 6);
+    var water = new T.Mesh(new T.PlaneGeometry(PX1 - PX0, PZ1 - PZ0), new T.MeshStandardMaterial({ map: waterTex, color: 0xd8f6ff, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.88 }));
+    water.rotation.x = -Math.PI / 2; water.position.set((PX0 + PX1) / 2, -0.18, (PZ0 + PZ1) / 2); scene.add(water);
+
+    // ---------------- loungers and umbrellas at the stern ----------------
+    var frameMat = new T.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.4 });
+    var padMats = [new T.MeshStandardMaterial({ color: 0x1aa0b8, roughness: 0.8 }), new T.MeshStandardMaterial({ color: 0xffb33c, roughness: 0.8 })];
+    function lounger(x, z, ry, k) {
+      var g = new T.Group();
+      var base = new T.Mesh(new T.BoxGeometry(0.66, 0.07, 1.25), frameMat); base.position.set(0, 0.3, 0.25); g.add(base);
+      var pad = new T.Mesh(new T.BoxGeometry(0.6, 0.06, 1.2), padMats[k % 2]); pad.position.set(0, 0.36, 0.25); g.add(pad);
+      var back = new T.Mesh(new T.BoxGeometry(0.6, 0.06, 0.72), padMats[k % 2]); back.position.set(0, 0.56, -0.62); back.rotation.x = -0.75; g.add(back);
+      var bfr = new T.Mesh(new T.BoxGeometry(0.66, 0.05, 0.75), frameMat); bfr.position.set(0, 0.53, -0.6); bfr.rotation.x = -0.75; g.add(bfr);
+      [[-0.3, 0.8], [0.3, 0.8], [-0.3, -0.3], [0.3, -0.3]].forEach(function (l) { var lg = new T.Mesh(new T.BoxGeometry(0.04, 0.3, 0.04), frameMat); lg.position.set(l[0], 0.15, l[1]); g.add(lg); });
+      g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    }
+    for (var li = 0; li < 6; li++) lounger(-12 + li * 1.05, -20.6, Math.PI, li);
+    for (var lk = 0; lk < 3; lk++) lounger(-4.2 + lk * 1.05, -21.2, Math.PI, lk + 1);
+    for (var lj = 0; lj < 4; lj++) lounger(-12.3, -15 + lj * 2.3, Math.PI / 2, lj + 1);
+    var umbTex = tex(256, 64, function (x, w, h) { for (var i = 0; i < 12; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#1aa0b8'; x.fillRect(i * w / 12, 0, w / 12 + 1, h); } });
+    function umbrella(x, z, c) {
+      var top = new T.Mesh(new T.ConeGeometry(1.25, 0.45, 12, 1, true), new T.MeshStandardMaterial({ map: umbTex, color: c || 0xffffff, side: T.DoubleSide, roughness: 0.7 }));
+      top.position.set(x, 2.25, z); scene.add(top);
+      var pole = new T.Mesh(new T.CylinderGeometry(0.025, 0.025, 2.3, 8), frameMat); pole.position.set(x, 1.15, z); scene.add(pole);
+    }
+    umbrella(-10.4, -21.6); umbrella(-7.2, -21.6, 0xffe2a8); umbrella(-13, -12.4); umbrella(-3.1, -22.3, 0xffd0c8);
+    // a flagpole at the stern, with an original house flag
+    var flagTex = tex(128, 80, function (x, w, h) {
+      x.fillStyle = '#12305e'; x.fillRect(0, 0, w, h);
+      x.fillStyle = '#ffc93c'; x.beginPath(); x.arc(w / 2, h / 2, 20, 0, 7); x.fill();
+      x.strokeStyle = '#ffc93c'; x.lineWidth = 4; for (var i = 0; i < 12; i++) { var a = i * Math.PI / 6; x.beginPath(); x.moveTo(w / 2 + Math.cos(a) * 26, h / 2 + Math.sin(a) * 26); x.lineTo(w / 2 + Math.cos(a) * 34, h / 2 + Math.sin(a) * 34); x.stroke(); }
+      x.fillStyle = '#ff5a1f'; x.fillRect(0, h - 10, w, 10);
+    });
+    var FPX = 2.6, fpole = new T.Mesh(new T.CylinderGeometry(0.04, 0.05, 7, 8), postMat); fpole.position.set(FPX, 3.5, DZ0 + 0.4); scene.add(fpole);
+    var flagGeo = new T.PlaneGeometry(1.6, 1.0, 12, 2), flagBase = flagGeo.attributes.position.array.slice();
+    var flag = new T.Mesh(flagGeo, new T.MeshStandardMaterial({ map: flagTex, side: T.DoubleSide, roughness: 0.8 }));
+    flag.position.set(FPX - 0.8, 6.4, DZ0 + 0.4); flag.rotation.y = Math.PI; scene.add(flag);
+    // potted palms in the stern corners and by the lanes
+    var potMat = new T.MeshStandardMaterial({ color: 0xf4efe6, roughness: 0.6 }), leafMat = new T.MeshStandardMaterial({ color: 0x2f9a4f, roughness: 0.7, side: T.DoubleSide });
+    var trunkMat = new T.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.9 });
+    function palm(x, z, s) {
+      var g = new T.Group();
+      var pot = new T.Mesh(new T.CylinderGeometry(0.34, 0.26, 0.55, 14), potMat); pot.position.y = 0.275; g.add(pot);
+      var tr = new T.Mesh(new T.CylinderGeometry(0.06, 0.09, 1.9, 8), trunkMat); tr.position.y = 1.5; tr.rotation.z = 0.06; g.add(tr);
+      for (var i = 0; i < 9; i++) {
+        var lf = new T.Mesh(new T.PlaneGeometry(0.34, 1.25, 1, 4), leafMat), pa = lf.geometry.attributes.position;
+        for (var k = 0; k < pa.count; k++) { var yy = pa.getY(k) + 0.625; pa.setZ(k, -yy * yy * 0.28); pa.setX(k, pa.getX(k) * (1 - yy / 1.4)); }
+        lf.geometry.computeVertexNormals(); lf.geometry.translate(0, 0.625, 0);
+        var hold = new T.Group(); hold.position.y = 2.42; hold.rotation.y = i * 2 * Math.PI / 9 + rnd(-0.2, 0.2); lf.rotation.x = -1.0 - rnd(0, 0.35); hold.add(lf); g.add(hold);
+      }
+      g.position.set(x, 0, z); g.scale.setScalar(s || 1); scene.add(g);
+    }
+    palm(2.4, DZ0 + 1.3, 1); palm(-12.2, DZ0 + 1.3, 1.1); palm(-1.1, DZ0 + 1.2, 0.85); palm(1.9, 6.5, 1);
+
+    // ---------------- the shuffleboard court ----------------
+    // 40 px a foot; the far end at the top of the texture (so the far triangle's numbers read upright from the player)
+    var PXF = 40, CW = 6 * PXF, CL = 52 * PXF;
+    var courtTex = tex(CW, CL, function (x, w, h) {
+      x.fillStyle = '#f2d39a'; x.fillRect(0, 0, w, h);
+      for (var i = 0; i < 1600; i++) { x.fillStyle = 'rgba(150,120,80,' + rnd(0.02, 0.06).toFixed(3) + ')'; x.fillRect(rnd(0, w), rnd(0, h), rnd(1, 3), rnd(1, 3)); }
+      var NAVY = '#20406e', lw = SB.LINE / DK.FT * PXF;
+      function Y(zm) { return h - zm / DK.FT * PXF; }               // canvas y for a court z (m from the near end)
+      function X(xm) { return w / 2 + xm / DK.FT * PXF; }
+      x.fillStyle = NAVY; x.strokeStyle = NAVY; x.lineWidth = lw;
+      function hline(zm) { x.fillRect(0, Y(zm) - lw / 2, w, lw); }
+      x.fillRect(0, 0, lw * 1.5, h); x.fillRect(w - lw * 1.5, 0, lw * 1.5, h);   // the court's side lines
+      hline(SB.ZB); hline(SB.NEAR_BASE); hline(SB.ZD); hline(SB.L - SB.ZD);
+      // a triangle: its base on the baseline at zb, its tip at za, band lines at the given z's; flip = the near one
+      function triangle(za, zb, bands, flip) {
+        var hwz = function (z) { return SB.HALF * (z - za) / (zb - za); };
+        x.beginPath(); x.moveTo(X(-SB.HALF), Y(zb)); x.lineTo(X(0), Y(za)); x.lineTo(X(SB.HALF), Y(zb)); x.stroke();
+        bands.forEach(function (bz) { var hh = hwz(bz); x.beginPath(); x.moveTo(X(-hh), Y(bz)); x.lineTo(X(hh), Y(bz)); x.stroke(); });
+        x.beginPath(); x.moveTo(X(0), Y(bands[0])); x.lineTo(X(0), Y(bands[2])); x.stroke();      // the center line through the 8s and 7s
+        function num(t, xm, zm, size) {
+          x.save(); x.translate(X(xm), Y(zm)); if (flip) x.rotate(Math.PI);
+          x.font = '800 ' + size + 'px "Arial Rounded MT Bold", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = NAVY; x.fillText(t, 0, 0); x.restore();
+        }
+        var m = function (a, b) { return (a + b) / 2; };
+        num('10', 0, m(za, bands[0]) + (bands[0] - za) * 0.12, 34);
+        num('8', -hwz(m(bands[0], bands[1])) * 0.5, m(bands[0], bands[1]), 44); num('8', hwz(m(bands[0], bands[1])) * 0.5, m(bands[0], bands[1]), 44);
+        num('7', -hwz(m(bands[1], bands[2])) * 0.52, m(bands[1], bands[2]), 46); num('7', hwz(m(bands[1], bands[2])) * 0.52, m(bands[1], bands[2]), 46);
+        num('10 OFF', 0, m(bands[2], zb), 30);
+      }
+      triangle(SB.ZA, SB.ZB, [SB.Z10, SB.Z8, SB.Z7], false);
+      // the near triangle mirrors the far one (for play the other way)
+      var mz = function (z) { return SB.L - z; };
+      (function () {
+        var za = mz(SB.ZA), zb = mz(SB.ZB), hwz = function (z) { return SB.HALF * (za - z) / (za - zb); };
+        x.beginPath(); x.moveTo(X(-SB.HALF), Y(zb)); x.lineTo(X(0), Y(za)); x.lineTo(X(SB.HALF), Y(zb)); x.stroke();
+        [mz(SB.Z10), mz(SB.Z8), mz(SB.Z7)].forEach(function (bz) { var hh = hwz(bz); x.beginPath(); x.moveTo(X(-hh), Y(bz)); x.lineTo(X(hh), Y(bz)); x.stroke(); });
+        x.beginPath(); x.moveTo(X(0), Y(mz(SB.Z10))); x.lineTo(X(0), Y(mz(SB.Z7))); x.stroke();
+        function num(t, xm, zm, size) { x.save(); x.translate(X(xm), Y(zm)); x.rotate(Math.PI); x.font = '800 ' + size + 'px "Arial Rounded MT Bold", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = NAVY; x.fillText(t, 0, 0); x.restore(); }
+        var m = function (a, b) { return (a + b) / 2; };
+        num('10', 0, m(za, mz(SB.Z10)) - (za - mz(SB.Z10)) * 0.12, 34);
+        var z8 = m(mz(SB.Z10), mz(SB.Z8)), z7 = m(mz(SB.Z8), mz(SB.Z7));
+        num('8', -hwz(z8) * 0.5, z8, 44); num('8', hwz(z8) * 0.5, z8, 44); num('7', -hwz(z7) * 0.52, z7, 46); num('7', hwz(z7) * 0.52, z7, 46);
+        num('10 OFF', 0, m(mz(SB.Z7), zb), 30);
+      })();
+      // the two half-rounds where discs are set (an original touch: little chevrons by the baselines)
+      x.globalAlpha = 0.5; [-0.5, 0.5].forEach(function (s) { x.beginPath(); x.moveTo(X(s - 0.12), Y(SB.NEAR_BASE - 0.12)); x.lineTo(X(s), Y(SB.NEAR_BASE - 0.04)); x.lineTo(X(s + 0.12), Y(SB.NEAR_BASE - 0.12)); x.stroke(); }); x.globalAlpha = 1;
+    });
+    courtTex.anisotropy = 16;
+    var court = new T.Mesh(new T.PlaneGeometry(SB.W, SB.L), new T.MeshStandardMaterial({ map: courtTex, roughness: 0.62, metalness: 0, envMapIntensity: 0.5 }));
+    court.rotation.x = -Math.PI / 2; court.position.set(0, 0.003, -SB.L / 2); scene.add(court);
+    // a teak border strip around the court (a slightly darker varnish)
+    var borderMat = new T.MeshStandardMaterial({ color: 0x7a4a26, roughness: 0.5 });
+    [-1, 1].forEach(function (s) { var b = new T.Mesh(new T.BoxGeometry(0.05, 0.012, SB.L + 0.1), borderMat); b.position.set(s * (SB.HALF + 0.025), 0.006, -SB.L / 2); scene.add(b); });
+    [0, SB.L].forEach(function (z) { var b = new T.Mesh(new T.BoxGeometry(SB.W + 0.1, 0.012, 0.05), borderMat); b.position.set(0, 0.006, -z + (z ? -0.025 : 0.025)); scene.add(b); });
+    // ---------------- discs ----------------
+    var discGeo = new T.LatheGeometry([[0, 0], [0.072, 0], [0.0762, 0.003], [0.0762, 0.021], [0.073, 0.0254], [0.061, 0.0254], [0.058, 0.0215], [0, 0.0215]].map(function (p) { return new T.Vector2(p[0], p[1]); }), 36);
+    var discTopTex = tex(128, 128, function (x, w, h) {
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
+      x.strokeStyle = 'rgba(0,0,0,.22)'; x.lineWidth = 5; x.beginPath(); x.arc(64, 64, 34, 0, 7); x.stroke();
+      x.fillStyle = 'rgba(0,0,0,.22)'; x.beginPath(); x.moveTo(64, 30); x.lineTo(70, 46); x.lineTo(58, 46); x.closePath(); x.fill();
+    });
+    var discCap = new T.CircleGeometry(0.058, 32); discCap.rotateX(-Math.PI / 2); discCap.translate(0, 0.0217, 0);
+    var sideCol = ['#e8453c', '#2f6fd6'];
+    var discMats = [0, 1].map(function (s) { return new T.MeshStandardMaterial({ color: sideCol[s], roughness: 0.28, metalness: 0.05 }); });
+    var capMats = [0, 1].map(function (s) { return new T.MeshStandardMaterial({ color: sideCol[s], map: discTopTex, roughness: 0.35 }); });
+    var blobTex = tex(64, 64, function (x, w, h) { var g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,.5)'); g.addColorStop(0.55, 'rgba(0,0,0,.25)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }, false);
+    var blobMat = new T.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false });
+    function blob(size) { var g = new T.PlaneGeometry(size, size); g.rotateX(-Math.PI / 2); var m = new T.Mesh(g, blobMat.clone()); m.renderOrder = 1; scene.add(m); return m; }
+    var discs = {};
+    function discMesh(id, side) {
+      if (discs[id] && discs[id].side === side) return discs[id];
+      if (discs[id]) { scene.remove(discs[id].g); scene.remove(discs[id].sh); }
+      var g = new T.Group(), body = new T.Mesh(discGeo, discMats[side].clone()), cap = new T.Mesh(discCap, capMats[side].clone());
+      g.add(body); g.add(cap); scene.add(g);
+      discs[id] = { g: g, body: body, cap: cap, sh: blob(0.22), side: side };
+      return discs[id];
+    }
+    // list: [{ id, side, x, z, a, alpha, y }]
+    function setDiscs(list) {
+      var seen = {};
+      list.forEach(function (o) {
+        var d = discMesh(o.id, o.side), al = o.alpha == null ? 1 : o.alpha; seen[o.id] = 1;
+        var y = 0.004 + (o.y || 0);
+        d.g.visible = al > 0.01; d.g.position.set(o.x, y, -o.z); d.g.rotation.y = o.a || 0;
+        [d.body, d.cap].forEach(function (m) { m.material.transparent = al < 0.999; m.material.opacity = al; });
+        d.sh.visible = d.g.visible; d.sh.position.set(o.x + 0.012, 0.0045, -o.z - 0.008); d.sh.material.opacity = al * 0.9;
+      });
+      for (var id in discs) if (!seen[id]) { discs[id].g.visible = false; discs[id].sh.visible = false; }
+    }
+    // ---------------- the cue ----------------
+    // an aluminum shaft about 6 ft long with a curved black head that cups the disc; held up at hip height
+    var cue = new T.Group();
+    var cueHead = new T.Mesh(new T.TorusGeometry(0.085, 0.011, 8, 20, Math.PI), new T.MeshStandardMaterial({ color: 0x1b1d22, roughness: 0.4 }));
+    cueHead.rotation.x = Math.PI / 2; cueHead.rotation.z = Math.PI; cueHead.position.set(0, 0.016, 0); cue.add(cueHead);
+    var cueNeck = new T.Mesh(new T.BoxGeometry(0.02, 0.02, 0.09), cueHead.material); cueNeck.position.set(0, 0.03, 0.12); cue.add(cueNeck);
+    var shaftLen = 1.85, shaft = new T.Mesh(new T.CylinderGeometry(0.011, 0.013, shaftLen, 10), new T.MeshStandardMaterial({ color: 0xd6dbe2, roughness: 0.25, metalness: 0.8 }));
+    var lift = Math.asin(0.42 / shaftLen);    // the handle end is about 0.45 m up (held low, as for a long push)
+    shaft.rotation.x = Math.PI / 2 - lift; shaft.position.set(0, 0.04 + Math.sin(lift) * shaftLen / 2, 0.16 + Math.cos(lift) * shaftLen / 2); cue.add(shaft);
+    var grip = new T.Mesh(new T.CylinderGeometry(0.016, 0.016, 0.3, 10), new T.MeshStandardMaterial({ color: 0x1aa0b8, roughness: 0.6 }));
+    grip.rotation.x = shaft.rotation.x; grip.position.set(0, 0.04 + Math.sin(lift) * (shaftLen - 0.15), 0.16 + Math.cos(lift) * (shaftLen - 0.15)); cue.add(grip);
+    scene.add(cue); cue.visible = false;
+    function setCue(x, z, ang, visible) {
+      cue.visible = !!visible; if (!visible) return;
+      cue.position.set(x - Math.sin(ang) * (SB.R + 0.012), 0.004, -z + Math.cos(ang) * (SB.R + 0.012)); cue.rotation.y = -ang;
+    }
+    // ---------------- the aim line ----------------
+    // dashes as thin flat strips (a 1 px line vanishes on the cream court)
+    var aimMax = 24, aimPos = new Float32Array(aimMax * 6 * 3), aimGeo = new T.BufferGeometry();
+    aimGeo.setAttribute('position', new T.BufferAttribute(aimPos, 3)); aimGeo.setDrawRange(0, 0);
+    var aimMesh = new T.Mesh(aimGeo, new T.MeshBasicMaterial({ color: 0x1aa0b8, transparent: true, opacity: 0.85, depthWrite: false, side: T.DoubleSide, fog: false }));
+    aimMesh.renderOrder = 5; aimMesh.frustumCulled = false; scene.add(aimMesh);
+    // pts: pairs of points (dash start, dash end) in game coordinates for the mode, or null
+    function setAim(mode, pts, color, width) {
+      if (!pts || pts.length < 2) { aimGeo.setDrawRange(0, 0); return; }
+      var n = 0, hw2 = (width || 0.03) / 2;
+      for (var i = 0; i + 1 < pts.length && n < aimMax; i += 2, n++) {
+        var a = W(mode, pts[i][0], pts[i][1], pts[i][2]), b = W(mode, pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
+        var dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * hw2, nz = dx / l * hw2;
+        aimPos.set([a.x + nx, a.y, a.z + nz, a.x - nx, a.y, a.z - nz, b.x + nx, b.y, b.z + nz, b.x + nx, b.y, b.z + nz, a.x - nx, a.y, a.z - nz, b.x - nx, b.y, b.z - nz], n * 18);
+      }
+      aimGeo.attributes.position.needsUpdate = true; aimGeo.setDrawRange(0, n * 6);
+      aimMesh.material.color.set(color || '#1aa0b8');
+    }
+
+    // ---------------- the cornhole boards ----------------
+    var boardTex = tex(256, 512, function (x, w, h) {
+      // (the board's top, front edge at the bottom of the texture)
+      x.fillStyle = '#fbfaf6'; x.fillRect(0, 0, w, h);
+      x.fillStyle = '#12305e'; x.fillRect(0, 0, w, 14); x.fillRect(0, h - 14, w, 14); x.fillRect(0, 0, 14, h); x.fillRect(w - 14, 0, 14, h);
+      // a teal wave across the lower half, an original compass rose near the front, the ship's name
+      x.fillStyle = '#1aa0b8'; x.beginPath(); x.moveTo(14, 330); for (var i = 0; i <= 8; i++) x.quadraticCurveTo(14 + (i + 0.5) * (w - 28) / 8, 312 + (i % 2 ? 22 : -10), 14 + (i + 1) * (w - 28) / 8, 330); x.lineTo(w - 14, 372); for (var j = 8; j >= 0; j--) x.quadraticCurveTo(14 + (j + 0.5) * (w - 28) / 8, 360 + (j % 2 ? 22 : -10), 14 + j * (w - 28) / 8, 372); x.closePath(); x.fill();
+      x.save(); x.translate(w / 2, 432); x.fillStyle = '#ff5a1f'; for (var k = 0; k < 8; k++) { x.rotate(Math.PI / 4); x.beginPath(); x.moveTo(0, -(k % 2 ? 24 : 40)); x.lineTo(6, 0); x.lineTo(-6, 0); x.closePath(); x.fill(); } x.fillStyle = '#12305e'; x.beginPath(); x.arc(0, 0, 7, 0, 7); x.fill(); x.restore();
+      x.fillStyle = '#12305e'; x.font = '900 25px Georgia, serif'; x.textAlign = 'center'; x.fillText('GOOBS', w / 2, 260); x.font = '800 15px Georgia, serif'; x.fillText('MARINER', w / 2, 282);
+      // a ring painted round the hole
+      var hy = h - (CH.HOLE_W / CH.BL) * h; x.strokeStyle = '#ff5a1f'; x.lineWidth = 6; x.beginPath(); x.arc(w / 2, hy, (CH.HOLE_R + 0.02) / CH.BW * w, 0, 7); x.stroke();
+    });
+    boardTex.repeat.set(1 / CH.BW, 1 / CH.BL); boardTex.offset.set(0.5, 0);
+    var boardTopMat = new T.MeshStandardMaterial({ map: boardTex, roughness: 0.45 });
+    var boardSideMat = new T.MeshStandardMaterial({ color: 0x12305e, roughness: 0.5 });
+    var boardInMat = new T.MeshBasicMaterial({ color: 0x0b0f18 });
+    var slope = Math.asin(CH.SIN);
+    function board(zFront, faceAway) {
+      var g = new T.Group();
+      var shape = new T.Shape(); shape.moveTo(-CH.BW / 2, 0); shape.lineTo(CH.BW / 2, 0); shape.lineTo(CH.BW / 2, CH.BL); shape.lineTo(-CH.BW / 2, CH.BL); shape.closePath();
+      var hp = new T.Path(); hp.absarc(0, CH.HOLE_W, CH.HOLE_R, 0, Math.PI * 2, true); shape.holes.push(hp);
+      var top = new T.Mesh(new T.ShapeGeometry(shape, 40), boardTopMat); g.add(top);
+      // the hole's inner wall (the plywood edge) and the dark inside of the box
+      var rim = new T.Mesh(new T.CylinderGeometry(CH.HOLE_R, CH.HOLE_R, 0.02, 32, 1, true), new T.MeshStandardMaterial({ color: 0xc9a77a, side: T.DoubleSide, roughness: 0.8 }));
+      rim.rotation.x = Math.PI / 2; rim.position.set(0, CH.HOLE_W, -0.01); g.add(rim);
+      var inside = new T.Mesh(new T.PlaneGeometry(CH.BW - 0.04, CH.BL - 0.04), boardInMat); inside.position.set(0, CH.BL / 2, -0.07); g.add(inside);
+      // the frame: 2x4 sides around it, flush with the top
+      var fd = 0.09;
+      [[-CH.BW / 2 - 0.0, CH.BL / 2, 0.02, CH.BL], [CH.BW / 2, CH.BL / 2, 0.02, CH.BL]].forEach(function (s) { var m = new T.Mesh(new T.BoxGeometry(s[2], s[3], fd), boardSideMat); m.position.set(s[0], s[1], -fd / 2); g.add(m); });
+      [[0, 0, CH.BW + 0.02], [0, CH.BL, CH.BW + 0.02]].forEach(function (s) { var m = new T.Mesh(new T.BoxGeometry(s[2], 0.02, fd), boardSideMat); m.position.set(s[0], s[1], -fd / 2); g.add(m); });
+      g.rotation.x = -(Math.PI / 2 - slope);
+      var holder = new T.Group(); holder.add(g); g.position.set(0, CH.FRONT_H, 0);
+      // the legs at the back
+      [-1, 1].forEach(function (s) { var lg = new T.Mesh(new T.BoxGeometry(0.04, CH.BACK_H - 0.02, 0.06), boardSideMat); lg.position.set(s * (CH.BW / 2 - 0.04), (CH.BACK_H - 0.02) / 2, -CH.BL * Math.cos(slope) + 0.06); holder.add(lg); });
+      holder.position.set(CX, 0, -zFront); if (faceAway) { holder.rotation.y = Math.PI; }
+      scene.add(holder);
+      return holder;
+    }
+    board(CH.ZF, false);
+    board(0, true);   // the near board (the player throws from beside it); it faces the far one
+    // ---------------- bags ----------------
+    var bagGeo = new T.BoxGeometry(CH.BAG, CH.TH, CH.BAG, 8, 2, 8);
+    (function () {
+      // puff it into a pillow: full thickness in the middle, thin at the seams
+      var p = bagGeo.attributes.position, hx = CH.BAG / 2;
+      for (var i = 0; i < p.count; i++) {
+        var x = p.getX(i) / hx, z = p.getZ(i) / hx, k = Math.sqrt(Math.max(0, (1 - x * x * x * x) * (1 - z * z * z * z)));
+        p.setY(i, p.getY(i) * (0.25 + 0.75 * k));
+        p.setX(i, p.getX(i) * (0.97 + 0.03 * k)); p.setZ(i, p.getZ(i) * (0.97 + 0.03 * k));
+      }
+      bagGeo.computeVertexNormals();
+    })();
+    var fabricTex = tex(128, 128, function (x, w, h) {
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
+      for (var i = 0; i < w; i += 2) { x.fillStyle = 'rgba(0,0,0,' + (0.04 + (i % 4 ? 0.03 : 0)).toFixed(2) + ')'; x.fillRect(i, 0, 1, h); x.fillRect(0, i, w, 1); }
+      x.strokeStyle = 'rgba(255,255,255,.75)'; x.setLineDash([5, 4]); x.lineWidth = 2.2; x.strokeRect(9, 9, w - 18, h - 18);
+    });
+    var bagMats = [0, 1].map(function (s) { return new T.MeshStandardMaterial({ color: sideCol[s], map: fabricTex, roughness: 0.92 }); });
+    var bags = {};
+    function bagMesh(id, side) {
+      if (bags[id] && bags[id].side === side) return bags[id];
+      if (bags[id]) { scene.remove(bags[id].m); scene.remove(bags[id].sh); }
+      var m = new T.Mesh(bagGeo, bagMats[side].clone()); m.rotation.order = 'XYZ'; scene.add(m);
+      bags[id] = { m: m, sh: blob(0.24), side: side };
+      return bags[id];
+    }
+    // list: [{ id, side, x, y, z (game coords, the bag's middle), yaw, pitch, roll, alpha, sh: shadow point {x,y,z,tilt} }]
+    function setBags(list) {
+      var seen = {};
+      list.forEach(function (o) {
+        var b = bagMesh(o.id, o.side), al = o.alpha == null ? 1 : o.alpha, p = W('corn', o.x, o.y, o.z); seen[o.id] = 1;
+        b.m.visible = al > 0.01; b.m.position.copy(p); b.m.rotation.set(o.pitch || 0, -(o.yaw || 0), o.roll || 0);
+        b.m.material.transparent = al < 0.999; b.m.material.opacity = al;
+        if (o.sh) {
+          var s = W('corn', o.sh.x, o.sh.y + 0.004, o.sh.z); b.sh.visible = b.m.visible; b.sh.position.copy(s); b.sh.rotation.x = o.sh.tilt || 0;
+          b.sh.material.opacity = al * Math.max(0, 1 - Math.max(0, o.y - o.sh.y) * 0.5);
+        } else b.sh.visible = false;
+      });
+      for (var id in bags) if (!seen[id]) { bags[id].m.visible = false; bags[id].sh.visible = false; }
+    }
+    function setColors(c0, c1) {
+      sideCol = [c0, c1];
+      [discMats, capMats, bagMats].forEach(function (ms) { ms[0].color.set(c0); ms[1].color.set(c1); });
+      for (var id in discs) { discs[id].body.material.color.set(sideCol[discs[id].side]); discs[id].cap.material.color.set(sideCol[discs[id].side]); }
+      for (var id2 in bags) bags[id2].m.material.color.set(sideCol[bags[id2].side]);
+    }
+
+    // ---------------- one draw per material for everything that never moves ----------------
+    // (the railings, loungers, palms, pool, boards and so on are a few hundred small meshes; merged, the phone draws
+    // the deck in a few dozen calls)
+    (function mergeStatic() {
+      var keep = {}, groups = {}, order = [];
+      [sky, sea, wake, water, flag, cue, aimMesh, deck, court].forEach(function (m) { keep[m.uuid] = 1; });
+      cue.traverse(function (o) { keep[o.uuid] = 1; });
+      scene.updateMatrixWorld(true);
+      var list = [];
+      scene.traverse(function (o) {
+        if (!o.isMesh || o.isInstancedMesh || keep[o.uuid] || o.material.transparent && o.material !== glassMat) return;
+        var g = o.geometry; if (!g.attributes.position || !g.attributes.normal || !g.attributes.uv) return;
+        list.push(o);
+      });
+      list.forEach(function (o) {
+        var k = o.material.uuid; if (!groups[k]) { groups[k] = { mat: o.material, parts: [], order: o.renderOrder }; order.push(k); }
+        var g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+        g.applyMatrix4(o.matrixWorld);
+        groups[k].parts.push(g);
+      });
+      list.forEach(function (o) { o.parent.remove(o); });
+      order.forEach(function (k) {
+        var parts = groups[k].parts, n = 0; parts.forEach(function (g) { n += g.attributes.position.count; });
+        var pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2), o3 = 0, o2 = 0;
+        var col = parts.every(function (g) { return !!g.attributes.color; }) ? new Float32Array(n * 3) : null;
+        parts.forEach(function (g) {
+          pos.set(g.attributes.position.array, o3); nor.set(g.attributes.normal.array, o3); uv.set(g.attributes.uv.array, o2);
+          if (col) col.set(g.attributes.color.array, o3);
+          o3 += g.attributes.position.count * 3; o2 += g.attributes.position.count * 2;
+        });
+        var mg = new T.BufferGeometry();
+        mg.setAttribute('position', new T.BufferAttribute(pos, 3)); mg.setAttribute('normal', new T.BufferAttribute(nor, 3)); mg.setAttribute('uv', new T.BufferAttribute(uv, 2));
+        if (col) mg.setAttribute('color', new T.BufferAttribute(col, 3));
+        mg.computeBoundingSphere();
+        var m = new T.Mesh(mg, groups[k].mat); m.renderOrder = groups[k].order; scene.add(m);
+      });
+    })();
+
+    // ---------------- updates from the app ----------------
+    var clock = 0;
+    function resize(w, h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    function render(dt) {
+      clock += dt || 0;
+      seaTex.offset.set(clock * 0.004, clock * 0.012);
+      waterTex.offset.set(Math.sin(clock * 0.3) * 0.05, clock * 0.02);
+      var p = flagGeo.attributes.position;
+      for (var i = 0; i < p.count; i++) { var bx = flagBase[i * 3], u = (bx + 0.8) / 1.6; p.setZ(i, Math.sin(clock * 5 - u * 5) * 0.12 * u); }
+      p.needsUpdate = true; flagGeo.computeVertexNormals();
+      renderer.render(scene, camera);
+    }
+    // the camera, in the mode's game coordinates
+    function look(mode, p, l, fov) {
+      var a = W(mode, p[0], p[1], p[2]), b = W(mode, l[0], l[1], l[2]);
+      camera.position.copy(a); camera.lookAt(b);
+      if (fov && Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    }
+    var v3 = new T.Vector3();
+    function toScreen(mode, x, y, z, w, h) { var a = W(mode, x, y, z); v3.copy(a).project(camera); return { x: (v3.x + 1) / 2 * w, y: (1 - v3.y) / 2 * h }; }
+    return { renderer: renderer, scene: scene, camera: camera, setDiscs: setDiscs, setCue: setCue, setAim: setAim, setBags: setBags, setColors: setColors,
+      resize: resize, render: render, look: look, toScreen: toScreen, CX: CX, slope: slope };
+  }
+  return { build: build };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Lido Deck app: two deck games on a cruise ship's pool deck, Shuffleboard and Cornhole, each against the phone
+   (Sunny, Skipper, the Commodore), two players passing the phone, or practice. Slide sideways to line up, swipe up
+   to push the disc or throw the bag (a faster swipe goes farther; the swipe's tilt aims). The rules, physics and
+   bots are in logic.js (DK), the 3D deck in scene.js (three.js from /shared), sounds in sound.js. Each game keeps
+   its own match going and saves after every shot; stats; house ads only between games. */
+(function () {
+  'use strict';
+  var S = DKSound, SC = null, SB = DK.SB, CH = DK.CH, DT = DK.DT;
+  var COLORS = ['#e8453c', '#2f6fd6'];
+
+  // ================= storage =================
+  var store = Goobs.store('deck');
+  var settings = { sound: false, adEvery: 2, target: 75, aim: true, n0: 'Glenn', n1: 'Cindy' };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); if (settings.target !== 50) settings.target = 75; })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  function vsBlank() { return { easy: [0, 0], medium: [0, 0], hard: [0, 0] }; }
+  var MD = { mode: 'shuffle', seen: false, finished: 0, lastAdAt: 0, wins: 0, hs: 0, hc: 0 };   // (hs, hc: shots by people, for the first tips)
+  var SBD = { games: 0, wins: 0, two: 0, bestFrame: 0, tens: 0, kitchens: 0, offs: 0, discs: 0, frames: 0, pracBest: 0, pracFrames: 0, bigWin: 0 };
+  var CHD = { games: 0, wins: 0, two: 0, bestInning: 0, holes: 0, swish: 0, four: 0, bags: 0, innings: 0, raw: 0, pracBest: 0, pracRounds: 0, bigWin: 0 };
+  for (var mk in MD) if (typeof meta[mk] !== typeof MD[mk]) meta[mk] = MD[mk];
+  [['sb', SBD], ['ch', CHD]].forEach(function (p) {
+    var o = meta[p[0]] && typeof meta[p[0]] === 'object' ? meta[p[0]] : {};
+    for (var k in p[1]) if (typeof o[k] !== typeof p[1][k]) o[k] = p[1][k];
+    if (!o.vs || typeof o.vs !== 'object') o.vs = vsBlank();
+    ['easy', 'medium', 'hard'].forEach(function (l) { if (!Array.isArray(o.vs[l])) o.vs[l] = [0, 0]; });
+    meta[p[0]] = o;
+  });
+  if (meta.mode !== 'corn') meta.mode = 'shuffle';
+  function saveMeta() { store.set('meta', meta); }
+  function loadG(m) {
+    var g = store.get('game_' + m, null);
+    if (!g || g.v !== 1 || g.mode !== m || g.over || !Array.isArray(g.pieces) || !Array.isArray(g.score) || !Array.isArray(g.xs) || !g.gs) return null;
+    if (['easy', 'medium', 'hard', 'two', 'practice'].indexOf(g.opp) < 0) return null;
+    return g;
+  }
+  var games = { shuffle: loadG('shuffle'), corn: loadG('corn') };
+  var mode = meta.mode, G = games[mode];
+  function saveGame() { if (G && !G.over) store.set('game_' + mode, G); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { var e = $(id); return !!e && e.classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovHelp') || isOpen('ovStats') || isOpen('ovStart') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function esc(s) { return String(s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
+  var msgT = 0;
+  var msgLog = [];
+  function message(html, cls, ms) { msgLog.push(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); if (msgLog.length > 60) msgLog.shift(); var m = $('msg'); m.innerHTML = html; m.className = 'msg show ' + (cls || ''); clearTimeout(msgT); msgT = setTimeout(function () { m.className = 'msg'; }, ms || 1500); }
+  var tipT = 0;
+  function tip(text, ms) { var t = $('tip'); clearTimeout(tipT); if (!text) { t.classList.add('hide'); return; } t.innerHTML = text; t.classList.remove('hide'); tipT = setTimeout(function () { t.classList.add('hide'); }, ms || 3500); }
+  function modeName(m) { return (m || mode) === 'shuffle' ? 'Shuffleboard' : 'Cornhole'; }
+  function piece(m) { return (m || mode) === 'shuffle' ? 'disc' : 'bag'; }
+  function isBot(g, side) { g = g || G; return side === 1 && (g.opp === 'easy' || g.opp === 'medium' || g.opp === 'hard'); }
+  function isHuman(side) { return !isBot(G, side); }
+  function names(g) { g = g || G; if (!g) return ['You', '']; if (g.opp === 'two') return [settings.n0 || 'Player 1', settings.n1 || 'Player 2']; if (g.opp === 'practice') return ['You', '']; return ['You', DK.BOTS[g.opp].name]; }
+  function signed(v) { return v < 0 ? '−' + (-v) : '+' + v; }
+  function dot(side) { return '<i style="background:' + COLORS[side] + '"></i>'; }
+
+  // ================= the match =================
+  // phases: 'load', 'pick' (no game: choose who to play), 'aim' (a person's turn), 'think' (the phone chooses its
+  // shot), 'botmove' (the phone lines up), 'move' (the physics runs), 'after' (pieces settle, dead ones fade),
+  // 'frame' (the frame's result shows), 'over'
+  var phase = 'load', pr = null, evN = 0, acc = 0, settleN = 0, planner = null, thinkT = 0, botShot = null, botT = 0, botFrom = 0;
+  var afterT = 0, frameT = 0, fade = [], lastRes = null, framePieces = null, cueT = -1, turbo = false, liveAim = null, endShown = false;
+  function startGame(opp) {
+    var g = DK.newGame(mode, opp, { target: settings.target });
+    g.names = null;
+    games[mode] = G = g; saveGame();
+    $('ovStart').classList.remove('show'); $('ovEnd').classList.remove('show');
+    S.hissStop(); fade = []; framePieces = null; endShown = false; lastRes = null;
+    $('power').classList.remove('show'); $('turn').classList.remove('hide');
+    S.horn();
+    startTurn(true);
+  }
+  function startTurn(first) {
+    if (!G) { showStart(); return; }
+    if (G.shot >= DK.perFrame(G)) { closeFrame(); if (G.over) { phase = 'over'; gameOver(); return; } }
+    pr = null; planner = null; botShot = null; liveAim = null; cueT = -1;
+    var side = DK.shooter(G);
+    renderHud();
+    if (isHuman(side)) {
+      phase = 'aim';
+      var n = names();
+      // pass-and-play: the name on the turn banner, and a nudge to pass the phone (the shot's result keeps the middle)
+      if (G.opp === 'two') { $('turn').innerHTML = dot(side) + esc(n[side]) + '’s turn <small>· ' + DK.left(G, side) + ' ' + piece() + (DK.left(G, side) === 1 ? '' : 's') + ' left</small>'; if (G.shot > 0 || G.frame > 1) tip('Pass to <b>' + esc(n[side]) + '</b>', 1600); }
+      else $('turn').innerHTML = dot(side) + 'Your turn <small>· ' + DK.left(G, side) + ' ' + piece() + (DK.left(G, side) === 1 ? '' : 's') + ' left</small>';
+      var learn = (mode === 'shuffle' ? meta.hs : meta.hc) < 3;
+      if (learn) tip(mode === 'shuffle' ? 'Slide sideways to set your disc · <b>swipe up</b> to push<br>A faster swipe pushes harder; tilt it to angle' : 'Slide sideways to pick your spot · <b>swipe up</b> to throw<br>A faster swipe throws farther; tilt it to aim', 6000);
+      else if (first) tip('');
+    } else {
+      phase = 'think'; thinkT = 0;
+      planner = DK.plan(G, G.opp);
+      $('turn').innerHTML = dot(side) + esc(names()[side]) + ' <small>is lining up…</small>';
+    }
+  }
+  function shoot(shot) {
+    var side = DK.shooter(G);
+    pr = DK.prepare(G, shot); evN = 0; acc = 0; settleN = 0; cueT = 0; liveAim = null;
+    phase = 'move';
+    if (mode === 'shuffle') { S.push(); S.hissStart(); } else S.whoosh();
+    if (isHuman(side)) { if (mode === 'shuffle') meta.hs++; else meta.hc++; }
+    if (isHuman(side) && shot.power != null) { $('power').textContent = (mode === 'shuffle' ? 'Push ' : 'Throw ') + shot.power; $('power').classList.add('show'); }
+    tip('');
+    $('turn').classList.add('hide');
+  }
+  // what the shot did: messages, stats, and on to the next
+  function finishShot() {
+    S.hissStop();
+    var side = pr.side, mine = side === 0 && G.opp !== 'two', n = names();
+    fade = [];
+    if (mode === 'shuffle') pr.sim.d.forEach(function (d) { if (SB.judge(d)) fade.push({ id: d.id, side: d.side, x: d.x, z: d.z, a: d.a }); });
+    else pr.sim.b.forEach(function (b) { if (b.st === 'deck' || b.st === 'fall') fade.push(bagView(b)); });
+    var res = DK.commit(G, pr); lastRes = res;
+    var st = mode === 'shuffle' ? meta.sb : meta.ch;
+    if (mine) {
+      if (mode === 'shuffle') { st.discs++; st.kitchens += res.kitchen.filter(function (s) { return s === 1; }).length; st.offs += res.knocked.filter(function (k) { return k.side === 1; }).length; }
+      else { st.bags++; if (res.mine === 'swish') st.swish++; }
+    }
+    // the message
+    var opp = 1 - side, them = n[opp], who = G.opp === 'two' ? esc(n[side]) : side === 0 ? 'You' : esc(n[1]);
+    var h = '', cls = '', ms = 1400, extra = '';
+    if (mode === 'shuffle') {
+      var kOpp = res.knocked.filter(function (k) { return k.side === opp; }).length, kOwn = res.knocked.filter(function (k) { return k.side === side; }).length;
+      var kit = res.kitchen.filter(function (s) { return s === opp; }).length, kitOwn = res.kitchen.filter(function (s) { return s === side; }).length;
+      var m = res.mine;
+      var place = m === 10 ? '10!' : m === 8 || m === 7 ? '' + m : m === -10 ? 'Kitchen! −10' : m === 'short' ? 'Short' : m === 'long' ? 'Too long' : m === 'off' ? 'Off the court' : null;
+      if (place === null) {
+        var me = pr.sim.d.filter(function (d) { return d.id === pr.id; })[0];
+        place = me && me.z < SB.ZA + 0.05 ? 'Guard' : me && Math.abs(me.x) < SB.hw(me.z) + SB.R ? 'On the line' : 'No score';
+      }
+      if (kit) { h = 'Kitchen!'; extra = '−10 for ' + esc(them); cls = 'big'; S.cheer(true); }
+      else if (kOpp) { h = kOpp > 1 ? 'Double knock-off!' : 'Knocked off!'; extra = place === '10!' || m === 8 || m === 7 ? 'and you’re on the ' + m : ''; if (side === 1 && G.opp !== 'two') extra = esc(n[1]) + ' got one of yours'; cls = 'big'; S.cheer(kOpp > 1); }
+      else if (m === 10) { h = '10!'; cls = 'big'; if (side === 0 || G.opp === 'two') S.cheer(false); }
+      else if (m === -10) { h = 'Kitchen! −10'; cls = 'bad'; S.aww(); }
+      else { h = place; cls = m === 'short' || m === 'long' || m === 'off' ? 'bad mid' : 'mid'; }
+      if (kOwn && !kit) extra = (extra ? extra + ' · ' : '') + 'knocked your own off';
+      if (kitOwn && m !== -10) extra = (extra ? extra + ' · ' : '') + 'your own into the kitchen';
+    } else {
+      var mm = res.mine;
+      var pin = res.pushedIn.filter(function (s) { return s === side; }).length, pOpp = res.pushedIn.filter(function (s) { return s === opp; }).length;
+      var kOpp2 = res.knocked.filter(function (k) { return k.side === opp; }).length;
+      if (mm === 'swish') { h = 'Swish!'; extra = 'straight in the hole'; cls = 'big'; S.cheer(true); }
+      else if (mm === 'hole') { h = 'In the hole!'; cls = 'big'; S.cheer(false); }
+      else if (mm === 'board') { h = 'On the board'; cls = 'mid'; }
+      else { h = mm === 'short' ? 'Short' : mm === 'long' ? 'Long' : mm === 'wide' ? 'Wide' : 'Off the board'; cls = 'bad mid'; }
+      if (pin) { h = pin > 1 ? 'Pushed two in!' : mm === 'hole' ? 'Two in the hole!' : 'Pushed in!'; cls = 'big'; S.cheer(true); }
+      if (pOpp) extra = (extra ? extra + ' · ' : '') + 'pushed one in for ' + esc(them);
+      if (kOpp2) { if (!pin && mm !== 'hole' && mm !== 'swish') { h = 'Knocked off!'; cls = 'big'; } else extra = (extra ? extra + ' · ' : '') + 'knocked one off'; }
+    }
+    if (G.opp !== 'practice' && (side === 1 || G.opp === 'two')) extra = extra || (G.opp === 'two' ? who : esc(n[1]));
+    message(h + (extra ? '<small>' + extra + '</small>' : ''), cls, cls.indexOf('big') >= 0 ? 1700 : ms);
+    saveGame(); saveMeta();
+    phase = 'after'; afterT = 0;
+    renderHud();
+  }
+  // the frame is over: score it (stats first, while the pieces are still there), then show it
+  function closeFrame() {
+    var raw = DK.rawPoints(G), mine = G.opp !== 'two';
+    if (mine) {
+      if (mode === 'shuffle') {
+        meta.sb.tens += G.pieces.filter(function (d) { return d.side === 0 && SB.zone(d.x, d.z) === 10; }).length;
+        if (G.opp === 'practice') { meta.sb.pracBest = Math.max(meta.sb.pracBest, raw[0]); meta.sb.pracFrames++; }
+        else { meta.sb.bestFrame = Math.max(meta.sb.bestFrame, raw[0]); meta.sb.frames++; }
+      } else {
+        var t = CH.tally(G.pieces);
+        meta.ch.holes += t.holes[0]; if (t.holes[0] === 4) meta.ch.four++;
+        if (G.opp === 'practice') { meta.ch.pracBest = Math.max(meta.ch.pracBest, raw[0]); meta.ch.pracRounds++; }
+        else { meta.ch.bestInning = Math.max(meta.ch.bestInning, raw[0]); meta.ch.innings++; meta.ch.raw += raw[0]; }
+      }
+    }
+    var fr = DK.endFrame(G);
+    if (G.over) recordOver();
+    else saveGame();
+    saveMeta();
+    return fr;
+  }
+  function endOfFrame() {
+    framePieces = G.pieces.slice();
+    var t = mode === 'corn' ? CH.tally(G.pieces) : null;
+    var fr = closeFrame(), n = names(), num = G.frame - 1, word = mode === 'shuffle' ? 'Frame' : G.opp === 'practice' ? 'Round' : 'Inning';
+    var h, sub = '';
+    if (G.opp === 'practice') { h = word + ' ' + num + ': ' + fr.raw[0]; sub = (fr.raw[0] >= (mode === 'shuffle' ? meta.sb.pracBest : meta.ch.pracBest) && fr.raw[0] > 0 ? 'your best yet! · ' : '') + 'total ' + G.score[0]; }
+    else if (mode === 'shuffle') { h = word + ' ' + num; sub = esc(n[0]) + ' ' + signed(fr.pts[0]) + ' · ' + esc(n[1]) + ' ' + signed(fr.pts[1]); }
+    else {
+      h = word + ' ' + num;
+      sub = fr.pts[0] === fr.pts[1] ? fr.raw[0] + ' – ' + fr.raw[1] + ': cancelled out' : esc(fr.pts[0] > fr.pts[1] ? n[0] : n[1]) + ' +' + Math.max(fr.pts[0], fr.pts[1]) + ' (' + fr.raw[0] + ' – ' + fr.raw[1] + ')';
+      if (t && (t.holes[0] === 4 || t.holes[1] === 4)) { h = 'Four-bagger!'; S.cheer(true); }
+    }
+    message(h + '<small>' + sub + '</small>', 'cool', 2300);
+    if (h.indexOf('Four') < 0) S.ding();
+    phase = 'frame'; frameT = 0;
+    renderHud();
+  }
+  // a finished game goes into the stats at once (the end card shows after the frame's result)
+  function recordOver() {
+    store.del('game_' + mode);
+    var st = mode === 'shuffle' ? meta.sb : meta.ch, won = G.winner === 0;
+    if (G.opp === 'two') st.two++;
+    else { st.games++; if (won) { st.wins++; meta.wins++; st.bigWin = Math.max(st.bigWin, G.score[0] - G.score[1]); } st.vs[G.opp][won ? 0 : 1]++; }
+    meta.finished++;
+  }
+  function gameOver() {
+    phase = 'over'; endShown = true;
+    var n = names(), w = G.winner, sc = G.score;
+    var title = G.opp === 'two' ? esc(n[w]) + ' wins!' : w === 0 ? 'You win!' : esc(n[1]) + ' wins';
+    if (w === 0 || G.opp === 'two') S.win(); else S.lose();
+    function num(v) { return v < 0 ? '−' + (-v) : '' + v; }
+    var frames = G.hist.map(function (f, i) { return '<span><b>' + (i + 1) + '</b> ' + num(f.pts[0]) + ' · ' + num(f.pts[1]) + '</span>'; }).join('');
+    var note;
+    if (mode === 'shuffle') note = 'Best frame ' + G.gs.best[0] + (G.opp !== 'two' ? '' : ' / ' + G.gs.best[1]) + ' · 10s: ' + G.gs.tens[0] + (G.opp === 'two' ? ' / ' + G.gs.tens[1] : '') + ' · knock-offs: ' + G.gs.offs[0] + (G.opp === 'two' ? ' / ' + G.gs.offs[1] : '');
+    else note = 'In the hole: ' + G.gs.holes[0] + (G.opp === 'two' ? ' / ' + G.gs.holes[1] : '') + ' · best inning ' + G.gs.best[0] + (G.opp === 'two' ? ' / ' + G.gs.best[1] : '') + (G.gs.swish[0] ? ' · swishes ' + G.gs.swish[0] : '');
+    $('endTitle').innerHTML = title;
+    $('endText').innerHTML = '<div class="endscore">' + num(sc[0]) + '<i>–</i>' + num(sc[1]) + '</div><p class="endnote">' + esc(n[0]) + ' vs ' + esc(n[1]) + ' · ' + (G.frame - 1) + ' ' + (mode === 'shuffle' ? 'frames' : 'innings') + '<br>' + note + '</p><div class="frames">' + frames + '</div>';
+    var box = $('endActions'); box.innerHTML = '';
+    var opp = G.opp;
+    var b = document.createElement('button'); b.className = 'btn red'; b.textContent = 'Play again';
+    b.addEventListener('click', function () { $('ovEnd').classList.remove('show'); between(function () { startGame(opp); }); });
+    var b2 = document.createElement('button'); b2.className = 'btn'; b2.textContent = 'Someone else';
+    b2.addEventListener('click', function () { $('ovEnd').classList.remove('show'); between(function () { G = games[mode] = null; showStart(); }); });
+    box.appendChild(b); box.appendChild(b2);
+    $('ovEnd').classList.add('show');
+    renderHud();
+  }
+  function between(next) {
+    var f = meta.finished;
+    if (Goobs.adsOn() && f > 0 && f % settings.adEvery === 0 && meta.lastAdAt !== f) { meta.lastAdAt = f; saveMeta(); next(); GoobsAds.show({}, function () {}); return; }
+    next();
+  }
+
+  // ================= the opponent picker =================
+  function showStart() {
+    phase = G ? phase : 'pick';
+    $('startTitle').textContent = modeName();
+    Array.prototype.forEach.call($('cardModes').children, function (b) { b.classList.toggle('on', b.dataset.mode === mode); });
+    $('startNote').innerHTML = (mode === 'shuffle' ? 'Game to ' + settings.target + ' · 4 discs each a frame' : 'First to 21 · 4 bags each an inning') + (G && phase !== 'over' ? '<br><b>Starting a new game ends this one.</b>' : '');
+    var h = '<h3>Against the phone</h3>';
+    [['easy', 'lv1', 'Easy'], ['medium', 'lv2', 'Medium'], ['hard', 'lv3', 'Hard']].forEach(function (l) {
+      var B = DK.BOTS[l[0]], st = mode === 'shuffle' ? meta.sb : meta.ch, r = st.vs[l[0]];
+      h += '<button class="' + l[1] + '" data-opp="' + l[0] + '"><i class="av">' + B.name[0] + '</i><span><b>' + B.name + '</b><small>' + B.blurb + '</small></span><em>' + l[2] + (r[0] + r[1] ? '<br>' + r[0] + '–' + r[1] : '') + '</em></button>';
+    });
+    h += '<h3>Or</h3><button class="two" data-opp="two"><i class="av"><svg viewBox="0 0 24 24"><use href="#i-two"/></svg></i><span><b>2 players</b><small>' + esc(settings.n0) + ' and ' + esc(settings.n1) + ', passing the phone</small></span></button>';
+    h += '<button class="prac" data-opp="practice"><i class="av"><svg viewBox="0 0 24 24"><use href="#i-target"/></svg></i><span><b>Practice</b><small>On your own, ' + (mode === 'shuffle' ? '4 discs a frame' : '4 bags a round') + '</small></span></button>';
+    $('opps').innerHTML = h;
+    var acts = $('startActions'); acts.innerHTML = '';
+    if (G && !G.over) { var k = document.createElement('button'); k.className = 'btn'; k.textContent = 'Keep playing'; k.addEventListener('click', function () { $('ovStart').classList.remove('show'); }); acts.appendChild(k); }
+    $('ovStart').classList.add('show');
+    renderHud();
+  }
+
+  // ================= the HUD =================
+  function renderHud() {
+    var sb = $('scorebd'), n = names(), solo = G && G.opp === 'practice';
+    sb.classList.toggle('solo', !!solo);
+    $('inset').classList.toggle('corn', mode === 'corn');
+    if (!G) { $('nm0').textContent = modeName(); $('pt0').textContent = ''; $('nm1').textContent = ''; $('pt1').textContent = ''; $('mid').textContent = ''; $('lf0').innerHTML = ''; $('lf1').innerHTML = ''; $('framechip').innerHTML = ''; $('turn').innerHTML = ''; sb.classList.add('solo'); return; }
+    var side = phase === 'over' ? -1 : DK.shooter(G);
+    $('nm0').textContent = solo ? 'Practice' : n[0]; $('nm1').textContent = n[1];
+    $('pt0').textContent = G.score[0]; $('pt1').textContent = G.score[1];
+    $('mid').innerHTML = 'to<br>' + G.target;
+    [0, 1].forEach(function (s) {
+      var l = G.shot >= DK.perFrame(G) ? 0 : DK.left(G, s), h = '';
+      for (var i = 0; i < 4; i++) h += '<i class="' + (i < l ? 'on' : '') + '"></i>';
+      $('lf' + s).innerHTML = solo && s === 1 ? '' : h;
+      $('sd' + s).classList.toggle('turn', s === side && (phase === 'aim' || phase === 'think' || phase === 'botmove'));
+    });
+    var now = DK.rawPoints(G, phase === 'frame' && framePieces ? framePieces : G.pieces), word = mode === 'shuffle' ? 'Frame' : solo ? 'Round' : 'Inning';
+    var num = phase === 'frame' ? G.frame - 1 : G.frame;
+    if (solo) $('framechip').innerHTML = word + ' ' + num + ' · now <b>' + now[0] + '</b>' + ((mode === 'shuffle' ? meta.sb.pracBest : meta.ch.pracBest) ? ' · best ' + (mode === 'shuffle' ? meta.sb.pracBest : meta.ch.pracBest) : '');
+    else if (mode === 'shuffle') $('framechip').innerHTML = word + ' ' + num + ' · now <b>' + now[0] + '</b> – <b>' + now[1] + '</b>';
+    else { var d = now[0] - now[1]; $('framechip').innerHTML = word + ' ' + num + ' · now <b>' + now[0] + '</b> – <b>' + now[1] + '</b>' + (d ? ' (' + (d > 0 ? esc(n[0]) : esc(n[1])) + ' +' + Math.abs(d) + ')' : ''); }
+    if (solo) $('pt0').textContent = G.score[0];
+  }
+
+  // ================= what to draw =================
+  var W = 390, H = 844, cam = { p: null, l: null, f: 40 };
+  function layout() {
+    W = window.innerWidth; H = window.innerHeight;
+    if (SC) SC.resize(W, H);
+    var c = $('swipe'), d = Math.min(2, window.devicePixelRatio || 1); c.width = W * d; c.height = H * d; c.getContext('2d').setTransform(d, 0, 0, d, 0, 0);
+    var ic = $('inset'), r = ic.getBoundingClientRect(); ic.width = Math.round(r.width * d); ic.height = Math.round(r.height * d);
+  }
+  function curX() { var side = DK.shooter(G); if (phase === 'botmove' && botShot) { var k = clamp(botT / 0.55, 0, 1); k = k * k * (3 - 2 * k); return botFrom + (botShot.x0 - botFrom) * k; } return G.xs[side]; }
+  // a bag as the scene wants it
+  function bagView(b) {
+    var o = { id: b.id, side: b.side, yaw: b.yaw || 0, pitch: 0, roll: 0 };
+    if (b.st === 'board' || b.st === 'hole') {
+      var p = CH.toWorld(b.u, b.w, CH.TH / 2 + (b.ht || 0)); o.x = p.x; o.y = p.y; o.z = p.z; o.pitch = SC.slope + (b.top >= 0 ? 0.12 : 0);
+      var s = CH.toWorld(b.u, b.w, 0.002); o.sh = { x: s.x, y: s.y, z: s.z, tilt: SC.slope };
+      if (b.st === 'hole' && (b.ht || 0) < -0.03) o.sh = null;
+    } else {
+      o.x = b.x; o.y = b.y; o.z = b.z;
+      if (b.st === 'fly') { o.pitch = Math.sin((b.yaw || 0) * 0.7) * 0.18; o.roll = Math.cos((b.yaw || 0) * 0.5) * 0.12; }
+      if (b.st === 'fall') { o.pitch = (b.yaw || 0) * 0.8; }
+      var c = CH.boardOf(b.x, b.y, b.z);
+      if (Math.abs(c.u) <= CH.BW / 2 && c.w >= 0 && c.w <= CH.BL && c.h > 0) { var q = CH.toWorld(c.u, c.w, 0.002); o.sh = { x: q.x, y: q.y, z: q.z, tilt: SC.slope }; }
+      else o.sh = { x: b.x, y: 0, z: b.z, tilt: 0 };
+    }
+    return o;
+  }
+  function drawWorld(dt) {
+    var fadeK = phase === 'after' ? clamp(1 - (afterT - 0.35) / 0.5, 0, 1) : 0;
+    var endK = phase === 'frame' ? clamp(1 - (frameT - 1.7) / 0.5, 0, 1) : 1;
+    var waiting = phase === 'aim' || phase === 'think' || phase === 'botmove';
+    if (mode === 'shuffle') {
+      var list = [];
+      if (phase === 'move' && pr) pr.sim.d.forEach(function (d) { list.push({ id: d.id, side: d.side, x: d.x, z: d.z, a: d.a }); });
+      else if (G) {
+        (phase === 'frame' && framePieces ? framePieces : G.pieces).forEach(function (d) { list.push({ id: d.id, side: d.side, x: d.x, z: d.z, a: d.a, alpha: endK }); });
+        if (phase === 'after') fade.forEach(function (d) { list.push({ id: d.id, side: d.side, x: d.x, z: d.z, a: d.a, alpha: fadeK }); });
+        if (waiting) list.push({ id: G.nextId, side: DK.shooter(G), x: curX(), z: SB.ZSTART, a: 0 });
+      }
+      SC.setDiscs(list); SC.setBags([]);
+      // the cue: behind the waiting disc; it follows the disc for the push, then stops and is put away
+      var side = G ? DK.shooter(G) : 0;
+      if (waiting && G) {
+        var back = phase === 'botmove' ? clamp((botT - 0.55) / 0.3, 0, 1) * 0.12 : 0;
+        var ang = liveAim != null ? liveAim : phase === 'botmove' && botShot && botT > 0.55 ? botShot.ang : 0;
+        SC.setCue(curX() - Math.sin(ang) * back, SB.ZSTART - Math.cos(ang) * back, ang, true);
+      } else if (phase === 'move' && pr && cueT >= 0 && cueT < 0.9) {
+        var sh = pr.shot, tr = Math.min(0.42, cueT < 0.25 ? 0 : 0) + Math.min(cueT, 0.2) / 0.2 * 0.42 - Math.max(0, cueT - 0.35) * 0.9;
+        SC.setCue(sh.x0 + Math.sin(sh.ang) * tr, SB.ZSTART + Math.cos(sh.ang) * tr, sh.ang, true);
+      } else SC.setCue(0, 0, 0, false);
+      // the aim line: from the waiting disc, the way it would go
+      if (phase === 'aim' && G && (settings.aim || liveAim != null)) {
+        var a2 = liveAim != null ? liveAim : 0, x0 = curX(), pts = [];
+        for (var i = 0; i < 18; i++) { var d0 = 0.2 + i * 0.42, d1 = d0 + 0.24; pts.push([x0 + Math.sin(a2) * d0, 0.006, SB.ZSTART + Math.cos(a2) * d0], [x0 + Math.sin(a2) * d1, 0.006, SB.ZSTART + Math.cos(a2) * d1]); }
+        SC.setAim('shuffle', pts, liveAim != null ? '#ff5a1f' : '#1aa0b8', 0.028);
+      } else SC.setAim('shuffle', null);
+    } else {
+      var bl = [];
+      if (phase === 'move' && pr) pr.sim.b.forEach(function (b) { if (b.st !== 'hand') bl.push(bagView(b)); });
+      else if (G) {
+        (phase === 'frame' && framePieces ? framePieces : G.pieces).forEach(function (b) { var v = bagView(b); v.alpha = endK; if (b.st === 'hole') v.alpha = 0; bl.push(v); });
+        if (phase === 'after') fade.forEach(function (v) { var c = {}; for (var k in v) c[k] = v[k]; c.alpha = fadeK; bl.push(c); });
+      }
+      if (waiting && G) {
+        // the next bag, in the thrower's hand: just showing at the bottom of the screen, swinging a little
+        var sway = phase === 'botmove' ? Math.sin(botT * 7) * 0.35 : Math.sin(clock * 1.6) * 0.05;
+        // (placed from the camera, like something held: 3 m out, a little right of and below the middle)
+        if (cam.p) {
+          var dx = cam.l[0] - cam.p[0], dy = cam.l[1] - cam.p[1], dz = cam.l[2] - cam.p[2], dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+          dx /= dl; dy /= dl; dz /= dl;
+          var rl = Math.hypot(dz, dx) || 1, rx = dz / rl, rz = -dx / rl, d3 = 3.0;
+          bl.push({ id: G.nextId, side: DK.shooter(G), x: cam.p[0] + dx * d3 + rx * 0.12, y: cam.p[1] + dy * d3 - 0.43 + sway * 0.06, z: cam.p[2] + dz * d3 + rz * 0.12 + sway * 0.15, yaw: 0.3, pitch: -0.35 + sway * 0.8, roll: 0.12, sh: null });
+        }
+      }
+      SC.setBags(bl); SC.setDiscs([]); SC.setCue(0, 0, 0, false);
+      if (phase === 'aim' && G && (settings.aim || liveAim != null)) {
+        var x1 = curX(), psi = CH.aimBase(x1) + (liveAim != null ? liveAim : 0), pts2 = [];
+        for (var j = 0; j < 14; j++) { var e0 = 0.6 + j * 0.56, e1 = e0 + 0.28; pts2.push([x1 + Math.sin(psi) * e0, 0.01, CH.Z0 + Math.cos(psi) * e0], [x1 + Math.sin(psi) * e1, 0.01, CH.Z0 + Math.cos(psi) * e1]); }
+        SC.setAim('corn', pts2, liveAim != null ? '#ff5a1f' : '#1aa0b8', 0.045);
+      } else SC.setAim('corn', null);
+    }
+  }
+  // ---------- the camera ----------
+  // Shuffleboard: behind the disc while aiming; it rides down the court with the disc, then looks down over the
+  // scoring triangle while things settle. Cornhole: behind the thrower looking at the far board; it moves in as the
+  // bag flies and holds on the board.
+  function camTarget() {
+    var x = G ? curX() : 0;
+    if (mode === 'shuffle') {
+      // (a long lens from well behind: the disc low on the screen, the far triangle as big as it can be above it)
+      var aimC = { p: [x * 0.6, 2.2, SB.ZSTART - 5.9], l: [x * 0.15, 0, 5.7], f: 30 };
+      var hold = { p: [0, 4.4, SB.ZA - 5.4], l: [0, 0, 11.95], f: 38 };   // (from the dead line to past the far baseline)
+      if (!G || phase === 'aim' || phase === 'think' || phase === 'botmove' || phase === 'pick' || phase === 'load') return aimC;
+      if (phase === 'move' && pr) {
+        // follow the disc that was pushed (or whatever is still moving once it stops)
+        var f = null;
+        pr.sim.d.forEach(function (d) { if (d.id === pr.id) f = d; });
+        if (f && !f.vx && !f.vz) pr.sim.d.forEach(function (d) { if ((d.vx || d.vz) && !d.off) f = d; });
+        if (!f) return hold;
+        if (f.z > SB.ZA - 2.5) return hold;
+        var k = clamp((f.z - SB.ZSTART) / (SB.ZA - 2.5 - SB.ZSTART), 0, 1);
+        // (closing in and rising as it goes, the disc kept in the lower part of the picture)
+        return { p: [f.x * 0.5 * (1 - k), 2.2 + 1.6 * k, f.z - 5.9 + 2.6 * k], l: [f.x * 0.3 * (1 - k), 0, f.z + 3.9 - 1.9 * k], f: 30 + 5 * k };
+      }
+      return hold;
+    }
+    var sx = x < 0 ? -1 : 1, aimB = { p: [x + sx * 0.12, 1.4, -3.2], l: [x * 0.2, 0.2, CH.ZF + 0.5], f: 25 };
+    var holdB = { p: [x * 0.3, 1.85, CH.ZF - 4.3], l: [0, 0.1, CH.ZF + 0.6], f: 27 };
+    if (!G || phase === 'aim' || phase === 'think' || phase === 'botmove' || phase === 'pick' || phase === 'load') return aimB;
+    if (phase === 'move' && pr) {
+      var bb = null; pr.sim.b.forEach(function (b) { if (b.id === pr.id) bb = b; });
+      if (bb && (bb.st === 'fly' || bb.st === 'fall' && bb.z < CH.ZF - 0.5)) {
+        // the long lens from the throwing spot holds both the top of the arc and the board, so the camera stays put
+        // (looking a little higher) while the bag rises, then moves in as it comes down
+        var kk = clamp((bb.z - 4.5) / (CH.ZF - 4.5), 0, 1); kk = kk * kk * (3 - 2 * kk);
+        var up = [x * 0.2, 1.0, CH.ZF + 0.5];
+        return { p: lerp3(aimB.p, holdB.p, kk * 0.8), l: lerp3(up, holdB.l, kk), f: 25 + 2 * kk };
+      }
+    }
+    return holdB;
+  }
+  function lerp3(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+  function updateCamera(dt, snap) {
+    var t = camTarget();
+    if (!cam.p || snap) { cam.p = t.p.slice(); cam.l = t.l.slice(); cam.f = t.f; }
+    var k = 1 - Math.exp(-dt * (phase === 'move' ? (mode === 'corn' ? 7 : 5) : 2.6));
+    for (var i = 0; i < 3; i++) { cam.p[i] += (t.p[i] - cam.p[i]) * k; cam.l[i] += (t.l[i] - cam.l[i]) * k; }
+    cam.f += (t.f - cam.f) * k;
+    SC.look(mode, cam.p, cam.l, cam.f);
+  }
+  // ---------- the overhead view (2D) ----------
+  function drawInset() {
+    var c = $('inset'), x = c.getContext('2d'), w = c.width, h = c.height;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h);
+    x.fillStyle = '#b98352'; x.fillRect(0, 0, w, h);
+    x.strokeStyle = 'rgba(70,40,20,.35)'; x.lineWidth = 1;
+    for (var i = 0; i < w; i += Math.max(4, w / 14)) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); }
+    var pieces = [];
+    if (G) {
+      if (phase === 'move' && pr) pieces = mode === 'shuffle' ? pr.sim.d : pr.sim.b;
+      else if (phase === 'frame' && framePieces) pieces = framePieces;
+      else pieces = G.pieces;
+    }
+    if (mode === 'shuffle') {
+      var z0 = SB.ZA - 0.62, z1 = SB.ZB + 0.28, sc = h / (z1 - z0);
+      var X = function (v) { return w / 2 + v * sc; }, Y = function (z) { return h - (z - z0) * sc; };
+      x.fillStyle = '#efe4cc'; x.fillRect(X(-SB.HALF), 0, SB.W * sc, h);
+      x.strokeStyle = '#20406e'; x.lineWidth = Math.max(1, sc * SB.LINE * 1.4);
+      x.beginPath(); x.moveTo(X(-SB.HALF), Y(SB.ZB)); x.lineTo(X(0), Y(SB.ZA)); x.lineTo(X(SB.HALF), Y(SB.ZB)); x.lineTo(X(-SB.HALF), Y(SB.ZB)); x.stroke();
+      [SB.Z10, SB.Z8, SB.Z7].forEach(function (z) { var hh = SB.hw(z); x.beginPath(); x.moveTo(X(-hh), Y(z)); x.lineTo(X(hh), Y(z)); x.stroke(); });
+      x.beginPath(); x.moveTo(X(0), Y(SB.Z10)); x.lineTo(X(0), Y(SB.Z7)); x.stroke();
+      x.beginPath(); x.moveTo(X(-SB.HALF), Y(SB.ZD)); x.lineTo(X(SB.HALF), Y(SB.ZD)); x.stroke();
+      x.fillStyle = 'rgba(32,64,110,.55)'; x.font = '800 ' + Math.round(sc * 0.16) + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('10', X(0), Y((SB.ZA + SB.Z10) / 2 + 0.12)); var m8 = (SB.Z10 + SB.Z8) / 2, m7 = (SB.Z8 + SB.Z7) / 2;
+      x.fillText('8', X(-SB.hw(m8) / 2), Y(m8)); x.fillText('8', X(SB.hw(m8) / 2), Y(m8)); x.fillText('7', X(-SB.hw(m7) / 2), Y(m7)); x.fillText('7', X(SB.hw(m7) / 2), Y(m7));
+      x.font = '800 ' + Math.round(sc * 0.11) + 'px sans-serif'; x.fillText('10 OFF', X(0), Y((SB.Z7 + SB.ZB) / 2));
+      pieces.forEach(function (d) {
+        if (d.dead || d.z < z0 - 0.1) return;
+        var v = SB.zone(d.x, d.z), r = Math.max(3.2, SB.R * sc);
+        x.beginPath(); x.arc(X(d.x), Y(d.z), r, 0, 7); x.fillStyle = COLORS[d.side]; x.fill();
+        x.lineWidth = Math.max(1.5, r * 0.32); x.strokeStyle = v > 0 ? '#ffe27a' : v < 0 ? '#ff2d20' : 'rgba(255,255,255,.85)'; x.stroke();
+      });
+    } else {
+      var w0 = -0.42, w1 = CH.BL + 0.3, sc2 = h / (w1 - w0);
+      var X2 = function (u) { return w / 2 + u * sc2; }, Y2 = function (ww) { return h - (ww - w0) * sc2; };
+      x.fillStyle = '#12305e'; x.fillRect(X2(-CH.BW / 2) - 2, Y2(CH.BL) - 2, CH.BW * sc2 + 4, CH.BL * sc2 + 4);
+      x.fillStyle = '#fbfaf6'; x.fillRect(X2(-CH.BW / 2) + 1, Y2(CH.BL) + 1, CH.BW * sc2 - 2, CH.BL * sc2 - 2);
+      x.fillStyle = '#1aa0b8'; x.fillRect(X2(-CH.BW / 2) + 1, Y2(0.42), CH.BW * sc2 - 2, 0.07 * sc2);
+      x.fillStyle = '#0b0f18'; x.beginPath(); x.arc(X2(0), Y2(CH.HOLE_W), CH.HOLE_R * sc2, 0, 7); x.fill();
+      x.strokeStyle = '#ff5a1f'; x.lineWidth = 2; x.beginPath(); x.arc(X2(0), Y2(CH.HOLE_W), (CH.HOLE_R + 0.02) * sc2, 0, 7); x.stroke();
+      pieces.forEach(function (b) {
+        var u, ww, hole = b.st === 'hole';
+        if (b.st === 'board' || hole) { u = b.u; ww = b.w; }
+        else if (b.st === 'fly' || b.st === 'fall' || b.st === 'deck') { var cb = CH.boardOf(b.x, b.y, b.z); u = cb.u; ww = cb.w; if (b.st === 'fly' && cb.h > 0.6) return; }
+        else return;
+        if (ww < w0 - 0.2 || ww > w1 + 0.2) return;
+        var s = CH.BAG * sc2 * (hole ? 0.55 : 1);
+        x.save(); x.translate(X2(u), Y2(ww)); x.rotate(-(b.yaw || 0));
+        x.globalAlpha = hole ? 0.85 : b.st === 'deck' ? 0.5 : 1;
+        x.fillStyle = COLORS[b.side]; x.strokeStyle = b.top >= 0 ? '#ffe27a' : 'rgba(255,255,255,.9)'; x.lineWidth = 1.5;
+        x.beginPath(); if (x.roundRect) x.roundRect(-s / 2, -s / 2, s, s, s * 0.22); else x.rect(-s / 2, -s / 2, s, s); x.fill(); x.stroke();
+        x.restore();
+      });
+    }
+  }
+
+  // ================= the loop =================
+  var lastT = 0, clock = 0;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (!SC) return;
+    var dt = Math.min(0.05, (t - lastT) / 1000 || 0.016); lastT = t; clock += dt;
+    var paused = sheetOpen() || document.hidden;
+    if (!paused && G) {
+      if (phase === 'think') {
+        thinkT += dt;
+        var done = planner.next(turbo ? 1e9 : 7);
+        if (done && (thinkT > 0.8 || turbo)) {
+          botShot = planner.result; botFrom = G.xs[DK.shooter(G)]; botT = 0; phase = 'botmove';
+          if (mode === 'corn') { botShot.x0 = clamp(Math.abs(botShot.x0), CH.XBOX[0], CH.XBOX[1]) * (botShot.x0 < 0 ? -1 : 1); }
+        }
+      } else if (phase === 'botmove') {
+        botT += dt;
+        if (botT > (mode === 'shuffle' ? 0.95 : 0.8) || turbo) { G.xs[DK.shooter(G)] = botShot.x0; shoot(botShot); }
+      } else if (phase === 'move') {
+        cueT += dt;
+        acc += dt; var n = 0, lim = turbo ? 20000 : 24;
+        if (turbo) acc = 20000 * DT;
+        while (acc >= DT && n < lim) { DK.stepShot(G, pr); acc -= DT; n++; if (turbo && !pr.sim.moving) break; }
+        if (n >= lim) acc = 0;
+        sounds();
+        settleN = pr.sim.moving ? 0 : settleN + 1;
+        if (settleN > (turbo ? 0 : 8) || pr.sim.t > 24) finishShot();
+      } else if (phase === 'after') {
+        afterT += dt;
+        if (afterT > (turbo ? 0 : 1.0)) { fade = []; $('power').classList.remove('show'); if (lastRes && lastRes.frameDone) endOfFrame(); else { $('turn').classList.remove('hide'); startTurn(); } }
+      } else if (phase === 'frame') {
+        frameT += dt;
+        if (frameT > (turbo ? 0 : 2.3)) { framePieces = null; $('turn').classList.remove('hide'); if (G.over) gameOver(); else startTurn(); }
+      }
+    }
+    if (paused) S.hissLevel(0);
+    updateCamera(dt);
+    drawWorld(dt);
+    SC.render(dt);
+    drawSwipe(dt);
+    drawInset();
+  }
+  function sounds() {
+    var ev = pr.sim.ev;
+    while (evN < ev.length) {
+      var e = ev[evN++];
+      if (e.k === 'clack') S.clack(e.p);
+      else if (e.k === 'land') S.thud(e.on, e.p);
+      else if (e.k === 'hole') S.hole();
+      else if (e.k === 'bump') S.bump(e.p);
+    }
+    if (mode === 'shuffle') {
+      var top = 0; pr.sim.d.forEach(function (d) { var v = Math.sqrt(d.vx * d.vx + d.vz * d.vz); if (v > top) top = v; });
+      S.hissLevel(clamp(top / 4, 0, 1));
+    }
+  }
+
+  // ================= swiping =================
+  // a sideways drag moves the disc (or where you stand); an upward swipe pushes or throws: how hard from how fast the
+  // finger moved at the end, the aim from the swipe's tilt (see DK.SB.fromSwipe and DK.CH.fromSwipe for the aim help)
+  var touch = null, trail = [], trailFade = 0;
+  function tiltOf(pts) { var a = pts[0], z = pts[pts.length - 1], cx = z[0] - a[0], cy = z[1] - a[1]; return Math.atan2(cx, -cy); }
+  function onDown(e) {
+    if (phase !== 'aim' || sheetOpen()) return;
+    S.unlock();
+    touch = { id: e.pointerId, x0: e.clientX, y0: e.clientY, mode: null, gx: G.xs[DK.shooter(G)], pts: [[e.clientX, e.clientY, performance.now()]] };
+    try { $('cv3').setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
+  }
+  function boxX(raw) {
+    // cornhole: the pitcher's boxes are either side of the near board (crossing the middle hops to the other box)
+    var a = clamp(Math.abs(raw), CH.XBOX[0], CH.XBOX[1]);
+    return raw < 0 ? -a : a;
+  }
+  function onMove(e) {
+    if (!touch || e.pointerId !== touch.id || phase !== 'aim') return;
+    var dx = e.clientX - touch.x0, dy = e.clientY - touch.y0, side = DK.shooter(G);
+    if (!touch.mode && Math.hypot(dx, dy) > 10) touch.mode = Math.abs(dx) > Math.abs(dy) * 1.1 ? 'move' : dy < 0 ? 'throw' : 'none';
+    if (touch.mode === 'move') {
+      var pxm = W / (mode === 'shuffle' ? 1.7 : 2.2), raw = touch.gx + dx / pxm;
+      G.xs[side] = mode === 'shuffle' ? clamp(raw, -SB.XMAX, SB.XMAX) : boxX(raw);
+    } else if (touch.mode === 'throw') {
+      touch.pts.push([e.clientX, e.clientY, performance.now()]); trail = touch.pts.slice(); trailFade = 1;
+      if (touch.pts.length > 3) { var t = tiltOf(touch.pts); liveAim = mode === 'shuffle' ? SB.fromSwipe(2, t).ang : CH.fromSwipe(2, t).aim; }
+    }
+  }
+  function onUp(e) {
+    if (!touch || (e && e.pointerId !== touch.id)) return;
+    var t = touch; touch = null;
+    if (phase !== 'aim') return;
+    if (t.mode === 'move') { saveGame(); return; }
+    if (t.mode !== 'throw') { liveAim = null; if (!t.mode) tip('Swipe <b>up</b> to ' + (mode === 'shuffle' ? 'push' : 'throw') + ' · slide sideways to move'); return; }
+    var p = t.pts, a = p[0], z = p[p.length - 1];
+    if (a[1] - z[1] < 50) { liveAim = null; tip('A longer swipe up ' + (mode === 'shuffle' ? 'pushes the disc' : 'throws the bag')); return; }
+    // the finger's speed over the last ~120 ms, in screen heights a second
+    var i = p.length - 1; while (i > 0 && z[2] - p[i][2] < 120) i--;
+    var dtm = Math.max(16, z[2] - p[i][2]), f = (p[i][1] - z[1]) / dtm * 1000 / H;
+    humanShot(f, tiltOf(p));
+  }
+  function humanShot(f, tilt) {
+    var side = DK.shooter(G), x0 = G.xs[side];
+    if (mode === 'shuffle') { var s = SB.fromSwipe(f, tilt); shoot({ x0: x0, v: s.v, ang: s.ang, power: s.power }); }
+    else { var c = CH.fromSwipe(f, tilt); shoot({ x0: x0, v: c.v, aim: c.aim, power: c.power, spin: 6 + Math.min(4, f) }); }
+  }
+  function drawSwipe(dt) {
+    var c = $('swipe').getContext('2d'); c.clearRect(0, 0, W, H);
+    if (touch && touch.mode === 'throw') trailFade = 1; else trailFade = Math.max(0, trailFade - dt * 2.5);
+    if (trailFade <= 0 || trail.length < 2) return;
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(255,240,170,' + (0.55 * trailFade).toFixed(2) + ')'; c.lineWidth = 10;
+    c.beginPath(); trail.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,' + (0.85 * trailFade).toFixed(2) + ')'; c.lineWidth = 3; c.stroke();
+  }
+
+  // ================= modes =================
+  function switchMode(m) {
+    if (m === mode) return;
+    S.hissStop();
+    if (G && phase === 'over') { G = games[mode] = null; }
+    saveGame();
+    mode = meta.mode = m; saveMeta();
+    G = games[mode];
+    pr = null; fade = []; framePieces = null; planner = null; liveAim = null;
+    $('ovEnd').classList.remove('show');
+    $('power').classList.remove('show'); $('turn').classList.remove('hide');
+    renderModes(); layout();
+    if (!G) { phase = 'pick'; showStart(); } else { $('ovStart').classList.remove('show'); startTurn(true); }
+    updateCamera(0, true);
+  }
+  function renderModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === mode); }); }
+
+  // ================= sheets =================
+  function pct(a, b) { return b ? Math.round(a * 100 / b) + '%' : '–'; }
+  function vsRows(st) {
+    return '<table class="vs">' + ['easy', 'medium', 'hard'].map(function (l) { var r = st.vs[l]; return '<tr><td>vs ' + DK.BOTS[l].name + ' <small style="color:var(--muted)">(' + l + ')</small></td><td>' + r[0] + ' won · ' + r[1] + ' lost</td></tr>'; }).join('') +
+      '<tr><td>2-player games</td><td>' + st.two + '</td></tr></table>';
+  }
+  function openStats() {
+    var a = meta.sb, b = meta.ch;
+    $('statsBody').innerHTML =
+      '<div class="stsec">Shuffleboard</div>' +
+      '<div class="tiles"><div class="tile"><b>' + a.wins + '</b><span>wins vs the phone</span></div><div class="tile"><b>' + a.bestFrame + '</b><span>best frame</span></div><div class="tile"><b>' + a.tens + '</b><span>10s scored</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + a.offs + '</b><span>knock-offs</span></div><div class="tile"><b>' + a.kitchens + '</b><span>sent to the kitchen</span></div><div class="tile"><b>' + a.pracBest + '</b><span>best practice frame</span></div></div>' +
+      vsRows(a) + '<p class="stnote">' + a.discs + ' discs pushed · ' + a.frames + ' frames vs the phone' + (a.bigWin ? ' · biggest win by ' + a.bigWin : '') + '</p>' +
+      '<div class="stsec">Cornhole</div>' +
+      '<div class="tiles"><div class="tile"><b>' + b.wins + '</b><span>wins vs the phone</span></div><div class="tile"><b>' + b.holes + '</b><span>in the hole</span></div><div class="tile"><b>' + pct(b.holes, b.bags) + '</b><span>hole rate</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + b.swish + '</b><span>swishes</span></div><div class="tile"><b>' + b.four + '</b><span>four-baggers</span></div><div class="tile"><b>' + b.bestInning + '</b><span>best inning</span></div></div>' +
+      vsRows(b) + '<p class="stnote">' + b.bags + ' bags thrown · ' + (b.innings ? (b.raw / b.innings).toFixed(1) : '–') + ' points an inning vs the phone · best practice round ' + b.pracBest + (b.bigWin ? ' · biggest win by ' + b.bigWin : '') + '</p>' +
+      '<p class="stnote">Stats count your own shots against the phone and in practice; 2-player games are counted as games.</p>';
+    $('ovStats').classList.add('show');
+  }
+  function openHelp() {
+    var common = [
+      'Play the phone (<b>Sunny</b> is easy, <b>Skipper</b> medium, the <b>Commodore</b> hard), <b>2 players</b> passing the phone, or <b>Practice</b> on your own. Pick in New game.',
+      'Switch between Shuffleboard and Cornhole at the top of the <b>Menu</b>. Each keeps its own game going, saved after every shot. Works offline.'
+    ];
+    var L = mode === 'shuffle' ? [
+      '<b>Line up</b>: slide your finger sideways to set your disc anywhere behind the baseline.',
+      '<b>Push</b>: swipe up. A faster swipe pushes harder (the number bottom right: about 50 reaches the 10); tilt the swipe to angle the push. The dashed line shows your aim.',
+      '<b>Scoring</b>: the triangle at the far end. <b>10</b> at the tip, <b>8</b> and <b>7</b> below it, and <b>10 OFF</b> (the kitchen) at the base. A disc counts only if it is completely inside an area, not touching a line. The map at the top right shows the triangle from above (a gold ring: scoring; red: the kitchen).',
+      '<b>Frames</b>: 4 discs each, taking turns. When all 8 are down, both sides score their discs; the other side starts the next frame.',
+      '<b>Tactics</b>: knock the other side’s discs off or into the kitchen; park a disc in front of yours as a guard. A disc that stops short of the far dead line, goes past the far baseline or off the court is taken away.',
+      '<b>Winning</b>: first to ' + settings.target + ' at the end of a frame (75 or 50 in Settings). A tie plays another frame.'
+    ] : [
+      '<b>Line up</b>: slide sideways to pick your spot in the box beside the board, left or right.',
+      '<b>Throw</b>: swipe up. A faster swipe throws farther (the number bottom right: about 50 lands just short of the hole and slides in); tilt the swipe to aim. A straight swipe heads for the hole.',
+      '<b>Points</b>: in the hole <b>3</b>, on the board <b>1</b>. A bag that comes down on the deck first, or falls off, scores nothing.',
+      '<b>Innings</b>: 4 bags each, taking turns. <b>Cancellation scoring</b>: only the difference counts (you 5, them 3: you score 2). Whoever scored throws first next inning.',
+      '<b>Tactics</b>: slide into the hole, push bags in (careful: theirs count for them), knock theirs off, or leave a blocker in front of the hole. The map at the top right shows the board from above.',
+      '<b>Winning</b>: first to <b>21</b> at the end of an inning.'
+    ];
+    $('helpTitle').textContent = 'How to play ' + modeName();
+    $('helpList').innerHTML = L.concat(common).map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function syncSettings() {
+    $('setSound').checked = settings.sound; $('setAim').checked = settings.aim;
+    $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+    Array.prototype.forEach.call($('segTarget').children, function (b) { b.classList.toggle('on', +b.dataset.t === settings.target); });
+    $('name0').value = settings.n0; $('name1').value = settings.n1;
+  }
+  function sheet(btn, ov, close, before) {
+    $(btn).addEventListener('click', function () { if (before) before(); else $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+
+  // ================= start =================
+  function init() {
+    var FS = Goobs.fullscreen({ overlay: true, menu: ['btnNew', 'btnStats', 'btnHelp', 'btnSettings'], info: function () {
+      if (!G) return '<b>' + modeName() + '</b>';
+      var n = names();
+      return '<b>' + modeName() + '</b> · ' + (G.opp === 'practice' ? 'practice' : G.opp === 'two' ? esc(n[0]) + ' vs ' + esc(n[1]) : 'vs ' + esc(n[1])) + ' · ' + (mode === 'shuffle' ? 'frame ' : 'inning ') + G.frame + (G.opp === 'practice' ? '' : ' · ' + G.score[0] + '–' + G.score[1]);
+    } });
+    FS.list.parentNode.insertBefore($('modes'), FS.list);
+    renderModes();
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      $('ggMenu').classList.remove('show');
+      switchMode(b.dataset.mode);
+    });
+    var cv = $('cv3');
+    cv.addEventListener('pointerdown', onDown); cv.addEventListener('pointermove', onMove);
+    cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', function () { touch = null; liveAim = null; });
+    cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('touchmove', function (e) { if (e.target === cv && e.cancelable) e.preventDefault(); }, { passive: false });
+    $('btnHome').addEventListener('click', function () { saveGame(); saveMeta(); Goobs.home(); });
+    $('btnNew').addEventListener('click', function () { showStart(); });
+    $('cardModes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.dataset.mode === mode) return; switchMode(b.dataset.mode); showStart(); });
+    $('opps').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.unlock(); startGame(b.dataset.opp); });
+    $('ovStart').addEventListener('click', function (e) { if (e.target === this && G && !G.over) this.classList.remove('show'); });
+    sheet('btnStats', 'ovStats', 'btnCloseStats', openStats);
+    sheet('btnHelp', 'ovHelp', 'btnCloseHelp', openHelp);
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings', function () { syncSettings(); $('ovSettings').classList.add('show'); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); S.set(settings.sound); S.ding(); });
+    $('setAim').addEventListener('change', function () { settings.aim = this.checked; saveSettings(); });
+    $('segTarget').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; settings.target = +b.dataset.t; saveSettings(); syncSettings(); });
+    ['name0', 'name1'].forEach(function (id, i) {
+      $(id).addEventListener('change', function () { var v = this.value.trim().slice(0, 12) || (i ? 'Player 2' : 'Player 1'); settings[i ? 'n1' : 'n0'] = v; saveSettings(); syncSettings(); renderHud(); });
+    });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncSettings(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncSettings(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncSettings(); });
+    S.set(settings.sound);
+    window.addEventListener('resize', layout);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { saveGame(); saveMeta(); S.hissStop(); } });
+    window.addEventListener('pagehide', function () { saveGame(); saveMeta(); });
+    Goobs.markPlayed('deck');
+    Goobs.initUpdates({ beforeReload: function () { saveGame(); saveMeta(); }, onVersions: function (v) { $('version').textContent = 'Lido Deck ' + (v.deck || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    import('../../shared/three.module.min.js').then(function (T) {
+      SC = DKScene.build(T, cv, DK); SC.setColors(COLORS[0], COLORS[1]);
+      if (/[?&]lofi\b/.test(location.search)) SC.renderer.setPixelRatio(0.35);   // (tests in software WebGL only)
+      layout();
+      if (G) { try { startTurn(true); } catch (e) { G = games[mode] = null; store.del('game_' + mode); showStart(); } }
+      else { phase = 'pick'; showStart(); }
+      updateCamera(0, true);
+      $('loading').classList.add('hide');
+      if (!meta.seen) { meta.seen = true; saveMeta(); }
+    }).catch(function (e) { $('loading').textContent = 'The deck didn’t load: ' + e.message; });
+    requestAnimationFrame(frame);
+    window.__dkReady = true;
+  }
+  init();
+
+  // test hook (Playwright): shoot with exact numbers or a finger speed, read the state, run fast
+  window.__deck = { msgs: msgLog, get G() { return G; }, get phase() { return phase; }, get mode() { return mode; }, get pr() { return pr; }, meta: meta, DK: DK, settings: settings,
+    shoot: function (s) { if (phase === 'aim') shoot(s); }, swipe: function (f, tilt) { if (phase === 'aim') humanShot(f, tilt || 0); },
+    newGame: function (opp) { startGame(opp); }, switchMode: switchMode, turbo: function (v) { turbo = !!v; },
+    advance: function (sec) { if (phase === 'move' && pr) { var n = Math.round(sec / DT); while (n-- > 0 && pr.sim.moving) DK.stepShot(G, pr); updateCamera(5, true); } },
+    screen: function (x, y, z) { return SC.toScreen(mode, x, y, z, W, H); } };
+})();
+</script>
+</body>
+</html>

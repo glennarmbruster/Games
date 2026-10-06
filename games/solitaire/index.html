@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Card Table</title>
+<style>
+/* Card Table styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+:root {
+  --felt: #1f8150; --felt-2: #166a41; --felt-line: rgba(255,255,255,.28); --felt-ink: rgba(255,255,255,.55);
+  --card: #ffffff; --card-edge: #d8dce6; --card-red: #dc2f47; --card-black: #1b2130;
+  --back-1: #5a54f0; --back-2: #7a5cff;
+}
+:root[data-theme="dark"] { --felt: #17442f; --felt-2: #102f21; --card: #f4f5f8; --card-edge: #b9bfcc; }
+:root[data-theme="blue"] { --felt: #1a4f7a; --felt-2: #123a5c; --card: #f7f9fd; --card-edge: #b9c6da; }
+
+.brand svg { border-radius: 10px; }
+.modes button { font-size: 13px; letter-spacing: -.2px; white-space: nowrap; }
+@media (max-width: 380px) { .modes button { font-size: 12.5px; } }
+.app { gap: 8px; }
+
+.info { min-height: 40px; }
+.info .stat { text-align: left; }
+.info .stat .mid { font-size: 18px; }
+.info .optbtn {
+  display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 11px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 700; font-size: 13px; box-shadow: var(--shadow-sm); white-space: nowrap; max-width: 150px;
+}
+.info .optbtn svg { width: 17px; height: 17px; flex: none; }
+.info .optbtn span { overflow: hidden; text-overflow: ellipsis; }
+.info .stats3 { display: flex; gap: 14px; }
+
+/* ---------- table ---------- */
+.table {
+  position: relative; isolation: isolate; width: 100%; flex: 1 1 auto; min-height: 0; border-radius: 16px; overflow: hidden; touch-action: none;
+  background: radial-gradient(120% 90% at 50% 20%, var(--felt) 0%, var(--felt-2) 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12), var(--shadow);
+}
+.slots, .cards { position: absolute; inset: 0; }
+.cards { pointer-events: none; }
+.cards .cd { pointer-events: auto; }
+.slot {
+  position: absolute; left: 0; top: 0; border-radius: calc(var(--cw) * .1); border: 1.5px solid var(--felt-line);
+  display: grid; place-items: center; color: var(--felt-ink); font-weight: 800; font-size: calc(var(--cw) * .38);
+}
+.slot svg { width: 46%; height: 46%; opacity: .55; }
+.slot.stockslot { border-style: dashed; }
+.slot .count { position: absolute; bottom: -1.45em; left: -30px; right: -30px; white-space: nowrap; text-align: center; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.75); }
+
+/* ---------- cards ---------- */
+.cd {
+  position: absolute; left: 0; top: 0; width: var(--cw); height: var(--ch); border-radius: calc(var(--cw) * .1);
+  background: var(--card); box-shadow: 0 0 0 .5px var(--card-edge), 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .2s cubic-bezier(.25,.8,.3,1); will-change: transform; -webkit-user-select: none; user-select: none;
+  color: var(--card-black); overflow: hidden;
+}
+.cd.red { color: var(--card-red); }
+.cd.nt { transition: none; }
+.cd .rk { position: absolute; left: 7%; top: 2%; font-weight: 800; font-size: calc(var(--cw) * .38); line-height: 1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+.cd .sm { position: absolute; right: 6%; top: 5%; width: calc(var(--cw) * .3); height: calc(var(--cw) * .3); }
+.cd .big { position: absolute; left: 50%; bottom: 8%; width: calc(var(--cw) * .56); height: calc(var(--cw) * .56); margin-left: calc(var(--cw) * -.28); }
+.cd .face { position: absolute; left: 12%; right: 12%; bottom: 7%; height: 52%; border-radius: calc(var(--cw) * .07); display: grid; place-items: center; font-weight: 900; font-size: calc(var(--cw) * .44); }
+.cd.red .face { background: color-mix(in srgb, var(--card-red) 12%, transparent); }
+.cd .face { background: color-mix(in srgb, var(--card-black) 9%, transparent); }
+.cd .face svg { position: absolute; width: 40%; height: 40%; right: 6%; bottom: 6%; opacity: .5; }
+.cd.small .sm { display: none; }
+.cd .bk { display: none; position: absolute; inset: 0; border-radius: inherit; }
+.cd.down .bk {
+  display: block; background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.13) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.13) 0 2px, transparent 2px 7px),
+    linear-gradient(135deg, var(--back-1), var(--back-2));
+  box-shadow: inset 0 0 0 calc(var(--cw) * .05) #fff;
+}
+.cd.down > :not(.bk) { visibility: hidden; }
+.cd.lift { box-shadow: 0 0 0 .5px var(--card-edge), 0 10px 22px rgba(0,0,0,.35); }
+.cd.sel { box-shadow: 0 0 0 3px #ffd84a, 0 4px 12px rgba(0,0,0,.3); }
+.cd.hint { animation: hintglow 1s ease-in-out 2; }
+@keyframes hintglow { 50% { box-shadow: 0 0 0 3px #ffd84a, 0 0 18px 4px rgba(255,216,74,.8); } }
+.cd.dim::after { content: ""; position: absolute; inset: 0; background: rgba(20,30,40,.28); border-radius: inherit; }
+.cd.shake { animation: cshake .28s; }
+@keyframes cshake { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
+.cd.flip { animation: cflip .22s ease-out; }
+@keyframes cflip { 0% { scale: .2 1; } 100% { scale: 1 1; } }
+
+/* spider's finished runs: a little king on the pile */
+.msg {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: rgba(10,16,24,.78); color: #fff;
+  padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity .25s;
+  white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis;
+}
+.msg.show { opacity: 1; }
+.finish {
+  position: absolute; right: 10px; bottom: 10px; display: none; height: 46px; padding: 0 20px; border-radius: 14px; border: 0;
+  background: linear-gradient(135deg, #ffcf4a, #ffb224); color: #3a2a00; font-weight: 800; font-size: 16px; box-shadow: 0 6px 16px -4px rgba(0,0,0,.4);
+}
+.finish.show { display: block; animation: cardin .25s; }
+.float { position: absolute; font-weight: 900; font-size: 18px; color: #ffe37a; text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none; animation: crise .9s ease-out forwards; z-index: 900; }
+@keyframes crise { 0% { opacity: 0; translate: 0 6px; } 20% { opacity: 1; } 100% { opacity: 0; translate: 0 -28px; } }
+
+.toolbar .tool { position: relative; font-size: 12.5px; }
+.toolbar .tool .dot { position: absolute; top: 7px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); display: none; }
+.toolbar .tool .dot.show { display: block; }
+.toolbar .tool.done svg { color: var(--ok); }
+
+/* options sheet */
+.seg { display: flex; gap: 3px; background: var(--surface-2); border-radius: 12px; padding: 3px; margin: 6px 0 12px; }
+.seg button { flex: 1; height: 38px; border-radius: 10px; border: 0; background: none; color: var(--muted); font-weight: 700; font-size: 15px; padding: 0; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.optnote { color: var(--muted); font-size: 14px; margin: 4px 2px 10px; line-height: 1.4; }
+.numrow { display: flex; gap: 8px; align-items: center; margin: 6px 0 12px; }
+.numrow input { flex: 1; min-width: 0; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 18px; font-weight: 700; padding: 0 12px; }
+.numrow .btn { flex: none; min-height: 44px; }
+.cardicon svg { border-radius: 16px; }
+.statgame { margin-bottom: 4px; }
+.statgame .sub { font-size: 13px; color: var(--muted); margin: -4px 2px 10px; }
+
+/* ---------- full screen (kit) ----------
+   Score / time / moves are pills in the top row (the game's name is hidden there; the Menu shows it, with the variant),
+   the felt runs to the very edges of the screen, and Options / New / How to / Stats / Settings live in the Menu.
+   Undo, Hint and Daily stay under the table. */
+html.gg-fs .top .brand h1 { display: none; }
+html.gg-fs .top .brand { flex: none; }
+.ttpills { flex: 1 1 auto; width: auto; min-width: 0; min-height: 0; justify-content: flex-end; gap: 5px; padding: 0; }
+.ttpills .ggpill { flex: none; padding: 7px 10px; }
+.ttpills .ggpill small { font-size: 13px; font-weight: 700; color: var(--muted); }
+.ttpills.tight .ggpill { padding-left: 7px; padding-right: 7px; }
+.ttpills.tight .ggpill small { display: none; }
+@media (max-width: 385px) { .ttpills { gap: 4px; } .ttpills .ggpill { padding: 7px 8px; font-size: 15px; } .ttpills .ggpill small { font-size: 12px; } }
+html.gg-fs .table { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); border-radius: 0; }
+/* spider's "5 deals" under the stock at the right edge of the felt: right-aligned so it isn't cut off by the screen edge */
+.slot.sstock .count { left: -40px; right: 0; text-align: right; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ct-logo" viewBox="0 0 100 100"><defs><linearGradient id="ctg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27a567"/><stop offset="1" stop-color="#157a48"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#ctg)"/><g transform="rotate(-12 50 50)"><rect x="18" y="22" width="40" height="56" rx="6" fill="#fff" stroke="#0d5c35" stroke-width="1.5"/><text x="24" y="40" font-family="-apple-system,system-ui,sans-serif" font-weight="900" font-size="16" fill="#1b2130">A</text></g>
+<g transform="rotate(10 50 50)"><rect x="44" y="24" width="40" height="56" rx="6" fill="#fff" stroke="#0d5c35" stroke-width="1.5"/><path d="M64 40c-4 6-10 9-10 14a5 5 0 0 0 10 1 5 5 0 0 0 10-1c0-5-6-8-10-14z" fill="#e0344b"/><text x="49" y="42" font-family="-apple-system,system-ui,sans-serif" font-weight="900" font-size="15" fill="#e0344b">K</text></g></symbol>
+<symbol id="s0" viewBox="0 0 24 24"><path d="M12 2C9 6.2 4 9 4 13.6 4 16 6 18 8.4 18c1.4 0 2.5-.6 3.1-1.4-.2 1.9-.9 3.4-2.3 4.4h5.6c-1.4-1-2.1-2.5-2.3-4.4.6.8 1.7 1.4 3.1 1.4 2.4 0 4.4-2 4.4-4.4C20 9 15 6.2 12 2z" fill="currentColor"/></symbol>
+<symbol id="s1" viewBox="0 0 24 24"><path d="M12 21.2S3.5 15.8 3.5 9.6A4.6 4.6 0 0 1 12 7.1a4.6 4.6 0 0 1 8.5 2.5c0 6.2-8.5 11.6-8.5 11.6z" fill="currentColor"/></symbol>
+<symbol id="s2" viewBox="0 0 24 24"><path d="M12 2l7.2 10L12 22 4.8 12z" fill="currentColor"/></symbol>
+<symbol id="s3" viewBox="0 0 24 24"><path d="M12 2.6a4.3 4.3 0 0 0-4.1 5.6 4.3 4.3 0 1 0 2.6 7.6c-.3 2.1-1 3.7-2.4 5.2h7.8c-1.4-1.5-2.1-3.1-2.4-5.2a4.3 4.3 0 1 0 2.6-7.6A4.3 4.3 0 0 0 12 2.6z" fill="currentColor"/></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="currentColor" fill-opacity=".15"/></g></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="currentColor" fill-opacity=".12"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/></g></symbol>
+<symbol id="i-opts" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></g></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#ct-logo"/></svg>
+      <h1>Card Table</h1>
+    </button>
+    <!-- full screen: score / time / moves sit in the top row as pills (was its own row) -->
+    <div class="info ttpills" id="info"></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-g="klondike">Klondike</button>
+    <button data-g="spider">Spider</button>
+    <button data-g="freecell">FreeCell</button>
+    <button data-g="tripeaks">TriPeaks</button>
+    <button data-g="pyramid">Pyramid</button>
+  </div>
+
+  <div class="table" id="table">
+    <div class="slots" id="slots"></div>
+    <div class="cards" id="cards"></div>
+    <div class="msg" id="msg"></div>
+    <button class="finish" id="btnFinish">Finish</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button class="tool" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-hint"/></svg><span>Hint</span></button>
+    <button class="tool" id="btnDaily"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><span id="dailyLabel">Daily</span><i class="dot" id="dailyDot"></i></button>
+    <button class="tool" id="btnOpts"><svg viewBox="0 0 24 24"><use href="#i-opts"/></svg><span>Options</span></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New</span></button>
+  </div>
+</div>
+
+<!-- Game options -->
+<div class="overlay" id="ovOpts">
+  <div class="sheet" role="dialog" aria-label="Game options">
+    <h2 id="optsTitle">Options</h2>
+    <div class="sheetbody" id="optsBody"></div>
+    <div class="actions"><button class="btn" id="btnCloseOpts">Done</button><button class="btn red" id="btnDealNow">Deal now</button></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Card flicks and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Card Table</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Card Table records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Card Table: card engine and the rules of each game (Klondike, Spider, FreeCell, TriPeaks, Pyramid).
+   No drawing here; runs in Node for the solvers and tests.
+   A card is { id, s (suit 0 spades, 1 hearts, 2 diamonds, 3 clubs), r (1 ace .. 13 king), u (1 face up) }.
+   A game state is { g, opts, seed, piles: { name: [cards, top last] }, score, moves, ... }. */
+var SOL = (function () {
+  'use strict';
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function shuffle(a, rnd) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function red(s) { return s === 1 || s === 2; }
+  function mk(id, s, r, u) { return { id: id, s: s, r: r, u: u ? 1 : 0 }; }
+  function deck52() { var d = []; for (var s = 0; s < 4; s++) for (var r = 1; r <= 13; r++) d.push(mk(s * 13 + r - 1, s, r, 0)); return d; }
+  function top(p) { return p.length ? p[p.length - 1] : null; }
+  function clone(st) { return JSON.parse(JSON.stringify(st)); }
+  function names(prefix, n) { var a = []; for (var i = 0; i < n; i++) a.push(prefix + i); return a; }
+  var FOUND = names('f', 4);
+  function foundFor(st, c) { // the foundation a single card may go to, or null
+    for (var i = 0; i < 4; i++) {
+      var f = st.piles['f' + i], t = top(f);
+      if (!t ? c.r === 1 : (t.s === c.s && c.r === t.r + 1)) return 'f' + i;
+    }
+    return null;
+  }
+  function altRun(p, idx) { // face-up, alternating colors, each one lower
+    for (var i = idx; i < p.length; i++) {
+      if (!p[i].u) return false;
+      if (i > idx && (red(p[i].s) === red(p[i - 1].s) || p[i].r !== p[i - 1].r - 1)) return false;
+    }
+    return true;
+  }
+  function suitRun(p, idx) { // face-up, same suit, each one lower
+    for (var i = idx; i < p.length; i++) {
+      if (!p[i].u) return false;
+      if (i > idx && (p[i].s !== p[i - 1].s || p[i].r !== p[i - 1].r - 1)) return false;
+    }
+    return true;
+  }
+  function flipTop(st, pid) { var t = top(st.piles[pid]); if (t && !t.u) { t.u = 1; return true; } return false; }
+
+  // ======================= Klondike =======================
+  // Scoring as in the classic Windows game. Standard: waste to tableau +5, to a foundation +10, turning a card +5,
+  // foundation back to tableau -15, going through the deck again -100 (draw 1) or -20 (draw 3), -2 every 10 s, and a time bonus on a win.
+  // Vegas: start at -52, +5 per card on a foundation; draw 1 goes through the deck once, draw 3 three times.
+  var klondike = {
+    id: 'klondike', name: 'Klondike', tabs: names('t', 7),
+    deal: function (seed, opts) {
+      var d = shuffle(deck52(), rng(seed)), piles = { stock: [], waste: [] }, k = 0, i, r, c;
+      FOUND.forEach(function (f) { piles[f] = []; });
+      for (i = 0; i < 7; i++) piles['t' + i] = [];
+      for (r = 0; r < 7; r++) for (c = r; c < 7; c++) { var cd = d[k++]; cd.u = r === c ? 1 : 0; piles['t' + c].push(cd); }
+      while (k < 52) piles.stock.push(d[k++]);
+      var vegas = opts.scoring === 'vegas';
+      return { g: 'klondike', opts: { draw: opts.draw === 3 ? 3 : 1, scoring: opts.scoring || 'standard' }, seed: seed, piles: piles, score: vegas ? -52 : 0, moves: 0, passes: 0 };
+    },
+    passLimit: function (st) { return st.opts.scoring === 'vegas' ? (st.opts.draw === 3 ? 3 : 1) : Infinity; },
+    canPick: function (st, pid, idx) {
+      var p = st.piles[pid];
+      if (!p || idx < 0 || idx >= p.length) return false;
+      if (pid[0] === 't') return !!p[idx].u;
+      if (pid === 'waste' || pid[0] === 'f') return idx === p.length - 1;
+      return false;
+    },
+    canDrop: function (st, pid, idx, to) {
+      if (to === pid || !klondike.canPick(st, pid, idx)) return false;
+      var cards = st.piles[pid].slice(idx), c = cards[0], t = top(st.piles[to] || []);
+      if (!st.piles[to]) return false;
+      if (to[0] === 'f') return cards.length === 1 && pid[0] !== 'f' && (!t ? c.r === 1 : t.s === c.s && c.r === t.r + 1);
+      if (to[0] === 't') return !t ? c.r === 13 : (t.u && red(t.s) !== red(c.s) && t.r === c.r + 1);
+      return false;
+    },
+    add: function (st, n) { st.score += n; if (st.opts.scoring === 'standard' && st.score < 0) st.score = 0; },
+    move: function (st, pid, idx, to) {
+      if (!klondike.canDrop(st, pid, idx, to)) return null;
+      var cards = st.piles[pid].splice(idx), vegas = st.opts.scoring === 'vegas', std = st.opts.scoring === 'standard';
+      Array.prototype.push.apply(st.piles[to], cards);
+      if (to[0] === 'f') klondike.add(st, vegas ? 5 : std ? 10 : 0);
+      else if (pid === 'waste' && std) klondike.add(st, 5);
+      else if (pid[0] === 'f') klondike.add(st, vegas ? -5 : std ? -15 : 0);
+      var flipped = pid[0] === 't' && flipTop(st, pid);
+      if (flipped && std) klondike.add(st, 5);
+      st.moves++;
+      return { from: pid, to: to, n: cards.length, flipped: flipped };
+    },
+    stockTap: function (st) {
+      var s = st.piles.stock, w = st.piles.waste;
+      if (s.length) {
+        for (var i = 0; i < st.opts.draw && s.length; i++) { var c = s.pop(); c.u = 1; w.push(c); }
+        st.moves++;
+        return { draw: true };
+      }
+      if (!w.length || st.passes + 1 >= klondike.passLimit(st)) return null;
+      while (w.length) { var d = w.pop(); d.u = 0; s.push(d); }
+      st.passes++;
+      if (st.opts.scoring === 'standard') klondike.add(st, st.opts.draw === 3 ? -20 : -100);
+      st.moves++;
+      return { recycle: true };
+    },
+    canRecycle: function (st) { return !st.piles.stock.length && st.piles.waste.length > 0 && st.passes + 1 < klondike.passLimit(st); },
+    won: function (st) { return FOUND.every(function (f) { return st.piles[f].length === 13; }); },
+    // all legal moves, each with a rough usefulness score (used by hints, tap-to-move and the "no more moves" check)
+    moves: function (st) {
+      var out = [], P = st.piles, i, j;
+      function add(from, idx, to, val) { out.push({ from: from, idx: idx, to: to, val: val }); }
+      var srcs = ['waste'].concat(klondike.tabs);
+      srcs.forEach(function (from) {
+        var p = P[from]; if (!p.length) return;
+        var t = p.length - 1, f = foundFor(st, p[t]);
+        if (f) add(from, t, f, 50 + (from[0] === 't' && t > 0 && !p[t - 1].u ? 20 : 0));
+      });
+      if (P.waste.length) klondike.tabs.forEach(function (to) { if (klondike.canDrop(st, 'waste', P.waste.length - 1, to)) add('waste', P.waste.length - 1, to, 30); });
+      klondike.tabs.forEach(function (from) {
+        var p = P[from];
+        for (j = 0; j < p.length; j++) {
+          if (!p[j].u) continue;
+          for (i = 0; i < 7; i++) {
+            var to = 't' + i;
+            if (!klondike.canDrop(st, from, j, to)) continue;
+            var reveals = j > 0 && !p[j - 1].u, empties = j === 0, first = j === 0 || !p[j - 1].u;
+            if (p[j].r === 13 && j === 0 && !P[to].length) continue; // king from an empty column to another: pointless
+            var val = reveals ? 40 : empties ? 25 : 0;
+            if (!first) { // splitting a run only helps if the card under it can then go up
+              var under = p[j - 1];
+              val = foundFor(st, under) ? 35 : -1;
+            }
+            if (val >= 0) add(from, j, to, val);
+          }
+        }
+      });
+      FOUND.forEach(function (from) {
+        var p = P[from]; if (!p.length) return;
+        klondike.tabs.forEach(function (to) { if (klondike.canDrop(st, from, p.length - 1, to)) add(from, p.length - 1, to, 1); });
+      });
+      out.sort(function (a, b) { return b.val - a.val; });
+      return out;
+    },
+    // is there any card in the stock or waste that could be played somewhere (so drawing still helps)?
+    talonPlayable: function (st) {
+      var cards = st.piles.stock.concat(st.piles.waste);
+      if (!klondike.canRecycle(st) && !st.piles.stock.length) cards = st.piles.waste.slice(-1);
+      return cards.some(function (c) {
+        if (foundFor(st, c)) return true;
+        return klondike.tabs.some(function (to) { var t = top(st.piles[to]); return !t ? c.r === 13 : t.u && red(t.s) !== red(c.s) && t.r === c.r + 1; });
+      });
+    },
+    hint: function (st) {
+      var m = klondike.moves(st).filter(function (x) { return x.val >= 20; });
+      if (m.length) return m[0];
+      if (st.piles.stock.length || klondike.canRecycle(st)) return { stock: true };
+      m = klondike.moves(st).filter(function (x) { return x.val >= 0 && x.from[0] !== 'f'; });
+      return m[0] || null;
+    },
+    stuck: function (st) {
+      if (klondike.won(st)) return false;
+      if (klondike.moves(st).some(function (x) { return x.val >= 20; })) return false;
+      if ((st.piles.stock.length || klondike.canRecycle(st)) && klondike.talonPlayable(st)) return false;
+      return true;
+    },
+    canAuto: function (st) {
+      if (st.piles.stock.length || st.piles.waste.length) return false;
+      return klondike.tabs.every(function (t) { return st.piles[t].every(function (c) { return c.u; }); }) && !klondike.won(st);
+    },
+    autoStep: function (st) {
+      var best = null;
+      klondike.tabs.forEach(function (t) { var c = top(st.piles[t]); if (c && foundFor(st, c) && (!best || c.r < best.r)) best = { t: t, r: c.r }; });
+      if (!best) return null;
+      var p = st.piles[best.t];
+      return klondike.move(st, best.t, p.length - 1, foundFor(st, top(p)));
+    },
+    timePenalty: function (st, prevMs, ms) { // -2 every 10 seconds (standard scoring)
+      if (st.opts.scoring !== 'standard') return 0;
+      var n = Math.floor(ms / 10000) - Math.floor(prevMs / 10000);
+      return n > 0 ? -2 * n : 0;
+    },
+    winBonus: function (st, ms) { var s = Math.round(ms / 1000); return st.opts.scoring === 'standard' && s >= 30 ? Math.round(700000 / s) : 0; }
+  };
+
+  // ======================= Spider =======================
+  // Classic Windows scoring: start at 500, -1 for every move (and deal), +100 for each finished king-to-ace run.
+  var spider = {
+    id: 'spider', name: 'Spider', tabs: names('t', 10),
+    deal: function (seed, opts) {
+      var suits = [1, 2, 4].indexOf(opts.suits) >= 0 ? opts.suits : 1, d = [], k, r, i;
+      var order = [0, 1, 2, 3];
+      for (k = 0; k < 8; k++) for (r = 1; r <= 13; r++) d.push(mk(k * 13 + r - 1, order[k % suits], r, 0));
+      shuffle(d, rng(seed));
+      var piles = { stock: [] };
+      for (i = 0; i < 10; i++) piles['t' + i] = [];
+      for (i = 0; i < 8; i++) piles['f' + i] = [];
+      for (i = 0; i < 54; i++) piles['t' + (i % 10)].push(d[i]);
+      for (i = 0; i < 10; i++) top(piles['t' + i]).u = 1;
+      for (i = 54; i < 104; i++) piles.stock.push(d[i]);
+      return { g: 'spider', opts: { suits: suits }, seed: seed, piles: piles, score: 500, moves: 0, done: 0 };
+    },
+    canPick: function (st, pid, idx) { var p = st.piles[pid]; return pid[0] === 't' && !!p && idx >= 0 && idx < p.length && suitRun(p, idx); },
+    canDrop: function (st, pid, idx, to) {
+      if (to === pid || to[0] !== 't' || !spider.canPick(st, pid, idx)) return false;
+      var c = st.piles[pid][idx], t = top(st.piles[to]);
+      return !t || t.r === c.r + 1;
+    },
+    // take away a finished king-to-ace run of one suit from the top of a column
+    collect: function (st, pid) {
+      var p = st.piles[pid], n = p.length;
+      if (n < 13 || p[n - 1].r !== 1) return false;
+      var start = n - 13;
+      if (p[start].r !== 13 || !suitRun(p, start)) return false;
+      var run = p.splice(start, 13);
+      st.piles['f' + st.done] = run;
+      st.done++; st.score += 100;
+      flipTop(st, pid);
+      return true;
+    },
+    move: function (st, pid, idx, to) {
+      if (!spider.canDrop(st, pid, idx, to)) return null;
+      var cards = st.piles[pid].splice(idx);
+      Array.prototype.push.apply(st.piles[to], cards);
+      var flipped = flipTop(st, pid);
+      st.moves++; st.score--;
+      var done = spider.collect(st, to);
+      return { from: pid, to: to, n: cards.length, flipped: flipped, collected: done ? to : null };
+    },
+    stockTap: function (st) {
+      if (!st.piles.stock.length) return null;
+      if (spider.tabs.some(function (t) { return !st.piles[t].length; })) return { blocked: true };
+      var got = [];
+      spider.tabs.forEach(function (t) { var c = st.piles.stock.pop(); c.u = 1; st.piles[t].push(c); });
+      spider.tabs.forEach(function (t) { if (spider.collect(st, t)) got.push(t); });
+      st.moves++; st.score--;
+      return { deal: true, collected: got };
+    },
+    won: function (st) { return st.done >= 8; },
+    moves: function (st) {
+      var out = [], P = st.piles;
+      spider.tabs.forEach(function (from) {
+        var p = P[from], n = p.length; if (!n) return;
+        var a = n - 1; while (a > 0 && p[a - 1].u && p[a - 1].s === p[a].s && p[a - 1].r === p[a].r + 1) a--;
+        for (var j = a; j < n; j++) {
+          spider.tabs.forEach(function (to) {
+            if (!spider.canDrop(st, from, j, to)) return;
+            var t = top(P[to]), c = p[j], val;
+            if (!t) { val = j === 0 ? -1 : (j === a && !p[j - 1].u ? 30 : 5); }
+            else if (t.s === c.s) val = 40 + (j === a && j > 0 && !p[j - 1].u ? 20 : 0) + (j > a ? -10 : 0);
+            else if (j === a) val = j > 0 && !p[j - 1].u ? 35 : (j === 0 ? 20 : (p[j - 1].r === c.r + 1 && p[j - 1].s !== c.s ? 2 : 1));
+            else val = -1;
+            if (j === a && j > 0 && p[j - 1].u && p[j - 1].r === c.r + 1 && t && t.s !== c.s) val = -1; // just swaps one mixed pile for another
+            if (val >= 0) out.push({ from: from, idx: j, to: to, val: val });
+          });
+        }
+      });
+      out.sort(function (a, b) { return b.val - a.val; });
+      return out;
+    },
+    hint: function (st) {
+      var m = spider.moves(st).filter(function (x) { return x.val >= 5; });
+      if (m.length) return m[0];
+      if (st.piles.stock.length && !spider.tabs.some(function (t) { return !st.piles[t].length; })) return { stock: true };
+      m = spider.moves(st);
+      return m[0] || null;
+    },
+    stuck: function (st) {
+      if (spider.won(st)) return false;
+      if (st.piles.stock.length) return false;
+      return !spider.moves(st).some(function (x) { return x.val >= 5; });
+    },
+    canAuto: function () { return false; }
+  };
+
+  // ======================= FreeCell =======================
+  // Deals are the Microsoft game numbers (1 to 32000); all but #11982 can be won. No score, as in the Windows game.
+  function msDeal(num) {
+    var cards = [], i, seed = num >>> 0;
+    for (i = 0; i < 52; i++) cards.push(51 - i);
+    for (i = 0; i < 52; i++) {
+      seed = (Math.imul(seed, 214013) + 2531011) & 0x7fffffff;
+      var r = seed >> 16, j = 51 - r % (52 - i), t = cards[i]; cards[i] = cards[j]; cards[j] = t;
+    }
+    var SU = [3, 2, 1, 0]; // Microsoft order clubs, diamonds, hearts, spades
+    return cards.map(function (c) { var s = SU[c & 3], r = (c >> 2) + 1; return mk(s * 13 + r - 1, s, r, 1); });
+  }
+  var freecell = {
+    id: 'freecell', name: 'FreeCell', tabs: names('t', 8), cells: names('c', 4),
+    deal: function (num) {
+      var d = msDeal(num), piles = {}, i;
+      for (i = 0; i < 4; i++) { piles['c' + i] = []; piles['f' + i] = []; }
+      for (i = 0; i < 8; i++) piles['t' + i] = [];
+      d.forEach(function (c, k) { piles['t' + (k % 8)].push(c); });
+      return { g: 'freecell', opts: {}, seed: num, piles: piles, score: 0, moves: 0 };
+    },
+    maxMove: function (st, toEmpty) {
+      var free = freecell.cells.filter(function (c) { return !st.piles[c].length; }).length;
+      var empty = freecell.tabs.filter(function (t) { return !st.piles[t].length; }).length - (toEmpty ? 1 : 0);
+      return (free + 1) * Math.pow(2, Math.max(0, empty));
+    },
+    canPick: function (st, pid, idx) {
+      var p = st.piles[pid];
+      if (!p || idx < 0 || idx >= p.length) return false;
+      if (pid[0] === 'c') return idx === p.length - 1;
+      if (pid[0] === 't') return altRun(p, idx);
+      return false;
+    },
+    canDrop: function (st, pid, idx, to) {
+      if (to === pid || !freecell.canPick(st, pid, idx) || !st.piles[to]) return false;
+      var n = st.piles[pid].length - idx, c = st.piles[pid][idx], t = top(st.piles[to]);
+      if (to[0] === 'c') return n === 1 && !t;
+      if (to[0] === 'f') return n === 1 && (!t ? c.r === 1 : t.s === c.s && c.r === t.r + 1);
+      if (to[0] === 't') {
+        if (n > freecell.maxMove(st, !t)) return false;
+        return !t || (red(t.s) !== red(c.s) && t.r === c.r + 1);
+      }
+      return false;
+    },
+    move: function (st, pid, idx, to) {
+      if (!freecell.canDrop(st, pid, idx, to)) return null;
+      var cards = st.piles[pid].splice(idx);
+      Array.prototype.push.apply(st.piles[to], cards);
+      st.moves++;
+      return { from: pid, to: to, n: cards.length };
+    },
+    // a card that can safely go up: every card that could still sit on it is already up or can't need it
+    safe: function (st, c) {
+      if (c.r <= 2) return true;
+      var lowOpp = 99, i;
+      for (i = 0; i < 4; i++) { var f = st.piles['f' + i], t = top(f); if (!t) { if (red(i) !== red(c.s)) lowOpp = 0; continue; } if (red(t.s) !== red(c.s)) lowOpp = Math.min(lowOpp, t.r); }
+      var oppCount = 0; for (i = 0; i < 4; i++) { var tt = top(st.piles['f' + i]); if (tt && red(tt.s) !== red(c.s)) oppCount++; }
+      if (oppCount < 2) lowOpp = 0;
+      return lowOpp >= c.r - 1;
+    },
+    autoStep: function (st) { // one safe card up (the game does this by itself after each move, like Windows)
+      var srcs = freecell.cells.concat(freecell.tabs);
+      for (var i = 0; i < srcs.length; i++) {
+        var p = st.piles[srcs[i]], c = top(p); if (!c) continue;
+        var f = foundFor(st, c);
+        if (f && freecell.safe(st, c)) { p.pop(); st.piles[f].push(c); return { from: srcs[i], to: f, n: 1, auto: true }; }
+      }
+      return null;
+    },
+    won: function (st) { return FOUND.every(function (f) { return st.piles[f].length === 13; }); },
+    moves: function (st) {
+      var out = [], P = st.piles;
+      freecell.cells.concat(freecell.tabs).forEach(function (from) {
+        var p = P[from]; if (!p.length) return;
+        var f = foundFor(st, top(p)); if (f) out.push({ from: from, idx: p.length - 1, to: f, val: 50 });
+      });
+      freecell.cells.forEach(function (from) {
+        var p = P[from]; if (!p.length) return;
+        freecell.tabs.forEach(function (to) { if (freecell.canDrop(st, from, 0, to)) out.push({ from: from, idx: 0, to: to, val: P[to].length ? 30 : 8 }); });
+      });
+      freecell.tabs.forEach(function (from) {
+        var p = P[from]; if (!p.length) return;
+        var a = p.length - 1; while (a > 0 && altRun(p, a - 1)) a--;
+        for (var j = a; j < p.length; j++) freecell.tabs.forEach(function (to) {
+          if (!freecell.canDrop(st, from, j, to)) return;
+          var toEmpty = !P[to].length;
+          if (toEmpty && j === 0) return;
+          out.push({ from: from, idx: j, to: to, val: toEmpty ? 6 : (j === a ? 25 : 12) });
+        });
+        var fc = freecell.cells.filter(function (c) { return !P[c].length; })[0];
+        if (fc) out.push({ from: from, idx: p.length - 1, to: fc, val: 3 });
+      });
+      out.sort(function (a, b) { return b.val - a.val; });
+      return out;
+    },
+    hint: function (st) { var m = freecell.moves(st); return m[0] || null; },
+    stuck: function (st) { return !freecell.won(st) && !freecell.moves(st).length; },
+    canAuto: function (st) {
+      if (freecell.won(st)) return false;
+      return freecell.tabs.every(function (t) { var p = st.piles[t]; for (var i = 1; i < p.length; i++) if (p[i].r > p[i - 1].r) return false; return true; });
+    },
+    autoFinishStep: function (st) {
+      var best = null;
+      freecell.cells.concat(freecell.tabs).forEach(function (s) { var c = top(st.piles[s]); if (c && foundFor(st, c) && (!best || c.r < best.r)) best = { s: s, r: c.r }; });
+      if (!best) return null;
+      var p = st.piles[best.s], c = p.pop(), f = foundFor(st, c); st.piles[f].push(c);
+      return { from: best.s, to: f, n: 1, auto: true };
+    }
+  };
+
+  // ======================= TriPeaks =======================
+  // 28 cards in three peaks; the bottom row starts face up. Play a card one higher or lower than the waste card
+  // (king and ace wrap). Scoring as in the classic game: each card in a run scores one more than the last (1, 2, 3...),
+  // a new stock card costs 5 and ends the run; the first two peaks cleared give +15 each, the last +30.
+  var TP_COVER = (function () {
+    var cov = [], k, j;
+    for (k = 0; k < 3; k++) cov[k] = [3 + 2 * k, 4 + 2 * k];
+    for (j = 0; j < 6; j++) { k = j >> 1; var o = j & 1; cov[3 + j] = [9 + 3 * k + o, 10 + 3 * k + o]; }
+    for (j = 0; j < 9; j++) cov[9 + j] = [18 + j, 19 + j];
+    for (j = 0; j < 10; j++) cov[18 + j] = [];
+    return cov;
+  })();
+  var tripeaks = {
+    id: 'tripeaks', name: 'TriPeaks', slots: names('p', 28), cover: TP_COVER,
+    deal: function (seed) {
+      var d = shuffle(deck52(), rng(seed)), piles = { stock: [], waste: [] }, i;
+      for (i = 0; i < 28; i++) { d[i].u = i >= 18 ? 1 : 0; piles['p' + i] = [d[i]]; }
+      for (i = 28; i < 51; i++) piles.stock.push(d[i]);
+      d[51].u = 1; piles.waste.push(d[51]);
+      return { g: 'tripeaks', opts: {}, seed: seed, piles: piles, score: 0, moves: 0, run: 0, peaks: 0, bestRun: 0 };
+    },
+    free: function (st, i) { return st.piles['p' + i].length > 0 && TP_COVER[i].every(function (j) { return !st.piles['p' + j].length; }); },
+    fits: function (a, b) { var d = Math.abs(a.r - b.r); return d === 1 || d === 12; },
+    canPick: function (st, pid, idx) { return pid[0] === 'p' && idx === 0 && tripeaks.free(st, +pid.slice(1)); },
+    canDrop: function (st, pid, idx, to) {
+      if (to !== 'waste' || !tripeaks.canPick(st, pid, idx)) return false;
+      var w = top(st.piles.waste);
+      return !!w && tripeaks.fits(st.piles[pid][0], w);
+    },
+    move: function (st, pid, idx, to) {
+      if (!tripeaks.canDrop(st, pid, idx, to)) return null;
+      var c = st.piles[pid].pop(), i = +pid.slice(1);
+      c.u = 1; st.piles.waste.push(c);
+      st.run++; st.score += st.run; if (st.run > st.bestRun) st.bestRun = st.run;
+      var bonus = 0;
+      if (i < 3) { st.peaks++; bonus = st.peaks === 3 ? 30 : 15; st.score += bonus; }
+      var flipped = [];
+      for (var k = 0; k < 28; k++) { var p = st.piles['p' + k]; if (p.length && !p[0].u && tripeaks.free(st, k)) { p[0].u = 1; flipped.push('p' + k); } }
+      st.moves++;
+      return { from: pid, to: 'waste', n: 1, flipped: flipped, run: st.run, bonus: bonus };
+    },
+    stockTap: function (st) {
+      if (!st.piles.stock.length) return null;
+      var c = st.piles.stock.pop(); c.u = 1; st.piles.waste.push(c);
+      st.run = 0; st.score -= 5; st.moves++;
+      return { draw: true };
+    },
+    won: function (st) { for (var i = 0; i < 28; i++) if (st.piles['p' + i].length) return false; return true; },
+    moves: function (st) {
+      var out = [];
+      for (var i = 0; i < 28; i++) if (tripeaks.canDrop(st, 'p' + i, 0, 'waste')) out.push({ from: 'p' + i, idx: 0, to: 'waste', val: 10 + (i < 18 ? 5 : 0) });
+      return out;
+    },
+    hint: function (st) { var m = tripeaks.moves(st); if (m.length) return m[0]; return st.piles.stock.length ? { stock: true } : null; },
+    stuck: function (st) { return !tripeaks.won(st) && !st.piles.stock.length && !tripeaks.moves(st).length; },
+    canAuto: function () { return false; }
+  };
+
+  // ======================= Pyramid =======================
+  // Take away pairs that add up to 13 (jack 11, queen 12, king 13 alone). A card can be used when nothing covers it.
+  // Tap the stock to turn its top card onto the waste; the waste's top card can be used. You can go through the stock 3 times.
+  // Clear the pyramid to win. Our scoring: +5 for each pyramid card taken, +1 for each stock or waste card, +250 for clearing.
+  var PY_COVER = (function () {
+    var cov = [], r, i;
+    for (r = 0; r < 7; r++) for (i = 0; i <= r; i++) cov.push(r === 6 ? [] : [((r + 1) * (r + 2)) / 2 + i, ((r + 1) * (r + 2)) / 2 + i + 1]);
+    return cov;
+  })();
+  var pyramid = {
+    id: 'pyramid', name: 'Pyramid', slots: names('q', 28), cover: PY_COVER, PASSES: 3,
+    deal: function (seed) {
+      var d = shuffle(deck52(), rng(seed)), piles = { stock: [], waste: [], found: [] }, i;
+      for (i = 0; i < 28; i++) { d[i].u = 1; piles['q' + i] = [d[i]]; }
+      for (i = 28; i < 52; i++) { d[i].u = 0; piles.stock.push(d[i]); }
+      return { g: 'pyramid', opts: {}, seed: seed, piles: piles, score: 0, moves: 0, passes: 0 };
+    },
+    free: function (st, pid) {
+      if (pid === 'waste') return st.piles[pid].length > 0;
+      if (pid[0] !== 'q') return false;
+      var i = +pid.slice(1);
+      return st.piles[pid].length > 0 && PY_COVER[i].every(function (j) { return !st.piles['q' + j].length; });
+    },
+    canPick: function (st, pid, idx) { var p = st.piles[pid]; return !!p && idx === p.length - 1 && pyramid.free(st, pid); },
+    canDrop: function (st, pid, idx, to) {
+      if (!pyramid.canPick(st, pid, idx)) return false;
+      var c = top(st.piles[pid]);
+      if (to === 'found') return c.r === 13;
+      if (to === pid || !st.piles[to] || !pyramid.free(st, to)) return false;
+      return c.r + top(st.piles[to]).r === 13;
+    },
+    take: function (st, pid) { var c = st.piles[pid].pop(); st.piles.found.push(c); st.score += pid[0] === 'q' ? 5 : 1; },
+    move: function (st, pid, idx, to) {
+      if (!pyramid.canDrop(st, pid, idx, to)) return null;
+      pyramid.take(st, pid);
+      if (to !== 'found') pyramid.take(st, to);
+      st.moves++;
+      var win = pyramid.won(st);
+      if (win) st.score += 250;
+      return { from: pid, to: to, pair: to !== 'found' };
+    },
+    stockTap: function (st) {
+      var s = st.piles.stock, w = st.piles.waste;
+      if (s.length) { var c = s.pop(); c.u = 1; w.push(c); st.moves++; return { draw: true }; }
+      if (!w.length || st.passes + 1 >= pyramid.PASSES) return null;
+      while (w.length) { var d = w.pop(); d.u = 0; s.push(d); }
+      st.passes++; st.moves++;
+      return { recycle: true };
+    },
+    canRecycle: function (st) { return !st.piles.stock.length && st.piles.waste.length > 0 && st.passes + 1 < pyramid.PASSES; },
+    won: function (st) { for (var i = 0; i < 28; i++) if (st.piles['q' + i].length) return false; return true; },
+    freeList: function (st) {
+      var out = [];
+      for (var i = 0; i < 28; i++) if (pyramid.free(st, 'q' + i)) out.push('q' + i);
+      if (st.piles.waste.length) out.push('waste');
+      return out;
+    },
+    moves: function (st) {
+      var f = pyramid.freeList(st), out = [];
+      f.forEach(function (a, i) {
+        var ca = top(st.piles[a]);
+        if (ca.r === 13) out.push({ from: a, idx: st.piles[a].length - 1, to: 'found', val: a[0] === 'q' ? 30 : 10 });
+        for (var j = i + 1; j < f.length; j++) {
+          var b = f[j], cb = top(st.piles[b]);
+          if (ca.r + cb.r === 13) out.push({ from: a, idx: st.piles[a].length - 1, to: b, val: (a[0] === 'q' ? 15 : 0) + (b[0] === 'q' ? 15 : 0) + 5 });
+        }
+      });
+      out.sort(function (a, b) { return b.val - a.val; });
+      return out;
+    },
+    hint: function (st) { var m = pyramid.moves(st); if (m.length) return m[0]; return (st.piles.stock.length || pyramid.canRecycle(st)) ? { stock: true } : null; },
+    stuck: function (st) {
+      if (pyramid.won(st)) return false;
+      if (pyramid.moves(st).length) return false;
+      if (st.piles.stock.length || pyramid.canRecycle(st)) {
+        // could any stock/waste card still pair with something (or is a king)?
+        var cards = st.piles.stock.concat(st.piles.waste), fr = pyramid.freeList(st).filter(function (p) { return p[0] === 'q'; });
+        return !cards.some(function (c) { return c.r === 13 || cards.some(function (d) { return d !== c && d.r + c.r === 13; }) || fr.some(function (p) { return top(st.piles[p]).r + c.r === 13; }); });
+      }
+      return true;
+    },
+    canAuto: function () { return false; }
+  };
+
+  var GAMES = { klondike: klondike, spider: spider, freecell: freecell, tripeaks: tripeaks, pyramid: pyramid };
+  return { rng: rng, shuffle: shuffle, red: red, top: top, clone: clone, deck52: deck52, msDeal: msDeal, foundFor: foundFor, GAMES: GAMES,
+    klondike: klondike, spider: spider, freecell: freecell, tripeaks: tripeaks, pyramid: pyramid };
+})();
+if (typeof module !== 'undefined') module.exports = SOL;
+</script>
+<script>
+window.CT_BANKS = {"klondike1":[2710068985,3359373932,3146935085,535458203,3359203508,3775791748,3790777082,2123867434,4189890424,3820215799,3582849417,293371793,1019926101,1136339408,472194096,693759567,3870726611,511251212,2477959551,2367337805,4252711747,2340015116,1136686798,3446157400,508377001,562398136,369109007,152230061,3156689105,1447284244,3647097640,1287615376,2918969790,3488044542,3578820703,2856671098,1850518414,1117166905,583489194,289062432,1361069016,1597163883,3233047133,2426349569,878191858,517614413,1329581730,2693565870,1947914983,954361558,2189745617,1798772497,4198279193,4111780548,1359056535,742674004,3901216963,3578104696,2039618225,3584707940,255528736,3560123671,2422486868,2671351553,4079038469,1168136138,840723888,4279349311,2992452849,3082312553,3969030374,3429427725,706554536,3668361958,4066812474,2828084215,78091023,856172008,1689351206,4145573938,1480665738,2697767332,2234308139,778052731,3506632828,2149553438,3259265662,2526951701,2011934171,3718025104,2033420212,267234193,482110739,1875078737,3312424594,2632064646,2426001298,2551287265,1229973731,3147892921,1802717505,689532927,600979524,3214279792,863864689,329036310,1859244241,223042652,3915164040,1890771049,3033321358,458298033,3316522415,2895137569,787004922,3189834700,2818876189,1418141153,3039643734,1208728010,2114529508,3385191886,3523599545,3297071960,2168718740,2334975928,2233917447,1022726032,945404076,3694874070,4079115691,4209045091,1844869187,2454855019,3530121939,4266010066,2686037027,2780607199,2163329568,3654777047,3691941171,1498355455,4016791986,3119081653,3245987241,747202090,3187468806,3316867909,1860891609,1298517095,35161470,819744132,3077154185,1283748112,1474991933,3954517571,2880266692,1867161330,1675926841,1913714709,3373668269,2086712484,661815025,3193898344,2934844921,1007087052,8774030,2225979594,529051591,2755087413,1541790077,1084395251,3738361044,4210742210,86228908,360940028,1309552256,3316951135,2196432553,2408849512,3412131332,1442261652,1106637623,981746077,1677396663,1339026105,3040527970,907102678,671523508,3187189315,2796700849,346876617,2420108193,4073148166,3393609557,3448645090,41776234,4258249864,19858750,1063913671,3429622416,430724952,2055881741,3073323565,2814328315,2189052442,459329246,675384569,1554187484,1583324681,2123503248,3492972794,2668333792,3356487902,157627985,957990702,2913896255,2082854584,240154522,772985303,709232936,2801867968,2864776135,286220539,3608111498,81123861,4175681235,713948982,112571817,3990418133,4245973855,1084676037,1711142818,4087083044,3117893453,2091915420,258555737,869607316,1958164116,3633589098,2044000583,3390909889,3591788760,1816813408,3377972185,56718279,3864594242,1481258517,122319034,3947394846,3499342920,3667401947,145184835,3548751895,2643307034,1315712965,1143115928,1076038594,1323212433,1357210311,967682207,1485329350,3115712921,2876875711,181093204,3310136620,3142345345,3029635407,2883204314,3898921340,4882601,509996399,1245054950,993259264,894064138,2720527572,62672112,1891847706,4118115024,143959474,1880274976,2308241927,1823399823,3187348161,1528183488,3480176792,610306941,1484556600,1946981367,1909867979,1880526601,2735752693,1482582089,3323249803,4031027452,2033396792,3914515746,124765548,2555313235,2039205136,2666225413,1765682127,2820936856,2159537616,3691316040,2172423046,3233224767,1446739861,2439856291,288487684,2548978215,2337854062,3071952081,3585842017,863685182,250481669,3807340553,3119297720,1118183278,3685333640,473661862,1235625473,2545107727,2676702176,2923151748,724207462,2649519937,1995777793,20891861,2197384796,1070987336,1614558877,1303228171,1855552823,1553963626,3254741351,1824190199,1395491703,167956241,2856623276,2290498814,1418920071,2478450536,2836787318,2630314832,1756983269,1194630588,2357965906,2181661535,2228926766,2957614449,2198181671,1022916499,665156272,2221059147,767621795,4075192157,100009631,1120335300,3503635249,1709367602,3588821193,2698244770,1068831140,538674559,868238615,2990845380,276295239,3850508941,3920657603,4280683348,1777645853,1354935865,1667197432,380005489,1347969457,3185637340,3290810770,3922699932,144257480,3900792199,2412221826,1408693739,3880292047,1365570933,610468502,4031609640,1646447454,3185357866,650880974,3595453661,437293670,594641060,2279895191,1588483078,3579678344,1711616330,1970142130,1217670883,344412183],"klondike3":[3359373932,3146935085,535458203,3775791748,3790777082,2123867434,3582849417,1019926101,1136339408,472194096,4227470482,511251212,2477959551,2367337805,4252711747,2340015116,1136686798,3446157400,508377001,562398136,369109007,152230061,3156689105,3647097640,1287615376,2918969790,3488044542,3578820703,2856671098,1850518414,583489194,3233047133,2426349569,878191858,517614413,1329581730,2693565870,1947914983,2189745617,1798772497,4111780548,1359056535,742674004,3901216963,2039618225,3584707940,255528736,3560123671,2422486868,2671351553,4079038469,1168136138,4279349311,3082312553,2672288771,3969030374,3429427725,706554536,3668361958,4066812474,2828084215,78091023,856172008,1689351206,4145573938,1480665738,2697767332,2234308139,778052731,3506632828,2149553438,3259265662,2526951701,3718025104,2033420212,267234193,3663350074,482110739,1875078737,3312424594,2632064646,2551287265,1229973731,3147892921,1802717505,689532927,600979524,3214279792,863864689,329036310,1859244241,223042652,1890771049,3033321358,458298033,3316522415,2895137569,787004922,2818876189,1418141153,3039643734,3523599545,3701951291,2168718740,2334975928,2233917447,1022726032,945404076,3694874070,4079115691,4209045091,1844869187,2763781851,2454855019,3530121939,4266010066,2686037027,2163329568,3654777047,3691941171,1498355455,4016791986,3119081653,3245987241,747202090,3187468806,3316867909,1860891609,1298517095,35161470,819744132,3077154185,1283748112,1474991933,3954517571,2880266692,1867161330,1675926841,1913714709,3373668269,2086712484,661815025,3193898344,2934844921,1007087052,2225979594,529051591,1084395251,3738361044,4210742210,360940028,1309552256,3316951135,230334786,2196432553,2408849512,1442261652,981746077,1677396663,1339026105,3040527970,907102678,671523508,3187189315,2796700849,346876617,2420108193,4073148166,3448645090,41776234,4258249864,19858750,1063913671,430724952,3073323565,2814328315,2189052442,459329246,675384569,1583324681,2123503248,3492972794,2668333792,3356487902,157627985,2913896255,2082854584,240154522,772985303,709232936,2864776135,286220539,3608111498,81123861,4175681235,713948982,112571817,2219786662,4245973855,1711142818,3117893453,2091915420,258555737,869607316,1958164116,3633589098,2044000583,3591788760,1816813408,3377972185,56718279,3864594242,1481258517,122319034,3947394846,3499342920,3667401947,2643307034,1315712965,1143115928,1323212433,1357210311,967682207,1485329350,3115712921,2876875711,3310136620,3142345345,1604277397,3121854045,2883204314,3898921340,4882601,509996399,2177515424,1245054950,2720527572,62672112,1891847706,143959474,1880274976,2308241927,1823399823,3187348161,3012181455,1528183488,1484556600,1909867979,1880526601,2735752693,1482582089,3323249803,4031027452,3914515746,2555313235,2039205136,2666225413,1765682127,2820936856,3691316040,1446739861,288487684,2548978215,2337854062,892121267,3071952081,3585842017,863685182,3807340553,1118183278,3685333640,473661862,1235625473,2545107727,2676702176,2923151748,724207462,2649519937,1995777793,20891861,1070987336,1614558877,1303228171,1855552823,2404431030,3254741351,1824190199,1395491703,167956241,2856623276,1418920071,2478450536,2836787318,2630314832,1756983269,1194630588,2357965906,2181661535,2228926766,2957614449,2198181671,1022916499,2221059147,767621795,100009631,1120335300,1568604203,3503635249,1709367602,3588821193,2698244770,1068831140,538674559,868238615,2990845380,276295239,3850508941,3920657603,4280683348,1777645853,1667197432,380005489,1347969457,3185637340,91485361,3290810770,3922699932,144257480,1408693739,3880292047,1365570933,4031609640,1646447454,3185357866,650880974,3595453661,437293670,594641060,2279895191,1588483078,3579678344,1711616330,1970142130,1217670883,344412183,1034987150,3602746959,397947332,839856697,14260533,1657253153,1527148466,1481515383,3250068742,3405869174,2144533537,3228699708,1385709095,1334039832,3177206173,1999122796,4114867541,2176810492,654617845,925256859,550617086,1271649367,1318444185,411224360,3006801605,3304168441,3726745276,2437282374,4016539101,2556413055,1426897355,706046849,2640860550,3640574708,1160401166,2822316151,343786189,84086784,356835729,516390975,3240483777,2280950203,757714734,2478880918,809103551,2543911373,2046511511,1678991683,3421351004,292996870,104330439,3663379924,2356887533,2609224542,368968777],"pyramid":[3197832834,3120279763,1993234978,763164311,4041386117,2843295771,1091054958,3698448785,1454244852,1863496662,3948541944,2061833094,879703117,2075938563,63637837,1084572398,1773844885,753994757,2773813984,858828326,1309541222,1006959654,119389504,3993058124,1099218774,2140250187,3522493253,2612367351,2336009918,3847329262,2396584815,2269901210,3841117136,2494332814,3074961689,3531188307,378344143,1873766261,1878059836,1667963250,3264606325,1943054269,2436093128,703712747,233311715,3507527955,2573145160,1556745916,3510118039,4248354926,667490079,3264629311,2390138556,1464063970,4225650057,3448245878,2960860070,2888775999,3613934545,3119537916,2795578724,2836179481,2625917147,2563935467,697155006,1875347349,3922595451,2396017218,2689046519,3963960616,272865478,55346081,2488897646,2707556528,2392999152,2231677537,1888797444,3214940110,3679658461,2538469152,844916588,3392021512,505694895,2054681418,860217231,490118423,1623163496,1383621869,3651030560,1875236166,1419640614,875392996,4229179657,907321997,4209453801,4106724355,2083786863,3818050918,2297452205,2364187757,3446875515,866858377,860581901,1676470121,1583738472,1397393612,2984080795,944701305,3350141804,3634803475,2653082359,2730606686,2460958757,3353534994,4020126791,3689353053,2387480516,1867668024,1392097105,1617135061,3988397041,1775432930,1823375866,3384045118,2212932296,1908917048,4217605468,2536741186,882988814,2244997209,4019066591,3267079941,14569523,4148183315,3550934002,1530552937,2904779196,3131879980,1684080218,4152695788,3020797108,2319377690,356971704,1549115769,347719199,3759838663,212715558,3565653343,2761960720,2071713768,1599379710,2743753987,2353626979,2248361869,738350099,3809411586,3130699659,2132863688,3177876225,901577489,2265484441,2961476273,3374596641,2512752432,1784742314,2235496877,1791450446,3634643900,2003613112,2864149096,64029359,400208708,284534249,3034181414,625424500,3576392281,883049625,71237475,1620267499,2931964555,3165939287,85716061,860104859,420159822,4146675209,745983528,2626051388,2739687622,2322802212,423130650,2719336985,393250386,688493858,2074214754,3870257603,2474943389,1740363400,2937674446,2357685678,3968604480,653589709,244612890,73534570,2116993088,390976753,1952945617,2350904796,2753784465,1883657158,128649734,2136370199,3643747349,2415254328,4072607610,543139712,563920572,93318381,3410093215,3978183745,2682800566,273892411,3072934823,66211880,1479255712,2112892337,3633457571,3104954140,4293816828,3488057820,1002737198,1581202540,3144339729,4292828785,990519693,85223209,2190900040,3792202997,1596369195,328192312,1515940253,2637474297,2958695567,1668341903,3352432177,4174214423,3058424394,3668198050,1959327688,1504792705,2168732014,4137851163,2397038160,3300522376,689015887,3339266933,804505443,2774975058,2888532783,2676245564,1559488292,2710121249,2194223298,2641871085,2224254092,3857256004,504382958,3851499365,1583728506,891298742,3729555807,397286071,2672839192,3288521018,1316842700,1336177585,4232790494,3743294806,3861501489,3734207575,2805792328,1035221853,4287739734,799102079,3976377720,3678989418,3125111475,2217835455,1983046356,1303903726,734317269,863363704,243497199,1162663151,2105411861,252200410,4095170066,772771550,4076377315,1408787340,4197847061,1394478789,151422834,682554798,3727221793,271735112,4087245850,1680319353,734841954,1488595877,27462341,4157560857,588197827,3115384061,3214452639,2637995663,3771421414,3310562784,3246311828,1314488686,981600557,1743504864,98785180,3986754423,3769058893,3710811648,431905296,2439064896,2792021826,3350512466,3162649914,3061996160,3556778275,1960420227,3714081450,1240246087,3610219548,1087677669,380736180,2641592917,4010133332,905798471,3016142209,3167732204,4086877411,953998160,2959508885,1417369207,2149343444,415934514,1880491164,2600529336,2168720633,3083973940,746761024,3304953529,1188335783,3982535757,2635233185,393564563,3161356931,2570613352,1904659100,3148661440,3626589594,1230949663,1204440129,2564147281,3674519943,1388424831,1826141111,406969795,964481098,1693128369,732323354,3231292100,3435078708,1210903238,3709212388,4080726141,2723936795,3721492027,3192771249,3320014063,3510035881,1657950419,1487699385,4140683788,778197367,3694601330,1105896178,209956116,1833195910,1430572686,1951733799,1362951471,855137051,1048067588,1516646170,3135854847,3362772937],"spider1":[417699301,1701642314,2871773226,3142578479,764945338,331884888,1633970309,4151514716,2789576734,848059642,2169094058,1952576031,3783410874,1104773072,2768051237,124070447,3175092143,2005473629,234139507,3797598160,938274731,2589617215,4222958008,3914085024,1165859090,2744154844,2273038491,4210359198,2339948093,451283714,2969031139,3042647295,3977175825,2454000732,2011194776,558731634,2214592059,1503712615,3239345364,3807400752,1613060201,717292665,2634569808,2355244969,4254624913,2097151590,545933966,678934110,2250526907,3887781001,3987416720,2781629631,1649842912,3562011767,1611353615,675969430,181479947,1512475802,3779175687,272154829,2632699756,104517753,3399007464,2409372376,648171456,4290744263,3945143465,1276301638,155359647,89044693,1915086474,2086982223,1366322072,378589094,3579312045,1308783468,1024434373,3321026279,1704892968,3577976314,1379069577,2927980983,1816085842,3144018215,1967628462,1989152856,207576244,22140797,1202102836,1095699165,2529179615,2728307107,3842722911,1818483641,412053585,1507072534,529750683,2028268253,2793737587,2139455748,1207014301,1328635883,2804274232,3282324208,916459746,3904282321,3946303280,2231282778,799041414,1210939622,3712249482,2281762156,2633168347,3025300271,208017903,1555391559,966888280,2254494713,1581685150,1217105352,3606704155,1198446361,2521451442,753446761,4127238758,3569668185,3381975939,2838393271,2103929203,1637036587,380082612,2633458560,1592815981,3605616654,4017162211,1857780698,1565413307,3727273244,3669196033,1220436237,1772150296,3939028400,1463038978,2842267555,3210691099,2977820413,778050757,2767303877,3286212141,1951147422,1685443618,375346675,1163810967,2739087454,2766337604,2359722336,335016846,3892481015,1187174953,2465417765,2185745027,439772870,4039388323,43497750,1616036802,4224682655,3575090188,1156897114,3058269124,2175624347,1831995112,2893288909,3688152657,3996994757,43856243,2904993132,1464387662,786050156,711439435,288083006,1473625238,4265324294,4035460886,1806404562,1469565232,1729318422,4084937868,850010187,2563340449,1645180601,272472175,1810548515,3249993708,900274126,772737351,3711156696,3138785552,173450662,979986978,2969140998,245216283,3175503398,3994578894,3518222409,976046525,1549066102,1459397388,52419854,3351401314,3101370854,1917801133,557484138,616883834,2058626009,56433900,3455849775,2983337172,3051137957,728762345,2377534663,2830287446,797748057,305175386,3096193991,553337220,4028762622,4112545183,4278496400,278820607,3769663637,446008273,3925665650,3478251440,3997254850,3619887314,3505767236,1830343799,1652398797,2831103659,3974798222,4130993960,3471644232,173893583,3271662297,172794103,689027381,2547910139,4233456302,2087540373,151611862,3283896159,1970035007,1555906702,1601624010,4141684267,1707961255,2371996173,1622373287,3976456807,1864208757,1218160585,2201726497,777641236,3883428243,4253529921,678163297,1138675417,4264107315,2363917822,3807886136,3891136392,3792712723,1727983114,1248052072,3417488527,2307085140,1165887603,1320457160,4157816583,558122918,3134262272,232801892,3012360002,3404850297,2081608741,1690608748,2957781780,1306941265,3673184398,2859402337,1766255783,1129168608,4186790829,625202967,1706252327,2301785434,3111489631,357084438,3152705273,3906905727,3247826998,747395921,354439890,427470017,4291857980,462807607,1768981125,1486924264,2080937644,1750802415,2883674938,211640958,719311625,2831998340,2927879811,1737132617,708226018,4122184305,3828183579,309744625,2032023220,2512508578,3309053754,616874489,947439634,2126809441,1727423674,1699458234,3268268941,4164245344,4175518631,1592157027,1655129177,2067433416,1168681656,3285585846,2455593822,2437913176,3401627677,1616662904,2485812692,1858212837,3564693489,1256031206,3981387306,336015389,1218670411,1277553771,2917952158,1087154197,2811666241,276160857,383805705,228041413,1687171422,4080652297,3948249950,4177300582,3488666580,647621450,2313375040,3386316810,3377988950,3535252352,854953848,280776989,727391760,1196448757,1482649158,11074837,2427291468,2967906512,731073100,2418953807,1657302526,4248191933,1632910577,3284412157,2284777692,242195411,898775607,3865379566,446197150,1832778906,3140785747,3518516217,678761292,1530940748,1856068144,2341822030,1067082033,4002604391,2264044301,3887112801,2787937498,588237086,3938762818,1863478857,1133034717,428848163],"spider2":[2871773226,3142578479,764945338,1633970309,632283555,4151514716,3720716465,3240368917,2789576734,848059642,875234891,2169094058,1952576031,3783410874,616558274,2768051237,4078149638,3175092143,2005473629,234139507,938274731,2589617215,4222958008,3914085024,2744154844,4210359198,2339948093,451283714,3910731780,3042647295,3977175825,2011194776,2214592059,3239345364,1613060201,2355244969,545933966,2250526907,3987416720,2781629631,3562011767,1611353615,181479947,1512475802,3779175687,272154829,2632699756,104517753,2409372376,648171456,4290744263,3945143465,155359647,89044693,1915086474,2086982223,1366322072,378589094,3579312045,1308783468,3577976314,1379069577,1967628462,1989152856,207576244,22140797,1202102836,1095699165,2529179615,2728307107,3842722911,1818483641,412053585,1507072534,529750683,1207014301,1328635883,2804274232,3282324208,3904282321,3946303280,2231282778,799041414,1210939622,3712249482,2281762156,2633168347,3025300271,208017903,1555391559,966888280,2254494713,1581685150,1217105352,3606704155,1198446361,4127238758,3569668185,2103929203,1637036587,380082612,2633458560,1592815981,3605616654,4017162211,1857780698,1565413307,3669196033,1772150296,3939028400,2842267555,3210691099,2977820413,778050757,2767303877,3286212141,1951147422,375346675,1163810967,2766337604,335016846,1187174953,2465417765,2185745027,1616036802,1156897114,3058269124,1831995112,2893288909,3688152657,43856243,2904993132,1464387662,711439435,288083006,4265324294,4035460886,1469565232,1729318422,4084937868,850010187,2563340449,1645180601,272472175,3249993708,900274126,173450662,979986978,245216283,3175503398,3994578894,3518222409,976046525,1549066102,1459397388,52419854,3351401314,3101370854,1917801133,557484138,616883834,2058626009,56433900,3455849775,2377534663,2830287446,797748057,305175386,3096193991,4028762622,4112545183,4278496400,3769663637,3478251440,3619887314,3072762944,3505767236,1830343799,2831103659,3974798222,4130993960,173893583,3271662297,2547910139,4233456302,151611862,1970035007,1555906702,4141684267,1707961255,2371996173,3976456807,1864208757,1218160585,2201726497,777641236,3883428243,1138675417,4264107315,2363917822,3807886136,3891136392,3792712723,1727983114,2307085140,1165887603,1320457160,4157816583,558122918,232801892,3012360002,3404850297,2081608741,1690608748,3673184398,1766255783,1129168608,4186790829,625202967,2301785434],"spider4":[4151514716,3720716465,848059642,2273038491,678934110,3779175687,3399007464,2958967100,22140797,3842722911,2139455748,1207014301,3904282321,1217105352,3569668185],"tripeaks":[3331527471,4280823065,3534806049,1553252525,103189872,3134923254,2989611905,78627508,1571153578,646996922,4180141973,3113258132,755049338,2362803169,1912834267,2056398747,2696494439,2053560509,3671849099,1697339949,3778436177,1837289536,2834792218,135029707,1024587074,2282352275,410673240,1433171069,991226407,2004898575,2108280100,3806624432,2738327249,2231045213,1333034733,36609919,4276159088,1443788755,1976393500,61112844,3107658101,634587689,2287918599,3501476719,2528996110,2796681792,4025105314,520641713,3306470181,2396390627,4220986632,1163408229,690612357,795039212,2527443930,1114504743,146806397,3087051215,2747252119,2871169739,2505885753,1021405537,4237029927,1920515698,3494529119,3169935094,506574959,2723038085,874546783,3208115479,1896295293,1915657025,3978719274,902710877,4078679986,2721374084,4292628647,2826930706,2973811942,1018932714,2083774250,2652933652,2247841783,362996585,2198914287,2926477600,873933165,1065542322,359716004,1344071610,1642357747,776961446,2387384140,3437589168,867262873,2191939371,377736054,4279764709,27911481,3215155038,2853251203,605233714,369068049,1156746172,2554776359,1521865387,2221990941,3572330054,3568569690,2152411309,4208376117,2353951322,3101551715,1669312162,3251066460,2501208302,4219101862,2748522922,374634347,160992616,2274185753,2608407381,2537355677,3315647461,2808338494,610090480,3937228356,1101341218,324621226,2992165773,2478200617,4061097655,3700343516,2099534977,1983109421,306203871,3654886121,2565483133,3455351583,2503355772,2532144154,2453036161,1980376003,3008838384,1710702243,3147137994,4053846956,3020250074,2449718044,140885672,3854192389,3350978071,1319761965,353046916,1264350464,569767027,4255121922,3344594882,327447663,3497001401,413452397,2147724606,2995607308,2512801667,1863218104,2286531783,3280877940,2142038042,1289269855,541706023,1605731620,3768127042,3910920351,1100477830,327867454,1319927664,2246292931,1237392733,561183676,2139601155,2460244526,1252382565,819987149,1997285932,3980755857,1435246481,1149757830,2578583185,1459798768,3556611666,401533628,3967321662,1409809302,385155312,2633031264,3744914615,2190364535,1360317754,1204429448,1915393319,4171747142,1923242574,15024411,663635976,903738490,3363314259,3828153892,3414994535,36678427,3666029924,4237066963,1780841551,3568590742,1205470175,377008636,884742631,2574965466,3842412029,1802889146,3633345747,829002039,1908599741,4294083975,1237394611,1829767312,2691317766,3313826356,3973905287,2931591790,1851017356,3934984571,1328010582,2787721528,1581609768,2610650907,2316497411,1763052913,2026527007,318329133,1404549793,3354978284,163039034,46333073,1281804388,3213579845,96112371,2778357171,540839586,2766998360,3973342388,2477948057,446282612,3689103721,3297403067,3593845110,2948826515,2151463062,2432245549,571463695,290943031,2027345941,3416888779,3404973041,3993686955,1617002675,4257227129,170090378,804011931,1836475021,243488527,1288032684,1357044104,2593596288,1591937628,3603534026,2721798011,4142446122,3794969612,1617357335,2696662517,2968749379,3043556234,2893556294,2400999602,2676978819,4289123782,1096383856,2827800321,540381094,1288159375,3227325100,2808501754,2642745210,2026111337,3158712473,2170351819,1470557782,1579865330,845611087,713728441,3837482808,2675214743,3746581105,2423501390,3711799132,3990027940,2509419225,3798175600,1906116647,2794484479,250251117,2913733204,2276762959,1231495734,1069780417,488033107,474706788,1846370409,3425060932,4261456977,3355683948,1477654173,2066496335,2162066792,26498853,3931281458,1920604302,2800012053,1657395976,2319217676,210616103,186396934,2092119463,2041563090,3849804926,1291028422,2448377866,3209325343,2442468102,805637355,2413478612,3170740267,2144388058,3372162528,1097178282,4155565594,926355645,2983449456,1475407075,746891802,2259358488,3868704611,2809519094,929628892,1596120793,3045240854,846349787,4053514130,3203982064,2218508028,2237860320,83799635,3907231023,3171492236,3297557177,222280639,4103654277,836952478,2718598222,868845932,1760137833,2964600464,552671374,1430240447,1471666418,646284922,2939417342,341651843,428081311,1862327707,34590857,1693299426,4271863144,2667846610,3668474650,3824687237,411308133,317106468,2442789269,3277633620,253370862,9324741,884594481,3767560630,3615690658,2178052810,1839950836,3785968560,1025563240,539958879]};
+</script>
+<script>
+/* Card Table sounds: synthesized with Web Audio (no audio files). */
+var CTSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function knock(freq, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.07);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 3;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+    tone('sine', freq * 0.35, freq * 0.25, 0.09, gain * 0.5, delay);
+  }
+  function swish(delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.09);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len) * 0.6;
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(900, t); bp.frequency.linearRampToValueAtTime(2200, t + 0.09); bp.Q.value = 1.2;
+    var g = a.createGain(); g.gain.value = 0.35;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    place: function () { if (on) knock(1800, 0.16); },
+    flick: function () { if (on) swish(); },
+    flip: function () { if (on) knock(3000, 0.08, 0.05); },
+    deal: function (n) { if (!on) return; for (var i = 0; i < (n || 3); i++) knock(2200, 0.1, i * 0.04); },
+    up: function (k) { if (!on) return; var f = 660 * Math.pow(1.06, k || 0); tone('sine', f, 0, 0.12, 0.2); tone('triangle', f * 1.5, 0, 0.1, 0.08, 0.03); },
+    run: function () { if (!on) return; [659, 784, 988, 1319].forEach(function (f, i) { tone('triangle', f, 0, 0.14, 0.22, i * 0.07); }); },
+    bump: function () { if (on) tone('triangle', 170, 120, 0.1, 0.2); },
+    over: function () { if (!on) return; [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.3, i * 0.2); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) knock(900, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = CTSound, BANKS = window.CT_BANKS || {};
+  var ORDER = ['klondike', 'spider', 'freecell', 'tripeaks', 'pyramid'];
+  var RANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+  // ================= storage =================
+  var store = Goobs.store('solitaire');
+  var settings = store.get('settings', null) || {};
+  var SD = { sound: false, adEvery: 3, klondike: { draw: 1, scoring: 'standard' }, spider: { suits: 1 }, winnable: { klondike: true, spider: true, tripeaks: true, pyramid: true } };
+  for (var sk in SD) if (settings[sk] === undefined || typeof settings[sk] !== typeof SD[sk]) settings[sk] = SD[sk];
+  settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { g: 'klondike', seen: {}, finished: 0, lastAdAt: 0, dailyDone: {}, playing: {} };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (ORDER.indexOf(meta.g) < 0) meta.g = 'klondike';
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  function statFor(key) {
+    var o = stats[key] || (stats[key] = {}), d = { played: 0, won: 0, streak: 0, bestStreak: 0, bestMs: 0, bestScore: null, fewest: 0, daily: 0 };
+    for (var k in d) if (o[k] === undefined) o[k] = d[k];
+    return o;
+  }
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return (n < 0 ? '-' : '') + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function locked() { return busy || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovOpts') || GoobsAds.isOpen(); }
+  function fmtTime(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function dayNum(d) { d = d || new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2020, 0, 1)) / 86400000); }
+  function dayLabel(n) { var d = new Date(Date.UTC(2020, 0, 1) + n * 86400000); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+  function G() { return SOL.GAMES[game.g]; }
+  function hasScore(g, st) { return g === 'klondike' ? st.opts.scoring !== 'none' : g !== 'freecell'; }
+
+  // ================= variants, banks and deals =================
+  function optsFor(g) { return g === 'klondike' ? { draw: settings.klondike.draw, scoring: settings.klondike.scoring } : g === 'spider' ? { suits: settings.spider.suits } : {}; }
+  function bankKey(g, o) { return g === 'klondike' ? 'klondike' + o.draw : g === 'spider' ? 'spider' + o.suits : g; }
+  function statKey(g, o) { return g === 'klondike' ? 'klondike-d' + o.draw : g === 'spider' ? 'spider-' + o.suits : g; }
+  function randSeed() { return (Math.floor(Math.random() * 4294967295) >>> 0) || 1; }
+  function freecellNum(r) { var n = 1 + Math.floor(r * 32000); return n === 11982 ? 11983 : n; }
+  function pickSeed(g, o, daily) {
+    if (g === 'freecell') return daily != null ? freecellNum(((daily * 7919) % 32000) / 32000) : freecellNum(Math.random());
+    var bank = BANKS[bankKey(g, o)];
+    if (daily != null) {
+      if (bank && bank.length) return bank[(daily * 37) % bank.length];
+      return (Math.imul(daily + 1, 0x9E3779B1) >>> 0) || 1;
+    }
+    if (settings.winnable[g] && bankOK(g, o)) return bank[Math.floor(Math.random() * bank.length)];
+    return randSeed();
+  }
+  // a bank too small to feel fresh (4-suit Spider is slow to check) is not used; those deals are random
+  function bankOK(g, o) { var b = BANKS[bankKey(g, o)]; return !!b && b.length >= 60; }
+  function dailyOpts(g) { return g === 'klondike' ? { draw: 1, scoring: 'standard' } : g === 'spider' ? { suits: 1 } : {}; }
+
+  // ================= game =================
+  // game: { g, st, undo: [json], ms, started, daily (day number or null), won, over, recorded, key }
+  var game = null, busy = false;
+  function slotKey(g, daily) { return daily != null ? 'daily.' + g : 'game.' + g; }
+  function saveGame() {
+    if (!game) return;
+    if (game.won || game.over) { store.del(slotKey(game.g, game.daily)); return; }
+    var g2 = {}; for (var k in game) g2[k] = game[k];
+    g2.undo = game.undo.slice(-60);
+    store.set(slotKey(game.g, game.daily), g2);
+  }
+  function deal(g, o, daily, seed) {
+    var st = SOL.GAMES[g].deal(seed != null ? seed : pickSeed(g, o, daily), o);
+    return { g: g, st: st, undo: [], ms: 0, started: false, daily: daily, won: false, over: false, recorded: false, key: statKey(g, o) };
+  }
+  function load(g, daily, fresh) {
+    if (game) saveGame();
+    var saved = !fresh && store.get(slotKey(g, daily), null);
+    if (daily != null && saved && saved.daily !== daily) saved = null;
+    if (saved && saved.st && saved.st.g === g && !saved.won) game = saved;
+    else game = deal(g, daily != null ? dailyOpts(g) : optsFor(g), daily);
+    meta.g = g; meta.playing[g] = daily != null ? 'daily' : 'normal'; saveMeta();
+    selected = null; clearHint();
+    renderAll(true);
+    saveGame();
+    if (!meta.seen[g]) openHelp();
+  }
+  function startNew(g, seed) { // a fresh regular deal
+    between(function () { game = null; game = deal(g, optsFor(g), null, seed); meta.g = g; meta.playing[g] = 'normal'; saveMeta(); selected = null; clearHint(); renderAll(true); saveGame(); S.deal(6); });
+  }
+  function abandon() { // leaving a game that was started counts as a loss (as in the originals)
+    if (!game || !game.started || game.won || game.recorded) return;
+    var s = statFor(game.key); s.played++; s.streak = 0; game.recorded = true; saveStats();
+    meta.finished++; saveMeta();
+    store.del(slotKey(game.g, game.daily));
+  }
+
+  // ================= layout =================
+  var T = { w: 0, h: 0, cw: 40, ch: 56, piles: {}, slots: [] };
+  function layout() {
+    // full screen: the felt runs to the screen's edges, so 4px at the sides (was 6) and 4px between columns (was 5; spider 2, was 3):
+    // the columns set the card size on a phone, so every px across goes to the cards
+    var r = $('table').getBoundingClientRect(), W = r.width, H = r.height, g = game.g, st = game.st, pad = 4, P = {}, slots = [];
+    var cols = g === 'spider' ? 10 : g === 'freecell' ? 8 : 7, gap = g === 'spider' ? 2 : 4, cw, ch, i;
+    // full screen: TriPeaks and Pyramid are set by the width of their bottom rows but have lots of height to spare, so the
+    // cards in a row now overlap a little (TriPeaks 16%, Pyramid 10%; only the right edge, never the rank) and get bigger
+    var ov = g === 'tripeaks' ? 0.84 : 0.9;
+    if (g === 'tripeaks') { cw = Math.floor((W - 2 * pad) / (9 * ov + 1)); ch = Math.round(cw * 1.42); var h3 = ch * 0.5 * 3 + ch + 20 + ch; if (h3 > H - 2 * pad) { ch = Math.floor((H - 2 * pad - 20) / 3.5); cw = Math.floor(ch / 1.42); } }
+    else if (g === 'pyramid') { cw = Math.floor((W - 2 * pad) / (6 * ov + 1)); ch = Math.round(cw * 1.42); var hp = ch * 0.45 * 6 + ch + 22 + ch; if (hp > H - 2 * pad) { ch = Math.floor((H - 2 * pad - 22) / 4.7); cw = Math.floor(ch / 1.42); } }
+    else { cw = Math.floor((W - 2 * pad - (cols - 1) * gap) / cols); ch = Math.round(cw * 1.42); var room = H - 2 * pad - ch - 12; if (room < ch * 2.5) { ch = Math.floor((H - 2 * pad - 12) / 3.6); cw = Math.floor(ch / 1.42); } }
+    var usedW = cols * cw + (cols - 1) * gap, x0 = Math.round((W - usedW) / 2);
+    function colX(c) { return x0 + c * (cw + gap); }
+    var top = pad, tabY = pad + ch + 12, bottom = H - pad;
+    if (g === 'klondike') {
+      P.stock = { x: colX(0), y: top, fan: 'stock' }; slots.push({ pid: 'stock', kind: 'stock' });
+      P.waste = { x: colX(1), y: top, fan: st.opts.draw === 3 ? 'waste3' : 'none' };
+      for (i = 0; i < 4; i++) { P['f' + i] = { x: colX(3 + i), y: top, fan: 'none' }; slots.push({ pid: 'f' + i, label: 'A' }); }
+      for (i = 0; i < 7; i++) { P['t' + i] = { x: colX(i), y: tabY, fan: 'down', maxY: bottom }; slots.push({ pid: 't' + i, label: 'K', faint: true }); }
+    } else if (g === 'spider') {
+      P.stock = { x: colX(9), y: top, fan: 'spiderstock' };
+      for (i = 0; i < 8; i++) P['f' + i] = { x: colX(0) + i * Math.round(cw * 0.3), y: top, fan: 'none' };
+      slots.push({ pid: 'f0', label: '', faint: true, wide: 8 });
+      for (i = 0; i < 10; i++) { P['t' + i] = { x: colX(i), y: tabY, fan: 'down', maxY: bottom }; slots.push({ pid: 't' + i, label: '' }); }
+    } else if (g === 'freecell') {
+      for (i = 0; i < 4; i++) { P['c' + i] = { x: colX(i), y: top, fan: 'none' }; slots.push({ pid: 'c' + i, label: '' }); }
+      for (i = 0; i < 4; i++) { P['f' + i] = { x: colX(4 + i), y: top, fan: 'none' }; slots.push({ pid: 'f' + i, label: 'A' }); }
+      for (i = 0; i < 8; i++) { P['t' + i] = { x: colX(i), y: tabY, fan: 'down', maxY: bottom }; slots.push({ pid: 't' + i, label: '' }); }
+    } else if (g === 'tripeaks') {
+      var step = cw * ov, left = Math.round((W - step * 9 - cw) / 2), dy = Math.round(ch * 0.5), y0 = pad + 4 + Math.max(0, Math.round((H - (3 * dy + 2 * ch + 40)) * 0.28));
+      var pos = function (p) {
+        if (p >= 18) return [left + (p - 18) * step, y0 + 3 * dy];
+        if (p >= 9) return [left + (p - 9 + 0.5) * step, y0 + 2 * dy];
+        if (p >= 3) { var j = p - 3, k = j >> 1, o = j & 1; return [left + (3 * k + o + 1) * step, y0 + dy]; }
+        return [left + (3 * p + 1.5) * step, y0];
+      };
+      for (i = 0; i < 28; i++) { var q = pos(i); P['p' + i] = { x: Math.round(q[0]), y: Math.round(q[1]), fan: 'none' }; }
+      var by = Math.min(y0 + 3 * dy + ch + 30, H - ch - 24);
+      P.stock = { x: Math.round(W / 2 - cw * 1.6), y: by, fan: 'stackx' }; slots.push({ pid: 'stock', kind: 'stock' });
+      P.waste = { x: Math.round(W / 2 + cw * 0.4), y: by, fan: 'none' }; slots.push({ pid: 'waste', label: '' });
+    } else if (g === 'pyramid') {
+      var pdy = Math.round(ch * 0.45), py0 = pad + 4 + Math.max(0, Math.round((H - (6 * pdy + 2 * ch + 36)) * 0.28)), cx0 = W / 2, pstep = cw * ov;
+      for (var rr = 0, n = 0; rr < 7; rr++) for (var ii = 0; ii <= rr; ii++, n++) P['q' + n] = { x: Math.round(cx0 - (rr + 1) * pstep / 2 + ii * pstep + (pstep - cw) / 2), y: py0 + rr * pdy, fan: 'none' };
+      var pby = Math.min(py0 + 6 * pdy + ch + 26, H - ch - 24);
+      P.stock = { x: Math.round(W / 2 - cw * 2.1), y: pby, fan: 'none' }; slots.push({ pid: 'stock', kind: 'stock' });
+      P.waste = { x: Math.round(W / 2 - cw * 0.5), y: pby, fan: 'none' }; slots.push({ pid: 'waste', label: '' });
+      P.found = { x: Math.round(W / 2 + cw * 1.1), y: pby, fan: 'none' }; slots.push({ pid: 'found', label: 'K', faint: true });
+    }
+    T = { w: W, h: H, cw: cw, ch: ch, piles: P, slots: slots };
+    var tb = $('table'); tb.style.setProperty('--cw', cw + 'px'); tb.style.setProperty('--ch', ch + 'px');
+  }
+  // where every card goes: [{ c, x, y, z, pid, idx }]
+  function positions() {
+    var out = [], st = game.st, z = 0;
+    Object.keys(T.piles).forEach(function (pid, order) {
+      var L = T.piles[pid], p = st.piles[pid] || [], n = p.length, i, base = (order + 1) * 120;
+      if (L.fan === 'down') {
+        var fd = T.ch * 0.13, fu = T.ch * (game.g === 'spider' ? 0.26 : 0.29), downs = 0, ups = 0;
+        for (i = 0; i < n - 1; i++) { if (p[i].u) ups++; else downs++; }
+        var need = downs * fd + ups * fu, room = L.maxY - L.y - T.ch;
+        if (need > room && need > 0) {
+          var k = room / need; fu *= k; fd *= k;
+          if (fd < 3) { fd = 3; fu = ups ? Math.max(6, (room - downs * fd) / ups) : fu; }
+        }
+        var y = L.y;
+        for (i = 0; i < n; i++) { out.push({ c: p[i], x: L.x, y: y, z: base + i, pid: pid, idx: i }); y += p[i].u ? fu : fd; }
+      } else if (L.fan === 'waste3') {
+        var shown = Math.min(3, n);
+        for (i = 0; i < n; i++) { var k2 = i - (n - shown); out.push({ c: p[i], x: L.x + (k2 > 0 ? k2 * T.cw * 0.32 : 0), y: L.y, z: base + i, pid: pid, idx: i }); }
+      } else if (L.fan === 'spiderstock') {
+        var groups = Math.ceil(n / 10);
+        for (i = 0; i < n; i++) { var gi = Math.floor(i / 10); out.push({ c: p[i], x: L.x - (groups - 1 - gi) * T.cw * 0.22, y: L.y, z: base + i, pid: pid, idx: i }); }
+      } else if (L.fan === 'stackx') {
+        for (i = 0; i < n; i++) out.push({ c: p[i], x: L.x - Math.min(i, 23) * 0.9, y: L.y, z: base + i, pid: pid, idx: i });
+      } else if (L.fan === 'stock') {
+        for (i = 0; i < n; i++) out.push({ c: p[i], x: L.x - Math.floor(i / 8) * 1, y: L.y - Math.floor(i / 8) * 1, z: base + i, pid: pid, idx: i });
+      } else {
+        for (i = 0; i < n; i++) out.push({ c: p[i], x: L.x, y: L.y, z: base + i, pid: pid, idx: i });
+      }
+    });
+    return out;
+  }
+
+  // ================= cards on screen =================
+  var els = {}, loc = {}, lastDown = {};
+  function cardHTML(c) {
+    var face = c.r > 10 ? '<div class="face">' + RANKS[c.r] + '<svg viewBox="0 0 24 24"><use href="#s' + c.s + '"/></svg></div>' : '<svg class="big" viewBox="0 0 24 24"><use href="#s' + c.s + '"/></svg>';
+    return '<span class="rk">' + RANKS[c.r] + '</span><svg class="sm" viewBox="0 0 24 24"><use href="#s' + c.s + '"/></svg>' + face + '<i class="bk"></i>';
+  }
+  function buildCards() {
+    var box = $('cards'); box.innerHTML = ''; els = {}; lastDown = {};
+    Object.keys(game.st.piles).forEach(function (pid) {
+      game.st.piles[pid].forEach(function (c) {
+        var el = document.createElement('div');
+        el.className = 'cd nt' + (SOL.red(c.s) ? ' red' : '') + (c.u ? '' : ' down');
+        el.dataset.id = c.id; el.innerHTML = cardHTML(c);
+        box.appendChild(el); els[c.id] = el; lastDown[c.id] = !c.u;
+      });
+    });
+  }
+  function renderSlots() {
+    var h = '';
+    T.slots.forEach(function (s) {
+      var L = T.piles[s.pid]; if (!L) return;
+      var w = s.wide ? T.cw + (s.wide - 1) * Math.round(T.cw * 0.3) : T.cw, inner = s.label || '';
+      if (s.kind === 'stock') {
+        var can = game.st.piles.stock.length === 0 && G().canRecycle && G().canRecycle(game.st);
+        inner = game.st.piles.stock.length ? '' : (can ? '<svg viewBox="0 0 24 24"><use href="#i-new"/></svg>' : '&times;');
+      }
+      h += '<div class="slot' + (s.kind === 'stock' ? ' stockslot' : '') + '" data-pid="' + s.pid + '" style="width:' + w + 'px;height:' + T.ch + 'px;transform:translate(' + L.x + 'px,' + L.y + 'px)' + (s.faint ? ';opacity:.6' : '') + '">' + inner +
+        (s.kind === 'stock' && game.g !== 'klondike' ? '<span class="count">' + game.st.piles.stock.length + (game.g === 'pyramid' ? ' &middot; round ' + (game.st.passes + 1) + '/3' : '') + '</span>' : '') + '</div>';
+    });
+    if (game.g === 'spider') {
+      var L = T.piles.stock;
+      if (L && game.st.piles.stock.length) h += '<div class="slot sstock" style="border:0;width:' + T.cw + 'px;height:' + T.ch + 'px;transform:translate(' + L.x + 'px,' + L.y + 'px)"><span class="count">' + (game.st.piles.stock.length / 10) + (game.st.piles.stock.length === 10 ? ' deal' : ' deals') + '</span></div>';
+    }
+    $('slots').innerHTML = h;
+  }
+  function render(instant) {
+    layout();
+    renderSlots();
+    loc = {};
+    positions().forEach(function (p) {
+      var el = els[p.c.id]; if (!el) return;
+      loc[p.c.id] = p;
+      if (instant) el.classList.add('nt'); else el.classList.remove('nt');
+      el.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px)';
+      el.style.zIndex = p.z;
+      var down = !p.c.u;
+      el.classList.toggle('down', down);
+      if (!instant && lastDown[p.c.id] && !down) { el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip'); S.flip(); }
+      lastDown[p.c.id] = down;
+      // (TriPeaks' peak cards overlap in a row, which would cut their corner suit in half, so they show the rank and big suit only)
+      el.classList.toggle('small', T.cw < 38 || (game.g === 'tripeaks' && p.pid[0] === 'p'));
+      var dim = (game.g === 'tripeaks' || game.g === 'pyramid') && p.pid[0] === (game.g === 'tripeaks' ? 'p' : 'q') && p.c.u && !(game.g === 'tripeaks' ? SOL.tripeaks.free(game.st, +p.pid.slice(1)) : SOL.pyramid.free(game.st, p.pid));
+      el.classList.toggle('dim', dim);
+      el.classList.toggle('sel', selected === p.pid);
+    });
+    if (instant) requestAnimationFrame(function () { Object.keys(els).forEach(function (id) { els[id].classList.remove('nt'); }); });
+    renderInfo(); renderTools();
+  }
+  function renderAll(fresh) { if (fresh) buildCards(); renderModes(); render(true); }
+
+  // ================= info and tools =================
+  var lastInfo = '';
+  function variantLabel() {
+    var st = game.st;
+    if (game.daily != null) return 'Daily &middot; ' + dayLabel(game.daily);
+    if (game.g === 'klondike') return 'Draw ' + st.opts.draw + (st.opts.scoring === 'vegas' ? ' &middot; Vegas' : st.opts.scoring === 'none' ? ' &middot; No score' : '');
+    if (game.g === 'spider') return st.opts.suits + (st.opts.suits === 1 ? ' suit' : ' suits');
+    if (game.g === 'freecell') return 'Game #' + st.seed;
+    return 'Options';
+  }
+  // full screen: when the pills don't fit the top row (an SE with big numbers), drop their unit words
+  function fitPills() {
+    var el = $('info'), w = 0; if (!el) return; el.classList.remove('tight');
+    Array.prototype.forEach.call(el.children, function (c) { w += c.offsetWidth + 6; });
+    if (w > el.clientWidth + 6) el.classList.add('tight');
+  }
+  function renderInfo() {
+    var st = game.st, parts = [];
+    // full screen: pills in the top row; the variant (Draw 3, Vegas, game #, Daily) is in the Menu
+    if (hasScore(game.g, st)) parts.push('<span class="ggpill">' + (game.g === 'klondike' && st.opts.scoring === 'vegas' ? (st.score < 0 ? '-$' : '$') + Math.abs(st.score) : fmt(st.score) + ' <small>pts</small>') + '</span>');
+    parts.push('<span class="ggpill" id="clock">' + fmtTime(game.ms) + '</span>');
+    parts.push('<span class="ggpill">' + st.moves + ' <small>' + (st.moves === 1 ? 'move' : 'moves') + '</small></span>');
+    var h = parts.join('');
+    if (h !== lastInfo) { $('info').innerHTML = h; lastInfo = h; }
+    fitPills();
+  }
+  function renderModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.g === game.g); }); }
+  function renderTools() {
+    $('btnUndo').disabled = !game.undo.length || game.won;
+    var done = meta.dailyDone[game.g] === dayNum();
+    $('dailyLabel').textContent = game.daily != null ? 'Back' : 'Daily';
+    $('dailyDot').classList.toggle('show', game.daily == null && !done);
+    $('btnDaily').classList.toggle('done', done && game.daily == null);
+    var can = !game.won && G().canAuto(game.st);
+    $('btnFinish').classList.toggle('show', can && !busy);
+  }
+  var msgTimer = 0;
+  function toast(t) { var m = $('msg'); m.textContent = t; m.classList.add('show'); clearTimeout(msgTimer); msgTimer = setTimeout(function () { m.classList.remove('show'); }, 1800); }
+  function floatAt(pid, text) {
+    var L = T.piles[pid]; if (!L) return;
+    var f = document.createElement('div'); f.className = 'float'; f.textContent = text;
+    f.style.left = (L.x + T.cw * 0.1) + 'px'; f.style.top = (L.y - 6) + 'px';
+    $('table').appendChild(f); setTimeout(function () { f.remove(); }, 950);
+  }
+
+  // ================= acting =================
+  function snapshot() { game.undo.push(JSON.stringify(game.st)); if (game.undo.length > 400) game.undo.shift(); }
+  function began() { if (!game.started) { game.started = true; tickReset(); } }
+  function afterMove(res) {
+    clearHint();
+    if (res && res.collected) { S.run(); toast('Run finished! +100'); }
+    if (res && res.bonus) floatAt('waste', '+' + res.bonus);
+    if (game.g === 'freecell') { busy = true; renderTools(); autoLoop(SOL.freecell.autoStep, function () { busy = false; settle(); }); return; }
+    settle();
+  }
+  function autoLoop(step, done) {
+    setTimeout(function () {
+      var r = step(game.st);
+      if (!r) { done(); return; }
+      S.up(game.st.piles[r.to].length); render(false); autoLoop(step, done);
+    }, 110);
+  }
+  function settle() {
+    render(false); saveGame();
+    if (G().won(game.st)) { win(); return; }
+    if (G().stuck(game.st)) setTimeout(function () { if (!game.won && G().stuck(game.st) && !locked()) stuckCard(); }, 450);
+  }
+  function doMove(pid, idx, to) {
+    var before = JSON.stringify(game.st), res = G().move(game.st, pid, idx, to);
+    if (!res) return false;
+    game.undo.push(before); if (game.undo.length > 400) game.undo.shift();
+    began();
+    if (to[0] === 'f' || to === 'found') S.up(game.st.piles[to].length); else S.place();
+    if (res.flipped === true && game.g === 'klondike' && game.st.opts.scoring === 'standard') { /* +5 shown in score */ }
+    selected = null;
+    afterMove(res);
+    return true;
+  }
+  function stockTap() {
+    if (locked()) return;
+    var before = JSON.stringify(game.st), res = G().stockTap ? G().stockTap(game.st) : null;
+    if (!res) { if (game.g === 'klondike' || game.g === 'pyramid') toast(game.st.piles.waste.length ? 'No more trips through the deck' : 'The stock is empty'); S.bump(); return; }
+    if (res.blocked) { toast('Fill every empty column before dealing'); S.bump(); return; }
+    game.undo.push(before); if (game.undo.length > 400) game.undo.shift();
+    began();
+    if (res.recycle) S.flick(); else S.deal(game.g === 'spider' ? 10 : 1);
+    selected = null;
+    afterMove(res);
+  }
+  function undo() {
+    if (!game.undo.length || game.won || locked()) return;
+    game.st = JSON.parse(game.undo.pop());
+    if (game.g === 'spider' && game.st.opts) { /* spider undo is free here */ }
+    selected = null; clearHint();
+    S.flick(); render(false); saveGame();
+  }
+
+  // tap-to-move: the best legal place for this card (and the ones on it)
+  function bestTarget(pid, idx) {
+    var st = game.st, g = G(), cands = [];
+    Object.keys(st.piles).forEach(function (to) { if (to !== pid && g.canDrop(st, pid, idx, to)) cands.push(to); });
+    if (!cands.length) return null;
+    function rank(to) {
+      var p = st.piles[to];
+      if (to[0] === 'f' || to === 'found' || to === 'waste') return 0;
+      if (to[0] === 't') return p.length ? 1 : 3;
+      if (to[0] === 'c') return 4;
+      return 5;
+    }
+    var from = +pid.slice(1) || 0;
+    cands.sort(function (a, b) { return rank(a) - rank(b) || ((+a.slice(1) - from + 20) % 20) - ((+b.slice(1) - from + 20) % 20); });
+    // a king already at the bottom of a column doesn't need moving to an empty one
+    if (game.g === 'klondike' && pid[0] === 't' && idx === 0 && cands[0][0] === 't' && !st.piles[cands[0]].length) return null;
+    return cands[0];
+  }
+  var selected = null;
+  function tapCard(pid, idx, el) {
+    var st = game.st, g = G();
+    if (pid === 'stock') { stockTap(); return; }
+    if (game.g === 'pyramid') {
+      if (!g.canPick(st, pid, idx)) { shake(el); return; }
+      var c = SOL.top(st.piles[pid]);
+      if (c.r === 13) { doMove(pid, idx, 'found'); return; }
+      if (selected && selected !== pid && g.canDrop(st, pid, idx, selected)) { doMove(pid, idx, selected); return; }
+      selected = selected === pid ? null : pid; S.place(); render(false); return;
+    }
+    if (!g.canPick(st, pid, idx)) { shake(el); return; }
+    var to = bestTarget(pid, idx);
+    if (!to) { shake(el); S.bump(); return; }
+    doMove(pid, idx, to);
+  }
+  function shake(el) { if (!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+  // ================= touch: drag and drop, or tap =================
+  var drag = null;
+  function onDown(e) {
+    if (!game || locked() || game.won) return;
+    S.unlock();
+    var el = e.target.closest('.cd'), slot = e.target.closest('.slot');
+    if (!el && slot) { if (slot.dataset.pid === 'stock') stockTap(); return; }
+    if (!el) return;
+    var p = loc[el.dataset.id]; if (!p) return;
+    drag = { pid: p.pid, idx: p.idx, x: e.clientX, y: e.clientY, t: performance.now(), el: el, moving: false, id: e.pointerId, group: [] };
+    if (G().canPick(game.st, p.pid, p.idx) && p.pid !== 'stock') {
+      var pile = game.st.piles[p.pid];
+      for (var i = p.idx; i < pile.length; i++) drag.group.push({ el: els[pile[i].id], x: loc[pile[i].id].x, y: loc[pile[i].id].y });
+    }
+    try { $('table').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+  function onMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moving) {
+      if (Math.hypot(dx, dy) < 7 || !drag.group.length) return;
+      drag.moving = true;
+      drag.group.forEach(function (g, i) { g.el.classList.add('nt', 'lift'); g.el.style.zIndex = 5000 + i; });
+    }
+    drag.group.forEach(function (g) { g.el.style.transform = 'translate(' + (g.x + dx).toFixed(1) + 'px,' + (g.y + dy).toFixed(1) + 'px)'; });
+  }
+  function dropTarget(dx, dy) {
+    var st = game.st, g = G(), first = drag.group[0], cx = first.x + dx, cy = first.y + dy, best = null, bestA = 0;
+    Object.keys(T.piles).forEach(function (pid) {
+      if (pid === drag.pid || !g.canDrop(st, drag.pid, drag.idx, pid)) return;
+      var L = T.piles[pid], p = st.piles[pid], rx = L.x, ry = L.y, rw = T.cw, rh = T.ch;
+      if (p.length && loc[p[p.length - 1].id]) { var q = loc[p[p.length - 1].id]; rx = q.x; ry = L.fan === 'down' ? L.y : q.y; rh = q.y - ry + T.ch; }
+      if (L.fan === 'down') rh += T.ch * 0.5;
+      var ox = Math.max(0, Math.min(cx + T.cw, rx + rw) - Math.max(cx, rx)), oy = Math.max(0, Math.min(cy + T.ch, ry + rh) - Math.max(cy, ry)), a = ox * oy;
+      if (a > bestA) { bestA = a; best = pid; }
+    });
+    return bestA > T.cw * T.ch * 0.08 ? best : null;
+  }
+  function onUp(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag; drag = null;
+    var dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (!d.moving) { tapCard(d.pid, d.idx, d.el); return; }
+    d.group.forEach(function (g) { g.el.classList.remove('nt', 'lift'); });
+    drag = d; var to = dropTarget(dx, dy); drag = null;
+    if (to && doMove(d.pid, d.idx, to)) return;
+    if (to === null && Math.hypot(dx, dy) > 30) S.bump();
+    render(false);
+  }
+  function onCancel() { if (!drag) return; var d = drag; drag = null; d.group.forEach(function (g) { g.el.classList.remove('nt', 'lift'); }); render(false); }
+
+  // ================= hints =================
+  var hintEls = [];
+  function clearHint() { hintEls.forEach(function (el) { el.classList.remove('hint'); }); hintEls = []; }
+  function glow(el) { if (!el) return; el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint'); hintEls.push(el); }
+  // the best move that doesn't just go back to a position you've already had
+  function smartHint() {
+    var st = game.st, g = G(), seen = {}, i;
+    game.undo.slice(-80).forEach(function (u) { try { seen[JSON.stringify(JSON.parse(u).piles)] = 1; } catch (e) { /* skip */ } });
+    seen[JSON.stringify(st.piles)] = 1;
+    var list = g.moves(st).filter(function (m) { return m.val >= 0; });
+    function fresh(m) { var c = SOL.clone(st); return g.move(c, m.from, m.idx, m.to) && !seen[JSON.stringify(c.piles)]; }
+    for (i = 0; i < list.length; i++) if (list[i].val >= 20 && fresh(list[i])) return list[i];
+    var base = g.hint(st);
+    if (base && base.stock) return base;
+    for (i = 0; i < list.length; i++) if (list[i].val < 20 && fresh(list[i])) return list[i];
+    return list[0] || null; // only moves back to earlier positions are left: still show one
+  }
+  function hint() {
+    if (locked() || game.won) return;
+    clearHint();
+    var h = smartHint();
+    if (!h) { toast('No moves left. Try Undo or a new game.'); S.bump(); return; }
+    if (h.stock) {
+      var sp = game.st.piles.stock;
+      if (sp.length) glow(els[sp[sp.length - 1].id]); else { var sl = document.querySelector('.slot[data-pid="stock"]'); if (sl) glow(sl); }
+      toast(game.g === 'spider' ? 'Deal a new row' : sp.length ? 'Turn over a card from the stock' : 'Go through the deck again');
+      return;
+    }
+    var p = game.st.piles[h.from];
+    for (var i = h.idx; i < p.length; i++) glow(els[p[i].id]);
+    var tp = game.st.piles[h.to];
+    if (tp && tp.length && h.to !== 'found') glow(els[tp[tp.length - 1].id]);
+    else { var s2 = document.querySelector('.slot[data-pid="' + h.to + '"]'); if (s2) glow(s2); }
+    S.place();
+  }
+
+  // ================= finishing =================
+  function finish() {
+    if (busy || !G().canAuto(game.st)) return;
+    busy = true; renderTools();
+    game.undo.push(JSON.stringify(game.st));
+    var step = game.g === 'freecell' ? SOL.freecell.autoFinishStep : SOL.klondike.autoStep;
+    (function go() {
+      var r = step(game.st);
+      if (!r) { busy = false; settle(); return; }
+      S.up(game.st.piles[r.to].length); render(false);
+      setTimeout(go, 75);
+    })();
+  }
+  function record(won) {
+    if (game.recorded) return;
+    var s = statFor(game.key);
+    s.played++;
+    if (won) {
+      s.won++; s.streak++; if (s.streak > s.bestStreak) s.bestStreak = s.streak;
+      if (!s.bestMs || game.ms < s.bestMs) s.bestMs = game.ms;
+      if (!s.fewest || game.st.moves < s.fewest) s.fewest = game.st.moves;
+      if (hasScore(game.g, game.st) && (s.bestScore === null || game.st.score > s.bestScore)) s.bestScore = game.st.score;
+      if (game.daily != null) { s.daily++; meta.dailyDone[game.g] = game.daily; }
+    } else s.streak = 0;
+    game.recorded = true; saveStats();
+    meta.finished++; saveMeta();
+  }
+  function win() {
+    if (game.won) return;
+    var bonus = game.g === 'klondike' ? SOL.klondike.winBonus(game.st, game.ms) : 0;
+    game.st.score += bonus;
+    game.won = true; record(true);
+    store.del(slotKey(game.g, game.daily));
+    S.win(); renderInfo(); renderTools();
+    // a little celebration: every card hops in turn
+    Object.keys(els).forEach(function (id, i) { var el = els[id]; setTimeout(function () { el.animate([{ translate: '0 0' }, { translate: '0 -14px' }, { translate: '0 0' }], { duration: 380, easing: 'ease-out' }); }, (i % 52) * 18); });
+    var s = statFor(game.key), lines = [];
+    lines.push('Time <b>' + fmtTime(game.ms) + '</b> &middot; <b>' + game.st.moves + '</b> moves');
+    if (hasScore(game.g, game.st)) lines.push((game.g === 'klondike' && game.st.opts.scoring === 'vegas' ? 'Money <b>$' + game.st.score + '</b>' : 'Score <b>' + fmt(game.st.score) + '</b>') + (bonus ? ' (time bonus ' + fmt(bonus) + ')' : ''));
+    lines.push('Won ' + s.won + ' of ' + s.played + ' &middot; streak ' + s.streak);
+    var daily = game.daily != null;
+    setTimeout(function () {
+      showCard(daily ? 'Daily deal done!' : 'You won!', lines.join('<br>'), [
+        { label: daily ? 'Back to my game' : 'New game', red: true, go: function () { if (daily) { between(function () { load(game.g, null); }); } else startNew(game.g); } }
+      ]);
+    }, 900);
+  }
+  function stuckCard() {
+    S.over();
+    showCard('No more moves', 'There’s nothing left to play. Undo a few moves, or start a new game.', [
+      { label: 'Undo', red: true, go: undo },
+      { label: 'New game', go: function () { abandon(); if (game.daily != null) between(function () { load(game.g, null); }); else startNew(game.g); } },
+      { label: 'Keep looking', go: function () {} }
+    ]);
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#ct-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next(); showAd(function () {}); return;
+    }
+    next();
+  }
+  function confirmLeave(what, go) {
+    if (!game.started || game.won || game.recorded) { go(); return; }
+    showCard(what, 'This game counts as a loss.', [
+      { label: 'Yes', red: true, go: function () { abandon(); go(); } },
+      { label: 'Keep playing', go: function () {} }
+    ]);
+  }
+
+  // ================= timer =================
+  var lastTick = Date.now();
+  function tickReset() { lastTick = Date.now(); }
+  function tick() {
+    var now = Date.now(), dt = Math.min(now - lastTick, 2000); lastTick = now;
+    if (!game || !game.started || game.won || document.hidden || locked()) return;
+    var prev = game.ms; game.ms += dt;
+    if (game.g === 'klondike') { var pen = SOL.klondike.timePenalty(game.st, prev, game.ms); if (pen) { SOL.klondike.add(game.st, pen); renderInfo(); } }
+    var c = $('clock'); if (c) c.textContent = fmtTime(game.ms);
+    if (Math.floor(game.ms / 5000) !== Math.floor(prev / 5000)) saveGame();
+  }
+
+  // ================= sheets =================
+  var HELP = {
+    klondike: ['Klondike', [
+      'Build four piles, one per suit, from <b>ace up to king</b> at the top right.',
+      'In the seven columns, stack cards <b>down</b> in <b>alternating colors</b> (a red 9 on a black 10). Move a card, or a whole run of face-up cards, by <b>dragging</b> it, or <b>tap</b> it to send it to the best spot.',
+      'Only a <b>king</b> (with its run) can go in an empty column. A face-down card turns over when it’s uncovered.',
+      '<b>Tap the stock</b> (top left) to turn over 1 or 3 cards. When it’s empty, tap it to go through again.',
+      '<b>Standard</b> scoring: +10 for each card up to a suit pile, +5 for waste to column or turning a card, &minus;15 for taking one back down, &minus;100 (draw 1) or &minus;20 (draw 3) for each new trip through the deck, &minus;2 every 10 seconds, and a time bonus when you win. <b>Vegas</b>: you start $52 down and win $5 a card; draw 1 goes through the deck once, draw 3 three times.',
+      'When every card is face up and the stock is used, <b>Finish</b> sends them all up for you.'
+    ]],
+    spider: ['Spider', [
+      'Two decks, ten columns. Build a run of <b>one suit from king down to ace</b> and it goes away by itself. Clear all eight runs to win.',
+      'You can place any card on one that’s <b>one higher</b>, whatever the suit, but you can only <b>move several cards together</b> when they’re one suit in order.',
+      'Any card or run can go in an empty column.',
+      '<b>Tap the stock</b> (top right) to deal one card onto every column. Every column needs at least one card first.',
+      'Score: you start at 500, lose 1 for every move and gain 100 for every finished run.',
+      '1 suit is gentle, 2 suits is harder, 4 suits is tough. Pick in <b>Options</b> (in the Menu, top right).'
+    ]],
+    freecell: ['FreeCell', [
+      'Every card is face up. Build four suit piles from <b>ace up to king</b> at the top right.',
+      'In the eight columns, stack <b>down</b> in <b>alternating colors</b>. Any card can go in an empty column.',
+      'The four <b>free cells</b> (top left) each hold one card.',
+      'You can move several cards at once when there’s room to do it one by one: more free cells and empty columns let you move longer runs.',
+      'Cards that are safe to put away go up by themselves.',
+      'Every deal has a number (the same as the classic Windows game). All of them can be won except #11982.'
+    ]],
+    tripeaks: ['TriPeaks', [
+      'Clear all three peaks. Tap an <b>uncovered</b> card that is <b>one higher or one lower</b> than the card on the waste pile (bottom). Suits don’t matter, and king and ace follow each other.',
+      'Cards turn over when nothing covers them.',
+      'Stuck? <b>Tap the stock</b> for a new waste card. It ends your run and costs 5 points. There’s one trip through the stock.',
+      'Each card in a run scores one more than the last: 1, 2, 3 and so on. Clearing the top of a peak gives +15 (the last one +30).'
+    ]],
+    pyramid: ['Pyramid', [
+      'Clear the pyramid by taking away <b>pairs that add up to 13</b>. Jack is 11, queen 12, and a <b>king</b> (13) goes away by itself. Ace is 1.',
+      'A card can be used when no cards sit on it. Tap one card, then its partner (or drag one onto the other).',
+      '<b>Tap the stock</b> to turn over its top card onto the waste. The waste’s top card can pair with the pyramid.',
+      'You can go through the stock <b>3 times</b>.',
+      'Score: +5 for every pyramid card, +1 for every stock card, +250 for clearing the pyramid.'
+    ]]
+  };
+  function openHelp() {
+    var h = HELP[game.g];
+    $('helpTitle').textContent = 'How to play ' + h[0];
+    $('helpList').innerHTML = h[1].map(function (x) { return '<li>' + x + '</li>'; }).join('') + '<li>A <b>Daily</b> deal for each game is the same on every phone and can always be won. <b>Undo</b> is unlimited.</li>';
+    $('ovHelp').classList.add('show');
+  }
+  function segHTML(name, items, cur) { return '<div class="seg" data-name="' + name + '">' + items.map(function (it) { return '<button data-v="' + it[0] + '"' + (String(it[0]) === String(cur) ? ' class="on"' : '') + '>' + it[1] + '</button>'; }).join('') + '</div>'; }
+  function openOpts() {
+    if (locked()) return;
+    var g = game.g, h = '';
+    $('optsTitle').textContent = SOL.GAMES[g].name + ' options';
+    if (g === 'klondike') {
+      h += '<div class="themelabel">Draw</div>' + segHTML('draw', [[1, 'Draw 1'], [3, 'Draw 3']], settings.klondike.draw);
+      h += '<div class="themelabel">Scoring</div>' + segHTML('scoring', [['standard', 'Standard'], ['vegas', 'Vegas'], ['none', 'None']], settings.klondike.scoring);
+    }
+    if (g === 'spider') h += '<div class="themelabel">Suits</div>' + segHTML('suits', [[1, '1 suit'], [2, '2 suits'], [4, '4 suits']], settings.spider.suits);
+    if (g === 'freecell') {
+      h += '<div class="themelabel">Play a game number</div><div class="numrow"><input id="fcNum" type="number" inputmode="numeric" min="1" max="32000" placeholder="1 to 32000" value="' + game.st.seed + '"><button class="btn red" id="fcGo">Play</button></div>';
+      h += '<p class="optnote">The same numbers as the classic Windows FreeCell. Every one can be won except #11982.</p>';
+    } else {
+      h += '<label class="row"><div>Winnable deals only<small>Every deal has been played through to a win by the computer first.' + (g === 'spider' && !bankOK('spider', { suits: 4 }) ? ' (4 suits: deals are always random; they take too long to check.)' : '') + '</small></div><span class="switch"><input type="checkbox" id="setWin"' + (settings.winnable[g] ? ' checked' : '') + '><span></span></span></label>';
+    }
+    h += '<p class="optnote">Changes start with your next new game.</p>';
+    $('optsBody').innerHTML = h;
+    Array.prototype.forEach.call($('optsBody').querySelectorAll('.seg'), function (seg) {
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        var n = seg.dataset.name, v = b.dataset.v;
+        if (n === 'draw') settings.klondike.draw = +v; else if (n === 'scoring') settings.klondike.scoring = v; else if (n === 'suits') settings.spider.suits = +v;
+        saveSettings();
+        Array.prototype.forEach.call(seg.children, function (x) { x.classList.toggle('on', x === b); });
+      });
+    });
+    var sw = $('setWin'); if (sw) sw.addEventListener('change', function () { settings.winnable[g] = this.checked; saveSettings(); });
+    var go = $('fcGo');
+    if (go) go.addEventListener('click', function () {
+      var n = Math.floor(+$('fcNum').value);
+      if (!(n >= 1 && n <= 32000)) { toast('Pick a number from 1 to 32000'); return; }
+      $('fcNum').blur(); if (Goobs.snap) Goobs.snap();
+      $('ovOpts').classList.remove('show');
+      confirmLeave('Play game #' + n + '?', function () { startNew('freecell', n); });
+    });
+    $('ovOpts').classList.add('show');
+  }
+  function renderStats() {
+    var h = '';
+    var rows = [['klondike-d1', 'Klondike, draw 1'], ['klondike-d3', 'Klondike, draw 3'], ['spider-1', 'Spider, 1 suit'], ['spider-2', 'Spider, 2 suits'], ['spider-4', 'Spider, 4 suits'], ['freecell', 'FreeCell'], ['tripeaks', 'TriPeaks'], ['pyramid', 'Pyramid']];
+    rows.forEach(function (r) {
+      var s = stats[r[0]];
+      if (!s || !s.played) return;
+      h += '<div class="statgame"><div class="themelabel">' + r[1] + '</div><div class="tiles"><div class="tile"><b>' + s.won + '/' + s.played + '</b><span>Won</span></div>' +
+        '<div class="tile"><b>' + Math.round(100 * s.won / s.played) + '%</b><span>Win rate</span></div><div class="tile"><b>' + s.streak + '</b><span>Streak</span></div></div>' +
+        '<div class="sub">Best streak ' + s.bestStreak + (s.bestMs ? ' &middot; best time ' + fmtTime(s.bestMs) : '') + (s.fewest ? ' &middot; fewest moves ' + s.fewest : '') + (s.bestScore !== null && s.bestScore !== undefined ? ' &middot; best score ' + fmt(s.bestScore) : '') + (s.daily ? ' &middot; ' + s.daily + ' daily' : '') + '</div></div>';
+    });
+    $('statsBody').innerHTML = h || '<p class="optnote">Play a game to start your records. Each game (and each draw or suit choice) keeps its own.</p>';
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncAds() {
+    $('setAds').checked = Goobs.adsOn();
+    $('adEvery').textContent = settings.adEvery;
+    $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+  }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    var tb = $('table');
+    tb.addEventListener('pointerdown', onDown);
+    tb.addEventListener('pointermove', onMove);
+    tb.addEventListener('pointerup', onUp);
+    tb.addEventListener('pointercancel', onCancel);
+    document.addEventListener('touchmove', function (e) { if (drag) e.preventDefault(); }, { passive: false });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnHint').addEventListener('click', hint);
+    $('btnFinish').addEventListener('click', finish);
+    $('btnNew').addEventListener('click', function () {
+      if (locked()) return;
+      if (game.daily != null) { confirmLeave('Leave today\u2019s deal?', function () { load(game.g, null); }); return; }
+      confirmLeave('Start a new game?', function () { startNew(game.g); });
+    });
+    $('btnDaily').addEventListener('click', function () {
+      if (locked()) return;
+      if (game.daily != null) { load(game.g, null); return; }
+      var today = dayNum();
+      if (meta.dailyDone[game.g] === today) {
+        showCard('Today’s deal is done', 'You already won today’s ' + SOL.GAMES[game.g].name + '. Play it again? (It won’t count twice.)', [
+          { label: 'Play it again', red: true, go: function () { load(game.g, today, true); } },
+          { label: 'Not now', go: function () {} }]);
+        return;
+      }
+      load(game.g, today);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || b.dataset.g === game.g || locked()) return;
+      var g = b.dataset.g;
+      load(g, meta.playing[g] === 'daily' && store.get('daily.' + g, null) && store.get('daily.' + g, null).daily === dayNum() ? dayNum() : null);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnCloseOpts').addEventListener('click', function () { $('ovOpts').classList.remove('show'); });
+    $('ovOpts').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('btnDealNow').addEventListener('click', function () { $('ovOpts').classList.remove('show'); confirmLeave('Deal a new game?', function () { startNew(game.g); }); });
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnOpts').addEventListener('click', openOpts);
+    // full screen (kit): Options, New, How to, Stats and Settings live in the Menu; Undo / Hint / Daily stay under the table.
+    // The clock stops while the Menu is open (locked() checks 'ggMenu'); the Menu closes before a moved button's handler runs.
+    Goobs.fullscreen({ menu: ['btnOpts', 'btnNew', 'btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { if (!game) return ''; var v = variantLabel(); return '<b>' + SOL.GAMES[game.g].name + '</b>' + (v !== 'Options' ? ' &middot; ' + v : ''); } });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen[game.g]) { meta.seen[game.g] = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    var lastW = 0, lastH = 0;
+    function onResize() { if (!game) return; var r = $('table').getBoundingClientRect(); if (Math.abs(r.width - lastW) > 0.5 || Math.abs(r.height - lastH) > 0.5) { lastW = r.width; lastH = r.height; render(true); } }
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe($('table'));
+    window.addEventListener('resize', onResize);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) saveGame(); else tickReset(); });
+    window.addEventListener('pagehide', saveGame);
+    setInterval(tick, 250);
+    syncSound(); syncAds();
+    var g0 = meta.g, dly = meta.playing[g0] === 'daily' ? dayNum() : null;
+    if (dly != null) { var sv = store.get('daily.' + g0, null); if (!sv || sv.daily !== dly) dly = null; }
+    load(g0, dly);
+    Goobs.markPlayed('solitaire');
+    Goobs.initUpdates({
+      beforeReload: saveGame,
+      onVersions: function (v) { $('version').textContent = 'Card Table ' + (v.solitaire || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__ct = { get game() { return game; }, smartHint: function () { return smartHint(); }, load: load, startNew: startNew, doMove: doMove, stockTap: stockTap, undo: undo, hint: hint, finish: finish, stats: function () { return stats; }, meta: function () { return meta; }, settings: settings, render: render, tapCard: tapCard, get loc() { return loc; }, get T() { return T; } };
+
+  init();
+})();
+</script>
+</body>
+</html>

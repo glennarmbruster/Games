@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en" class="gg-landscape">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Mean Birds</title>
+<style>
+/* Mean Birds (landscape). Themes, cards and ad cards come from /shared/goobs.css */
+html, body { background: #8fd6ff; }
+#cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* in-game buttons */
+.hud {
+  position: fixed; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) calc(env(safe-area-inset-right, 0px) + 12px) 0 calc(env(safe-area-inset-left, 0px) + 12px);
+}
+.hudl { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+.hbtn { width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(255,255,255,.88); color: #1b2130; display: grid; place-items: center; box-shadow: 0 3px 10px rgba(0,0,0,.18); padding: 0; }
+.hbtn svg { width: 22px; height: 22px; }
+.hbtn:active { transform: scale(.94); }
+.lvname { font-weight: 800; font-size: 16px; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.28); margin-left: 4px; }
+.hudr { text-align: right; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.hudr .score { font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1; }
+.hudr .best { font-size: 13px; font-weight: 700; opacity: .9; margin-top: 3px; }
+.hud.hide { display: none; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%); background: rgba(10,16,24,.75); color: #fff;
+  padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; pointer-events: none; opacity: 0; transition: opacity .25s; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* level select */
+.screen { position: fixed; inset: 0; display: none; flex-direction: column; background: linear-gradient(#8fd6ff, #d9f3ff 70%, #bfe7a8); z-index: 5;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) calc(env(safe-area-inset-right, 0px) + 14px) calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 14px); }
+.screen.show { display: flex; }
+.lsTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
+.lsTop .brand h1 { font-size: 22px; color: #1b2130; }
+.lsTop .homebtn .chev { color: #3b36c9; }
+.lsWorld { text-align: center; color: #1b2130; }
+.lsWorld b { display: block; font-size: 19px; font-weight: 800; }
+.lsWorld span { font-size: 14px; font-weight: 700; color: #3b4660; }
+.lsWorlds { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; justify-content: center; }
+.lsWorlds .lsWorld { min-width: 0; }
+.lsWorld b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wbtn { flex: none; width: 40px; height: 40px; border-radius: 12px; border: 0; background: rgba(255,255,255,.9); color: #1b2130; font-size: 28px; font-weight: 800; line-height: 1; padding: 0 0 3px; box-shadow: 0 3px 0 rgba(40,60,90,.15); }
+.wbtn:disabled { opacity: .3; }
+.screen.night .lsWorld, .screen.night .lsWorld span, .screen.night .lsTop .brand h1 { color: #fff; }
+.mlv.long { font-size: 17px; }
+.spin { width: 44px; height: 44px; margin: 4px auto 8px; border-radius: 50%; border: 5px solid rgba(90,84,240,.2); border-top-color: #5a54f0; animation: mbspin .9s linear infinite; }
+@keyframes mbspin { to { transform: rotate(360deg); } }
+.lsTop .iconbtn { background: rgba(255,255,255,.9); color: #1b2130; border-color: transparent; }
+.lsGrid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(10, 1fr); grid-auto-rows: 1fr; gap: 8px; padding: 10px 0 4px; overflow-y: auto; }
+@media (max-aspect-ratio: 3/2) { .lsGrid { grid-template-columns: repeat(5, 1fr); } }
+.mlv { position: relative; aspect-ratio: auto; border: 0; border-radius: 16px; background: rgba(255,255,255,.92); color: #1b2130; box-shadow: 0 4px 0 rgba(40,60,90,.18);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 900; font-size: 22px; padding: 0; min-height: 64px; }
+.mlv:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(40,60,90,.18); }
+.mlv .st { display: flex; gap: 1px; }
+.mlv .st svg { width: 15px; height: 15px; color: #d6dbe6; }
+.mlv .st svg.on { color: #ffc23a; }
+.mlv.lock { opacity: .45; }
+.mlv.lock::after { content: "\1F512"; position: absolute; font-size: 16px; bottom: 6px; }
+.mlv.cur { background: linear-gradient(135deg, #5a54f0, #7a5cff); color: #fff; }
+.mlv.cur .st svg { color: rgba(255,255,255,.4); }
+
+/* cards */
+.mbcard { width: min(92vw, 430px); max-height: 92vh; overflow-y: auto; padding: 18px 18px 16px; }
+.mbcard .actions { flex-direction: row; }
+.mbcard .actions .btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; }
+.mbcard .actions .btn svg { width: 20px; height: 20px; }
+.mbcard p { margin: 4px 0 14px; }
+.stars3 { display: flex; justify-content: center; gap: 6px; margin: 2px 0 6px; }
+.stars3 svg { width: 54px; height: 54px; color: #d6dbe6; }
+.stars3 svg:nth-child(2) { transform: translateY(-10px); }
+.stars3 svg.on { color: #ffc23a; animation: starpop .4s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes starpop { 0% { scale: 0; } 100% { scale: 1; } }
+.toggles { display: flex; gap: 8px; margin: 8px 0 8px; }
+.tog { flex: 1; min-height: 56px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 700; font-size: 13px; padding: 0; }
+.tog svg { width: 22px; height: 22px; }
+.tog.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.tog .adbadge { font-size: 11px; font-weight: 900; background: var(--gold); color: #3a2a00; border-radius: 5px; padding: 1px 5px; }
+.adrow { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+.adrow button { width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--surface-2); font-size: 18px; font-weight: 800; color: var(--ink); padding: 0; }
+.adrow.off { opacity: .4; pointer-events: none; }
+#birdPic { display: block; margin: 0 auto 4px; width: 220px; height: 150px; }
+
+/* portrait: ask to turn the phone */
+.rotate { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; text-align: center; background: linear-gradient(#8fd6ff, #d9f3ff); color: #1b2130; padding: 24px; }
+.rotate b { display: block; font-size: 22px; margin: 18px 0 6px; }
+.rotate span { color: #3b4660; font-size: 16px; }
+.rotate .phone { width: 64px; height: 108px; border: 6px solid #1b2130; border-radius: 16px; margin: 0 auto; animation: turn 2.2s ease-in-out infinite; }
+@keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { .rotate { display: flex; } }
+
+.skiphint { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 16px); background: rgba(255,255,255,.88); color: #1b2130;
+  font-weight: 800; font-size: 14px; padding: 7px 12px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,.18); pointer-events: none; opacity: 0; transition: opacity .25s; }
+.skiphint.show { opacity: 1; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="mb-logo" viewBox="0 0 100 100"><defs><linearGradient id="mbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#d9f3ff"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#mbg)"/><rect y="74" width="100" height="26" fill="#6cc24a"/><path d="M0 74h100" stroke="#4f9d34" stroke-width="3"/>
+<ellipse cx="46" cy="50" rx="24" ry="20" fill="#2b3552"/><ellipse cx="42" cy="58" rx="13" ry="9" fill="#46557e"/><path d="M68 46l16 5-16 5z" fill="#9aa3ad"/>
+<circle cx="58" cy="43" r="6.5" fill="#fff"/><circle cx="60" cy="43" r="3" fill="#10141f"/><path d="M51 36.5h14" stroke="#2b3552" stroke-width="4" stroke-linecap="round"/>
+<path d="M26 60c8 6 22 7 32 3l-2 7c-10 3-22 2-31-3z" fill="#e53a3a"/><path d="M28 63l-9 13 8-2 3-9z" fill="#e53a3a"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-restart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></g></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="currentColor"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></g></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5" fill="currentColor"/><circle cx="17.5" cy="16" r="2.5" fill="currentColor"/></g></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+</defs></svg>
+
+<canvas id="cv"></canvas>
+
+<!-- in-game buttons -->
+<div class="hud" id="hud">
+  <div class="hudl">
+    <button class="hbtn" id="btnPause" aria-label="Pause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg></button>
+    <button class="hbtn" id="btnRestart" aria-label="Restart"><svg viewBox="0 0 24 24"><use href="#i-restart"/></svg></button>
+    <div class="lvname" id="lvName"></div>
+  </div>
+  <div class="hudr"><div class="score" id="score">0</div><div class="best" id="best"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="skiphint" id="skipHint">Tap to skip &#8250;&#8250;</div>
+
+<!-- level select -->
+<div class="screen show" id="scLevels">
+  <div class="lsTop">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games"><span class="chev" aria-hidden="true">&#8249;</span><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#mb-logo"/></svg><h1>Mean Birds</h1></button>
+    <div class="lsWorlds">
+      <button class="wbtn" id="wPrev" aria-label="Previous world">&#8249;</button>
+      <div class="lsWorld"><b id="worldName">Sunny Farm</b><span id="worldStars"></span></div>
+      <button class="wbtn" id="wNext" aria-label="Next world">&#8250;</button>
+    </div>
+    <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+  </div>
+  <div class="lsGrid" id="lsGrid"></div>
+</div>
+
+<!-- pause / settings -->
+<div class="overlay center" id="ovPause">
+  <div class="card mbcard" role="dialog">
+    <h2 id="pauseTitle">Paused</h2>
+    <div class="toggles">
+      <button class="tog" id="togMusic"><svg viewBox="0 0 24 24"><use href="#i-music"/></svg><span>Music</span></button>
+      <button class="tog" id="togSound"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg><span>Sound</span></button>
+      <button class="tog" id="togAds"><span class="adbadge">AD</span><span>Old-time ads</span></button>
+    </div>
+    <div class="adrow" id="adRow">Ad every <button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button> levels</div>
+    <div class="actions" id="pauseActions">
+      <button class="btn" id="btnPLevels"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg> Levels</button>
+      <button class="btn" id="btnPRestart"><svg viewBox="0 0 24 24"><use href="#i-restart"/></svg> Restart</button>
+      <button class="btn red" id="btnResume"><svg viewBox="0 0 24 24"><use href="#i-play"/></svg> Play</button>
+    </div>
+    <div class="version" id="version">Mean Birds</div>
+  </div>
+</div>
+
+<!-- level end -->
+<div class="overlay center" id="ovEnd">
+  <div class="card mbcard" role="dialog">
+    <h2 id="endTitle"></h2>
+    <div class="stars3" id="endStars"></div>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<!-- an endless level that is still being made (only if the player gets there before the background maker) -->
+<div class="overlay center" id="ovMake">
+  <div class="card mbcard" role="dialog">
+    <div class="spin" aria-hidden="true"></div>
+    <h2 id="makeText">Making the next level&#8230;</h2>
+    <p>Building a new fort and test-flying it to be sure it can be won.</p>
+    <div class="actions"><button class="btn" id="btnMakeLevels"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg> Levels</button></div>
+  </div>
+</div>
+
+<!-- a new bird -->
+<div class="overlay center" id="ovBird">
+  <div class="card mbcard" role="dialog">
+    <canvas id="birdPic" width="220" height="150"></canvas>
+    <h2 id="birdName"></h2>
+    <p id="birdText"></p>
+    <div class="actions"><button class="btn red" id="btnBirdOk">Got it</button></div>
+  </div>
+</div>
+
+<div class="rotate" id="rotate"><div><div class="phone"></div><b>Turn your phone sideways</b><span>Mean Birds plays in landscape.</span></div></div>
+
+<script src="../../shared/planck.min.js"></script>
+<script>
+/* Mean Birds physics and rules (planck.js, a JavaScript Box2D). No drawing here; runs in Node for the level checker.
+   World units are meters, y points up, the ground is y = 0 and the slingshot stands at x = level.sling.
+   It's a named factory (MBMake) so app.js can hand its source to a Web Worker that makes and proves endless levels off the main thread. */
+function MBMake() {
+  'use strict';
+  var pl = typeof planck !== 'undefined' ? planck : null;
+  var DT = 1 / 60, GRAVITY = -10;
+  var SLING_H = 2.9, MAX_PULL = 2.1, VMAX = 17.5;   // pouch height, longest pull, launch speed at a full pull
+  var VMIN = 1.2, K = 1.9, MCAP = 6;               // damage: speed that starts to hurt, damage per (m/s x kg), heaviest mass counted
+  var POINTS_GRUB = 5000, POINTS_BIRD = 10000;
+
+  // materials: density (kg per square meter), friction, bounce, strength per square meter
+  var MAT = {
+    wood: { d: 0.7, f: 0.6, r: 0.15, hp: 45 },
+    glass: { d: 0.9, f: 0.2, r: 0.1, hp: 16 },
+    stone: { d: 2.2, f: 0.8, r: 0.05, hp: 120 }
+  };
+  // birds: radius, density, and how hard they hit each material
+  var BIRDS = {
+    rocco: { r: 0.36, d: 4, hit: { wood: 1, glass: 1, stone: 0.8 }, name: 'Rocco' },
+    pips: { r: 0.22, d: 4, hit: { wood: 0.5, glass: 3, stone: 0.35 }, name: 'The Pips' },
+    zip: { r: 0.33, d: 4, hit: { wood: 2.4, glass: 0.9, stone: 0.45 }, name: 'Zip' }
+  };
+  var GRUBS = { s: { r: 0.36, hp: 5 }, m: { r: 0.5, hp: 9 }, l: { r: 0.7, hp: 14 } };
+
+  function use(p) { pl = p; }
+  function blockHP(m, w, h) { return MAT[m].hp * (w * h + 0.25); }
+  function blockPts(w, h) { return 50 * Math.round((200 + 600 * w * h) / 50); }
+
+  // ---------------------------------------------------------------- a level in play ----------------------------------------------------------------
+  // create(level, snap?) builds the world; snap (from snapshot()) restores a mid-level state
+  function create(level, snap) {
+    var world = new pl.World({ gravity: { x: 0, y: GRAVITY } });
+    var S = {
+      level: level, world: world, bodies: [], byId: {}, score: 0, grubsLeft: 0, events: [], time: 0, nextId: 1,
+      queue: level.birds.slice(), shot: 0, bird: null, flock: [], ability: false, pending: [], hits: []
+    };
+    var sx = level.sling || 0;
+    S.pouch = { x: sx, y: SLING_H };
+    // ground
+    var ground = world.createBody();
+    ground.createFixture(new pl.Edge({ x: -200, y: 0 }, { x: 400, y: 0 }), { friction: 0.9 });
+    ground.setUserData({ kind: 'ground' });
+    (level.terrain || []).forEach(function (t) {
+      var b = world.createBody({ position: { x: t.x, y: t.y } });
+      b.createFixture(new pl.Box(t.w / 2, t.h / 2), { friction: 0.9 });
+      b.setUserData({ kind: 'terrain', w: t.w, h: t.h, x: t.x, y: t.y });
+    });
+    function add(o, kind) {
+      var id = o.id || S.nextId;
+      S.nextId = Math.max(S.nextId, id + 1);
+      var b, u = { kind: kind, id: id };
+      if (kind === 'block' || kind === 'tnt') {
+        var m = kind === 'tnt' ? 'wood' : o.m, w = kind === 'tnt' ? 0.7 : o.w, h = kind === 'tnt' ? 0.7 : o.h;
+        b = world.createDynamicBody({ position: { x: o.x, y: o.y }, angle: o.a || 0 });
+        b.createFixture(new pl.Box(w / 2, h / 2), { density: MAT[m].d, friction: MAT[m].f, restitution: MAT[m].r });
+        u.m = m; u.w = w; u.h = h;
+        u.maxHp = kind === 'tnt' ? 2 : blockHP(m, w, h); u.pts = kind === 'tnt' ? 1000 : blockPts(w, h);
+      } else if (kind === 'boulder') {
+        b = world.createDynamicBody({ position: { x: o.x, y: o.y } });
+        b.createFixture(new pl.Circle(o.r), { density: MAT.stone.d, friction: 0.7, restitution: 0.1 });
+        b.setAngularDamping(0.4);
+        u.m = 'stone'; u.r = o.r; u.maxHp = blockHP('stone', o.r * 1.8, o.r * 1.8); u.pts = blockPts(o.r * 1.8, o.r * 1.8);
+      } else if (kind === 'grub') {
+        var g = GRUBS[o.s || 'm'];
+        b = world.createDynamicBody({ position: { x: o.x, y: o.y } });
+        b.createFixture(new pl.Circle(g.r), { density: 0.8, friction: 0.7, restitution: 0.2 });
+        b.setAngularDamping(1.5);
+        u.s = o.s || 'm'; u.r = g.r; u.helmet = o.helmet ? 1 : 0; u.maxHp = g.hp * (o.helmet ? 2.2 : 1); u.pts = POINTS_GRUB;
+        S.grubsLeft++;
+      }
+      u.hp = u.maxHp;
+      b.setUserData(u);
+      S.bodies.push(b); S.byId[id] = b;
+      return b;
+    }
+    var id = 1;
+    (level.blocks || []).forEach(function (o) { add(Object.assign({ id: id++ }, o), 'block'); });
+    (level.tnt || []).forEach(function (o) { add(Object.assign({ id: id++ }, o), 'tnt'); });
+    (level.boulders || []).forEach(function (o) { add(Object.assign({ id: id++ }, o), 'boulder'); });
+    (level.grubs || []).forEach(function (o) { add(Object.assign({ id: id++ }, o), 'grub'); });
+    if (snap) restore(S, snap);
+
+    // impacts: how fast two things meet decides the damage (resting stacks don't hurt)
+    world.on('pre-solve', function (c) {
+      if (!c.isTouching()) return;
+      var fa = c.getFixtureA(), fb = c.getFixtureB(), A = fa.getBody(), B = fb.getBody();
+      var wm = c.getWorldManifold(null); if (!wm || !wm.pointCount) return;
+      var n = wm.normal, best = 0;
+      for (var i = 0; i < wm.pointCount; i++) {
+        var p = wm.points[i], va = A.getLinearVelocityFromWorldPoint(p), vb = B.getLinearVelocityFromWorldPoint(p);
+        var s = (va.x - vb.x) * n.x + (va.y - vb.y) * n.y;
+        if (s > best) best = s;
+      }
+      if (best <= VMIN) return;
+      S.hits.push([A, B, best]);
+    });
+    return S;
+  }
+  function massOf(b) { return b.isStatic() ? 0 : b.getMass(); }
+  function damageOne(S, X, O, speed) {
+    var u = X.getUserData(); if (!u || !u.maxHp || u.dead) return;
+    var o = O.getUserData() || {}, mo = O.isStatic() ? massOf(X) : massOf(O), mult = 1;
+    if (o.kind === 'bird') mult = u.kind === 'grub' ? 1.4 : (BIRDS[o.type].hit[u.m] || 1);
+    var dmg = (speed - VMIN) * Math.min(mo, MCAP) * K * mult;
+    if (dmg < 0.3) return;
+    u.hp -= dmg;
+    if (u.hp <= 0) kill(S, X, 'hit');
+    else if (dmg > 0.8) S.events.push({ t: 'hit', m: u.m || u.kind, x: X.getPosition().x, y: X.getPosition().y, k: u.kind });
+  }
+  function kill(S, b, why) {
+    var u = b.getUserData(); if (u.dead) return;
+    u.dead = true; u.hp = 0;
+    var p = b.getPosition();
+    S.score += u.pts || 0;
+    if (u.kind === 'grub') { S.grubsLeft--; S.events.push({ t: 'pop', x: p.x, y: p.y, r: u.r, pts: u.pts }); }
+    else S.events.push({ t: 'break', m: u.kind === 'tnt' ? 'tnt' : u.m, x: p.x, y: p.y, a: b.getAngle(), w: u.w || u.r * 2, h: u.h || u.r * 2, pts: u.pts, v: b.getLinearVelocity() });
+    S.pending.push(b);
+    if (u.kind === 'tnt') boom(S, p.x, p.y, 3.6, 16, 28);
+  }
+  function boom(S, x, y, R, imp, dmg) {
+    S.events.push({ t: 'boom', x: x, y: y, R: R });
+    S.bodies.forEach(function (b) {
+      var u = b.getUserData(); if (!u || u.dead) return;
+      var p = b.getPosition(), dx = p.x - x, dy = p.y - y, d = Math.sqrt(dx * dx + dy * dy);
+      if (d > R || d < 1e-4) return;
+      var k = 1 - d / R;
+      b.applyLinearImpulse({ x: dx / d * imp * k * Math.min(1, b.getMass() * 0.8 + 0.2), y: dy / d * imp * k * Math.min(1, b.getMass() * 0.8 + 0.2) + imp * 0.2 * k }, p, true);
+      if (u.maxHp && u.kind !== 'bird') { u.hp -= dmg * k; if (u.hp <= 0) kill(S, b, 'boom'); }
+    });
+  }
+  function step(S) {
+    S.hits = [];
+    S.world.step(DT);
+    S.time += DT;
+    markTouches(S);
+    if (S.noDamage) S.hits = [];
+    S.hits.forEach(function (h) { damageOne(S, h[0], h[1], h[2]); damageOne(S, h[1], h[0], h[2]); });
+    // anything that fell off the world is gone
+    S.bodies.forEach(function (b) {
+      var u = b.getUserData(); if (u.dead) return;
+      var p = b.getPosition();
+      if (p.y < -4 || p.x < (S.level.sling || 0) - 40 || p.x > 220) kill(S, b, 'fell');
+    });
+    // bodies that died this step leave the world (TNT chains are handled as they happen)
+    while (S.pending.length) {
+      var b = S.pending.pop();
+      S.world.destroyBody(b);
+      S.bodies.splice(S.bodies.indexOf(b), 1);
+    }
+    S.flock = S.flock.filter(function (b) { var p = b.getPosition(); if (p.y < -4 || p.x > 220 || p.x < -60) { S.world.destroyBody(b); return false; } return true; });
+  }
+
+  // ---------------------------------------------------------------- birds ----------------------------------------------------------------
+  function makeBird(S, type, x, y, vx, vy) {
+    var B = BIRDS[type], b = S.world.createDynamicBody({ position: { x: x, y: y }, bullet: true });
+    b.createFixture(new pl.Circle(B.r), { density: B.d, friction: 0.6, restitution: 0.3 });
+    b.setAngularDamping(0.8);
+    b.setLinearVelocity({ x: vx, y: vy });
+    b.setUserData({ kind: 'bird', type: type });
+    S.flock.push(b);
+    return b;
+  }
+  // pull: how far the pouch is dragged back (dx, dy in meters, pointing away from the target)
+  function launchVel(pull) {
+    var len = Math.sqrt(pull.x * pull.x + pull.y * pull.y);
+    if (len < 1e-6) return { x: 0, y: 0 };
+    var k = Math.min(len, MAX_PULL) / MAX_PULL * VMAX / len;
+    return { x: -pull.x * k, y: -pull.y * k };
+  }
+  function clampPull(pull) {
+    var len = Math.sqrt(pull.x * pull.x + pull.y * pull.y);
+    if (len <= MAX_PULL) return pull;
+    return { x: pull.x / len * MAX_PULL, y: pull.y / len * MAX_PULL };
+  }
+  function launch(S, pull) {
+    if (!S.queue.length) return null;
+    pull = clampPull(pull);
+    var type = S.queue.shift(), v = launchVel(pull);
+    S.bird = makeBird(S, type, S.pouch.x + pull.x, S.pouch.y + pull.y, v.x, v.y);
+    S.bird.getUserData().launchedAt = S.time;
+    S.ability = type !== 'rocco';
+    S.shot++;
+    S.events.push({ t: 'launch', type: type });
+    return S.bird;
+  }
+  function useAbility(S) {
+    if (!S.ability || !S.bird) return false;
+    var b = S.bird, u = b.getUserData(), v = b.getLinearVelocity(), p = b.getPosition(), sp = Math.sqrt(v.x * v.x + v.y * v.y);
+    if (u.touched || sp < 1) { S.ability = false; return false; }
+    S.ability = false;
+    if (u.type === 'pips') { // split into three, fanning out a little
+      [-0.2, 0.2].forEach(function (da) {
+        var c = Math.cos(da), s = Math.sin(da);
+        var nb = makeBird(S, 'pips', p.x, p.y + da * 0.9, v.x * c - v.y * s, v.x * s + v.y * c);
+        nb.getUserData().launchedAt = u.launchedAt;
+      });
+      S.events.push({ t: 'split', x: p.x, y: p.y });
+    } else if (u.type === 'zip') { // a straight dash, much faster
+      var ns = Math.max(sp * 2.1, 30);
+      b.setLinearVelocity({ x: v.x / sp * ns, y: v.y / sp * ns });
+      u.dash = true;
+      S.events.push({ t: 'dash', x: p.x, y: p.y });
+    }
+    return true;
+  }
+  // mark birds as having touched something (abilities only work before the first bump)
+  function markTouches(S) {
+    S.flock.forEach(function (b) {
+      for (var ce = b.getContactList(); ce; ce = ce.next) if (ce.contact.isTouching()) { b.getUserData().touched = true; break; }
+    });
+  }
+  // is everything (apart from birds) at rest?
+  function settled(S) {
+    for (var i = 0; i < S.bodies.length; i++) {
+      var b = S.bodies[i]; if (!b.isAwake()) continue;
+      var v = b.getLinearVelocity();
+      if (v.x * v.x + v.y * v.y > 0.02 || Math.abs(b.getAngularVelocity()) > 0.15) return false;
+    }
+    return true;
+  }
+  // is the current shot over? (all its birds stopped, gone or old, then the world at rest)
+  function shotDone(S) {
+    if (!S.bird) return true;
+    var age = S.time - S.bird.getUserData().launchedAt;
+    var moving = S.flock.some(function (b) { var v = b.getLinearVelocity(); return v.x * v.x + v.y * v.y > 0.25; });
+    if (age < 0.8) return false;
+    if (moving && age < 9) return false;
+    if (!settled(S) && age < 14) return false;
+    return true;
+  }
+  function endShot(S) {
+    S.flock.forEach(function (b) { var p = b.getPosition(); S.events.push({ t: 'poof', x: p.x, y: p.y }); S.world.destroyBody(b); });
+    S.flock = []; S.bird = null; S.ability = false;
+  }
+  function won(S) { return S.grubsLeft <= 0; }
+  function bonus(S) { return S.queue.length * POINTS_BIRD; }
+
+  // ---------------------------------------------------------------- snapshots (for the level checker's shot search) ----------------------------------------------------------------
+  function snapshot(S) {
+    return {
+      score: S.score, queue: S.queue.slice(), shot: S.shot,
+      b: S.bodies.map(function (b) { var p = b.getPosition(), v = b.getLinearVelocity(), u = b.getUserData(); return [u.id, p.x, p.y, b.getAngle(), v.x, v.y, b.getAngularVelocity(), u.hp]; })
+    };
+  }
+  function restore(S, snap) {
+    var keep = {}; snap.b.forEach(function (r) { keep[r[0]] = r; });
+    S.bodies.slice().forEach(function (b) {
+      var u = b.getUserData(), r = keep[u.id];
+      if (!r) { if (u.kind === 'grub') S.grubsLeft--; S.world.destroyBody(b); S.bodies.splice(S.bodies.indexOf(b), 1); return; }
+      b.setTransform({ x: r[1], y: r[2] }, r[3]); b.setLinearVelocity({ x: r[4], y: r[5] }); b.setAngularVelocity(r[6]); u.hp = r[7];
+    });
+    S.score = snap.score; S.queue = snap.queue.slice(); S.shot = snap.shot;
+  }
+
+  // the shape of the level: where the camera should look
+  function bounds(level) {
+    var sx = level.sling || 0, x1 = sx + 12, y1 = 6;
+    function grow(x, y) { if (x > x1) x1 = x; if (y > y1) y1 = y; }
+    (level.blocks || []).forEach(function (o) { grow(o.x + o.w / 2, o.y + o.h / 2); });
+    (level.grubs || []).forEach(function (o) { grow(o.x + 1, o.y + 1); });
+    (level.terrain || []).forEach(function (o) { grow(o.x + o.w / 2, o.y + o.h / 2); });
+    (level.tnt || []).forEach(function (o) { grow(o.x + 0.5, o.y + 0.5); });
+    (level.boulders || []).forEach(function (o) { grow(o.x + o.r, o.y + o.r); });
+    return { x0: sx - 3.8 - 0.85 * Math.max(0, (level.birds || []).length - 2), x1: x1 + 2, y0: -0.8, y1: Math.max(y1 + 2, 9) };
+  }
+
+  // ---------------------------------------------------------------- the proof (tools/check.js uses this same code) ----------------------------------------------------------------
+  // 1. settle: a new level runs 2.5 s with no damage and keeps where things came to rest (skipped once level.settled is set);
+  // 2. stand still: 3 s with no shot; nothing may move over 3 cm, take damage or break;
+  // 3. win: a greedy shot search, per bird trying 17 angles x 4 powers x the tap times, keeping the shot that pops the most
+  //    Grublins, then scores the most. It must win with the birds given.
+  // It's a step machine (run(ms) does a slice and returns), so the phone can run it in a worker, or in small slices if it must.
+  var P_ANGLES = []; for (var pa = -5; pa <= 75; pa += 5) P_ANGLES.push(pa);
+  var P_POWERS = [0.6, 0.75, 0.9, 1];
+  var P_TAPS = { rocco: [null], pips: [null, 0.45, 0.7, 1.0], zip: [null, 0.35, 0.6, 0.9] };
+  function now() { return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(); }
+  function Prover(level, opt) {
+    this.lv = level; this.opt = opt || {}; this.stage = level.settled ? 'stand' : 'settle'; this.done = false;
+    this.k = 0; this.c = 0; this.snap = null; this.shots = []; this.best = null; this.sim = null; this.steps = 0;
+    this.res = { stand: null, won: false, shots: this.shots, score: 0 };
+  }
+  // a candidate shot: c counts through angles x powers x taps in the same order as the old nested loops (ties keep the first)
+  Prover.prototype.cand = function (type, c) {
+    var taps = P_TAPS[type], nt = taps.length, np = P_POWERS.length;
+    return { a: P_ANGLES[Math.floor(c / (np * nt))], p: P_POWERS[Math.floor(c / nt) % np], tap: taps[c % nt] };
+  };
+  Prover.prototype.total = function (type) { return P_ANGLES.length * P_POWERS.length * P_TAPS[type].length; };
+  Prover.prototype.tick = function () {
+    var lv = this.lv, i, S;
+    if (this.stage === 'settle') {
+      S = create(lv); S.noDamage = true;
+      var ns = this.opt.settleSteps || 150;   // made levels settle longer (tall stacks creep for a while); the banked ones keep 150
+      for (i = 0; i < ns; i++) step(S);
+      this.steps += ns;
+      var byId = {}; S.bodies.forEach(function (b) { byId[b.getUserData().id] = b; });
+      var id = 1;
+      ['blocks', 'tnt', 'boulders', 'grubs'].forEach(function (k) {
+        (lv[k] || []).forEach(function (o) {
+          var b = byId[id++]; if (!b) return;
+          var p = b.getPosition(); o.x = +p.x.toFixed(4); o.y = +p.y.toFixed(4); var a = +b.getAngle().toFixed(4); if (a) o.a = a; else delete o.a;
+        });
+      });
+      lv.settled = 1; this.stage = 'stand'; return;
+    }
+    if (this.stage === 'stand') {
+      S = create(lv);
+      var p0 = S.bodies.map(function (b) { return [b.getPosition().x, b.getPosition().y]; }), n0 = S.bodies.length;
+      for (i = 0; i < 180; i++) step(S);
+      this.steps += 180;
+      var md = 0, dmg = 0;
+      S.bodies.forEach(function (b, j) { var p = b.getPosition(); md = Math.max(md, Math.hypot(p.x - p0[j][0], p.y - p0[j][1])); var u = b.getUserData(); dmg = Math.max(dmg, u.maxHp - u.hp); });
+      this.res.stand = { ok: md < 0.03 && dmg < 0.5 && S.bodies.length === n0, md: +md.toFixed(3), dmg: +dmg.toFixed(2), lost: n0 - S.bodies.length };
+      if (!this.res.stand.ok && this.opt.quitEarly) { this.done = true; return; }
+      this.stage = 'search'; return;
+    }
+    // search: one candidate shot is played in slices of up to 60 physics steps
+    var type = lv.birds[this.k];
+    if (!this.sim) {
+      var cd = this.cand(type, this.c), th = cd.a * Math.PI / 180;
+      S = create(lv, this.snap);
+      launch(S, { x: -Math.cos(th) * cd.p * MAX_PULL, y: -Math.sin(th) * cd.p * MAX_PULL });
+      this.sim = { S: S, t0: S.time, n: 0, cd: cd };
+    }
+    var m = this.sim; S = m.S;
+    for (i = 0; i < 60 && !shotDone(S) && m.n < 1400; i++) { if (m.cd.tap != null && S.ability && S.time - m.t0 >= m.cd.tap) useAbility(S); step(S); m.n++; }
+    this.steps += i;
+    if (!shotDone(S) && m.n < 1400) return;
+    endShot(S); this.sim = null;
+    var r = { a: m.cd.a, p: m.cd.p, tap: m.cd.tap, grubs: S.grubsLeft, score: S.score, S: S };
+    if (!this.best || r.grubs < this.best.grubs || (r.grubs === this.best.grubs && r.score > this.best.score)) this.best = r;
+    if (++this.c < this.total(type)) return;
+    var b = this.best;
+    this.shots.push({ a: b.a, p: b.p, tap: b.tap, grubs: b.grubs, score: b.score });
+    if (b.grubs === 0) { this.res.won = true; this.res.score = b.score + bonus(b.S); this.done = true; return; }
+    this.snap = snapshot(b.S); this.best = null; this.c = 0; this.k++;
+    if (this.k >= lv.birds.length) { this.res.won = false; this.res.score = 0; this.done = true; }
+  };
+  // do up to ms of work (Infinity: to the end); true when finished. maxSteps (opt) gives up on a level that's too slow to prove.
+  Prover.prototype.run = function (ms) {
+    var end = now() + ms;
+    while (!this.done) {
+      this.tick();
+      if (this.opt.maxSteps && this.steps > this.opt.maxSteps) { this.res.won = false; this.res.slow = true; this.done = true; }
+      if (now() >= end) break;
+    }
+    return this.done;
+  };
+  function prove(level, opt) { var pr = new Prover(level, opt); pr.run(Infinity); pr.res.steps = pr.steps; return pr.res; }
+  // star lines from the search's best score: 2 stars at 65%, 3 at 85% (rounded down to 500); the winning shots are kept as 'solve'
+  function setStars(lv, res) {
+    var b = res.score;
+    lv.stars = [Math.floor(b * 0.65 / 500) * 500, Math.floor(b * 0.85 / 500) * 500]; lv.best = b;
+    lv.solve = res.shots.map(function (x) { return [x.a, x.p, x.tap]; });
+  }
+
+  // ---------------------------------------------------------------- endless levels (Glenn: "unlimited levels", 2026-10-01) ----------------------------------------------------------------
+  // Levels 1-20 are the banked World 1 in levels.json. Level n past that is built here from its number alone (seeded), so it's the same
+  // level on every phone, then proven by the Prover above; a level that fails is rebuilt from the next seed (n, attempt) until one passes.
+  // Worlds of 20 keep coming, each with its own theme (backdrop tint, favorite materials); difficulty grows gently up to level 100
+  // and then holds, with a breather every 10 levels and a bigger fort to end each world.
+  var BANK = 20, WORLD_SIZE = 20, PT = 0.3;
+  var THEMES = [
+    { id: 'farm', name: 'Sunny Farm', mat: { wood: 5, glass: 3, stone: 2 }, tnt: 0.25, boulder: 0.15, hill: 0.25 },
+    { id: 'woods', name: 'Pine Woods', mat: { wood: 7, glass: 1.5, stone: 1.5 }, tnt: 0.2, boulder: 0.3, hill: 0.3 },
+    { id: 'sea', name: 'Seaside Cliffs', mat: { wood: 4, glass: 4, stone: 2 }, tnt: 0.2, boulder: 0.35, hill: 0.45 },
+    { id: 'snow', name: 'Snowy Peaks', mat: { wood: 2.5, glass: 6, stone: 1.5 }, tnt: 0.15, boulder: 0.3, hill: 0.4 },
+    { id: 'mine', name: 'Canyon Mine', mat: { wood: 4, glass: 1.5, stone: 4.5 }, tnt: 0.5, boulder: 0.3, hill: 0.35 },
+    { id: 'fair', name: 'Night Carnival', mat: { wood: 3.5, glass: 3.5, stone: 3 }, tnt: 0.4, boulder: 0.2, hill: 0.2 }
+  ];
+  // world w (0 = Sunny Farm, the banked one): the themes come round again every 6 worlds (the world number tells them apart)
+  function worldOf(n) {
+    var w = Math.floor((Math.max(1, n) - 1) / WORLD_SIZE), t = THEMES[w % THEMES.length], lap = Math.floor(w / THEMES.length);
+    return { index: w, theme: t, name: t.name, lap: lap };
+  }
+  function tierOf(n) {
+    var d = Math.min(1, Math.max(0, (n - BANK) / 80)), kind = 'normal';
+    if (n % WORLD_SIZE === 0) kind = 'big'; else if (n % 10 === 4) kind = 'breather';
+    return { d: kind === 'breather' ? d * 0.35 : d, kind: kind };
+  }
+  // small seeded random numbers (mulberry32); the seed mixes the level number and the attempt
+  function hash32(a) { a = (a ^ 61) ^ (a >>> 16); a = (a + (a << 3)) | 0; a ^= a >>> 4; a = Math.imul(a, 0x27d4eb2d); a ^= a >>> 15; return a >>> 0; }
+  function rng(seed) {
+    var s = seed >>> 0;
+    return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function pickW(R, weights) { var tot = 0, k; for (k in weights) tot += weights[k]; var x = R() * tot; for (k in weights) { x -= weights[k]; if (x <= 0) return k; } return k; }
+  function pick(R, list) { return list[Math.floor(R() * list.length) % list.length]; }
+  function rnd(R, a, b) { return +(a + R() * (b - a)).toFixed(2); }
+
+  // fort pieces (the same shapes as tools/gen.js: huts are two posts and a plank)
+  function gHut(lv, x, y, w, h, m, roof) {
+    lv.blocks.push({ m: m, x: x - w / 2 + PT / 2, y: y + h / 2, w: PT, h: h });
+    lv.blocks.push({ m: m, x: x + w / 2 - PT / 2, y: y + h / 2, w: PT, h: h });
+    lv.blocks.push({ m: roof || m, x: x, y: y + h + PT / 2, w: w + 0.2, h: PT });
+    return y + h + PT;
+  }
+  function gBox(lv, x, y, s, m) { lv.blocks.push({ m: m, x: x, y: y + s / 2, w: s, h: s }); return y + s; }
+  function gPlank(lv, x, y, w, m) { lv.blocks.push({ m: m, x: x, y: y + PT / 2, w: w, h: PT }); return y + PT; }
+  function gPost(lv, x, y, h, m) { lv.blocks.push({ m: m, x: x, y: y + h / 2, w: PT, h: h }); return y + h; }
+  function gGrub(lv, x, y, s, helmet) { lv.grubs.push({ x: x, y: y + GRUBS[s].r, s: s, helmet: helmet ? 1 : 0 }); }
+  function gTnt(lv, x, y) { lv.tnt.push({ x: x, y: y + 0.35 }); return y + 0.7; }
+  function gBoulder(lv, x, y, r) { lv.boulders.push({ x: x, y: y + r, r: r }); }
+  function gHill(lv, x, w, h) { lv.terrain.push({ x: x, y: h / 2, w: w, h: h }); return h; }
+
+  // a level's building kit: materials by theme (stone grows with difficulty), grub sizes that fit, helmets
+  function kit(R, theme, d) {
+    var mw = { wood: theme.mat.wood, glass: theme.mat.glass, stone: theme.mat.stone * (0.6 + 1.2 * d) };
+    var K = {
+      R: R, d: d, theme: theme,
+      mat: function () { return pickW(R, mw); },
+      light: function () { return R() < 0.5 ? 'wood' : 'glass'; },
+      helm: function () { return R() < 0.05 + 0.35 * d; },
+      // the biggest grub that fits a room w wide and h tall, sometimes a size smaller
+      grub: function (w, h) {
+        var room = Math.min(h, w - 2 * PT) - 0.12, fit = ['s', 'm', 'l'].filter(function (s) { return GRUBS[s].r * 2 <= room; });
+        if (!fit.length) return null;
+        var i = fit.length - 1; if (i > 0 && R() < 0.55 - 0.3 * d) i--; if (i > 0 && R() < 0.25) i--;
+        return fit[i];
+      },
+      floors: function (max) { return Math.min(max, 1 + Math.floor(R() * (1.6 + 2.2 * d))); }
+    };
+    return K;
+  }
+  // a tower of huts; a grub in most floors (always the first one asked for), maybe one on the roof and a boulder on top
+  function gTower(lv, K, x, y, floors, w, opt) {
+    opt = opt || {};
+    var R = K.R, any = false;
+    for (var i = 0; i < floors; i++) {
+      var m = K.mat(), h = opt.h || rnd(R, 1.4, 1.9), roof = R() < 0.25 ? K.mat() : m;
+      if (R() < 0.82 || (!any && i === floors - 1 && !opt.roofGrub)) { var s = K.grub(w, h); if (s) { gGrub(lv, x, y, s, K.helm()); any = true; } }
+      else if (i === 0 && R() < K.theme.tnt) gTnt(lv, x, y);
+      y = gHut(lv, x, y, w, h, m, roof);
+    }
+    if (opt.roofGrub || (!opt.flat && R() < 0.35)) { gGrub(lv, x, y, R() < 0.6 ? 's' : 'm', K.helm()); }
+    else if (!opt.flat && R() < K.theme.boulder * (0.3 + 0.5 * K.d)) gBoulder(lv, x, y, rnd(R, 0.45, 0.6));   // (boulders up top often roll off: kept rare)
+    return y;
+  }
+  function gPyramid(lv, x, y, rows, s, m) { for (var r = 0; r < rows; r++) { var n = rows - r; for (var i = 0; i < n; i++) gBox(lv, x - (n - 1) * s / 2 + i * s, y + r * s, s, m); } return y + rows * s; }
+
+  // pieces: each takes the ground space it needs [width] and builds itself centered at x
+  var PIECES = {
+    tower: function (K, big) { var w = rnd(K.R, 2.0, 2.8), f = K.floors(big ? 4 : 3); return { w: w + 0.2, build: function (lv, x) { gTower(lv, K, x, 0, f, w); } }; },
+    tall: function (K) { var w = rnd(K.R, 2.0, 2.4), f = Math.min(4, 2 + Math.floor(K.R() * (1 + 2 * K.d))); return { w: w + 0.2, build: function (lv, x) { gTower(lv, K, x, 0, f, w); } }; },
+    hut: function (K) { var w = rnd(K.R, 2.0, 2.6); return { w: w + 0.2, build: function (lv, x) { gTower(lv, K, x, 0, 1, w); } }; },
+    hall: function (K, big) {
+      var w = rnd(K.R, 3.8, 4.4);
+      return { w: w + 0.2, build: function (lv, x) {
+        var R = K.R, m = K.mat(), h = rnd(R, 1.6, 1.9), s1 = K.grub(w / 2, h) || 's';
+        gGrub(lv, x - w / 4, 0, s1, K.helm()); gGrub(lv, x + w / 4, 0, K.grub(w / 2, h) || 's', K.helm());
+        var y = gHut(lv, x, 0, w, h, m, R() < 0.4 ? 'stone' : m);
+        gTower(lv, K, x, y, big ? 2 : 1 + (R() < 0.4 + 0.4 * K.d ? 1 : 0), rnd(R, 2.2, Math.min(3.0, w - 1.0)));
+      } };
+    },
+    bridge: function (K) {
+      var w = rnd(K.R, 1.9, 2.3), gap = rnd(K.R, 1.6, 2.4), f = Math.min(3, K.floors(3)), span = 2 * w + gap;
+      return { w: span + 0.2, build: function (lv, x) {
+        var R = K.R, xa = x - (w + gap) / 2, xb = x + (w + gap) / 2, fh = rnd(R, 1.4, 1.8); // same floor height both sides, so the plank lies flat
+        var ya = gTower(lv, K, xa, 0, f, w, { flat: true, h: fh }), yb = gTower(lv, K, xb, 0, f, w, { flat: true, h: fh });
+        var top = gPlank(lv, x, Math.max(ya, yb), span - 0.4, R() < 0.5 ? 'glass' : 'wood');
+        gGrub(lv, x, top, R() < 0.5 ? 'm' : 'l', K.helm());
+        if (R() < 0.5) { gGrub(lv, x - span / 2 + 0.6, top, 's', false); }
+        if (R() < 0.4) gTnt(lv, x, 0);
+      } };
+    },
+    shield: function (K) {
+      var R = K.R, kind = R() < 0.55 ? 'wall' : 'fence', m = R() < 0.5 ? 'stone' : K.mat();
+      if (kind === 'fence') { var np = 3 + Math.floor(R() * 3), ph = rnd(R, 1.8, 2.6); return { w: (np - 1) * 0.9 + 0.3, build: function (lv, x) { for (var i = 0; i < np; i++) gPost(lv, x - (np - 1) * 0.45 + i * 0.9, 0, ph, m === 'stone' ? 'wood' : m); } }; }
+      var s = rnd(R, 0.55, 0.7), cols = 2 + Math.floor(R() * 2), rows = 1 + Math.floor(R() * 2);
+      return { w: cols * s, build: function (lv, x) { for (var r = 0; r < rows; r++) for (var i = 0; i < cols - r; i++) gBox(lv, x - (cols - 1) * s / 2 + i * s + r * s / 2, r * s, s, m); } };
+    },
+    pyramid: function (K) {
+      var R = K.R, rows = 2 + Math.floor(R() * (1.5 + 1.5 * K.d)), s = rnd(R, 0.9, 1.15), m = R() < 0.6 ? 'stone' : K.mat();
+      return { w: rows * s, build: function (lv, x) { var y = gPyramid(lv, x, 0, rows, s, m); gGrub(lv, x, y, R() < 0.5 ? 'm' : 's', K.helm()); } };
+    },
+    tntCellar: function (K) {
+      var w = rnd(K.R, 2.4, 2.8);
+      return { w: w + 0.2, build: function (lv, x) { gTnt(lv, x - 0.75, 0); gTnt(lv, x + 0.75, 0); var y = gPlank(lv, x, 0.7, w + 0.2, 'wood'); gTower(lv, K, x, y, 1 + (K.R() < 0.5 + 0.3 * K.d ? 1 : 0), w); } };
+    },
+    hillKeep: function (K) {
+      var R = K.R, two = R() < 0.5, hw = two ? rnd(R, 5.6, 6.4) : rnd(R, 3.0, 3.6), hh = rnd(R, 1.4, 2.8);
+      return { w: hw, build: function (lv, x) {
+        var h = gHill(lv, x, hw, hh);
+        if (two) { gTower(lv, K, x - hw / 4, h, 1 + (R() < 0.4 * K.d ? 1 : 0), 2.2); gTower(lv, K, x + hw / 4, h, 1, 2.2); }
+        else gTower(lv, K, x, h, 1 + (R() < 0.5 * K.d ? 1 : 0), Math.min(2.6, hw - 0.6));
+      } };
+    },
+    grub: function (K) { return { w: 1.2, build: function (lv, x) { gGrub(lv, x, 0, K.R() < 0.5 ? 'm' : 's', K.helm()); } }; },
+    tnt: function () { return { w: 0.8, build: function (lv, x) { gTnt(lv, x, 0); } }; }
+  };
+  // fort plans, left to right; names to go with them
+  var LAYOUTS = [
+    { p: ['tower', 'tower'], names: ['Two towers', 'Side by side', 'Twin lookouts', 'Neighbors again'] },
+    { p: ['shield', 'tall'], names: ['Behind the wall', 'Safe and sound', 'Keep out', 'Hide and seek'] },
+    { p: ['bridge'], names: ['The bridge', 'Rope walk', 'Over the top', 'High crossing'] },
+    { p: ['hut', 'hut', 'hut'], names: ['Little village', 'Row of huts', 'Three sheds', 'Cottages'] },
+    { p: ['pyramid', 'tower'], names: ['Rock and roll', 'Stone steps', 'Pile up', 'Steps and tower'] },
+    { p: ['tntCellar', 'tower'], names: ['Powder room', 'Boom cellar', 'Handle with care', 'Kaboom'] },
+    { p: ['hall'], names: ['The great hall', 'Big barn', 'Grand lodge', 'Town hall'] },
+    { p: ['grub', 'hillKeep'], names: ['King of the hill', 'Up high', 'Hilltop fort', 'The lookout'] },
+    { p: ['tall'], names: ['Sky high', 'Tall order', 'Beanstalk', 'Wobbly tower'] },
+    { p: ['shield', 'hut', 'tower'], names: ['Outpost', 'Front line', 'Gatehouse', 'Fenced in'] },
+    { p: ['tower', 'tnt', 'tower'], names: ['Spark gap', 'Between the lines', 'Hot spot', 'Fuse box'] },
+    { p: ['hillKeep', 'tower'], names: ['Hill and tower', 'Up and over', 'Ridge camp', 'Cliff side'] }
+  ];
+  var BIG = [['shield', 'hall'], ['tntCellar', 'bridge'], ['pyramid', 'tall', 'tower'], ['hillKeep', 'hall'], ['tower', 'tower', 'tower']];
+  var BREATHER = [['hut', 'hut'], ['tower'], ['hut', 'grub'], ['hall']];
+  // which plan level n uses: each run of 12 levels deals out all 12 plans (stepping by 5, which never repeats inside the run),
+  // from a start picked by the run's number; attempts past the 3rd try other plans
+  function planBase(n) { var L = LAYOUTS.length; return (hash32(Math.floor(n / L) * 31 + 7) + n * 5) % L; }
+  function planOf(n, attempt) {
+    var L = LAYOUTS.length, i = planBase(n);
+    if (n % L === 0 && i === planBase(n - 1)) i = (i + 1) % L;   // where two runs meet
+    return attempt >= 3 ? (i + attempt) % L : i;
+  }
+
+  // build level n (attempt 0, 1, ...): pieces placed left to right inside x 9.6 to 21.5 (the part of the field a phone shows best)
+  function build(n, attempt) {
+    attempt = attempt || 0;
+    var R = rng(hash32(n * 2654435761 + attempt * 40503 + 99991)), W = worldOf(n), T = tierOf(n), K = kit(R, W.theme, T.d);
+    var lv = { blocks: [], grubs: [], tnt: [], boulders: [], terrain: [], sling: 0, n: n, gen: 1, attempt: attempt }, plan, name, li = planOf(n, attempt);
+    if (T.kind === 'big') { plan = BIG[hash32(n * 13 + attempt) % BIG.length]; name = pick(R, ['Grublin stronghold', 'The big one', 'Boss fort', 'Grand finale']); }
+    else if (T.kind === 'breather') { plan = BREATHER[hash32(n * 17 + attempt) % BREATHER.length]; name = pick(R, ['Easy does it', 'Breather', 'Quick one', 'Warm-up']); }
+    else { plan = LAYOUTS[li].p; name = pick(R, LAYOUTS[li].names); }
+    var parts = plan.map(function (k) { return PIECES[k](K, T.kind === 'big'); });
+    var gaps = parts.map(function () { return rnd(R, 0.9, 1.9 - 0.6 * T.d); });
+    var need = 0; parts.forEach(function (p, i) { need += p.w + (i ? gaps[i] : 0); });
+    while (need > 11.9 && parts.length > 1) { need -= parts.pop().w + gaps.pop(); }
+    var x = 9.6 + Math.max(0, (11.9 - need)) * (0.25 + 0.5 * R());
+    // pieces go in left to right; one that would make the fort bigger than the banked ones (20 blocks, 7 Grublins) is taken back
+    // and building stops: bigger forts make the proof (and the phone) slow without making the level better
+    parts.forEach(function (p, i) {
+      if (lv.full) return;
+      var keep = {}; ['blocks', 'grubs', 'tnt', 'boulders', 'terrain'].forEach(function (k) { keep[k] = lv[k].length; });
+      if (i) x += gaps[i];
+      p.build(lv, x + p.w / 2);
+      if (lv.blocks.length > 20 || lv.grubs.length > 7 || (i && lv.blocks.length + lv.grubs.length + lv.tnt.length > 26)) {
+        for (var k in keep) lv[k].length = keep[k];
+        lv.full = true; return;
+      }
+      x += p.w;
+    });
+    delete lv.full;
+    if (!lv.grubs.length) gGrub(lv, x + 0.9, 0, 'm', false);
+    lv.name = name;
+    // birds: about one per two Grublins plus spares (fewer spares as it gets harder; breathers and big forts get one more),
+    // picked to suit the fort: the Pips for glass, Zip for wood, Rocco for stone
+    var c = { wood: 0, glass: 0, stone: 0 }; lv.blocks.forEach(function (b) { c[b.m] += b.w * b.h; });
+    var tot = c.wood + c.glass + c.stone || 1;
+    var nb = Math.round(2.3 + lv.grubs.length * 0.45 - 0.8 * T.d + (T.kind === 'normal' ? 0 : 1));
+    nb = Math.max(2, Math.min(5, nb));
+    var bw = { rocco: 1 + 2 * c.stone / tot, pips: 0.5 + 2.5 * c.glass / tot, zip: 0.5 + 2.5 * c.wood / tot };
+    var solo = R() < 0.12 ? pickW(R, bw) : null;
+    lv.birds = []; for (var b = 0; b < nb; b++) lv.birds.push(solo || pickW(R, bw));
+    return lv;
+  }
+  // make level n: build, prove; on failure the next attempt. maxSteps caps the work on one attempt (a fixed count of physics steps,
+  // not a clock, so every phone lands on the same attempt). After 10 failed attempts a breather plan is used (small, passes easily).
+  // A step machine like the Prover: run(ms) works for up to ms and returns true when done; .result is then { level, attempts, ms, steps }.
+  function Maker(n, opt) { this.n = n; this.opt = opt || {}; this.a = -1; this.pr = null; this.lv = null; this.done = false; this.result = null; this.steps = 0; this.ms = 0; }
+  Maker.prototype.next = function () {
+    var n = this.n; this.a++;
+    if (this.a >= 40) { this.done = true; return; }
+    var lv = build(n, this.a);
+    if (this.a >= 10) { var bl = build(Math.floor(n / 10) * 10 + 4, this.a); bl.n = n; bl.name = lv.name; lv = bl; }
+    this.lv = lv; this.pr = new Prover(lv, { quitEarly: true, settleSteps: 360, maxSteps: this.opt.maxSteps || 600000 });
+  };
+  Maker.prototype.run = function (ms) {
+    var t0 = now(), end = t0 + ms;
+    while (!this.done) {
+      if (!this.pr) { this.next(); if (this.done) break; }
+      var left = end - now();
+      var fin = this.pr.run(left > 0 ? left : 0);
+      if (fin) {
+        var res = this.pr.res; this.steps += this.pr.steps; this.pr = null;
+        if (res.stand && res.stand.ok && res.won) {
+          // if the search needed every bird, add one more at the end so a person has a spare. The greedy search would pick the same
+          // shots (it plays the birds in order), so the proof still holds; the spare only adds its 10,000 bonus to the best score.
+          if (res.shots.length >= this.lv.birds.length) { this.lv.birds.push(this.lv.birds[this.lv.birds.length - 1]); res.score += POINTS_BIRD; }
+          setStars(this.lv, res); this.result = { level: this.lv, attempts: this.a + 1, steps: this.steps }; this.done = true; }
+      }
+      if (now() >= end) break;
+    }
+    this.ms += now() - t0;
+    if (this.result) this.result.ms = Math.round(this.ms);
+    return this.done;
+  };
+  function make(n, opt) { var m = new Maker(n, opt); m.run(Infinity); return m.result; }
+
+  return {
+    use: use, DT: DT, MAT: MAT, BIRDS: BIRDS, GRUBS: GRUBS, SLING_H: SLING_H, MAX_PULL: MAX_PULL, VMAX: VMAX, GRAVITY: GRAVITY,
+    POINTS_GRUB: POINTS_GRUB, POINTS_BIRD: POINTS_BIRD,
+    create: create, step: step, launch: launch, launchVel: launchVel, clampPull: clampPull, useAbility: useAbility, markTouches: markTouches,
+    settled: settled, shotDone: shotDone, endShot: endShot, won: won, bonus: bonus, snapshot: snapshot, bounds: bounds, blockHP: blockHP,
+    Prover: Prover, prove: prove, setStars: setStars, BANK: BANK, WORLD_SIZE: WORLD_SIZE, THEMES: THEMES, worldOf: worldOf, tierOf: tierOf, build: build, make: make, Maker: Maker
+  };
+}
+var MB = MBMake();
+if (typeof module !== 'undefined') module.exports = MB;
+</script>
+<script>
+window.MB_LEVELS = {"worlds":[{"id":"farm","name":"Sunny Farm","levels":[{"blocks":[{"m":"wood","x":11.95,"y":0.9151,"w":0.3,"h":1.8,"a":-0.0019},{"m":"wood","x":14.05,"y":0.915,"w":0.3,"h":1.8,"a":-0.0011},{"m":"wood","x":13.0001,"y":1.9799,"w":2.6,"h":0.3,"a":-0.0001}],"grubs":[{"x":13,"y":0.505,"s":"m","helmet":0}],"tnt":[],"boulders":[],"terrain":[],"name":"First flight","birds":["rocco","rocco"],"sling":0,"settled":1,"stars":[10000,13500],"best":16150,"solve":[[10,1,null]]},{"blocks":[{"m":"wood","x":10.9499,"y":0.9151,"w":0.3,"h":1.8,"a":-0.0018},{"m":"wood","x":13.05,"y":0.915,"w":0.3,"h":1.8,"a":-0.001},{"m":"wood","x":12,"y":1.9799,"w":2.6,"h":0.3,"a":-0.0001},{"m":"wood","x":14.95,"y":0.9147,"w":0.3,"h":1.8,"a":-0.0025},{"m":"wood","x":17.05,"y":0.9146,"w":0.3,"h":1.8,"a":-0.0012},{"m":"wood","x":16.0001,"y":1.9785,"w":2.6,"h":0.3,"a":0.0001}],"grubs":[{"x":12,"y":0.365,"s":"s","helmet":0},{"x":16,"y":0.505,"s":"m","helmet":0},{"x":15.9997,"y":2.4919,"s":"s","helmet":0,"a":0.001}],"tnt":[],"boulders":[],"terrain":[],"name":"Neighbors","birds":["rocco","rocco","rocco"],"sling":0,"settled":1,"stars":[17500,23000],"best":27150,"solve":[[10,0.9,null],[0,1,null]]},{"blocks":[{"m":"wood","x":13.9503,"y":0.9134,"w":0.3,"h":1.8,"a":-0.006},{"m":"wood","x":16.0498,"y":0.9135,"w":0.3,"h":1.8,"a":-0.0016},{"m":"wood","x":15.0005,"y":1.9725,"w":2.6,"h":0.3,"a":0.0012},{"m":"wood","x":13.9496,"y":3.033,"w":0.3,"h":1.8,"a":-0.0022},{"m":"wood","x":16.0495,"y":3.0342,"w":0.3,"h":1.8,"a":-0.0046},{"m":"wood","x":14.9995,"y":4.0959,"w":2.6,"h":0.3,"a":0.0008}],"grubs":[{"x":15,"y":0.505,"s":"m","helmet":0},{"x":14.9971,"y":2.4863,"s":"s","helmet":0,"a":0.0078},{"x":14.9984,"y":4.6082,"s":"s","helmet":0,"a":0.0027}],"tnt":[],"boulders":[],"terrain":[],"name":"Two up","birds":["rocco","rocco","rocco"],"sling":0,"settled":1,"stars":[24000,31500],"best":37300,"solve":[[75,1,null]]},{"blocks":[{"m":"wood","x":11.8499,"y":0.9141,"w":0.3,"h":1.8,"a":-0.0031},{"m":"wood","x":14.1499,"y":0.9141,"w":0.3,"h":1.8,"a":-0.002},{"m":"stone","x":13,"y":1.9774,"w":2.8000000000000003,"h":0.3,"a":-0.0001},{"m":"wood","x":15.85,"y":0.9141,"w":0.3,"h":1.8,"a":-0.0032},{"m":"wood","x":18.15,"y":0.9141,"w":0.3,"h":1.8,"a":-0.0021},{"m":"stone","x":17.0001,"y":1.9774,"w":2.8000000000000003,"h":0.3}],"grubs":[{"x":13,"y":0.505,"s":"m","helmet":0},{"x":17,"y":0.505,"s":"m","helmet":0}],"tnt":[],"boulders":[],"terrain":[],"name":"Stone roof","birds":["rocco","rocco","rocco"],"sling":0,"settled":1,"stars":[20500,27000],"best":32000,"solve":[[15,0.9,null]]},{"blocks":[{"m":"wood","x":10.9856,"y":0.3146,"w":0.6,"h":0.6,"a":-0.0003},{"m":"wood","x":11.6,"y":0.3144,"w":0.6,"h":0.6,"a":0.0001},{"m":"wood","x":12.2144,"y":0.3147,"w":0.6,"h":0.6,"a":0.0003},{"m":"wood","x":11.2924,"y":0.9293,"w":0.6,"h":0.6,"a":-0.0002},{"m":"wood","x":11.9075,"y":0.9293,"w":0.6,"h":0.6,"a":0.0004},{"m":"wood","x":14.45,"y":1.2148,"w":0.3,"h":2.4,"a":-0.0021},{"m":"wood","x":16.55,"y":1.2148,"w":0.3,"h":2.4,"a":-0.0012},{"m":"wood","x":15.5001,"y":2.579,"w":2.6,"h":0.3,"a":-0.0001}],"grubs":[{"x":15.5,"y":0.505,"s":"m","helmet":1},{"x":15.5001,"y":3.0928,"s":"s","helmet":0,"a":-0.0004}],"tnt":[],"boulders":[],"terrain":[],"name":"Hay wall","birds":["rocco","rocco","rocco","rocco"],"sling":0,"settled":1,"stars":[21000,27500],"best":32900,"solve":[[5,1,null],[-5,1,null]]},{"blocks":[{"m":"glass","x":11.9498,"y":0.9149,"w":0.3,"h":1.8,"a":-0.0007},{"m":"glass","x":14.0136,"y":0.921,"w":0.3,"h":1.8,"a":-0.0528},{"m":"glass","x":12.9987,"y":1.9864,"w":2.6,"h":0.3,"a":0.0058},{"m":"glass","x":14.9896,"y":0.9201,"w":0.3,"h":1.8,"a":0.0439},{"m":"glass","x":17.0501,"y":0.915,"w":0.3,"h":1.8,"a":-0.0016},{"m":"glass","x":16.0029,"y":1.9853,"w":2.6,"h":0.3,"a":-0.005}],"grubs":[{"x":13,"y":0.365,"s":"s","helmet":0},{"x":16,"y":0.365,"s":"s","helmet":0},{"x":14.4992,"y":0.365,"s":"s","helmet":0,"a":0.0009}],"tnt":[],"boulders":[],"terrain":[],"name":"Greenhouse","birds":["pips","pips","rocco"],"sling":0,"settled":1,"stars":[24500,32000],"best":37800,"solve":[[15,0.75,0.7]]},{"blocks":[{"m":"glass","x":14.0506,"y":0.7642,"w":0.3,"h":1.5,"a":-0.002},{"m":"glass","x":15.9496,"y":0.7642,"w":0.3,"h":1.5,"a":-0.0004},{"m":"glass","x":15.0011,"y":1.6763,"w":2.4000000000000004,"h":0.3,"a":0.0007},{"m":"glass","x":14.0497,"y":2.5888,"w":0.3,"h":1.5,"a":-0.0015},{"m":"glass","x":15.9488,"y":2.5895,"w":0.3,"h":1.5,"a":-0.0021},{"m":"glass","x":14.9996,"y":3.502,"w":2.4000000000000004,"h":0.3,"a":0.0005},{"m":"glass","x":14.0483,"y":4.4154,"w":0.3,"h":1.5,"a":0.0004},{"m":"glass","x":15.9481,"y":4.4166,"w":0.3,"h":1.5,"a":-0.0003},{"m":"glass","x":14.9976,"y":5.3306,"w":2.4000000000000004,"h":0.3,"a":0.0006}],"grubs":[{"x":15,"y":0.365,"s":"s","helmet":0},{"x":14.9705,"y":2.191,"s":"s","helmet":0,"a":0.0821},{"x":14.9823,"y":4.1561,"s":"m","helmet":0,"a":0.0338}],"tnt":[],"boulders":[],"terrain":[],"name":"Glass stack","birds":["pips","pips","pips"],"sling":0,"settled":1,"stars":[25500,33500],"best":39650,"solve":[[-5,0.75,null]]},{"blocks":[{"m":"wood","x":15.0002,"y":0.8672,"w":2.6,"h":0.3,"a":0.0001},{"m":"wood","x":13.8515,"y":1.7768,"w":0.3,"h":1.5,"a":-0.005},{"m":"wood","x":16.1501,"y":1.7763,"w":0.3,"h":1.5,"a":-0.0068},{"m":"wood","x":15.0015,"y":2.6868,"w":2.8000000000000003,"h":0.3},{"m":"glass","x":13.8508,"y":3.5994,"w":0.3,"h":1.5,"a":-0.0006},{"m":"glass","x":16.1505,"y":3.5997,"w":0.3,"h":1.5,"a":-0.0019},{"m":"glass","x":15.0005,"y":4.5137,"w":2.8000000000000003,"h":0.3,"a":0.0001}],"grubs":[{"x":14.999,"y":1.5214,"s":"m","helmet":0,"a":0.0026},{"x":14.9999,"y":3.2005,"s":"s","helmet":0,"a":0.0036}],"tnt":[{"x":14.2005,"y":0.3602,"a":-0.0012},{"x":15.7999,"y":0.3602,"a":0.0012}],"boulders":[],"terrain":[],"name":"Bang barn","birds":["rocco","pips","rocco"],"sling":0,"settled":1,"stars":[23000,30000],"best":35850,"solve":[[-5,0.6,null]]},{"blocks":[{"m":"glass","x":13.95,"y":3.4151,"w":0.3,"h":1.8,"a":-0.0014},{"m":"glass","x":16.05,"y":3.415,"w":0.3,"h":1.8,"a":-0.0004},{"m":"wood","x":15.0001,"y":4.4799,"w":2.6,"h":0.3},{"m":"wood","x":16.7499,"y":3.265,"w":0.3,"h":1.5,"a":-0.0012},{"m":"wood","x":18.45,"y":3.2649,"w":0.3,"h":1.5,"a":-0.0006},{"m":"wood","x":17.6,"y":4.1798,"w":2.2,"h":0.3,"a":-0.0001}],"grubs":[{"x":15,"y":3.005,"s":"m","helmet":0},{"x":17.6,"y":2.865,"s":"s","helmet":0}],"tnt":[],"boulders":[],"terrain":[{"x":16,"y":1.25,"w":6,"h":2.5}],"name":"On the hill","birds":["rocco","pips","pips"],"sling":0,"settled":1,"stars":[20500,26500],"best":31650,"solve":[[30,0.9,null]]},{"blocks":[{"m":"wood","x":13.6504,"y":0.9131,"w":0.3,"h":1.8,"a":-0.0064},{"m":"wood","x":16.3498,"y":0.9131,"w":0.3,"h":1.8,"a":-0.0024},{"m":"wood","x":15.0005,"y":1.9714,"w":3.2,"h":0.3,"a":0.001},{"m":"glass","x":13.6497,"y":2.8818,"w":0.3,"h":1.5,"a":-0.0021},{"m":"glass","x":16.3496,"y":2.8831,"w":0.3,"h":1.5,"a":-0.0042},{"m":"glass","x":14.9996,"y":3.7949,"w":3.2,"h":0.3,"a":0.0006}],"grubs":[{"x":15,"y":0.705,"s":"l","helmet":0},{"x":14.9976,"y":2.625,"s":"m","helmet":0,"a":0.0048},{"x":14.9986,"y":4.3078,"s":"s","helmet":0,"a":0.0021}],"tnt":[],"boulders":[],"terrain":[],"name":"Frosty top","birds":["pips","rocco","pips","rocco"],"sling":0,"settled":1,"stars":[31000,40500],"best":48000,"solve":[[55,0.75,0.45]]},{"blocks":[{"m":"wood","x":12.5501,"y":0.9137,"w":0.3,"h":1.8,"a":-0.0056},{"m":"wood","x":14.4498,"y":0.9136,"w":0.3,"h":1.8,"a":-0.0013},{"m":"wood","x":13.4999,"y":1.9732,"w":2.4000000000000004,"h":0.3,"a":-0.0002},{"m":"wood","x":12.5499,"y":3.0353,"w":0.3,"h":1.8,"a":-0.0014},{"m":"wood","x":14.4497,"y":3.0352,"w":0.3,"h":1.8,"a":-0.0041},{"m":"wood","x":13.4999,"y":4.0992,"w":2.4000000000000004,"h":0.3,"a":-0.0001},{"m":"wood","x":16.5502,"y":0.9137,"w":0.3,"h":1.8,"a":-0.0057},{"m":"wood","x":18.4498,"y":0.9137,"w":0.3,"h":1.8,"a":-0.0014},{"m":"wood","x":17.5004,"y":1.9734,"w":2.4000000000000004,"h":0.3,"a":0.0005},{"m":"wood","x":16.5497,"y":3.0349,"w":0.3,"h":1.8,"a":-0.0007},{"m":"wood","x":18.4495,"y":3.0361,"w":0.3,"h":1.8,"a":-0.0034},{"m":"wood","x":17.4993,"y":4.0994,"w":2.4000000000000004,"h":0.3,"a":0.0007}],"grubs":[{"x":13.5,"y":0.365,"s":"s","helmet":0},{"x":13.5002,"y":2.4863,"s":"s","helmet":0,"a":-0.0006},{"x":17.5,"y":0.505,"s":"m","helmet":0},{"x":17.4992,"y":2.4866,"s":"s","helmet":0,"a":0.0024}],"tnt":[],"boulders":[],"terrain":[],"name":"Zip zap","birds":["zip","zip","rocco"],"sling":0,"settled":1,"stars":[28500,37500],"best":44300,"solve":[[-5,0.6,0.35]]},{"blocks":[{"m":"wood","x":10,"y":1.2153,"w":0.3,"h":2.4,"a":-0.0022},{"m":"wood","x":10.9,"y":1.2153,"w":0.3,"h":2.4,"a":-0.0022},{"m":"wood","x":11.8,"y":1.2153,"w":0.3,"h":2.4,"a":-0.0022},{"m":"wood","x":12.7,"y":1.2153,"w":0.3,"h":2.4,"a":-0.0022},{"m":"wood","x":13.6,"y":1.2153,"w":0.3,"h":2.4,"a":-0.0022},{"m":"wood","x":17.05,"y":0.9147,"w":0.3,"h":1.8,"a":-0.0024},{"m":"wood","x":18.95,"y":0.9147,"w":0.3,"h":1.8,"a":-0.0011},{"m":"wood","x":18.0001,"y":1.9786,"w":2.4000000000000004,"h":0.3,"a":0.0001}],"grubs":[{"x":15.5,"y":0.505,"s":"m","helmet":0},{"x":18,"y":0.365,"s":"s","helmet":0},{"x":17.9997,"y":2.4921,"s":"s","helmet":0,"a":0.001}],"tnt":[],"boulders":[],"terrain":[],"name":"Long fence","birds":["zip","zip","zip"],"sling":0,"settled":1,"stars":[19000,25000],"best":29900,"solve":[[10,1,0.6],[10,0.75,0.35]]},{"blocks":[{"m":"stone","x":13.7856,"y":0.614,"w":1.2,"h":1.2,"a":-0.0006},{"m":"stone","x":15.0003,"y":0.6131,"w":1.2,"h":1.2,"a":0.0001},{"m":"stone","x":16.2149,"y":0.6142,"w":1.2,"h":1.2,"a":0.0005},{"m":"stone","x":14.3912,"y":1.8277,"w":1.2,"h":1.2,"a":-0.0014},{"m":"stone","x":15.6086,"y":1.8276,"w":1.2,"h":1.2,"a":0.0014},{"m":"stone","x":15,"y":3.0411,"w":1.2,"h":1.2}],"grubs":[{"x":15.0002,"y":4.1446,"s":"m","helmet":0,"a":-0.0003},{"x":17.6,"y":0.365,"s":"s","helmet":0},{"x":12.7998,"y":1.078,"s":"s","helmet":0,"a":0.0006}],"tnt":[{"x":12.8,"y":0.3641,"a":0.0001}],"boulders":[],"terrain":[],"name":"Rock pile","birds":["rocco","zip","pips"],"sling":0,"settled":1,"stars":[17500,22500],"best":27050,"solve":[[45,0.75,null],[15,1,0.6]]},{"blocks":[{"m":"wood","x":12.9507,"y":0.9128,"w":0.3,"h":1.8,"a":-0.0069},{"m":"wood","x":15.0496,"y":0.9128,"w":0.3,"h":1.8,"a":-0.0016},{"m":"wood","x":13.9998,"y":1.9686,"w":2.6,"h":0.3,"a":-0.0003},{"m":"glass","x":12.9501,"y":3.0278,"w":0.3,"h":1.8,"a":-0.0054},{"m":"glass","x":15.0494,"y":3.0275,"w":0.3,"h":1.8,"a":-0.0077},{"m":"glass","x":14.0002,"y":4.0883,"w":2.6,"h":0.3,"a":-0.0003},{"m":"wood","x":16.95,"y":0.765,"w":0.3,"h":1.5,"a":-0.0015},{"m":"wood","x":19.05,"y":0.7649,"w":0.3,"h":1.5,"a":-0.0008},{"m":"wood","x":18.0001,"y":1.6797,"w":2.6,"h":0.3}],"grubs":[{"x":14,"y":0.365,"s":"s","helmet":0},{"x":14.0006,"y":2.6226,"s":"m","helmet":0,"a":-0.0014},{"x":18,"y":0.505,"s":"m","helmet":0}],"tnt":[],"boulders":[{"x":14.0002,"y":4.8397,"r":0.6,"a":0.0001}],"terrain":[],"name":"Rolling stone","birds":["rocco","zip","pips"],"sling":0,"settled":1,"stars":[25000,32500],"best":38750,"solve":[[10,1,null]]},{"blocks":[{"m":"wood","x":12.1502,"y":0.9146,"w":0.3,"h":1.8,"a":-0.0013},{"m":"wood","x":13.8496,"y":0.9145,"w":0.3,"h":1.8,"a":-0.0003},{"m":"wood","x":12.9998,"y":1.9778,"w":2.2,"h":0.3},{"m":"wood","x":12.1492,"y":3.0419,"w":0.3,"h":1.8,"a":-0.0022},{"m":"wood","x":13.8489,"y":3.041,"w":0.3,"h":1.8,"a":-0.0036},{"m":"wood","x":13.0003,"y":4.1054,"w":2.2,"h":0.3,"a":-0.0005},{"m":"wood","x":17.1505,"y":0.9146,"w":0.3,"h":1.8,"a":-0.0015},{"m":"wood","x":18.8498,"y":0.9146,"w":0.3,"h":1.8,"a":-0.0002},{"m":"wood","x":18.0011,"y":1.9778,"w":2.2,"h":0.3,"a":0.0006},{"m":"wood","x":17.1499,"y":3.0412,"w":0.3,"h":1.8,"a":-0.001},{"m":"wood","x":18.8494,"y":3.0418,"w":0.3,"h":1.8,"a":-0.0016},{"m":"wood","x":17.9998,"y":4.1054,"w":2.2,"h":0.3,"a":0.0005},{"m":"glass","x":15.4996,"y":4.4189,"w":5.4,"h":0.3}],"grubs":[{"x":13,"y":0.365,"s":"s","helmet":0},{"x":12.9923,"y":2.4926,"s":"s","helmet":0,"a":0.0203},{"x":18,"y":0.365,"s":"s","helmet":0},{"x":17.9654,"y":2.4926,"s":"s","helmet":0,"a":0.0966},{"x":15.5003,"y":5.0733,"s":"m","helmet":0,"a":-0.0012}],"tnt":[],"boulders":[],"terrain":[],"name":"Two towers","birds":["pips","zip","rocco","rocco"],"sling":0,"settled":1,"stars":[33500,44000],"best":52050,"solve":[[40,0.75,1],[20,0.75,0.9]]},{"blocks":[{"m":"stone","x":14.35,"y":3.015,"w":0.3,"h":2,"a":-0.001},{"m":"stone","x":16.65,"y":3.0149,"w":0.3,"h":2,"a":-0.0003},{"m":"wood","x":15.5001,"y":4.1796,"w":2.8000000000000003,"h":0.3},{"m":"wood","x":17.3498,"y":3.0144,"w":0.3,"h":2,"a":-0.0025},{"m":"wood","x":19.6499,"y":3.0144,"w":0.3,"h":2,"a":-0.0016},{"m":"stone","x":18.5,"y":4.1781,"w":2.8000000000000003,"h":0.3,"a":-0.0001}],"grubs":[{"x":15.5,"y":2.505,"s":"m","helmet":1},{"x":18.5,"y":2.505,"s":"m","helmet":1},{"x":15.4997,"y":4.6937,"s":"s","helmet":0,"a":0.0007}],"tnt":[],"boulders":[],"terrain":[{"x":17,"y":1,"w":7,"h":2}],"name":"Castle keep","birds":["zip","pips","rocco","rocco"],"sling":0,"settled":1,"stars":[30500,40000],"best":47200,"solve":[[35,0.6,0.6]]},{"blocks":[{"m":"glass","x":14.1503,"y":0.8137,"w":0.3,"h":1.6,"a":-0.0054},{"m":"glass","x":15.8498,"y":0.8137,"w":0.3,"h":1.6,"a":-0.001},{"m":"glass","x":15.0005,"y":1.7736,"w":2.2,"h":0.3,"a":0.0004},{"m":"glass","x":14.1497,"y":2.7353,"w":0.3,"h":1.6,"a":-0.0005},{"m":"glass","x":15.8495,"y":2.7364,"w":0.3,"h":1.6,"a":-0.0035},{"m":"glass","x":14.9993,"y":3.6998,"w":2.2,"h":0.3,"a":0.0006},{"m":"glass","x":18.1503,"y":0.8137,"w":0.3,"h":1.6,"a":-0.0054},{"m":"glass","x":19.8498,"y":0.8137,"w":0.3,"h":1.6,"a":-0.001},{"m":"glass","x":19.0005,"y":1.7736,"w":2.2,"h":0.3,"a":0.0004},{"m":"glass","x":18.1497,"y":2.7353,"w":0.3,"h":1.6,"a":-0.0005},{"m":"glass","x":19.8495,"y":2.7364,"w":0.3,"h":1.6,"a":-0.0035},{"m":"glass","x":18.9993,"y":3.6998,"w":2.2,"h":0.3,"a":0.0006}],"grubs":[{"x":15,"y":0.365,"s":"s","helmet":0},{"x":14.9992,"y":2.2869,"s":"s","helmet":0,"a":0.0025},{"x":19,"y":0.505,"s":"m","helmet":0},{"x":18.9992,"y":2.2869,"s":"s","helmet":0,"a":0.0025}],"tnt":[{"x":13,"y":0.3638,"a":0.0002},{"x":13,"y":1.0767,"a":0.0004},{"x":17,"y":0.365}],"boulders":[],"terrain":[],"name":"Powder keg","birds":["pips","pips","zip"],"sling":0,"settled":1,"stars":[32000,41500],"best":49400,"solve":[[-5,0.6,null]]},{"blocks":[{"m":"wood","x":14.0506,"y":0.9123,"w":0.3,"h":1.8,"a":-0.0071},{"m":"wood","x":17.9498,"y":0.9123,"w":0.3,"h":1.8,"a":-0.0037},{"m":"wood","x":16.0007,"y":1.969,"w":4.4,"h":0.3,"a":0.0007},{"m":"glass","x":14.45,"y":2.8785,"w":0.3,"h":1.5,"a":-0.0032},{"m":"glass","x":17.5495,"y":2.8794,"w":0.3,"h":1.5,"a":-0.0045},{"m":"stone","x":15.9995,"y":3.7898,"w":3.6,"h":0.3,"a":0.0005},{"m":"wood","x":15.0492,"y":4.5528,"w":0.3,"h":1.2,"a":-0.0015},{"m":"wood","x":16.949,"y":4.5534,"w":0.3,"h":1.2,"a":-0.0005},{"m":"wood","x":15.9991,"y":5.3155,"w":2.4000000000000004,"h":0.3,"a":0.0005}],"grubs":[{"x":15,"y":0.505,"s":"m","helmet":0},{"x":17,"y":0.505,"s":"m","helmet":0},{"x":15.9969,"y":2.4834,"s":"s","helmet":0,"a":0.009},{"x":15.9976,"y":5.8284,"s":"s","helmet":1,"a":0.0035}],"tnt":[],"boulders":[],"terrain":[],"name":"Farmhouse","birds":["rocco","pips","zip","rocco"],"sling":0,"settled":1,"stars":[35000,45500],"best":53950,"solve":[[15,1,null]]},{"blocks":[{"m":"wood","x":11.15,"y":2.2651,"w":0.3,"h":1.5,"a":-0.0016},{"m":"wood","x":12.85,"y":2.2649,"w":0.3,"h":1.5,"a":-0.0007},{"m":"wood","x":12.0001,"y":3.1798,"w":2.2,"h":0.3,"a":-0.0001},{"m":"glass","x":18.9499,"y":3.9146,"w":0.3,"h":1.8,"a":-0.0021},{"m":"glass","x":21.05,"y":3.9146,"w":0.3,"h":1.8,"a":-0.0014},{"m":"stone","x":20,"y":4.9787,"w":2.6,"h":0.3,"a":-0.0001}],"grubs":[{"x":12,"y":1.865,"s":"s","helmet":0},{"x":20,"y":3.505,"s":"m","helmet":1},{"x":16,"y":0.505,"s":"m","helmet":0}],"tnt":[],"boulders":[],"terrain":[{"x":12,"y":0.75,"w":3,"h":1.5},{"x":20,"y":1.5,"w":4,"h":3}],"name":"Twin hills","birds":["zip","pips","rocco","zip"],"sling":0,"settled":1,"stars":[24000,31500],"best":37500,"solve":[[30,0.6,0.6],[25,0.9,0.45]]},{"blocks":[{"m":"stone","x":12,"y":1.0225,"w":0.6,"h":0.6,"a":0.0007},{"m":"stone","x":10.1925,"y":0.315,"w":0.6,"h":0.6},{"m":"stone","x":10.8075,"y":0.315,"w":0.6,"h":0.6},{"m":"stone","x":13.95,"y":0.8141,"w":0.3,"h":1.6,"a":-0.0021},{"m":"stone","x":16.0498,"y":0.8141,"w":0.3,"h":1.6,"a":-0.0005},{"m":"stone","x":15.0004,"y":1.7758,"w":2.6,"h":0.3,"a":-0.0004},{"m":"wood","x":13.9515,"y":2.7365,"w":0.3,"h":1.6,"a":-0.0091},{"m":"wood","x":16.0498,"y":2.7363,"w":0.3,"h":1.6,"a":-0.0056},{"m":"wood","x":15,"y":3.6917,"w":2.6,"h":0.3,"a":-0.0004},{"m":"glass","x":13.9501,"y":4.6506,"w":0.3,"h":1.6,"a":-0.0053},{"m":"glass","x":16.049,"y":4.6502,"w":0.3,"h":1.6,"a":-0.0079},{"m":"glass","x":14.9995,"y":5.611,"w":2.6,"h":0.3,"a":-0.0003},{"m":"wood","x":17.9504,"y":0.9133,"w":0.3,"h":1.8,"a":-0.0065},{"m":"wood","x":20.0497,"y":0.9133,"w":0.3,"h":1.8,"a":-0.0017},{"m":"wood","x":19.0006,"y":1.9717,"w":2.6,"h":0.3,"a":0.0014},{"m":"glass","x":17.9496,"y":3.0319,"w":0.3,"h":1.8,"a":-0.0016},{"m":"glass","x":20.0495,"y":3.0333,"w":0.3,"h":1.8,"a":-0.0045},{"m":"glass","x":18.9995,"y":4.0953,"w":2.6,"h":0.3,"a":0.0008}],"grubs":[{"x":15,"y":0.505,"s":"m","helmet":1},{"x":15.0018,"y":2.4306,"s":"m","helmet":0,"a":-0.0031},{"x":14.9999,"y":4.2056,"s":"s","helmet":0,"a":0.0006},{"x":19,"y":0.705,"s":"l","helmet":1},{"x":18.9968,"y":2.4856,"s":"s","helmet":0,"a":0.0087},{"x":18.9983,"y":4.6081,"s":"s","helmet":0,"a":0.0028}],"tnt":[{"x":12,"y":0.3618,"a":0.0003}],"boulders":[{"x":14.9987,"y":6.3124,"r":0.55,"a":0.0016}],"terrain":[],"name":"Grublin fort","birds":["rocco","pips","zip","rocco","pips"],"sling":0,"settled":1,"stars":[44000,57500],"best":68000,"solve":[[10,0.9,null],[60,0.9,1]]}]}]};
+</script>
+<script>
+/* Mean Birds drawings: our own birds, Grublins, materials and the Sunny Farm backdrop, all drawn on a canvas. */
+var MBDraw = (function () {
+  'use strict';
+  function rr(c, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  function hash(n) { n = (n * 2654435761) >>> 0; n ^= n >>> 15; return (n % 1000) / 1000; }
+
+  // ---------------- birds (facing right at angle 0; r = radius in pixels) ----------------
+  function eye(c, x, y, s, look) {
+    c.fillStyle = '#fff'; c.beginPath(); c.ellipse(x, y, s, s * 1.08, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#10141f'; c.beginPath(); c.arc(x + s * 0.3 * (look || 1), y + s * 0.05, s * 0.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(x + s * 0.45, y - s * 0.25, s * 0.16, 0, Math.PI * 2); c.fill();
+  }
+  function lid(c, x, y, s, col) { // a flat top lid: a determined look, not an angry brow
+    c.fillStyle = col; c.beginPath(); c.rect(x - s * 1.2, y - s * 1.3, s * 2.4, s * 0.85); c.fill();
+  }
+  function bird(c, type, x, y, r, a, opt) {
+    opt = opt || {};
+    c.save(); c.translate(x, y); c.rotate(-(a || 0));
+    if (type === 'rocco') {
+      // a rook: slim blue-black body, a pale grey beak, a red scarf
+      c.fillStyle = '#1f2740'; c.beginPath(); c.moveTo(-r * 0.9, -r * 0.1); c.lineTo(-r * 1.55, -r * 0.45); c.lineTo(-r * 1.45, r * 0.15); c.closePath(); c.fill();
+      c.fillStyle = '#2b3552'; c.beginPath(); c.ellipse(0, 0, r * 1.08, r, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#46557e'; c.beginPath(); c.ellipse(-r * 0.12, r * 0.38, r * 0.62, r * 0.42, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#e53a3a'; c.beginPath(); c.ellipse(-r * 0.05, r * 0.15, r * 0.95, r * 0.22, -0.15, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(-r * 0.7, r * 0.2); c.lineTo(-r * 1.2, r * 0.85); c.lineTo(-r * 0.75, r * 0.72); c.closePath(); c.fill();
+      c.fillStyle = '#b8c0cc'; c.beginPath(); c.moveTo(r * 0.78, -r * 0.3); c.lineTo(r * 1.62, -r * 0.08); c.lineTo(r * 0.8, r * 0.18); c.closePath(); c.fill();
+      c.strokeStyle = '#8a93a0'; c.lineWidth = Math.max(1, r * 0.05); c.beginPath(); c.moveTo(r * 0.85, -r * 0.06); c.lineTo(r * 1.45, -r * 0.08); c.stroke();
+      eye(c, r * 0.45, -r * 0.38, r * 0.26, 1); if (!opt.wide) lid(c, r * 0.45, -r * 0.38, r * 0.26, '#2b3552');
+    } else if (type === 'pips') {
+      // a finch: small, round, sky blue with a cream belly and a short orange cone beak
+      c.fillStyle = '#2f8fd8'; c.beginPath(); c.moveTo(-r * 0.8, -r * 0.1); c.lineTo(-r * 1.45, -r * 0.35); c.lineTo(-r * 1.35, r * 0.25); c.closePath(); c.fill();
+      c.fillStyle = '#4db8ff'; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#fff1d6'; c.beginPath(); c.ellipse(r * 0.05, r * 0.42, r * 0.58, r * 0.4, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#2f8fd8'; c.beginPath(); c.moveTo(-r * 0.1, -r * 0.95); c.quadraticCurveTo(r * 0.1, -r * 1.45, r * 0.3, -r * 0.92); c.fill();
+      c.fillStyle = '#ff9f1c'; c.beginPath(); c.moveTo(r * 0.8, -r * 0.22); c.lineTo(r * 1.35, r * 0.02); c.lineTo(r * 0.8, r * 0.24); c.closePath(); c.fill();
+      eye(c, r * 0.42, -r * 0.3, r * 0.26, 1);
+    } else if (type === 'zip') {
+      // a swift: yellow, long wings swept back, a forked tail
+      c.fillStyle = '#e0a800'; c.beginPath(); c.moveTo(-r * 0.7, -r * 0.1); c.lineTo(-r * 1.9, -r * 0.55); c.lineTo(-r * 1.3, 0); c.lineTo(-r * 1.9, r * 0.45); c.lineTo(-r * 0.7, r * 0.15); c.closePath(); c.fill();
+      c.fillStyle = '#ffd23c'; c.beginPath(); c.moveTo(r * 1.35, 0); c.quadraticCurveTo(r * 0.6, -r * 1.05, -r * 0.9, -r * 0.35); c.quadraticCurveTo(-r * 1.0, r * 0.55, r * 0.2, r * 0.8); c.quadraticCurveTo(r * 1.1, r * 0.6, r * 1.35, 0); c.fill();
+      c.fillStyle = '#e0a800'; c.beginPath(); c.moveTo(-r * 0.2, -r * 0.1); c.lineTo(-r * 1.2, -r * 0.95); c.lineTo(-r * 0.55, r * 0.1); c.closePath(); c.fill();
+      c.fillStyle = '#fff4c2'; c.beginPath(); c.ellipse(r * 0.3, r * 0.4, r * 0.55, r * 0.26, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#4a3a10'; c.beginPath(); c.moveTo(r * 1.25, -r * 0.08); c.lineTo(r * 1.7, r * 0.04); c.lineTo(r * 1.25, r * 0.16); c.closePath(); c.fill();
+      c.fillStyle = '#3d2f0a'; c.beginPath(); c.ellipse(r * 0.62, -r * 0.3, r * 0.42, r * 0.13, -0.2, 0, Math.PI * 2); c.fill();
+      eye(c, r * 0.62, -r * 0.3, r * 0.2, 1);
+    }
+    c.restore();
+  }
+
+  // ---------------- Grublins: plump striped grubs with little masks ----------------
+  function grub(c, x, y, r, a, helmet, hp, t, look) {
+    c.save(); c.translate(x, y); c.rotate(-(a || 0));
+    var body = '#ff9a3c', stripe = '#7b4bd6';
+    c.fillStyle = body; c.beginPath(); c.ellipse(0, r * 0.05, r * 1.04, r * 0.96, 0, 0, Math.PI * 2); c.fill();
+    c.save(); c.beginPath(); c.ellipse(0, r * 0.05, r * 1.04, r * 0.96, 0, 0, Math.PI * 2); c.clip();
+    c.fillStyle = stripe;
+    [-0.55, 0.05, 0.62].forEach(function (k) { c.beginPath(); c.ellipse(r * k, r * 0.3, r * 0.14, r * 1.1, 0.12, 0, Math.PI * 2); c.fill(); });
+    c.fillStyle = 'rgba(255,255,255,.22)'; c.beginPath(); c.ellipse(-r * 0.3, -r * 0.45, r * 0.5, r * 0.22, -0.3, 0, Math.PI * 2); c.fill();
+    c.restore();
+    // mask across the eyes
+    c.fillStyle = '#3b2a5c'; rr(c, -r * 0.82, -r * 0.5, r * 1.64, r * 0.48, r * 0.24); c.fill();
+    var ey = -r * 0.26, dl = look || -1;
+    [-0.34, 0.34].forEach(function (k) {
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(r * k, ey, r * 0.2, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#10141f'; c.beginPath(); c.arc(r * k + r * 0.07 * dl, ey + r * 0.03, r * 0.1, 0, Math.PI * 2); c.fill();
+    });
+    // a cheeky grin
+    c.strokeStyle = '#7a3a12'; c.lineWidth = Math.max(1, r * 0.08); c.lineCap = 'round';
+    c.beginPath(); c.arc(0, r * 0.12, r * 0.3, 0.25, Math.PI - 0.25); c.stroke();
+    // antennae
+    c.strokeStyle = '#7b4bd6'; c.lineWidth = Math.max(1, r * 0.08);
+    if (!helmet) [-1, 1].forEach(function (k) { c.beginPath(); c.moveTo(r * 0.25 * k, -r * 0.85); c.quadraticCurveTo(r * 0.35 * k, -r * 1.3, r * 0.55 * k, -r * 1.28); c.stroke(); c.fillStyle = '#7b4bd6'; c.beginPath(); c.arc(r * 0.57 * k, -r * 1.28, r * 0.11, 0, Math.PI * 2); c.fill(); });
+    else { // an acorn cap helmet
+      c.fillStyle = '#8a5a2b'; c.beginPath(); c.ellipse(0, -r * 0.72, r * 0.95, r * 0.5, 0, Math.PI, 0); c.fill();
+      c.strokeStyle = '#6b4220'; c.lineWidth = Math.max(1, r * 0.05);
+      for (var i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(r * 0.28 * i, -r * 0.72); c.lineTo(r * 0.28 * i + r * 0.2, -r * 1.12); c.stroke(); }
+      c.fillStyle = '#6b4220'; c.fillRect(-r * 0.08, -r * 1.36, r * 0.16, r * 0.2);
+      if (hp < 0.55) { c.strokeStyle = '#3b2410'; c.beginPath(); c.moveTo(-r * 0.3, -r * 1.1); c.lineTo(-r * 0.1, -r * 0.85); c.lineTo(-r * 0.25, -r * 0.75); c.stroke(); }
+    }
+    if (hp < 0.5 && !helmet) { c.fillStyle = 'rgba(122,58,18,.55)'; c.beginPath(); c.arc(r * 0.5, r * 0.3, r * 0.14, 0, Math.PI * 2); c.fill(); }
+    c.restore();
+  }
+
+  // ---------------- blocks ----------------
+  var MATS = {
+    wood: { fill: '#d39a5a', edge: '#8a5a2b', line: 'rgba(120,70,30,.45)' },
+    glass: { fill: 'rgba(178,226,255,.72)', edge: '#6fb4e6', line: 'rgba(255,255,255,.85)' },
+    stone: { fill: '#a3abb5', edge: '#6b737c', line: 'rgba(80,88,98,.5)' }
+  };
+  function cracks(c, w, h, hp, id) {
+    if (hp > 0.66) return;
+    c.strokeStyle = 'rgba(30,30,40,.55)'; c.lineWidth = Math.max(1, Math.min(w, h) * 0.06);
+    var n = hp > 0.33 ? 1 : 2;
+    for (var k = 0; k < n; k++) {
+      var sx = (hash(id * 7 + k) - 0.5) * w * 0.6, sy = -h / 2;
+      c.beginPath(); c.moveTo(sx, sy);
+      for (var j = 1; j <= 3; j++) c.lineTo(sx + (hash(id * 13 + j + k * 5) - 0.5) * w * 0.4, sy + h * j / 3);
+      c.stroke();
+    }
+  }
+  function block(c, x, y, w, h, a, m, hp, id) {
+    var M = MATS[m] || MATS.wood, rad = Math.min(w, h) * 0.14;
+    c.save(); c.translate(x, y); c.rotate(-a);
+    rr(c, -w / 2, -h / 2, w, h, rad); c.fillStyle = M.fill; c.fill();
+    c.lineWidth = Math.max(1, Math.min(w, h) * 0.08); c.strokeStyle = M.edge; c.stroke();
+    c.save(); rr(c, -w / 2, -h / 2, w, h, rad); c.clip();
+    if (m === 'wood') {
+      c.strokeStyle = M.line; c.lineWidth = Math.max(1, Math.min(w, h) * 0.05);
+      var along = w >= h, L = along ? w : h, S = along ? h : w;
+      for (var i = 1; i <= 2; i++) { var o = -S / 2 + S * i / 3; c.beginPath(); if (along) { c.moveTo(-L / 2 + L * 0.08, o); c.lineTo(L / 2 - L * 0.12, o); } else { c.moveTo(o, -L / 2 + L * 0.1); c.lineTo(o, L / 2 - L * 0.08); } c.stroke(); }
+    } else if (m === 'glass') {
+      c.strokeStyle = M.line; c.lineWidth = Math.max(1.5, Math.min(w, h) * 0.12);
+      c.beginPath(); c.moveTo(-w * 0.35, h * 0.35); c.lineTo(-w * 0.05, -h * 0.35); c.stroke();
+    } else {
+      c.fillStyle = M.line;
+      for (var k = 0; k < 4; k++) { c.beginPath(); c.arc((hash(id * 3 + k) - 0.5) * w * 0.8, (hash(id * 5 + k) - 0.5) * h * 0.7, Math.min(w, h) * 0.07, 0, Math.PI * 2); c.fill(); }
+    }
+    cracks(c, w, h, hp, id);
+    c.restore(); c.restore();
+  }
+  function tnt(c, x, y, s, a) {
+    c.save(); c.translate(x, y); c.rotate(-a);
+    rr(c, -s / 2, -s / 2, s, s, s * 0.1); c.fillStyle = '#e8453c'; c.fill(); c.lineWidth = Math.max(1, s * 0.07); c.strokeStyle = '#9b231c'; c.stroke();
+    c.fillStyle = '#ffd23c'; c.fillRect(-s / 2, -s * 0.16, s, s * 0.32);
+    c.fillStyle = '#9b231c'; c.font = '900 ' + (s * 0.27).toFixed(1) + 'px -apple-system,system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('BOOM', 0, s * 0.01);
+    c.restore();
+  }
+  function boulder(c, x, y, r, a, hp, id) {
+    c.save(); c.translate(x, y); c.rotate(-a);
+    c.fillStyle = '#9aa2ac'; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+    c.lineWidth = Math.max(1, r * 0.08); c.strokeStyle = '#6b737c'; c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(-r * 0.3, -r * 0.35, r * 0.3, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(80,88,98,.5)'; [[0.35, 0.2], [-0.2, 0.45], [0.1, -0.5]].forEach(function (p) { c.beginPath(); c.arc(p[0] * r, p[1] * r, r * 0.12, 0, Math.PI * 2); c.fill(); });
+    c.save(); c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.clip(); cracks(c, r * 2, r * 2, hp, id); c.restore();
+    c.restore();
+  }
+  function terrain(c, x, y, w, h, theme) { // screen rect: grassy earth (snowy, sandy... in the other worlds)
+    var T = THEMES[theme];
+    rr(c, x, y, w, h + 30, 8); c.fillStyle = T && theme !== 'farm' ? T.ground : '#b07c45'; c.fill();
+    c.fillStyle = 'rgba(0,0,0,.08)'; for (var i = 0; i < 6; i++) { c.beginPath(); c.arc(x + w * (0.12 + 0.15 * i), y + h * (0.4 + 0.3 * hash(i + w | 0)), Math.max(2, h * 0.05), 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = T ? T.grass[0] : '#6cc24a'; rr(c, x - 2, y - 2, w + 4, Math.max(8, h * 0.18), 6); c.fill();
+  }
+
+  // ---------------- backdrops: one per world theme (Sunny Farm is the original), in layers that move at different speeds ----------------
+  // sky top / middle / bottom, far and near hills (amp, base), ground and grass, the level-select background, and night for dark skies
+  var THEMES = {
+    farm: { sky: ['#79c9ff', '#d4f0ff', '#eaf8ff'], far: '#a7dca0', farAmp: 5, near: '#8fd07c', ground: '#9b6b3a', grass: ['#6cc24a', '#58a83a'], fence: 1, sel: 'linear-gradient(#8fd6ff, #d9f3ff 70%, #bfe7a8)' },
+    woods: { sky: ['#86c3e6', '#d8efe6', '#eef8f2'], far: '#8cc49a', farAmp: 6, near: '#5fa86a', ground: '#7a5530', grass: ['#4f9a3a', '#3f852e'], fence: 1, sel: 'linear-gradient(#86c3e6, #d8efe6 70%, #9fd39a)' },
+    sea: { sky: ['#5fbcff', '#cfeeff', '#f1fbff'], far: '#4aa3d8', farAmp: 0.6, near: '#e6cf8e', ground: '#b98e57', grass: ['#e8d49a', '#d4bd7f'], sel: 'linear-gradient(#5fbcff, #cfeeff 70%, #ecd9a0)' },
+    snow: { sky: ['#9fc2e6', '#e3eef8', '#f6f9fc'], far: '#e4edf6', farAmp: 9, near: '#cfdfee', ground: '#7d7368', grass: ['#f7fafd', '#dce7f1'], sel: 'linear-gradient(#9fc2e6, #e3eef8 70%, #ffffff)' },
+    mine: { sky: ['#f0a95f', '#fbd9a6', '#fff0d6'], far: '#cf7e52', farAmp: 7, near: '#b9643c', ground: '#7a4426', grass: ['#c98a4a', '#b07438'], sel: 'linear-gradient(#f0a95f, #fbd9a6 70%, #e0a46a)' },
+    fair: { sky: ['#141b45', '#3b2f6e', '#5a3f7a'], far: '#2a2d5c', farAmp: 4, near: '#363c6e', ground: '#4a3a2a', grass: ['#3c7a3a', '#2f652e'], night: 1, sel: 'linear-gradient(#141b45, #3b2f6e 70%, #2a2d5c)' }
+  };
+  function backdrop(c, W, H, cam, gy, t, theme) {
+    var T = THEMES[theme] || THEMES.farm, id = THEMES[theme] ? theme : 'farm';
+    var g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, T.sky[0]); g.addColorStop(0.7, T.sky[1]); g.addColorStop(1, T.sky[2]);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    var z = cam.z, i;
+    if (T.night) { // stars and a moon
+      c.fillStyle = 'rgba(255,255,255,.8)';
+      for (i = 0; i < 40; i++) { var stx = (hash(i + 1) * W * 1.3 - cam.x * z * 0.03) % W, sty = hash(i + 101) * H * 0.55, tw = 0.6 + 0.4 * Math.sin(t * 2 + i); c.globalAlpha = tw; c.fillRect((stx + W) % W, sty, 2, 2); }
+      c.globalAlpha = 1;
+      c.fillStyle = '#fff6d8'; c.beginPath(); c.arc(W * 0.82, H * 0.18, Math.min(W, H) * 0.06, 0, Math.PI * 2); c.fill();
+      c.fillStyle = T.sky[0]; c.beginPath(); c.arc(W * 0.82 + Math.min(W, H) * 0.025, H * 0.18 - Math.min(W, H) * 0.015, Math.min(W, H) * 0.05, 0, Math.PI * 2); c.fill();
+    } else { // sun
+      c.fillStyle = id === 'mine' ? 'rgba(255,245,200,.95)' : 'rgba(255,236,150,.9)'; c.beginPath(); c.arc(W * 0.82, H * 0.18, Math.min(W, H) * 0.07, 0, Math.PI * 2); c.fill();
+    }
+    // clouds drift slowly
+    c.fillStyle = T.night ? 'rgba(160,170,220,.25)' : 'rgba(255,255,255,.9)';
+    for (i = 0; i < (id === 'mine' ? 3 : 6); i++) {
+      var cx = ((i * 260 - cam.x * z * 0.08 + t * 6) % (W + 400) + (W + 400)) % (W + 400) - 200, cy = H * (0.12 + 0.07 * (i % 3));
+      var cs = 22 + (i % 3) * 8;
+      c.beginPath(); c.arc(cx, cy, cs, 0, Math.PI * 2); c.arc(cx + cs, cy - cs * 0.4, cs * 0.9, 0, Math.PI * 2); c.arc(cx + cs * 2, cy, cs * 0.8, 0, Math.PI * 2); c.fill();
+    }
+    function hills(par, col, amp, base, freq, sharp) {
+      c.fillStyle = col; c.beginPath(); c.moveTo(0, H);
+      for (var x = 0; x <= W + 10; x += 10) {
+        var wx = (x - W / 2) / z + cam.x * par, k = 0.5 + 0.5 * Math.sin(wx * freq) * Math.sin(wx * freq * 0.37 + 1);
+        if (sharp) k = 1 - Math.abs(Math.sin(wx * freq * 1.3)) * 0.8 - 0.2 * Math.abs(Math.sin(wx * freq * 0.41 + 2)); // peaks
+        c.lineTo(x, gy - (base + amp * k) * z * 0.9);
+      }
+      c.lineTo(W, H); c.closePath(); c.fill();
+    }
+    if (id === 'sea') { c.fillStyle = T.far; c.fillRect(0, gy - 2.6 * z * 0.9, W, H); c.fillStyle = 'rgba(255,255,255,.35)'; for (i = 0; i < 8; i++) { var wvx = ((i * 140 - cam.x * z * 0.2 + t * 10) % (W + 140) + W + 140) % (W + 140) - 70; c.fillRect(wvx, gy - (2.2 - (i % 3) * 0.5) * z * 0.9, 40, 2); } }
+    else hills(0.25, T.far, T.farAmp, 2.5, 0.09, id === 'snow' || id === 'mine');
+    if (id === 'snow') hills(0.25, 'rgba(255,255,255,.55)', T.farAmp * 0.35, 2.5 + T.farAmp * 0.62, 0.09, true);
+    // a landmark far back: the barn and silo on the farm, pines, a lighthouse, a mine head frame, a big wheel
+    var baseX = W / 2 + (38 - cam.x) * z * 0.55, s = z * 0.55, k;
+    if (id === 'farm') {
+      c.fillStyle = '#c95a4a'; c.fillRect(baseX, gy - 5.5 * s, 6 * s, 5.5 * s);
+      c.beginPath(); c.moveTo(baseX - 0.5 * s, gy - 5.5 * s); c.lineTo(baseX + 3 * s, gy - 8 * s); c.lineTo(baseX + 6.5 * s, gy - 5.5 * s); c.closePath(); c.fillStyle = '#9b3b30'; c.fill();
+      c.fillStyle = '#f3e6d0'; c.fillRect(baseX + 2.2 * s, gy - 3.2 * s, 1.6 * s, 3.2 * s);
+      c.fillStyle = '#b9c3cc'; c.fillRect(baseX + 6.8 * s, gy - 8 * s, 2.2 * s, 8 * s); c.beginPath(); c.arc(baseX + 7.9 * s, gy - 8 * s, 1.1 * s, Math.PI, 0); c.fill();
+    } else if (id === 'woods') {
+      for (k = -6; k < 10; k++) {
+        var px = W / 2 + (k * 4.2 + 30 - cam.x * 0.45) * z * 0.6, ph = (5 + 3 * hash(k + 50)) * s;
+        if (px < -60 || px > W + 60) continue;
+        c.fillStyle = k % 2 ? '#3f7d4c' : '#4a8a55';
+        c.beginPath(); c.moveTo(px, gy - ph - 1.5 * s); c.lineTo(px - 1.6 * s, gy - 1.2 * s); c.lineTo(px + 1.6 * s, gy - 1.2 * s); c.closePath(); c.fill();
+        c.fillStyle = '#6b4a2b'; c.fillRect(px - 0.25 * s, gy - 1.3 * s, 0.5 * s, 1.3 * s);
+      }
+    } else if (id === 'sea') {
+      c.fillStyle = '#f4f1ea'; c.beginPath(); c.moveTo(baseX, gy - 1.5 * s); c.lineTo(baseX + 0.6 * s, gy - 10 * s); c.lineTo(baseX + 2.4 * s, gy - 10 * s); c.lineTo(baseX + 3 * s, gy - 1.5 * s); c.closePath(); c.fill();
+      c.fillStyle = '#d9453c'; for (k = 0; k < 3; k++) c.fillRect(baseX + (0.3 + k * 0.15) * s, gy - (3.5 + k * 2.4) * s, (2.4 - k * 0.3) * s, 1.1 * s);
+      c.fillStyle = '#ffe58a'; c.fillRect(baseX + 0.7 * s, gy - 11.3 * s, 1.6 * s, 1.3 * s); c.fillStyle = '#3b3f4a'; c.beginPath(); c.moveTo(baseX + 0.4 * s, gy - 11.3 * s); c.lineTo(baseX + 1.5 * s, gy - 12.4 * s); c.lineTo(baseX + 2.6 * s, gy - 11.3 * s); c.closePath(); c.fill();
+    } else if (id === 'mine') {
+      c.strokeStyle = '#6b3d22'; c.lineWidth = Math.max(2, 0.35 * s); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(baseX, gy); c.lineTo(baseX + 2.5 * s, gy - 9 * s); c.lineTo(baseX + 5 * s, gy); c.moveTo(baseX + 0.9 * s, gy - 3.2 * s); c.lineTo(baseX + 4.1 * s, gy - 3.2 * s); c.moveTo(baseX + 1.7 * s, gy - 6.2 * s); c.lineTo(baseX + 3.3 * s, gy - 6.2 * s); c.stroke();
+      c.fillStyle = '#4a2a18'; c.beginPath(); c.arc(baseX + 2.5 * s, gy - 9 * s, 1 * s, 0, Math.PI * 2); c.fill();
+    } else if (id === 'fair') {
+      var wx0 = baseX + 4 * s, wy0 = gy - 7 * s, wr = 5.5 * s;
+      c.strokeStyle = '#8a7fc8'; c.lineWidth = Math.max(1.5, 0.18 * s);
+      c.beginPath(); c.arc(wx0, wy0, wr, 0, Math.PI * 2); c.moveTo(wx0, wy0); c.lineTo(wx0 - 3 * s, gy); c.moveTo(wx0, wy0); c.lineTo(wx0 + 3 * s, gy); c.stroke();
+      for (k = 0; k < 12; k++) {
+        var ang = k / 12 * Math.PI * 2 + t * 0.15, lx = wx0 + Math.cos(ang) * wr, ly = wy0 + Math.sin(ang) * wr;
+        c.beginPath(); c.moveTo(wx0, wy0); c.lineTo(lx, ly); c.stroke();
+        c.fillStyle = ['#ffd23c', '#ff6a8a', '#6ae0ff'][k % 3]; c.beginPath(); c.arc(lx, ly, Math.max(2, 0.45 * s), 0, Math.PI * 2); c.fill();
+      }
+    }
+    hills(0.55, T.near, id === 'sea' ? 1.2 : 2.5, id === 'sea' ? 0.3 : 0.6, 0.16);
+    if (T.fence) { // fence posts near the ground
+      c.fillStyle = 'rgba(160,110,60,.55)';
+      var fs = z * 0.8, off = ((-cam.x * z * 0.8) % (fs * 3) + fs * 3) % (fs * 3);
+      for (var fx = off - fs * 3; fx < W + fs * 3; fx += fs * 3) { c.fillRect(fx, gy - fs * 1.2, fs * 0.18, fs * 1.2); }
+      c.fillRect(0, gy - fs * 0.95, W, fs * 0.12); c.fillRect(0, gy - fs * 0.5, W, fs * 0.12);
+    }
+    // the ground
+    c.fillStyle = T.ground; c.fillRect(0, gy, W, H - gy);
+    c.fillStyle = T.grass[0]; c.fillRect(0, gy - 1, W, Math.max(6, z * 0.35));
+    c.fillStyle = T.grass[1]; c.fillRect(0, gy + Math.max(6, z * 0.35) - 2, W, 3);
+  }
+
+  // the slingshot: a forked branch and two bands
+  function slingBack(c, x, gy, z, pouch) {
+    c.strokeStyle = '#6b4220'; c.lineCap = 'round';
+    c.lineWidth = z * 0.34; c.beginPath(); c.moveTo(x, gy); c.lineTo(x, gy - 2.1 * z); c.stroke();
+    c.lineWidth = z * 0.26; c.beginPath(); c.moveTo(x, gy - 2.0 * z); c.lineTo(x + 0.32 * z, gy - 3.05 * z); c.stroke();
+    if (pouch) { c.strokeStyle = '#3b2415'; c.lineWidth = z * 0.14; c.beginPath(); c.moveTo(x + 0.32 * z, gy - 2.95 * z); c.lineTo(pouch.x, pouch.y); c.stroke(); }
+  }
+  function slingFront(c, x, gy, z, pouch) {
+    if (pouch) { c.strokeStyle = '#3b2415'; c.lineWidth = z * 0.16; c.beginPath(); c.moveTo(x - 0.34 * z, gy - 2.95 * z); c.lineTo(pouch.x, pouch.y); c.stroke();
+      c.fillStyle = '#5a3a20'; c.beginPath(); c.ellipse(pouch.x, pouch.y, z * 0.2, z * 0.3, 0, 0, Math.PI * 2); c.fill(); }
+    c.strokeStyle = '#8a5a2b'; c.lineCap = 'round'; c.lineWidth = z * 0.26;
+    c.beginPath(); c.moveTo(x, gy - 2.0 * z); c.lineTo(x - 0.34 * z, gy - 3.05 * z); c.stroke();
+  }
+  return { bird: bird, grub: grub, block: block, tnt: tnt, boulder: boulder, terrain: terrain, backdrop: backdrop, THEMES: THEMES, slingBack: slingBack, slingFront: slingFront, rr: rr, MATS: MATS };
+})();
+</script>
+<script>
+/* Mean Birds sounds and music: all made with Web Audio (no audio files). Sound effects and music switch on and off separately. */
+var MBSound = (function () {
+  'use strict';
+  var ac = null, fx = null, mus = null, soundOn = false, musicOn = false, noiseBuf = null;
+  function ctx() {
+    if (!soundOn && !musicOn) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      fx = ac.createGain(); fx.gain.value = 0.55; fx.connect(ac.destination);
+      mus = ac.createGain(); mus.gain.value = 0.16; mus.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay, out) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(out || fx); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur, f0, f1, q, gain, delay, type) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), s = a.createBufferSource(); s.buffer = noiseBuf;
+    var f = a.createBiquadFilter(); f.type = type || 'bandpass'; f.frequency.setValueAtTime(f0, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur); f.Q.value = q || 1;
+    var g = a.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(fx); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
+  }
+  var lastHit = 0;
+  var SQUAWK = { rocco: [520, 380], pips: [1300, 1700], zip: [900, 1400] };
+  var E = {
+    stretch: function () { if (soundOn) tone('sawtooth', 90, 140, 0.22, 0.05); },
+    launch: function (type) {
+      if (!soundOn) return;
+      noise(0.25, 600, 2400, 0.8, 0.35);
+      var q = SQUAWK[type] || SQUAWK.rocco; tone('square', q[0], q[1], 0.18, 0.1, 0.03); tone('square', q[0] * 1.1, q[1] * 0.9, 0.12, 0.07, 0.19);
+    },
+    split: function () { if (soundOn) [1500, 1800, 2100].forEach(function (f, i) { tone('square', f, f * 1.2, 0.07, 0.07, i * 0.04); }); },
+    dash: function () { if (soundOn) { noise(0.3, 900, 5000, 0.7, 0.4); tone('sawtooth', 300, 1200, 0.2, 0.08); } },
+    wood: function () { var n = Date.now(); if (!soundOn || n - lastHit < 40) return; lastHit = n; noise(0.09, 700, 300, 3, 0.4); tone('triangle', 180, 120, 0.1, 0.18); },
+    glass: function () { var n = Date.now(); if (!soundOn || n - lastHit < 40) return; lastHit = n; noise(0.08, 4200, 6000, 4, 0.25); tone('sine', 2600, 2100, 0.12, 0.06); },
+    stone: function () { var n = Date.now(); if (!soundOn || n - lastHit < 40) return; lastHit = n; noise(0.12, 260, 120, 2, 0.5); tone('sine', 90, 60, 0.15, 0.25); },
+    breakWood: function () { if (!soundOn) return; noise(0.25, 900, 250, 2, 0.55); tone('triangle', 160, 70, 0.2, 0.2); },
+    breakGlass: function () { if (!soundOn) return; for (var i = 0; i < 5; i++) tone('sine', 2500 + Math.random() * 2500, 0, 0.12 + Math.random() * 0.1, 0.06, i * 0.03); noise(0.3, 5000, 8000, 1, 0.25); },
+    breakStone: function () { if (!soundOn) return; noise(0.4, 300, 80, 1.5, 0.7); tone('sine', 70, 40, 0.35, 0.3); },
+    pop: function () { if (!soundOn) return; tone('sine', 700, 180, 0.14, 0.35); tone('square', 1200, 600, 0.06, 0.05, 0.02); noise(0.12, 2000, 800, 1, 0.2); },
+    boom: function () { if (!soundOn) return; noise(0.9, 400, 40, 0.7, 1.0, 0, 'lowpass'); tone('sine', 80, 30, 0.6, 0.5); },
+    poof: function () { if (soundOn) noise(0.25, 1500, 400, 0.8, 0.12); },
+    bonus: function (i) { if (soundOn) tone('triangle', 660 * Math.pow(1.12, i), 0, 0.2, 0.25); },
+    star: function (i) { if (soundOn) { tone('sine', 880 * Math.pow(1.25, i), 0, 0.35, 0.28); tone('triangle', 1760 * Math.pow(1.25, i), 0, 0.2, 0.08, 0.03); } },
+    win: function () { if (soundOn) [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    lose: function () { if (soundOn) [392, 349, 311, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.35, 0.28, i * 0.22); }); },
+    snicker: function () { if (soundOn) [0, 0.12, 0.24].forEach(function (d) { tone('square', 420, 300, 0.08, 0.06, d); }); },
+    tap: function () { if (soundOn) tone('sine', 900, 0, 0.05, 0.12); },
+    ding: function () { if (soundOn) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (soundOn) noise(0.07, 900, 0, 3, 0.4); }
+  };
+
+  // ---------------- music: a bouncy farm tune, looped with a look-ahead scheduler ----------------
+  var BPM = 112, STEP = 60 / BPM / 2; // eighth notes
+  // melody (semitones from C5, null = rest) and bass (semitones from C3), 32 eighths
+  var MEL = [0, null, 4, 7, 9, 7, 4, null, 5, null, 9, 12, 9, null, 7, null, 4, null, 7, 12, 11, 9, 7, 5, 4, 2, 4, 7, 0, null, null, null];
+  var BASS = [0, 7, 0, 7, 5, 12, 5, 12, 0, 7, 0, 7, 2, 7, 7, 11, 0, 7, 0, 7, 5, 12, 5, 12, 7, 2, 7, 11, 0, 7, 0, 12];
+  var timer = null, nextT = 0, idx = 0;
+  function note(f, t, dur, type, gain) {
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(mus); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function schedule() {
+    if (!ac || !musicOn) return;
+    while (nextT < ac.currentTime + 0.25) {
+      var m = MEL[idx % 32], b = BASS[idx % 32];
+      if (m !== null) note(523.25 * Math.pow(2, m / 12), nextT, STEP * 0.9, 'triangle', 0.5);
+      if (idx % 2 === 0) note(130.81 * Math.pow(2, b / 12), nextT, STEP * 1.6, 'sine', 0.8);
+      if (idx % 2 === 1) { // a soft shaker
+        var s = ac.createBufferSource(); s.buffer = noiseBuf; var f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000;
+        var g = ac.createGain(); g.gain.setValueAtTime(0.18, nextT); g.gain.exponentialRampToValueAtTime(0.0001, nextT + 0.05);
+        s.connect(f); f.connect(g); g.connect(mus); s.start(nextT, Math.random() * 0.5); s.stop(nextT + 0.06);
+      }
+      nextT += STEP; idx++;
+    }
+  }
+  function startMusic() {
+    if (!musicOn || timer || !ctx()) return;
+    nextT = ac.currentTime + 0.1; idx = 0;
+    timer = setInterval(schedule, 90);
+  }
+  function stopMusic() { if (timer) { clearInterval(timer); timer = null; } }
+
+  E.setSound = function (v) { soundOn = !!v; if (v) ctx(); };
+  E.setMusic = function (v) { musicOn = !!v; if (v) startMusic(); else stopMusic(); };
+  E.unlock = function () { if (soundOn || musicOn) ctx(); if (musicOn) startMusic(); };
+  E.pauseMusic = function () { stopMusic(); };
+  E.resumeMusic = function () { if (musicOn) startMusic(); };
+  return E;
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = MBDraw, SND = MBSound, DATA = window.MB_LEVELS || { worlds: [] };
+  var WORLD = DATA.worlds[0];
+  var BIRD_INFO = {
+    rocco: ['Rocco the rook', 'No tricks, just a solid hit. Good against everything.'],
+    pips: ['The Pips', 'Tap the screen while they fly and they split into three. Great for smashing glass.'],
+    zip: ['Zip the swift', 'Tap the screen while it flies for a fast, straight dash. Cuts through wood.']
+  };
+
+  // ================= storage =================
+  var store = Goobs.store('meanbirds');
+  var settings = { sound: false, music: false, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { cur: 0, seenBirds: {}, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var scores = store.get('scores', null) || {};
+  function saveScores() { store.set('scores', scores); }
+  function key(i) { return WORLD.id + '-' + (i + 1); }   // 'farm-N' for every level N, banked or made (old saves stay valid)
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  var portrait = window.matchMedia ? window.matchMedia('(orientation: portrait)') : { matches: false };
+  function paused() { return !S || isOpen('ovMake') || isOpen('ovPause') || isOpen('ovEnd') || isOpen('ovBird') || GoobsAds.isOpen() || document.hidden || portrait.matches || isOpen('scLevels'); }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 1800); }
+  function starsFor(lv, score, won) { if (!won) return 0; var s = lv.stars || [0, 0]; return 1 + (score >= s[0] ? 1 : 0) + (score >= s[1] ? 1 : 0); }
+
+  // ================= a level in play =================
+  var S = null, lv = null, li = 0, phase = 'aim', phaseT = 0, acc = 0, pull = null, dragging = false;
+  var trail = [], lastTrail = [], parts = [], floats = [], shake = 0, shownScore = 0, bonusShown = 0;
+  var theme = 'farm', selW = null;
+  function startLevel(i) {
+    var L = levelAt(i);
+    if (!L) { waitFor(i); return; }   // a made level that isn't ready yet: "Making level N..." until it is
+    $('ovMake').classList.remove('show'); gen.waitI = -1;
+    li = i; lv = L; theme = MB.worldOf(i + 1).theme.id; selW = Math.floor(i / MB.WORLD_SIZE);
+    S = MB.create(lv);
+    phase = 'aim'; phaseT = 0; acc = 0; pull = null; dragging = false;
+    trail = []; lastTrail = []; parts = []; floats = []; shake = 0; shownScore = 0;
+    camMode = 'auto'; snapCam();
+    $('scLevels').classList.remove('show'); $('hud').classList.remove('hide');
+    $('lvName').textContent = 'Level ' + (i + 1) + ' \u00b7 ' + lv.name;
+    gen.queue = []; genAhead(i + 2); genAhead(i + 3);   // make the next levels in the background while this one is played (older asks dropped)
+    var best = scores[key(i)];
+    $('best').textContent = best ? 'Best ' + fmt(best.best) : '';
+    SND.resumeMusic();
+    // introduce a bird the first time it shows up
+    var fresh = lv.birds.filter(function (b, k) { return lv.birds.indexOf(b) === k && !meta.seenBirds[b]; })[0];
+    if (fresh) showBird(fresh);
+  }
+  function showBird(type) {
+    meta.seenBirds[type] = true; saveMeta();
+    var c = $('birdPic'), x = c.getContext('2d'), dpr = Math.min(3, window.devicePixelRatio || 1);
+    c.width = 220 * dpr; c.height = 150 * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, 220, 150);
+    x.fillStyle = '#d9f3ff'; D.rr(x, 0, 0, 220, 150, 18); x.fill();
+    x.fillStyle = '#6cc24a'; x.fillRect(0, 118, 220, 32);
+    var r = type === 'pips' ? 26 : 38;
+    if (type === 'pips') { D.bird(x, 'pips', 70, 96, r, 0); D.bird(x, 'pips', 110, 70, r, 0); D.bird(x, 'pips', 150, 96, r, 0); }
+    else D.bird(x, type, 110, 118 - r, r, 0, { wide: true });
+    $('birdName').textContent = BIRD_INFO[type][0];
+    $('birdText').textContent = BIRD_INFO[type][1];
+    $('ovBird').classList.add('show');
+  }
+
+  // ================= camera =================
+  // cam: center (x, y) in meters and zoom z in pixels per meter
+  var W = 0, H = 0, dpr = 1, cv = $('cv'), ctx = cv.getContext('2d'), cam = { x: 0, y: 5, z: 20 }, camMode = 'auto', fitZ = 20;
+  function resize() {
+    W = window.innerWidth; H = window.innerHeight; dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    readInsets();
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (S) snapCam();
+  }
+  // the notch side of a phone lying sideways is kept clear, so the slingshot never sits under it
+  var insetL = 0, insetR = 0;
+  function readInsets() {
+    var p = document.createElement('div');
+    p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);visibility:hidden';
+    document.body.appendChild(p);
+    var cs = getComputedStyle(p); insetL = parseFloat(cs.paddingLeft) || 0; insetR = parseFloat(cs.paddingRight) || 0;
+    p.remove();
+  }
+  function fitTo(b) {
+    var avail = Math.max(100, W - insetL - insetR), z = Math.min(avail / (b.x1 - b.x0), (H - 10) / (b.y1 - b.y0));
+    return { x: b.x0 + (W / 2 - insetL) / z, y: b.y0 + H / (2 * z), z: z };
+  }
+  function levelView() { var b = MB.bounds(lv); return b; }
+  function target() {
+    var b = levelView();
+    fitZ = fitTo(b).z;
+    if (phase === 'flight' || phase === 'winwait' || phase === 'losewait') {
+      S.flock.forEach(function (bd) {
+        var p = bd.getPosition();
+        if (p.x - 3 < b.x0) b.x0 = p.x - 3; if (p.x + 3 > b.x1) b.x1 = Math.min(p.x + 3, b.x1 + 30);
+        if (p.y + 3 > b.y1) b.y1 = Math.min(p.y + 3, 60);
+      });
+    }
+    return fitTo(b);
+  }
+  function snapCam() { var t = target(); cam.x = t.x; cam.y = t.y; cam.z = t.z; }
+  function clampCam() {
+    var b = levelView();
+    cam.z = Math.max(fitZ * 0.8, Math.min(fitZ * 2.8, cam.z));
+    cam.x = Math.max(b.x0 - 4, Math.min(b.x1 + 4, cam.x));
+    cam.y = Math.max(b.y0 + H / (2 * cam.z), Math.min(Math.max(b.y1, 20) + 5, cam.y));
+  }
+  function updateCam(dt) {
+    if (camMode !== 'auto') { clampCam(); return; }
+    var t = target(), k = 1 - Math.exp(-dt * 3.2);
+    cam.x += (t.x - cam.x) * k; cam.y += (t.y - cam.y) * k; cam.z += (t.z - cam.z) * k;
+  }
+  function sx(x) { return W / 2 + (x - cam.x) * cam.z; }
+  function sy(y) { return H / 2 - (y - cam.y) * cam.z; }
+  function wx(px) { return cam.x + (px - W / 2) / cam.z; }
+  function wy(py) { return cam.y - (py - H / 2) / cam.z; }
+
+  // ================= flow =================
+  function birdPos() { // where the waiting bird sits
+    var p = S.pouch;
+    return pull ? { x: p.x + pull.x, y: p.y + pull.y } : { x: p.x, y: p.y };
+  }
+  function doLaunch(pv) {
+    if (phase !== 'aim' || !S.queue.length) return;
+    var type = S.queue[0];
+    MB.launch(S, pv);
+    SND.launch(type);
+    phase = 'flight'; phaseT = 0; lastTrail = trail.length ? trail : lastTrail; trail = []; camMode = 'auto';
+    pull = null; dragging = false;
+  }
+  function flow(dt) {
+    phaseT += dt;
+    if (phase === 'flight') {
+      if (MB.shotDone(S)) {
+        MB.endShot(S);
+        if (MB.won(S)) setPhase('winwait');
+        else if (S.queue.length) { setPhase('aim'); SND.snicker(); }
+        else setPhase('losewait');
+      }
+    } else if (phase === 'aim') {
+      if (MB.won(S)) setPhase('winwait');
+    } else if (phase === 'winwait') {
+      if ((MB.settled(S) && phaseT > 0.8) || phaseT > 3.5) { setPhase('bonus'); bonusShown = 0; }
+    } else if (phase === 'bonus') {
+      if (S.queue.length && phaseT > 0.55) {
+        var i = bonusShown++, q = queuePos(0);
+        S.queue.shift(); S.score += MB.POINTS_BIRD; phaseT = 0;
+        floats.push({ x: q.x, y: q.y + 1.2, t: fmt(MB.POINTS_BIRD), c: '#ffd23c', life: 1.2, max: 1.2, big: 1 });
+        puff(q.x, q.y, '#ffffff', 10); SND.bonus(i);
+      } else if (!S.queue.length && phaseT > 0.9) { setPhase('end'); endCard(true); }
+    } else if (phase === 'losewait') {
+      if (MB.won(S)) { setPhase('winwait'); return; }
+      if ((MB.settled(S) && phaseT > 1.2) || phaseT > 4) { setPhase('end'); endCard(false); }
+    }
+  }
+  function setPhase(p) { phase = p; phaseT = 0; }
+  function queuePos(i) { var r = MB.BIRDS[S.queue[i] || 'rocco'].r; return { x: S.pouch.x - 1.2 - i * 0.85, y: r }; }
+
+  // ================= effects from the physics =================
+  var MATCOL = { wood: ['#d39a5a', '#8a5a2b'], glass: ['#bfe6ff', '#ffffff'], stone: ['#a3abb5', '#6b737c'], tnt: ['#e8453c', '#ffd23c'] };
+  function puff(x, y, col, n) { for (var i = 0; i < n && parts.length < 260; i++) { var a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 2.5; parts.push({ k: 'puff', x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6 + Math.random() * 0.4, max: 1, c: col, s: 0.18 + Math.random() * 0.22 }); } }
+  function shards(e) {
+    var cols = MATCOL[e.m] || MATCOL.wood, n = Math.min(12, 4 + Math.round((e.w * e.h) * 6));
+    for (var i = 0; i < n && parts.length < 260; i++) {
+      var ox = (Math.random() - 0.5) * e.w, oy = (Math.random() - 0.5) * e.h, v = e.v || { x: 0, y: 0 };
+      parts.push({ k: 'shard', x: e.x + ox, y: e.y + oy, vx: v.x * 0.3 + (Math.random() - 0.5) * 5, vy: v.y * 0.3 + Math.random() * 5, life: 0.9 + Math.random() * 0.6, max: 1.5,
+        c: cols[i % 2], s: 0.08 + Math.random() * 0.16, r: Math.random() * 6, vr: (Math.random() - 0.5) * 12 });
+    }
+  }
+  var quiet = null; // while skipping ahead: count sounds so a burst of breaks plays only a few
+  function drainEvents() {
+    var ev = S.events; S.events = [];
+    var snd = SND;
+    if (quiet) snd = new Proxy(SND, { get: function (o, k) { var f = o[k]; if (typeof f !== 'function') return f; return function () { quiet[k] = (quiet[k] || 0) + 1; if (quiet[k] <= 1) f.apply(o, arguments); }; } });
+    var SND_ = SND; SND = snd;
+    ev.forEach(function (e) {
+      if (e.t === 'hit') { if (e.k === 'grub') SND.tap(); else if (SND[e.m]) SND[e.m](); }
+      else if (e.t === 'break') {
+        shards(e);
+        if (e.m === 'tnt') { /* the boom event covers it */ } else if (e.m === 'glass') SND.breakGlass(); else if (e.m === 'stone') SND.breakStone(); else SND.breakWood();
+        if (e.pts) floats.push({ x: e.x, y: e.y + 0.4, t: fmt(e.pts), c: '#ffffff', life: 0.9, max: 0.9 });
+      } else if (e.t === 'pop') {
+        puff(e.x, e.y, '#ffb45a', 10); puff(e.x, e.y, '#9b7be6', 6); puff(e.x, e.y, '#fff3d6', 6);
+        floats.push({ x: e.x, y: e.y + e.r + 0.4, t: fmt(e.pts), c: '#ffd23c', life: 1.2, max: 1.2, big: 1 });
+        SND.pop();
+      } else if (e.t === 'boom') {
+        parts.push({ k: 'flash', x: e.x, y: e.y, life: 0.35, max: 0.35, s: e.R });
+        puff(e.x, e.y, '#ffcf4a', 14); puff(e.x, e.y, '#ff6a3c', 10); puff(e.x, e.y, '#666', 8);
+        shake = Math.min(1, shake + 0.8); SND.boom();
+      } else if (e.t === 'split') { puff(e.x, e.y, '#bfe6ff', 8); SND.split(); }
+      else if (e.t === 'dash') { puff(e.x, e.y, '#fff4c2', 10); SND.dash(); }
+      else if (e.t === 'poof') { puff(e.x, e.y, '#ffffff', 9); SND.poof(); }
+    });
+    SND = SND_;
+  }
+
+  // ================= tap to skip ahead (Glenn: skip past the waiting to the next bird) =================
+  // the physics still runs every step (just not drawn), so the result is exactly what would have happened
+  function canSkip() {
+    if (!S) return false;
+    if (phase === 'flight') return !!S.bird && S.time - S.bird.getUserData().launchedAt > 0.3 && !S.ability;
+    return phase === 'winwait' || phase === 'losewait' || phase === 'bonus';
+  }
+  function skipAhead() {
+    if (!canSkip()) return;
+    var n = 0;
+    quiet = {};
+    if (phase === 'flight') { while (!MB.shotDone(S) && n < 1500) { MB.step(S); n++; } }
+    else if (phase === 'winwait' || phase === 'losewait') { while (!MB.settled(S) && n < 600) { MB.step(S); n++; } phaseT = 99; }
+    else if (phase === 'bonus') {
+      while (S.queue.length) { var q = queuePos(0); S.queue.shift(); S.score += MB.POINTS_BIRD; floats.push({ x: q.x, y: q.y + 1.2, t: fmt(MB.POINTS_BIRD), c: '#ffd23c', life: 1.2, max: 1.2, big: 1 }); }
+      SND.bonus(0); phaseT = 99;
+    }
+    drainEvents();
+    quiet = null;
+    acc = 0;
+  }
+  function renderSkip() {
+    var el = $('skipHint'), on = canSkip() && !paused() && (phase !== 'flight' || S.time - S.bird.getUserData().launchedAt > 0.8);
+    if (el.classList.contains('show') !== on) el.classList.toggle('show', on);
+  }
+  function stepParts(dt) {
+    parts = parts.filter(function (p) {
+      p.life -= dt; if (p.life <= 0) return false;
+      if (p.k === 'shard') { p.vy -= 12 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; if (p.y < 0.05) { p.y = 0.05; p.vy *= -0.3; p.vx *= 0.6; } }
+      else if (p.k === 'puff') { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; }
+      return true;
+    });
+    floats = floats.filter(function (f) { f.life -= dt; f.y += dt * 0.8; return f.life > 0; });
+    shake = Math.max(0, shake - dt * 2.5);
+  }
+
+  // ================= drawing =================
+  function render(t) {
+    var c = ctx, z = cam.z;
+    c.save();
+    if (shake > 0) c.translate((Math.random() - 0.5) * shake * 12, (Math.random() - 0.5) * shake * 12);
+    var gy = sy(0);
+    D.backdrop(c, W, H, cam, gy, t, S ? theme : null);
+    if (!S) { c.restore(); return; }
+    // last shot's path: white dots
+    c.fillStyle = 'rgba(255,255,255,.85)';
+    lastTrail.forEach(function (p, i) { c.beginPath(); c.arc(sx(p[0]), sy(p[1]), Math.max(1.5, z * (i % 3 === 0 ? 0.1 : 0.06)), 0, Math.PI * 2); c.fill(); });
+    c.fillStyle = 'rgba(255,255,255,.95)';
+    trail.forEach(function (p, i) { c.beginPath(); c.arc(sx(p[0]), sy(p[1]), Math.max(1.5, z * (i % 3 === 0 ? 0.1 : 0.06)), 0, Math.PI * 2); c.fill(); });
+    // hills and platforms
+    (lv.terrain || []).forEach(function (o) { D.terrain(c, sx(o.x - o.w / 2), sy(o.y + o.h / 2), o.w * z, o.h * z, theme); });
+    // the fort
+    S.bodies.forEach(function (b) {
+      var u = b.getUserData(), p = b.getPosition(), a = b.getAngle(), hp = u.maxHp ? u.hp / u.maxHp : 1;
+      if (u.kind === 'block') D.block(c, sx(p.x), sy(p.y), u.w * z, u.h * z, a, u.m, hp, u.id);
+      else if (u.kind === 'tnt') D.tnt(c, sx(p.x), sy(p.y), u.w * z, a);
+      else if (u.kind === 'boulder') D.boulder(c, sx(p.x), sy(p.y), u.r * z, a, hp, u.id);
+      else if (u.kind === 'grub') D.grub(c, sx(p.x), sy(p.y), u.r * z, a, u.helmet, hp, t, -1);
+    });
+    // slingshot and birds
+    var sxp = sx(S.pouch.x), aiming = phase === 'aim';
+    var bp = aiming ? birdPos() : null, pouchScr = bp ? { x: sx(bp.x), y: sy(bp.y) } : null;
+    D.slingBack(c, sxp, gy, z, pouchScr);
+    // birds waiting their turn stand on the ground
+    for (var i = aiming ? 1 : 0; i < S.queue.length; i++) {
+      var q = queuePos(i - (aiming ? 1 : 0)), type = S.queue[i], r = MB.BIRDS[type].r, hop = Math.max(0, Math.sin(t * 3 + i * 1.7)) * 0.12;
+      D.bird(c, type, sx(q.x), sy(q.y + hop), r * z, 0);
+    }
+    if (aiming && S.queue.length) {
+      var type0 = S.queue[0], r0 = MB.BIRDS[type0].r;
+      D.bird(c, type0, pouchScr.x, pouchScr.y, r0 * z, pull ? Math.atan2(-pull.y, -pull.x) : 0, { wide: dragging });
+    }
+    S.flock.forEach(function (b) { var p = b.getPosition(), u = b.getUserData(); D.bird(c, u.type, sx(p.x), sy(p.y), MB.BIRDS[u.type].r * z, b.getAngle()); });
+    D.slingFront(c, sxp, gy, z, pouchScr);
+    // particles
+    parts.forEach(function (p) {
+      var a = Math.min(1, p.life / p.max * 1.4);
+      if (p.k === 'flash') { c.fillStyle = 'rgba(255,230,140,' + (a * 0.7).toFixed(2) + ')'; c.beginPath(); c.arc(sx(p.x), sy(p.y), p.s * z * (1.2 - a * 0.4), 0, Math.PI * 2); c.fill(); return; }
+      c.globalAlpha = a; c.fillStyle = p.c;
+      if (p.k === 'shard') { c.save(); c.translate(sx(p.x), sy(p.y)); c.rotate(p.r); c.fillRect(-p.s * z / 2, -p.s * z / 3, p.s * z, p.s * z * 0.66); c.restore(); }
+      else { c.beginPath(); c.arc(sx(p.x), sy(p.y), p.s * z * (1.4 - a * 0.4), 0, Math.PI * 2); c.fill(); }
+      c.globalAlpha = 1;
+    });
+    // points
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    floats.forEach(function (f) {
+      var a = Math.min(1, f.life / f.max * 2), fs = Math.max(13, Math.min(34, z * (f.big ? 0.75 : 0.5)));
+      c.globalAlpha = a; c.font = '900 ' + fs.toFixed(0) + 'px -apple-system,system-ui,sans-serif';
+      c.lineWidth = fs * 0.18; c.strokeStyle = 'rgba(40,30,20,.7)'; c.strokeText(f.t, sx(f.x), sy(f.y)); c.fillStyle = f.c; c.fillText(f.t, sx(f.x), sy(f.y));
+      c.globalAlpha = 1;
+    });
+    c.restore();
+  }
+  function renderHUD() {
+    if (!S) return;
+    shownScore += (S.score - shownScore) * 0.25; if (Math.abs(S.score - shownScore) < 10) shownScore = S.score;
+    $('score').textContent = fmt(shownScore);
+  }
+
+  // ================= input: pull the sling, tap for powers, drag to look around, pinch to zoom =================
+  var pts = {}, pan = null, pinch = null, tapStart = null;
+  function nearBird(px, py) {
+    if (phase !== 'aim' || !S.queue.length) return false;
+    var b = birdPos(), r = MB.BIRDS[S.queue[0]].r * cam.z;
+    return Math.hypot(px - sx(b.x), py - sy(b.y)) < Math.max(48, r * 2.4);
+  }
+  function onDown(e) {
+    if (paused()) return;
+    SND.unlock();
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    var n = Object.keys(pts).length;
+    tapStart = n === 1 ? { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, used: false } : null;
+    if (n === 1 && nearBird(e.clientX, e.clientY)) { dragging = true; pull = { x: 0, y: 0 }; SND.stretch(); return; }
+    if (n === 1 && phase === 'flight' && S.ability) { if (MB.useAbility(S)) { tapStart.used = true; return; } }
+    if (n === 2) { dragging = false; pull = null; var k = Object.keys(pts), a = pts[k[0]], b = pts[k[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, wx: wx((a.x + b.x) / 2), wy: wy((a.y + b.y) / 2) }; pan = null; camMode = 'manual'; return; }
+    if (n === 1) pan = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
+  }
+  function onMove(e) {
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (dragging) {
+      var p = MB.clampPull({ x: wx(e.clientX) - S.pouch.x, y: wy(e.clientY) - S.pouch.y });
+      var was = pull ? Math.hypot(pull.x, pull.y) : 0, now = Math.hypot(p.x, p.y);
+      if (Math.floor(now * 3) > Math.floor(was * 3)) SND.stretch();
+      pull = p; return;
+    }
+    var k = Object.keys(pts);
+    if (pinch && k.length >= 2) {
+      var a = pts[k[0]], b = pts[k[1]], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      cam.z = pinch.z * d / Math.max(20, pinch.d); clampCam();
+      cam.x = pinch.wx - (mx - W / 2) / cam.z; cam.y = pinch.wy + (my - H / 2) / cam.z; clampCam();
+      return;
+    }
+    if (pan) {
+      var dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+      if (Math.abs(dx) + Math.abs(dy) > 6) camMode = 'manual';
+      if (camMode === 'manual') { cam.x = pan.cx - dx / cam.z; cam.y = pan.cy + dy / cam.z; clampCam(); }
+    }
+  }
+  function onUp(e) {
+    delete pts[e.pointerId];
+    var ts = tapStart; tapStart = null;
+    if (ts && ts.id === e.pointerId && !ts.used && !dragging && !pinch && Math.hypot(e.clientX - ts.x, e.clientY - ts.y) < 12 && performance.now() - ts.t < 450) { skipAhead(); }
+    if (dragging) {
+      dragging = false;
+      if (pull && Math.hypot(pull.x, pull.y) > 0.35) doLaunch(pull); else pull = null;
+      return;
+    }
+    if (Object.keys(pts).length < 2) pinch = null;
+    if (!Object.keys(pts).length) pan = null;
+  }
+
+  // ================= end of a level =================
+  function endCard(won) {
+    var k = key(li), prev = scores[k], st = starsFor(lv, S.score, won), newBest = false;
+    if (won) {
+      if (!prev || S.score > prev.best) { scores[k] = { best: S.score, stars: Math.max(st, prev ? prev.stars : 0) }; newBest = !!prev; }
+      else if (st > prev.stars) scores[k].stars = st;
+      if (meta.cur <= li) meta.cur = li + 1;
+      saveScores(); SND.win();
+    } else SND.lose();
+    meta.finished++; saveMeta();
+    SND.pauseMusic();
+    $('endTitle').textContent = won ? 'Level cleared!' : 'The Grublins won this one';
+    var h = '';
+    for (var i = 0; i < 3; i++) h += '<svg viewBox="0 0 24 24" class="' + (i < st ? 'on' : '') + '" style="animation-delay:' + (0.25 + i * 0.35) + 's"><use href="#i-star"/></svg>';
+    $('endStars').innerHTML = h;
+    for (var j = 0; j < st; j++) (function (j2) { setTimeout(function () { SND.star(j2); }, 250 + j2 * 350); })(j);
+    $('endText').innerHTML = won ? 'Score <b>' + fmt(S.score) + '</b>' + (newBest ? '<br><span class="newbest">New best!</span>' : '') + (st < 3 && lv.stars ? '<br><small>3 stars at ' + fmt(lv.stars[1]) + '</small>' : '')
+      : S.grubsLeft + (S.grubsLeft === 1 ? ' Grublin is' : ' Grublins are') + ' still there. Try a different angle.';
+    var b = [{ l: 'Levels', ic: 'i-grid', go: function () { between(showLevels); } }, { l: won ? 'Replay' : 'Try again', ic: 'i-restart', go: function () { between(function () { startLevel(li); }); }, red: !won }];
+    if (won) b.push({ l: 'Next', ic: 'i-next', red: true, go: function () { between(function () { startLevel(li + 1); }); } });
+    var box = $('endActions'); box.innerHTML = '';
+    b.forEach(function (x) {
+      var el = document.createElement('button'); el.className = 'btn' + (x.red ? ' red' : '');
+      el.innerHTML = '<svg viewBox="0 0 24 24"><use href="#' + x.ic + '"/></svg> ' + x.l;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); x.go(); });
+      box.appendChild(el);
+    });
+    setTimeout(function () { $('ovEnd').classList.add('show'); }, won ? 200 : 500);
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { SND.ding(); }, onStep: function () { SND.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next(); showAd(function () {}); return;
+    }
+    next();
+  }
+
+  // ================= level select: worlds of 20 that keep coming =================
+  // shows one world at a time; the arrows page through every world up to the one after the furthest level reached
+  function showLevels(w) {
+    S = null;
+    $('hud').classList.add('hide'); $('skipHint').classList.remove('show');
+    var WS = MB.WORLD_SIZE, maxW = Math.floor(meta.cur / WS) + 1;
+    if (typeof w !== 'number') w = selW == null ? Math.floor(meta.cur / WS) : selW;
+    w = Math.max(0, Math.min(maxW, w)); selW = w;
+    var h = '', total = 0, wi = MB.worldOf(w * WS + 1), th = D.THEMES[wi.theme.id] || D.THEMES.farm;
+    for (var k = 0; k < WS; k++) {
+      var i = w * WS + k, sc = scores[key(i)], st = sc ? sc.stars : 0, lock = i > meta.cur; total += st;
+      h += '<button class="mlv' + (lock ? ' lock' : '') + (i === meta.cur && !sc ? ' cur' : '') + (i + 1 >= 1000 ? ' long' : '') + '" data-i="' + i + '">' + (i + 1) + '<span class="st">';
+      for (var q = 0; q < 3; q++) h += '<svg viewBox="0 0 24 24" class="' + (q < st ? 'on' : '') + '"><use href="#i-star"/></svg>';
+      h += '</span></button>';
+    }
+    $('lsGrid').innerHTML = h;
+    $('worldName').textContent = 'World ' + (w + 1) + ' \u00b7 ' + wi.name;
+    $('worldStars').textContent = total + ' / ' + WS * 3 + ' \u2605';
+    $('wPrev').disabled = w <= 0; $('wNext').disabled = w >= maxW;
+    var sc0 = $('scLevels'); sc0.style.background = th.sel; sc0.classList.toggle('night', !!th.night);
+    sc0.classList.add('show');
+    gen.queue = []; genAhead(meta.cur + 1);   // the next level to play, so it's ready when it's tapped
+    SND.pauseMusic();
+  }
+
+  // ================= endless levels: made on the phone from the level number, proven by the same search as tools/check.js =================
+  // Levels past the bank come from MB.make(n) (src/logic.js). That proof plays a few hundred simulated shots, a few seconds' work,
+  // so it runs in a Web Worker built from a Blob (planck's own text, read through the offline cache, plus logic.js's MBMake source),
+  // and the next levels are made while the current one is played. If no worker can be made, the same work runs here in small slices.
+  // Made levels are kept in memory and the last few in storage, so reopening the app doesn't make them again.
+  var BANKN = WORLD.levels.length, GEN_V = 1;
+  var gen = { cache: {}, order: [], queue: [], job: null, mode: '', worker: null, waitI: -1, log: [] };
+  (function () { var c = store.get('gen', null); if (c && c.v === GEN_V && c.lv) for (var n in c.lv) { gen.cache[n] = c.lv[n]; gen.order.push(+n); } })();
+  function levelAt(i) { return i < BANKN ? WORLD.levels[i] : gen.cache[i + 1] || null; }
+  function genKeep(n, level) {
+    gen.cache[n] = level;
+    gen.order = gen.order.filter(function (x) { return x !== n; }); gen.order.push(n);
+    var keep = {}, o = gen.order.slice(-12); o.forEach(function (x) { if (gen.cache[x]) keep[x] = gen.cache[x]; });
+    store.set('gen', { v: GEN_V, lv: keep });
+  }
+  // ask for level n (1-based) to be made; urgent puts it first in line
+  function genWant(n, urgent) {
+    if (n <= BANKN || gen.cache[n] || (gen.job && gen.job.n === n)) return;
+    var at = gen.queue.indexOf(n);
+    if (at >= 0) { if (!urgent) return; gen.queue.splice(at, 1); }
+    if (urgent) gen.queue.unshift(n); else gen.queue.push(n);
+    // the player is waiting for this one: a background make in progress gives way (it goes back in line)
+    if (urgent && gen.job && !gen.job.urgent) {
+      var old = gen.job.n;
+      if (gen.mode === 'worker' && gen.url) { try { gen.worker.terminate(); } catch (e) { /* gone */ } genWorker(); }
+      gen.job = null; gen.queue.splice(1, 0, old);
+    }
+    genPump();
+    if (urgent && gen.job && gen.job.n === n) gen.job.urgent = true;
+  }
+  function genAhead(n) { genWant(n, false); }
+  function workerMain() { // runs inside the worker (MB is there already)
+    self.onmessage = function (e) {
+      var n = e.data.n, r = MB.make(n);
+      self.postMessage({ n: n, level: r ? r.level : null, attempts: r ? r.attempts : 0, ms: r ? r.ms : 0 });
+    };
+  }
+  function genSetup() {
+    gen.mode = 'setup';
+    function fallback() { gen.mode = 'main'; if (gen.worker) { try { gen.worker.terminate(); } catch (e) { /* gone */ } gen.worker = null; } if (gen.job && !gen.job.maker) { gen.queue.unshift(gen.job.n); gen.job = null; } genPump(); }
+    try {
+      var el = document.querySelector('script[src*="planck"]');
+      fetch(el.src).then(function (r) { if (!r.ok) throw new Error('planck ' + r.status); return r.text(); }).then(function (txt) {
+        var code = txt + '\n;var MB = (' + MBMake.toString() + ')();\n(' + workerMain.toString() + ')();\n';
+        gen.url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+        gen.fallback = fallback;
+        genWorker(); gen.mode = 'worker'; genPump();
+      }).catch(fallback);
+    } catch (e) { fallback(); }
+  }
+  function genWorker() {
+    var w = new Worker(gen.url);
+    w.onmessage = function (e) { var d = e.data; if (gen.worker === w) genDone(d.n, d.level, d.attempts, d.ms, 'worker'); };
+    w.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); if (gen.worker === w) gen.fallback(); };
+    gen.worker = w;
+  }
+  function genPump() {
+    if (!gen.mode) { genSetup(); return; }
+    if (gen.mode === 'setup' || gen.job) return;
+    while (gen.queue.length && gen.cache[gen.queue[0]]) gen.queue.shift();
+    if (!gen.queue.length) return;
+    var n = gen.queue.shift();
+    gen.job = { n: n, t0: performance.now() };
+    if (gen.mode === 'worker') gen.worker.postMessage({ n: n });
+    else gen.job.maker = new MB.Maker(n);
+  }
+  // main-thread fallback: a slice of the work each frame (more while the player is waiting for it)
+  function genSlice() {
+    if (gen.mode !== 'main' || !gen.job || !gen.job.maker) return;
+    var m = gen.job.maker, ms = isOpen('ovMake') || !S ? 40 : 4;
+    if (m.run(ms)) { var r = m.result; genDone(gen.job.n, r ? r.level : null, r ? r.attempts : 0, Math.round(performance.now() - gen.job.t0), 'main'); }
+  }
+  function genDone(n, level, attempts, ms, how) {
+    if (!level) { // never seen in testing (40 attempts all failed): play a proven banked fort under this number instead
+      level = JSON.parse(JSON.stringify(WORLD.levels[(n - 1) % BANKN])); level.n = n; attempts = -1;
+    }
+    genKeep(n, level);
+    gen.log.push({ n: n, ms: ms, attempts: attempts, how: how, wall: Math.round(performance.now() - (gen.job ? gen.job.t0 : 0)) });
+    if (gen.job && gen.job.n === n) gen.job = null;
+    if (gen.waitI === n - 1 && isOpen('ovMake')) startLevel(n - 1);
+    genPump();
+  }
+  function waitFor(i) {
+    gen.waitI = i;
+    $('makeText').textContent = 'Making level ' + (i + 1) + '\u2026';
+    $('ovMake').classList.add('show');
+    genWant(i + 1, true);
+  }
+
+  // ================= settings (pause card) =================
+  function syncToggles() {
+    $('togMusic').classList.toggle('on', settings.music);
+    $('togSound').classList.toggle('on', settings.sound);
+    $('togAds').classList.toggle('on', Goobs.adsOn());
+    $('adEvery').textContent = settings.adEvery;
+    $('adRow').classList.toggle('off', !Goobs.adsOn());
+    SND.setSound(settings.sound); SND.setMusic(settings.music && !!S && !isOpen('scLevels'));
+  }
+  function openPause(fromLevels) {
+    $('pauseTitle').textContent = fromLevels ? 'Settings' : 'Paused';
+    $('pauseActions').style.display = fromLevels ? 'none' : '';
+    $('ovPause').classList.add('show');
+  }
+
+  // ================= main loop =================
+  var last = 0;
+  function frame(tms) {
+    requestAnimationFrame(frame);
+    var t = tms / 1000, dt = Math.min(0.05, last ? t - last : 0); last = t;
+    if (S && !paused()) {
+      acc += dt;
+      var n = 0;
+      while (acc >= MB.DT && n < 4) {
+        MB.step(S); acc -= MB.DT; n++;
+        if (phase === 'flight' && S.bird && S.flock.indexOf(S.bird) >= 0 && (S.time * 60 | 0) % 3 === 0) { var p = S.bird.getPosition(); if (trail.length < 400) trail.push([p.x, p.y]); }
+      }
+      if (n === 4) acc = 0;
+      drainEvents();
+      flow(dt);
+      stepParts(dt);
+      updateCam(dt);
+    }
+    genSlice();
+    render(t);
+    renderHUD();
+    if (S) renderSkip();
+  }
+
+  function init() {
+    cv.addEventListener('pointerdown', onDown);
+    cv.addEventListener('pointermove', onMove);
+    cv.addEventListener('pointerup', onUp);
+    cv.addEventListener('pointercancel', onUp);
+    document.addEventListener('touchmove', function (e) { if (e.target === cv) e.preventDefault(); }, { passive: false });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { SND.unlock(); }, { passive: true }); });
+    window.addEventListener('resize', resize);
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(document.documentElement);
+    $('btnHome').addEventListener('click', function () { Goobs.home(); });
+    $('btnSettings').addEventListener('click', function () { openPause(true); });
+    $('btnPause').addEventListener('click', function () { openPause(false); });
+    $('btnRestart').addEventListener('click', function () { if (S) startLevel(li); });
+    $('btnResume').addEventListener('click', function () { $('ovPause').classList.remove('show'); });
+    $('btnPRestart').addEventListener('click', function () { $('ovPause').classList.remove('show'); startLevel(li); });
+    $('btnPLevels').addEventListener('click', function () { $('ovPause').classList.remove('show'); showLevels(); });
+    $('ovPause').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('btnBirdOk').addEventListener('click', function () { $('ovBird').classList.remove('show'); });
+    $('togMusic').addEventListener('click', function () { settings.music = !settings.music; saveSettings(); syncToggles(); });
+    $('togSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncToggles(); SND.ding(); });
+    $('togAds').addEventListener('click', function () { Goobs.setAds(!Goobs.adsOn()); syncToggles(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncToggles(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncToggles(); });
+    $('wPrev').addEventListener('click', function () { showLevels(selW - 1); });
+    $('wNext').addEventListener('click', function () { showLevels(selW + 1); });
+    $('btnMakeLevels').addEventListener('click', function () { $('ovMake').classList.remove('show'); gen.waitI = -1; showLevels(); });
+    $('lsGrid').addEventListener('click', function (e) {
+      var b = e.target.closest('.mlv'); if (!b) return;
+      var i = +b.dataset.i;
+      if (i > meta.cur) { toast(i - 1 > meta.cur ? 'Clear level ' + (meta.cur + 1) + ' first' : 'Clear level ' + i + ' first'); return; }
+      SND.unlock(); startLevel(i); syncToggles();
+    });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) SND.pauseMusic(); else if (S && settings.music) SND.resumeMusic(); });
+    resize();
+    syncToggles();
+    showLevels();
+    requestAnimationFrame(frame);
+    Goobs.markPlayed('meanbirds');
+    Goobs.initUpdates({ onVersions: function (v) { $('version').textContent = 'Mean Birds ' + (v.meanbirds || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+
+  // hook for automated tests
+  window.__mb = { get S() { return S; }, get phase() { return phase; }, get cam() { return cam; }, start: startLevel, launch: doLaunch, levels: function () { return WORLD.levels; }, levelAt: levelAt, gen: gen, genWant: genWant, showLevels: showLevels,
+    setCur: function (i) { meta.cur = i; saveMeta(); }, get li() { return li; }, meta: function () { return meta; }, scores: function () { return scores; }, useAbility: function () { return MB.useAbility(S); }, sx: sx, sy: sy };
+
+  init();
+})();
+</script>
+</body>
+</html>

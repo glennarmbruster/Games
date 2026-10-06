@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Pin High can't open, say so on screen (never a blank page) */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__ghReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eaf6ea;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Pin High didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      var b = document.createElement('button'); b.textContent = 'All games'; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:#5a54f0'; b.onclick = function () { location.href = '../../'; }; d.appendChild(b);
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__ghReady) fail('It took too long to start.'); }, 12000);
+})();
+</script>
+<title>Pin High</title>
+<style>
+/* Pin High styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand h1 { font-size: 22px; }
+.ghapp { gap: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; }
+.stage { position: relative; flex: 1; overflow: hidden; touch-action: none; background: #8fd0ff; border-radius: 18px; margin: 0 8px; box-shadow: var(--shadow); user-select: none; -webkit-user-select: none; }
+.stage canvas#cv { display: block; width: 100%; height: 100%; touch-action: none; }
+.loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; color: #1b3a6b; pointer-events: none; }
+.loading.hide { display: none; }
+/* HUD */
+.hud { position: absolute; left: 8px; right: 8px; top: 8px; pointer-events: none; display: flex; flex-direction: column; gap: 6px; }
+.hrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+.pill { background: rgba(16,28,48,.72); color: #fff; font-weight: 800; font-size: 14px; padding: 6px 11px; border-radius: 12px; line-height: 1.25; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.pill.small { font-size: 12.5px; font-weight: 700; }
+.pill b { font-weight: 900; }
+.pill .sc { display: inline-block; min-width: 26px; text-align: center; border-radius: 8px; padding: 1px 6px; margin-left: 4px; background: #fff; color: #1b1f33; font-weight: 900; }
+.wind { display: flex; align-items: center; gap: 4px; background: rgba(16,28,48,.72); color: #fff; border-radius: 12px; padding: 5px 9px; font-weight: 900; font-size: 16px; }
+.wind svg { width: 22px; height: 22px; transition: transform .3s; }
+.wind small { font-size: 10px; font-weight: 700; opacity: .8; }
+.mini { width: 72px; height: 108px; border-radius: 10px; background: rgba(16,28,48,.55); border: 2px solid rgba(255,255,255,.6); pointer-events: auto; }
+.msg { align-self: center; margin-top: 8px; background: rgba(255,255,255,.94); color: #1b1f33; font-weight: 900; font-size: 18px; padding: 8px 16px; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.2); opacity: 0; transition: opacity .3s; text-align: center; max-width: 92%; }
+.msg.show { opacity: 1; }
+.msg small { display: block; font-size: 13px; font-weight: 700; color: #4a5268; }
+.readout { align-self: center; display: none; grid-template-columns: repeat(3, auto); gap: 4px 14px; background: rgba(16,28,48,.8); color: #fff; padding: 8px 14px; border-radius: 14px; font-size: 12px; font-weight: 700; }
+.readout.show { display: grid; }
+.readout b { display: block; font-size: 17px; font-weight: 900; }
+/* controls */
+.ctl { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.ctlrow { display: flex; gap: 6px; align-items: stretch; }
+.cbtn { border: 0; border-radius: 12px; background: rgba(255,255,255,.92); color: #1b1f33; font: inherit; font-weight: 900; font-size: 20px; min-width: 38px; padding: 0 8px; box-shadow: 0 2px 8px rgba(0,0,0,.18); display: flex; align-items: center; justify-content: center; }
+.cbtn.wide { font-size: 13px; min-width: 64px; }
+.cbtn svg { width: 22px; height: 22px; }
+.cbtn:active { transform: scale(.96); }
+.club { flex: 1; min-width: 0; background: rgba(255,255,255,.92); border-radius: 12px; text-align: center; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.18); line-height: 1.1; }
+.club b { display: block; font-size: 15px; color: #1b1f33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.club small { font-size: 12px; font-weight: 800; color: #4a5268; }
+.spinball { position: relative; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #d6dbe6); border: 1.5px solid #9aa6c0; display: block; }
+.spinball i { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #e8354a; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.pad { position: relative; height: 84px; border-radius: 16px; background: rgba(16,28,48,.55); border: 2px solid rgba(255,255,255,.35); touch-action: none; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.pad:active { background: rgba(16,28,48,.66); }
+.padtip { color: rgba(255,255,255,.95); font-weight: 900; font-size: 16px; pointer-events: none; text-align: center; padding: 0 10px; }
+/* the swing meter stands upright at the right edge: the marker climbs for power, then drops back to the green zone */
+.vmeter { position: absolute; right: 12px; bottom: calc(100% + 6px); width: 34px; height: clamp(150px, 36vh, 300px); border-radius: 17px; background: linear-gradient(0deg, #2d3a5a, #3a4a78); border: 2px solid rgba(255,255,255,.8); box-shadow: 0 4px 14px rgba(0,0,0,.25); overflow: visible; pointer-events: none; }
+.vmeter .mzone { position: absolute; left: 0; right: 0; background: rgba(90,255,150,.9); }
+.vmeter .m100 { position: absolute; left: -3px; right: -3px; height: 3px; margin-bottom: -1.5px; background: #fff; border-radius: 2px; }
+.vmeter .mfill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; border-radius: 0 0 15px 15px; background: linear-gradient(0deg, rgba(255,210,30,.45), rgba(255,120,60,.9)); }
+.vmeter .mpow { position: absolute; left: -4px; right: -4px; height: 4px; margin-bottom: -2px; background: #ff3d4f; border-radius: 2px; display: none; }
+.vmeter .mhead { position: absolute; left: -7px; right: -7px; height: 7px; margin-bottom: -3.5px; border-radius: 4px; background: #fff; box-shadow: 0 0 8px #fff, 0 1px 3px rgba(0,0,0,.4); }
+.vmeter .mlab { position: absolute; right: calc(100% + 5px); font-size: 10.5px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); margin-bottom: -7px; }
+.vmeter .mlab.zone { color: #5aff96; }
+.vmeter.swipe .mzone, .vmeter.swipe .mhead, .vmeter.swipe .mlab.zone { display: none; }
+.dropbtn { position: absolute; left: 10px; bottom: calc(100% + 6px); border: 0; border-radius: 12px; background: rgba(255,255,255,.94); color: #1b1f33; font: inherit; font-weight: 900; font-size: 13px; padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,.2); display: none; }
+.dropbtn.show { display: block; }
+.spinpad { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); background: rgba(255,255,255,.96); border-radius: 18px; padding: 12px; width: 220px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.3); display: none; }
+.spinpad.show { display: block; }
+.spinpad small { display: block; color: #4a5268; font-weight: 700; font-size: 11.5px; margin: 8px 0; }
+.spinbig { position: relative; width: 150px; height: 150px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #cfd6e4); border: 3px solid #9aa6c0; touch-action: none; }
+.spinbig::before, .spinbig::after { content: ""; position: absolute; background: rgba(0,0,0,.12); }
+.spinbig::before { left: 50%; top: 8%; bottom: 8%; width: 2px; } .spinbig::after { top: 50%; left: 8%; right: 8%; height: 2px; }
+.spinbig i { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #e8354a; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.spinpad .btn { width: 100%; }
+.actions.col { flex-direction: column; }
+.optlbl { font-weight: 800; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 12px 2px 6px; }
+.optlbl:first-child { margin-top: 2px; }
+.seg { display: flex; gap: 3px; background: var(--surface-2); border-radius: 14px; padding: 3px; }
+.seg button { flex: 1; font: inherit; font-weight: 800; font-size: 14px; border: 0; border-radius: 11px; padding: 9px 4px; background: transparent; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.note { color: var(--muted); font-size: 13px; margin: 8px 2px 4px; }
+.cardicon svg { border-radius: 16px; }
+.hideui .ctl .ctlrow, .hideui .ctl .pad, .hideui .ctl .vmeter, .hideui .ctl .dropbtn { visibility: hidden; }
+/* scorecard */
+.sctable { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; margin: 4px 0 8px; }
+.sctable th, .sctable td { padding: 5px 1px; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
+.sctable th { font-weight: 800; color: var(--muted); font-size: 11.5px; }
+.sctable td:first-child, .sctable th:first-child { width: 44px; text-align: left; font-weight: 800; color: var(--muted); font-size: 11.5px; padding-left: 2px; }
+.sctable .tot { font-weight: 900; }
+.sctable th:last-child { width: 30px; }
+.sctable .cur { background: rgba(90,84,240,.1); }
+.sc-n { display: inline-flex; align-items: center; justify-content: center; min-width: 23px; height: 23px; font-weight: 900; color: var(--ink); }
+.sc-eagle { border-radius: 50%; background: #ffc93c; color: #3a2a00; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #ffc93c; }
+.sc-birdie { border-radius: 50%; background: #ff5a6a; color: #fff; }
+.sc-bogey { border-radius: 5px; background: #8cc8ff; color: #10284a; }
+.sc-double { border-radius: 5px; background: #3d6fe0; color: #fff; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #3d6fe0; }
+.sclegend { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted); margin: 2px 0 6px; }
+.sclegend span { display: inline-flex; align-items: center; gap: 4px; }
+.sclegend i { display: inline-block; width: 12px; height: 12px; }
+.scsum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 6px 0; }
+.scsum div { background: var(--surface-2); border-radius: 12px; padding: 8px 4px; text-align: center; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.scsum b { display: block; font-size: 19px; color: var(--ink); font-weight: 900; }
+.card .sctable { font-size: 12px; }
+.card .sc-n { min-width: 20px; height: 20px; }
+#ovMenu .btn[hidden] { display: none; }
+
+/* Full screen (0.3.0, Glenn: "every game full screen", Cindy: "it's too small"): the course fills the whole phone edge to
+   edge (no rounded stage), the kit's top row floats on the sky (html.gg-fs-over) with back, Sound and Menu; the hole and
+   wind pills sit under it and the swing controls float at the bottom, clear of the home bar. The camera keeps its framing
+   of the space below the top row, so the ball still sits just above the swing pad (scene.js resize). */
+.fslbl { display: none; }
+.ggmenu .fslbl { display: inline; }
+html.gg-fs-over .ghapp { padding: 0; }
+html.gg-fs-over .stagewrap { position: fixed; inset: 0; width: auto; margin: 0; }
+html.gg-fs-over .stage { margin: 0; border-radius: 0; box-shadow: none; }
+html.gg-fs-over .hud { top: calc(env(safe-area-inset-top, 0px) + 56px); left: calc(env(safe-area-inset-left, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px); }
+html.gg-fs-over .ctl { padding: 8px calc(env(safe-area-inset-right, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 8px) calc(env(safe-area-inset-left, 0px) + 10px); }
+html.gg-fs-over .spinpad { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px); }
+/* taller phones: a taller swing pad and bigger club buttons */
+@media (min-height: 760px) {
+  html.gg-fs .pad { height: 96px; }
+  html.gg-fs .ctlrow .cbtn, html.gg-fs .ctlrow .club { min-height: 48px; }
+  html.gg-fs .club b { font-size: 16px; }
+}
+
+/* Players and modes (Phase 3): colour dots, the player picker, the hand-over banner, everyone's scores */
+.pdot, .tdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: 0; box-shadow: 0 0 0 1.5px rgba(255,255,255,.9); flex: none; }
+.tdot { box-shadow: 0 0 0 1.5px rgba(0,0,0,.25); }
+.optlbl small { text-transform: none; letter-spacing: 0; font-weight: 700; }
+.pchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pchip { font: inherit; font-weight: 800; font-size: 15px; border: 2px solid var(--line-strong, rgba(0,0,0,.15)); background: var(--surface); color: var(--ink); border-radius: 20px; padding: 7px 13px; display: inline-flex; align-items: center; }
+.pchip.on { background: var(--surface-2); border-color: var(--accent); }
+.pchip.add { border-style: dashed; color: var(--muted); }
+.pchips.full .pchip:not(.on) { opacity: .4; pointer-events: none; }
+.pcard { border-radius: 16px; background: var(--surface-2); padding: 8px 8px 8px; margin-bottom: 8px; border-left: 6px solid var(--pc); }
+.phead { display: flex; align-items: center; gap: 8px; margin: 0 2px 6px; min-height: 30px; }
+.phead b { font-size: 17px; color: var(--ink); }
+.phead small { color: var(--muted); font-weight: 700; font-size: 12px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pnum { width: 22px; height: 22px; border-radius: 50%; background: var(--pc); color: #fff; font-weight: 900; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.pname { font: inherit; font-weight: 800; font-size: 16px; width: 118px; border: 2px solid var(--line-strong, rgba(0,0,0,.15)); border-radius: 10px; padding: 4px 8px; background: var(--surface); color: var(--ink); }
+.pbtns { display: flex; gap: 4px; margin-left: auto; flex: none; }
+.pmini { width: 32px; height: 30px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 900; font-size: 16px; }
+.pprefs { display: flex; gap: 6px; margin-bottom: 6px; }
+.pprefs .seg:first-child { flex: 2; } .pprefs .seg:last-child { flex: 3; }
+.seg.sm { background: var(--surface); border-radius: 11px; padding: 2px; }
+.seg.sm button { font-size: 12.5px; padding: 6px 2px; border-radius: 9px; }
+.seg.sm button.on { background: var(--pc, var(--accent)); color: #fff; box-shadow: none; }
+.seg button:disabled { opacity: .35; }
+.seg button[hidden] { display: none; }
+#ovPlayers .actions { display: flex; gap: 8px; }
+#ovPlayers .actions .btn { flex: 1; } #ovPlayers .actions .btn.red { flex: 2; }
+/* whose turn */
+.overlay.turnov { background: rgba(10,12,22,.22); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.turncard { position: relative; overflow: hidden; padding-top: 30px; }
+.turnbar { position: absolute; left: 0; right: 0; top: 0; height: 12px; background: var(--pc); }
+.turncard h2 { font-size: 30px; }
+.turncard h2::before { content: ""; display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--pc); margin-right: 9px; vertical-align: 1px; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px var(--pc); }
+.turncard p { margin: 4px 0 10px; }
+.turncard p small { font-size: 14px; }
+.turnprefs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.turnprefs span { background: var(--surface-2); color: var(--ink); border-radius: 12px; padding: 5px 10px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; }
+/* everyone's hole / standings */
+.htable { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 6px; text-align: center; }
+.htable th { font-size: 11.5px; color: var(--muted); font-weight: 800; padding: 2px 3px; }
+.htable td { padding: 4px 3px; border-top: 1px solid var(--line, rgba(0,0,0,.08)); color: var(--ink); font-weight: 700; }
+.htable td:first-child, .htable th:first-child { text-align: left; white-space: nowrap; }
+.htable td small { color: var(--muted); font-size: 11px; }
+.htable .sc-n { min-width: 24px; height: 24px; }
+.sc-pick { opacity: .55; font-style: italic; }
+.sctable.multi td:first-child, .sctable.multi th:first-child { width: 58px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sctable.multi .pdot { width: 8px; height: 8px; margin-right: 3px; }
+.sctable .mrow td { font-size: 11px; font-weight: 800; color: var(--muted); }
+.sctable sup { font-size: 8px; }
+.cstat { display: block; font-weight: 800; color: var(--ink); font-size: 15px; margin: 4px 0 6px; }
+.bests { display: block; margin-top: 6px; font-size: 12.5px; }
+#ovEnd .card { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.card .sctable.multi { font-size: 11px; }
+.card .sctable.multi .sc-n { min-width: 18px; height: 18px; }
+.seg[hidden], .optlbl[hidden] { display: none; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="gh-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#8fd0ff"/>
+<path d="M0 62 Q30 50 55 58 T100 54 V100 H0Z" fill="#5fc84b"/><path d="M0 74 Q40 64 100 72 V100 H0Z" fill="#4bab3f"/>
+<ellipse cx="62" cy="62" rx="20" ry="6" fill="#7de96b"/><ellipse cx="62" cy="62" rx="2.6" ry="1.2" fill="#0c140c"/>
+<path d="M62 62V22" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M63 22 L82 28 L63 34Z" fill="#ff3d4f"/>
+<path d="M22 70 Q38 28 60 36" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="3 4" stroke-linecap="round"/><circle cx="22" cy="72" r="5" fill="#fff" stroke="#9aa6c0" stroke-width="1.5"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></g></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4l12 4-12 4" fill="currentColor" fill-opacity=".3"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M3 14.5h18M9 4v16M15 4v16"/></g></symbol>
+<symbol id="i-players" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.2A5 5 0 0 1 21.5 19"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app ghapp" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#gh-logo"/></svg>
+      <h1>Pin High</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnCard" aria-label="Scorecard"><svg viewBox="0 0 24 24"><use href="#i-card"/></svg></button>
+      <button class="iconbtn" id="btnNewRound" aria-label="New round"><svg viewBox="0 0 24 24"><use href="#i-players"/></svg></button>
+      <button class="iconbtn" id="btnMenu" aria-label="Choose what to play"><svg viewBox="0 0 24 24"><use href="#i-flag"/></svg><span class="fslbl">Course &amp; range</span></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="loading" id="loading">Mowing the fairway&hellip;</div>
+      <div class="hud" id="hud">
+        <div class="hrow">
+          <div class="pill" id="hHole"></div>
+          <div class="wind" id="hWind"><svg viewBox="0 0 24 24"><path id="windArrow" d="M12 3l5 9h-3v9h-4v-9H7z" fill="#fff"/></svg><b id="hWindMph">0</b><small>mph</small></div>
+        </div>
+        <div class="hrow">
+          <div class="pill small" id="hShot"></div>
+          <canvas class="mini" id="mini" width="120" height="180"></canvas>
+        </div>
+        <div class="msg" id="msg"></div>
+        <div class="readout" id="readout"></div>
+      </div>
+      <div class="ctl" id="ctl">
+        <div class="ctlrow">
+          <button class="cbtn" id="clubPrev" aria-label="Longer club">&#8249;</button>
+          <div class="club" id="club"><b id="clubName">Driver</b><small id="clubDist">246 yd</small></div>
+          <button class="cbtn" id="clubNext" aria-label="Shorter club">&#8250;</button>
+          <button class="cbtn wide" id="btnType">Full</button>
+          <button class="cbtn spinbtn" id="btnSpin" aria-label="Spin"><span class="spinball"><i id="spinDot"></i></span></button>
+          <button class="cbtn" id="btnMap" aria-label="Hole map"><svg viewBox="0 0 24 24"><use href="#i-map"/></svg></button>
+        </div>
+        <div class="pad" id="pad">
+          <div class="padtip" id="padtip">Tap to swing</div>
+        </div>
+        <div class="vmeter" id="meter"><div class="mzone" id="mzone"></div><div class="mfill" id="mfill"></div><div class="m100"></div><div class="mpow" id="mpow"></div><div class="mhead" id="mhead"></div><span class="mlab top">100</span><span class="mlab zone">&#9679;</span></div>
+        <button class="dropbtn" id="btnDrop">Unplayable?</button>
+      </div>
+      <div class="spinpad" id="spinpad"><div class="spinbig" id="spinbig"><i id="spinBigDot"></i></div><small>Drag the dot: low = backspin, high = topspin, left = draw, right = fade</small><button class="btn" id="spinDone">Done</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Choose what to play -->
+<div class="overlay center" id="ovMenu">
+  <div class="card" role="dialog">
+    <div class="cardicon"><svg viewBox="0 0 100 100"><use href="#gh-logo"/></svg></div>
+    <h2>Pin High</h2>
+    <p id="menuSub">A round for 1-4 players on a brand-new course, or practice.</p>
+    <div class="actions col">
+      <button class="btn red" id="goResume">Resume</button>
+      <button class="btn red" id="goRound">New round (players, game, course)</button>
+      <button class="btn" id="goReplay">Play again</button>
+      <button class="btn" id="goHole">Willow Bend (practice hole)</button>
+      <button class="btn" id="goRange">Driving range</button>
+      <button class="btn" id="goHelp">How to play</button>
+    </div>
+  </div>
+</div>
+
+<!-- New round: who's playing, the game, holes, course (Phase 3) -->
+<div class="overlay" id="ovPlayers">
+  <div class="sheet" role="dialog" aria-label="New round">
+    <h2>New round</h2>
+    <div class="sheetbody">
+      <div class="optlbl">Who&rsquo;s playing <small>(up to 4; pass the phone)</small></div>
+      <div class="pchips" id="pChips"></div>
+      <div id="pList"></div>
+      <p class="note">The first player tees off first on hole 1. After that: honours (lowest score on the last hole), then farthest from the hole plays.</p>
+      <div class="optlbl">Game</div>
+      <div class="seg" id="segMode"><button data-v="stroke">Stroke play</button><button data-v="match">Match play</button><button data-v="skins">Skins</button></div>
+      <p class="note" id="modeNote"></p>
+      <div class="optlbl">Holes</div>
+      <div class="seg" id="segHoles"><button data-v="9">9 holes</button><button data-v="18">18 holes</button></div>
+      <div class="optlbl">Course</div>
+      <div class="seg" id="segCourse"><button data-v="new">A new course</button><button data-v="last">Play again</button></div>
+    </div>
+    <div class="actions"><button class="btn" id="btnClosePlayers">Cancel</button><button class="btn red" id="goTeeOff">Tee off</button></div>
+  </div>
+</div>
+
+<!-- Pass the phone: whose turn it is -->
+<div class="overlay center turnov" id="ovTurn">
+  <div class="card turncard" id="turnCard" role="dialog">
+    <div class="turnbar"></div>
+    <h2 id="turnName">Your turn</h2>
+    <p id="turnInfo"></p>
+    <div class="turnprefs" id="turnPrefs"></div>
+    <div class="actions"><button class="btn red" id="turnGo">Ready</button></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="optlbl" id="setWho">Who&rsquo;s practising</div>
+      <div class="seg" id="segMe"><button data-v="glenn">Glenn</button><button data-v="cindy">Cindy</button></div>
+      <div class="optlbl">Swing</div>
+      <div class="seg" id="segSwing"><button data-v="meter">3-click meter</button><button data-v="swipe">Swipe</button></div>
+      <div class="optlbl">Help with aiming</div>
+      <div class="seg" id="segAssist"><button data-v="easy">Easy</button><button data-v="pro">Pro</button><button data-v="tour">Tour</button></div>
+      <p class="note" id="assistNote"></p>
+      <div class="optlbl">Tee box</div>
+      <div class="seg" id="segTee"><button data-v="back"><i class="tdot" style="background:#2d6cdf"></i>Back</button><button data-v="mid"><i class="tdot" style="background:#f4f4f4"></i>Middle</button><button data-v="fwd"><i class="tdot" style="background:#e8354a"></i>Forward</button></div>
+      <p class="note" id="teeNote"></p>
+      <div class="optlbl">Gimmes</div>
+      <div class="seg" id="segGimme"><button data-v="0">Off</button><button data-v="2">Inside 2 ft</button><button data-v="4">Inside 4 ft</button></div>
+      <p class="note">A putt that stops this close counts as holed (one more stroke).</p>
+      <label class="row"><div>Pick up at double par<small>Keeps the round moving: a hole ends at twice its par.</small></div><span class="switch"><input type="checkbox" id="setPickup"><span></span></span></label>
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound effects<small>Swings, strikes, the cup, splashes.</small></div><span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Course sounds<small>Birds and a breeze.</small></div><span class="switch"><input type="checkbox" id="setAmb"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between holes, never during one. Shared by all Goobs-Games.</small></div><span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished holes.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Pin High</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Scorecard -->
+<div class="overlay" id="ovCard">
+  <div class="sheet" role="dialog" aria-label="Scorecard">
+    <h2 id="cardTitle">Scorecard</h2>
+    <div class="sheetbody"><div id="cardBody"></div></div>
+    <div class="actions"><button class="btn red" id="btnCloseCard">Done</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Pin High golf physics (no DOM; runs in Node for the tests). Units: meters, seconds, radians; y is up.
+   Flight: gravity, drag and Magnus lift from spin (spin axis fixed at launch, spin decays), wind that grows with
+   height. Ground: bounce with restitution and friction by surface, backspin check-up, rolling with slope and rolling
+   resistance by surface, trees (trunks bounce, canopies slow and drop the ball), water, out of bounds, the cup
+   (drop-ins, lip-outs, fast balls skipping over). Fixed 1/240 s steps. The course supplies height, normal and
+   surface lookups (see course.js). */
+var GF = (function () {
+  'use strict';
+  var G = 9.81, RHO = 1.2, R = 0.02135, M = 0.04593, A = Math.PI * R * R, DT = 1 / 240, CUP_R = 0.054, YD = 0.9144;
+  // surfaces: bounce (e), sliding friction at a bounce (mu), rolling resistance (roll, in g), spin grip on landing (grip),
+  // shot from this lie: distance (dist) and spin (spin) multipliers
+  var SURF = {
+    tee: { e: 0.36, mu: 0.3, roll: 0.085, grip: 0.8, dist: 1, spin: 1, name: 'Tee' },
+    fairway: { e: 0.36, mu: 0.3, roll: 0.085, grip: 0.8, dist: 1, spin: 1, name: 'Fairway' },
+    fringe: { e: 0.32, mu: 0.32, roll: 0.11, grip: 0.9, dist: 0.97, spin: 0.9, name: 'Fringe' },
+    green: { e: 0.3, mu: 0.3, roll: 0.056, grip: 1, dist: 1, spin: 1, name: 'Green' },
+    rough: { e: 0.2, mu: 0.5, roll: 0.26, grip: 0.45, dist: 0.86, spin: 0.55, name: 'Rough' },
+    deep: { e: 0.12, mu: 0.65, roll: 0.5, grip: 0.3, dist: 0.66, spin: 0.35, name: 'Deep rough' },
+    sand: { e: 0.05, mu: 0.85, roll: 1.1, grip: 0.2, dist: 0.8, spin: 0.7, name: 'Bunker' },
+    path: { e: 0.55, mu: 0.12, roll: 0.035, grip: 0.3, dist: 1, spin: 1, name: 'Cart path' },
+    water: { e: 0, mu: 1, roll: 9, grip: 0, dist: 0, spin: 0, name: 'Water' },
+    ob: { e: 0.2, mu: 0.5, roll: 0.3, grip: 0.4, dist: 0.8, spin: 0.5, name: 'Out of bounds' }
+  };
+  // the bag: target carry at full power (meters, no wind, from a fairway lie), launch angle and backspin
+  var CLUBS = [
+    { id: 'dr', name: 'Driver', short: 'Dr', carry: 222, launch: 12, spin: 2700, curve: 1.25 },
+    { id: '3w', name: '3 Wood', short: '3W', carry: 204, launch: 11.5, spin: 3500, curve: 1.15 },
+    { id: '5w', name: '5 Wood', short: '5W', carry: 191, launch: 12.5, spin: 4200, curve: 1.1 },
+    { id: 'hy', name: 'Hybrid', short: 'Hy', carry: 178, launch: 14, spin: 4500, curve: 1 },
+    { id: '4i', name: '4 Iron', short: '4i', carry: 168, launch: 14.5, spin: 4700, curve: 1 },
+    { id: '5i', name: '5 Iron', short: '5i', carry: 159, launch: 15.5, spin: 5200, curve: 0.95 },
+    { id: '6i', name: '6 Iron', short: '6i', carry: 150, launch: 17, spin: 5900, curve: 0.9 },
+    { id: '7i', name: '7 Iron', short: '7i', carry: 140, launch: 19, spin: 6700, curve: 0.85 },
+    { id: '8i', name: '8 Iron', short: '8i', carry: 130, launch: 21, spin: 7500, curve: 0.8 },
+    { id: '9i', name: '9 Iron', short: '9i', carry: 120, launch: 23.5, spin: 8300, curve: 0.75 },
+    { id: 'pw', name: 'Pitching Wedge', short: 'PW', carry: 108, launch: 26, spin: 8800, curve: 0.7 },
+    { id: 'gw', name: 'Gap Wedge', short: 'GW', carry: 94, launch: 29, spin: 9200, curve: 0.65 },
+    { id: 'sw', name: 'Sand Wedge', short: 'SW', carry: 79, launch: 32, spin: 9600, curve: 0.6 },
+    { id: 'lw', name: 'Lob Wedge', short: 'LW', carry: 63, launch: 36, spin: 10000, curve: 0.55 },
+    { id: 'pt', name: 'Putter', short: 'Pt', carry: 0, launch: 0, spin: 0, curve: 0, putter: true }
+  ];
+  var SHOTS = {
+    full: { name: 'Full', speed: 1, launch: 1, spin: 1 },
+    punch: { name: 'Punch', speed: 0.9, launch: 0.6, spin: 0.7 },
+    chip: { name: 'Chip', speed: 0.5, launch: 0.95, spin: 0.55 },
+    flop: { name: 'Flop', speed: 0.66, launch: 1.65, spin: 1.3 },
+    bump: { name: 'Bump & run', speed: 0.72, launch: 0.42, spin: 0.3 }
+  };
+
+  // ---------------- vectors ----------------
+  function v3(x, y, z) { return { x: x, y: y, z: z }; }
+  function cross(a, b) { return v3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x); }
+  function dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+  function len(a) { return Math.sqrt(dot(a, a)); }
+  function norm(a) { var l = len(a) || 1; return v3(a.x / l, a.y / l, a.z / l); }
+
+  // ---------------- wind ----------------
+  // course.wind = { speed (m/s at 10 m), dir (radians, the direction it blows toward, 0 = -z) }; stronger higher up
+  function windAt(course, y, groundY) {
+    var w = course && course.wind; if (!w || !w.speed) return v3(0, 0, 0);
+    var h = Math.max(0, y - (groundY || 0)), f = 0.6 + 1.1 * Math.min(1, h / 30);
+    return v3(Math.sin(w.dir) * w.speed * f, 0, -Math.cos(w.dir) * w.speed * f);
+  }
+
+  // ---------------- a ball ----------------
+  // shot: { pos, dir (unit, horizontal), speed, launch (rad), back (rad/s), side (rad/s; + curves right) }
+  function launch(course, shot) {
+    var d = norm(v3(shot.dir.x, 0, shot.dir.z)), up = v3(0, 1, 0), right = cross(d, up), c = Math.cos(shot.launch), s = Math.sin(shot.launch);
+    var b = {
+      p: v3(shot.pos.x, shot.pos.y, shot.pos.z), v: v3(d.x * c * shot.speed, s * shot.speed, d.z * c * shot.speed),
+      w: v3(right.x * shot.back, -shot.side, right.z * shot.back), state: shot.putt ? 'roll' : 'fly', t: 0, bounces: 0,
+      start: v3(shot.pos.x, shot.pos.y, shot.pos.z), apex: shot.pos.y, carry: null, lastDry: v3(shot.pos.x, shot.pos.y, shot.pos.z), lipped: 0, hitTree: 0, events: []
+    };
+    if (shot.putt) b.v = v3(d.x * shot.speed, 0, d.z * shot.speed);
+    return b;
+  }
+  function surf(course, x, z) { return course.surfaceAt(x, z); }
+  // one fixed step; returns the ball's state
+  function step(course, b) {
+    if (b.state === 'fly') fly(course, b); else if (b.state === 'roll') roll(course, b);
+    b.t += DT;
+    if (b.t > 40 && (b.state === 'fly' || b.state === 'roll')) b.state = 'stop';
+    return b.state;
+  }
+  function fly(course, b) {
+    var gy = course.heightAt(b.p.x, b.p.z), wind = windAt(course, b.p.y, gy);
+    var rel = v3(b.v.x - wind.x, b.v.y - wind.y, b.v.z - wind.z), sp = len(rel) || 1e-6, wm = len(b.w);
+    var S = R * wm / sp, Cd = 0.24 + 0.18 * S, Cl = wm > 1 ? 0.54 * Math.pow(S, 0.4) : 0;
+    var k = 0.5 * RHO * A / M, ax = -k * Cd * sp * rel.x, ay = -k * Cd * sp * rel.y - G, az = -k * Cd * sp * rel.z;
+    if (Cl) { var mag = norm(cross(b.w, rel)), f = k * Cl * sp * sp; ax += mag.x * f; ay += mag.y * f; az += mag.z * f; }
+    b.v.x += ax * DT; b.v.y += ay * DT; b.v.z += az * DT;
+    b.p.x += b.v.x * DT; b.p.y += b.v.y * DT; b.p.z += b.v.z * DT;
+    var decay = 1 - DT / 22; b.w.x *= decay; b.w.y *= decay; b.w.z *= decay;
+    if (b.p.y > b.apex) b.apex = b.p.y;
+    trees(course, b);
+    track(course, b);
+    var h = course.heightAt(b.p.x, b.p.z);
+    if (b.p.y - R <= h) {
+      var su = surf(course, b.p.x, b.p.z);
+      if (b.carry === null) { b.carry = v3(b.p.x, h, b.p.z); b.events.push({ t: 'land', s: su, x: b.p.x, z: b.p.z }); }
+      if (su === 'water') { b.state = 'water'; b.p.y = course.waterLevel ? course.waterLevel(b.p.x, b.p.z) : h; b.events.push({ t: 'splash' }); return; }
+      if (cupCheck(course, b, true)) return;
+      bounce(course, b, su, h);
+    }
+  }
+  function bounce(course, b, su, h) {
+    var n = course.normalAt(b.p.x, b.p.z), S = SURF[su] || SURF.rough;
+    var vn = dot(b.v, n); if (vn >= 0) { b.p.y = h + R; return; }
+    var vt = v3(b.v.x - vn * n.x, b.v.y - vn * n.y, b.v.z - vn * n.z);
+    var e = S.e * (1 - Math.min(0.55, -vn / 45));
+    var newVn = -vn * e;
+    // friction and backspin grip: backspin pulls the ball back (check-up; a lot of it on a green makes it spin back)
+    var vtl = len(vt), dirT = vtl > 1e-6 ? v3(vt.x / vtl, vt.y / vtl, vt.z / vtl) : v3(0, 0, 0);
+    var right = norm(cross(dirT, n)), backspin = dot(b.w, right); // positive = backspin relative to travel
+    var keep = Math.max(0, vtl * (1 - S.mu)), check = Math.max(0, backspin) * R * S.grip * 0.55;
+    var nt = keep - check; if (nt < -vtl * 0.35) nt = -vtl * 0.35;
+    b.v = v3(dirT.x * nt + n.x * newVn, dirT.y * nt + n.y * newVn, dirT.z * nt + n.z * newVn);
+    b.w.x *= 0.45; b.w.y *= 0.35; b.w.z *= 0.45;
+    b.p.y = h + R + 1e-4; b.bounces++;
+    b.events.push({ t: 'bounce', s: su, v: -vn });
+    if (newVn < 0.9 || su === 'sand' || b.bounces > 12) { b.state = 'roll'; b.v.y = 0; }
+  }
+  function roll(course, b) {
+    var su = surf(course, b.p.x, b.p.z);
+    if (su === 'water') { b.state = 'water'; b.events.push({ t: 'splash' }); return; }
+    var S = SURF[su] || SURF.rough, n = course.normalAt(b.p.x, b.p.z);
+    // gravity along the slope (horizontal part of the normal), and rolling resistance against the motion
+    var gx = n.x * G * n.y, gz = n.z * G * n.y, vx = b.v.x, vz = b.v.z, sp = Math.hypot(vx, vz);
+    var slopeA = Math.hypot(gx, gz), res = S.roll * G;
+    if (sp < 0.02) {
+      if (slopeA <= res * 1.05) { b.v = v3(0, 0, 0); b.state = 'stop'; b.p.y = course.heightAt(b.p.x, b.p.z) + R; b.events.push({ t: 'stop', s: su }); return; }
+      vx += gx * DT; vz += gz * DT;
+    } else {
+      vx += (gx - res * vx / sp) * DT; vz += (gz - res * vz / sp) * DT;
+      var nsp = Math.hypot(vx, vz); if (dot(v3(vx, 0, vz), v3(b.v.x, 0, b.v.z)) < 0 && slopeA <= res) { vx = 0; vz = 0; }
+      else if (nsp < 0.015 && slopeA <= res * 1.05) { vx = 0; vz = 0; }
+    }
+    b.v = v3(vx, 0, vz);
+    b.p.x += vx * DT; b.p.z += vz * DT; b.p.y = course.heightAt(b.p.x, b.p.z) + R;
+    trees(course, b);
+    track(course, b);
+    cupCheck(course, b, false);
+  }
+  // the cup: slow enough near the middle drops in; a little too fast catches the lip and turns away; fast skips over
+  function cupCheck(course, b, flying) {
+    var c = course.pin; if (!c || b.state === 'holed') return false;
+    var dx = b.p.x - c.x, dz = b.p.z - c.z, d = Math.hypot(dx, dz);
+    if (d > CUP_R) { b.overCup = false; b.lipLock = false; return false; }
+    if (b.lipLock) { var ox = dx / (d || 1), oz = dz / (d || 1); b.v.x += ox * 0.8 * DT * 60; b.v.z += oz * 0.8 * DT * 60; return false; } // riding the lip on its way out
+    var sp = Math.hypot(b.v.x, b.v.z);
+    if (flying) { if (Math.abs(b.v.y) < 6 && sp < 4 && d < CUP_R - R * 0.4) { holed(b, c); return true; } return false; }
+    // how far off-center the ball's line passes the middle of the cup decides whether it can drop
+    var off = sp > 1e-4 ? Math.abs((b.v.x * dz - b.v.z * dx) / sp) : d, f = Math.max(0, 1 - Math.pow(Math.min(off, CUP_R) / CUP_R, 2)), vcap = 0.35 + 1.25 * Math.sqrt(f); d = off;
+    if (sp < vcap) { holed(b, c); return true; }
+    if (!b.overCup) {
+      b.overCup = true;
+      if (sp < vcap + 0.9) { // lip-out: turned away from the middle and slowed
+        var side = (dx * b.v.z - dz * b.v.x) >= 0 ? 1 : -1, ang = side * (0.35 + 0.9 * (d / CUP_R)) * (1 - (sp - vcap) / 0.9 * 0.5);
+        var ca = Math.cos(ang), sa = Math.sin(ang), nx = b.v.x * ca - b.v.z * sa, nz = b.v.x * sa + b.v.z * ca;
+        b.v = v3(nx * 0.62, 0, nz * 0.62); b.lipped++; b.lipLock = true; b.events.push({ t: 'lip' });
+      } else b.events.push({ t: 'skip' });
+    }
+    return false;
+  }
+  function holed(b, c) { b.state = 'holed'; b.p = v3(c.x, course0h(c), c.z); b.v = v3(0, 0, 0); b.events.push({ t: 'holed' }); }
+  function course0h(c) { return (c.y || 0) - 0.06; }
+  // trees: trunks are posts the ball bounces off; canopies soak up speed so the ball drops
+  function trees(course, b) {
+    var list = course.treesNear ? course.treesNear(b.p.x, b.p.z) : course.trees; if (!list) return;
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i], dx = b.p.x - t.x, dz = b.p.z - t.z, d2 = dx * dx + dz * dz;
+      if (d2 > (t.r + 1) * (t.r + 1)) continue;
+      var base = t.y, top = base + t.h, cy = base + t.h - t.r * 0.9;
+      var d = Math.sqrt(d2);
+      if (b.p.y < cy - t.r * 0.5 && b.p.y > base && d < t.tr + R) { // trunk
+        var nx = dx / (d || 1), nz = dz / (d || 1), vn = b.v.x * nx + b.v.z * nz;
+        if (vn < 0) { b.v.x -= 1.5 * vn * nx; b.v.z -= 1.5 * vn * nz; b.v.x *= 0.7; b.v.z *= 0.7; b.p.x = t.x + nx * (t.tr + R); b.p.z = t.z + nz * (t.tr + R); b.events.push({ t: 'trunk' }); b.hitTree++; }
+        continue;
+      }
+      var ey = (b.p.y - cy) / (t.r * 0.85);
+      if (d * d / (t.r * t.r) + ey * ey < 1 && b.state === 'fly') { // canopy
+        var damp = Math.exp(-DT * 7); b.v.x *= damp; b.v.z *= damp; if (b.v.y > 0) b.v.y *= damp;
+        if (!b.inLeaves) { b.inLeaves = true; b.events.push({ t: 'leaves' }); b.hitTree++; }
+        return;
+      }
+    }
+    b.inLeaves = false;
+  }
+  // remember the last spot outside water, for the drop
+  function track(course, b) {
+    if (course.inWaterArea && !course.inWaterArea(b.p.x, b.p.z)) { b.lastDry.x = b.p.x; b.lastDry.z = b.p.z; }
+  }
+  // run a whole shot; returns the ball at rest (or in water, out of bounds, holed)
+  function simulate(course, shot, maxT) {
+    var b = launch(course, shot), n = 0, lim = (maxT || 40) / DT;
+    while ((b.state === 'fly' || b.state === 'roll') && n++ < lim) step(course, b);
+    return b;
+  }
+
+  // ---------------- shot making ----------------
+  // speed for a club at full power (found by search at start-up so every club carries its target)
+  var speedCache = {};
+  var flat = { heightAt: function () { return 0; }, normalAt: function () { return v3(0, 1, 0); }, surfaceAt: function () { return 'fairway'; }, wind: null };
+  function carryFor(club, speed, launchDeg, back) {
+    var b = launch(flat, { pos: v3(0, R, 0), dir: v3(0, 0, -1), speed: speed, launch: launchDeg * Math.PI / 180, back: back * Math.PI / 30, side: 0 });
+    while (b.state === 'fly') step(flat, b);
+    return b.carry ? -b.carry.z : 0;
+  }
+  function fullSpeed(club) {
+    if (speedCache[club.id]) return speedCache[club.id];
+    var lo = 10, hi = 95;
+    for (var i = 0; i < 26; i++) { var mid = (lo + hi) / 2; if (carryFor(club, mid, club.launch, club.spin) < club.carry) lo = mid; else hi = mid; }
+    speedCache[club.id] = (lo + hi) / 2; return speedCache[club.id];
+  }
+  // turn a swing into ball launch numbers.
+  // sw: { club, power (0..1.1), acc (-1 hook .. +1 slice; 0 = pure), strike (0..1 quality), spinX (-1 draw .. 1 fade), spinY (-1 back .. 1 top),
+  //       type ('full' etc.), lie (surface name), aim (radians offset added by uneven lies), dir (unit), pos, puttScale (m, putter only) }
+  function makeShot(course, sw) {
+    var club = sw.club, S = SURF[sw.lie] || SURF.fairway, T = SHOTS[sw.type || 'full'] || SHOTS.full;
+    if (club.putter) {
+      // a putt starts rolling: speed from the distance the meter was set to on this surface's resistance
+      var rs = SURF.green.roll * G, dist = Math.max(0.2, sw.power * sw.puttScale);
+      var ang = sw.acc * 0.045, dx = sw.dir.x * Math.cos(ang) - sw.dir.z * Math.sin(ang), dz = sw.dir.x * Math.sin(ang) + sw.dir.z * Math.cos(ang);
+      return { pos: sw.pos, dir: v3(dx, 0, dz), speed: Math.sqrt(2 * rs * dist) * (1 + (sw.strike != null ? (sw.strike - 0.9) * 0.1 : 0)), launch: 0, back: 0, side: 0, putt: true };
+    }
+    var p = Math.max(0.05, sw.power), over = Math.max(0, p - 1);
+    var sp = fullSpeed(club) * Math.pow(p, 1 / 1.45) * T.speed * (sw.strike != null ? 0.9 + 0.1 * sw.strike : 1);
+    // lie: rough and sand cost distance and spin; a driver from anything but a tee or fairway is a poor idea
+    var lieDist = S.dist, lieSpin = S.spin;
+    if (sw.lie === 'sand') { if (sw.greenside) { lieDist = 0.62; lieSpin = 1.1; } else { lieDist = club.id === 'dr' || club.id === '3w' ? 0.45 : 0.9; lieSpin = 0.7; } }
+    if (club.id === 'dr' && sw.lie !== 'tee') lieDist *= sw.lie === 'fairway' ? 0.93 : 0.8;
+    sp *= Math.sqrt(lieDist);
+    var launchDeg = Math.min(58, club.launch * T.launch * (sw.lie === 'rough' || sw.lie === 'deep' ? 0.92 : 1));
+    // uphill lie: the slope adds loft (higher, shorter); downhill takes it away (lower, runs out)
+    var slope = Math.max(-0.25, Math.min(0.25, sw.slope || 0));
+    if (slope) { launchDeg = Math.max(3, Math.min(60, launchDeg + Math.atan(slope) * 180 / Math.PI * 0.8)); sp *= 1 - Math.max(0, slope) * 0.35; }
+    var back = club.spin * T.spin * lieSpin * (1 - 0.45 * (sw.spinY || 0)); // spin control: bottom of the ball = more backspin
+    var acc = sw.acc || 0, amp = 1 + over * 7;
+    var side = (acc * amp * 1150 * club.curve + (sw.spinX || 0) * 1100 * club.curve) * (T.spin < 0.6 ? 0.6 : 1) * lieSpin;
+    var start = (acc * amp * 0.9 - (sw.spinX || 0) * 0.8) * Math.PI / 180 + (sw.aim || 0);
+    var ca = Math.cos(start), sa = Math.sin(start), dx2 = sw.dir.x * ca - sw.dir.z * sa, dz2 = sw.dir.x * sa + sw.dir.z * ca;
+    return { pos: sw.pos, dir: v3(dx2, 0, dz2), speed: sp, launch: launchDeg * Math.PI / 180, back: Math.max(300, back) * Math.PI / 30, side: side * Math.PI / 30 };
+  }
+  function clubById(id) { for (var i = 0; i < CLUBS.length; i++) if (CLUBS[i].id === id) return CLUBS[i]; return CLUBS[0]; }
+  // the club whose full carry just covers the distance (from this lie)
+  function autoClub(dist, lie) {
+    if (lie === 'green') return CLUBS[CLUBS.length - 1];
+    var S = SURF[lie] || SURF.fairway, list = CLUBS.filter(function (c) { return !c.putter && (c.id !== 'dr' || lie === 'tee'); });
+    for (var i = list.length - 1; i >= 0; i--) if (list[i].carry * Math.sqrt(S.dist) * 1.02 >= dist) return list[i];
+    return list[0];
+  }
+  return { G: G, R: R, DT: DT, CUP_R: CUP_R, YD: YD, SURF: SURF, CLUBS: CLUBS, SHOTS: SHOTS, v3: v3, cross: cross, dot: dot, norm: norm, len: len,
+    windAt: windAt, launch: launch, step: step, simulate: simulate, makeShot: makeShot, fullSpeed: fullSpeed, clubById: clubById, autoClub: autoClub, carryFor: carryFor };
+})();
+if (typeof module !== 'undefined') module.exports = GF;
+</script>
+<script>
+/* Pin High holes: shape, height and surface of a hole (no DOM; runs in Node for the tests). A hole is described by
+   a center line from tee to green, fairway widths, elevation along the line, a green (ellipse with tilt and
+   contours), bunkers, water, trees, a cart path and out-of-bounds distance. heightAt / normalAt / surfaceAt answer
+   the physics; the scene samples the same functions to build the terrain. Hole runs from the tee (z = 0) toward -z. */
+var GC = (function () {
+  'use strict';
+  function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function sstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  // position of (x, z) against a polyline: distance along it (s), signed side distance (d, + = right of travel), total length
+  function project(line, x, z) {
+    var best = { d2: 1e18, s: 0, side: 0 }, acc = 0;
+    for (var i = 0; i < line.length - 1; i++) {
+      var a = line[i], b = line[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz, L = Math.sqrt(L2);
+      var t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)), px = a[0] + dx * t, pz = a[1] + dz * t, d2 = (x - px) * (x - px) + (z - pz) * (z - pz);
+      if (d2 < best.d2) { var cr = dx * (z - a[1]) - dz * (x - a[0]); best = { d2: d2, s: acc + L * t, side: cr > 0 ? 1 : -1 }; }
+      acc += L;
+    }
+    // travel toward -z: "right" of travel is +x
+    return { s: best.s, d: Math.sqrt(best.d2), side: best.side };
+  }
+  function lineLen(line) { var s = 0; for (var i = 0; i < line.length - 1; i++) s += Math.hypot(line[i + 1][0] - line[i][0], line[i + 1][1] - line[i][1]); return s; }
+  function interp(list, s) { if (s <= list[0][0]) return list[0][1]; for (var i = 0; i < list.length - 1; i++) if (s <= list[i + 1][0]) { var t = (s - list[i][0]) / (list[i + 1][0] - list[i][0]); t = t * t * (3 - 2 * t); return lerp(list[i][1], list[i + 1][1], t); } return list[list.length - 1][1]; }
+  function ell(e, x, z) { var c = Math.cos(e.rot || 0), s = Math.sin(e.rot || 0), dx = x - e.x, dz = z - e.z, u = (dx * c + dz * s) / e.rx, v = (-dx * s + dz * c) / e.rz; return Math.sqrt(u * u + v * v); }
+
+  // ---------------------------------------------------------------- building a hole ----------------------------------------------------------------
+  function build(def) {
+    var H = { def: def, name: def.name, par: def.par, line: def.line, len: lineLen(def.line), green: def.green, bunkers: def.bunkers || [], water: def.water || [], trees: [], wind: def.wind || null,
+      ob: def.ob || 50, rough: def.rough || 26, pins: def.pins, tees: def.tees, range: !!def.range, targets: def.targets || [] };
+    var R = rng(def.seed || 7), ph = [R() * 6.28, R() * 6.28, R() * 6.28, R() * 6.28];
+    var g = def.green;
+    H.baseAt = function (x, z) {
+      var p = project(def.line, x, z), base = interp(def.elev, p.s);
+      // rolling ground: smooth waves, gentler where you play
+      var amp = lerp(0.35, 1.6, sstep(10, 40, p.d)) * (def.flat ? 0.15 : 1);
+      var n = Math.sin(x * 0.045 + ph[0]) * Math.cos(z * 0.038 + ph[1]) + 0.6 * Math.sin(x * 0.11 + z * 0.07 + ph[2]) + 0.35 * Math.cos(x * 0.19 - z * 0.15 + ph[3]);
+      return base + n * amp + (def.sideRise || 0) * sstep(20, 60, p.d);
+    };
+    H.greenBase = H.baseAt(g.x, g.z);
+    H.greenH = function (x, z) {
+      var h = H.greenBase + (g.tilt ? (x - g.x) * g.tilt[0] + (z - g.z) * g.tilt[1] : 0);
+      (g.bumps || []).forEach(function (b) { var dx = x - b[0], dz = z - b[1]; h += b[2] * Math.exp(-(dx * dx + dz * dz) / (2 * b[3] * b[3])); });
+      return h;
+    };
+    H.heightAt = function (x, z) {
+      var h = H.baseAt(x, z);
+      // tee boxes: flat, a little raised
+      (def.tees ? Object.keys(def.tees) : []).forEach(function (k) { var t = def.tees[k], dx = Math.abs(x - t[0]), dz = Math.abs(z - t[1]); var w = 1 - sstep(3.5, 6, Math.max(dx, dz * 0.7)); if (w > 0) h = lerp(h, H.baseAt(t[0], t[1]) + 0.35, w); });
+      // bunkers dip
+      H.bunkers.forEach(function (b) { var r = ell(b, x, z); if (r < 1.25) h -= (b.depth || 0.7) * (1 - sstep(0.55, 1.15, r)); });
+      // water basins
+      H.water.forEach(function (w) { var r = ell(w, x, z); if (r < 1.4) h = lerp(h, Math.min(h, w.level - 1.6), 1 - sstep(0.8, 1.35, r)); });
+      // the green
+      var rg = ell(g, x, z); if (rg < 1.5) h = lerp(h, H.greenH(x, z), 1 - sstep(1.1, 1.5, rg));
+      return h;
+    };
+    H.normalAt = function (x, z) { var e = 0.12, hx = H.heightAt(x + e, z) - H.heightAt(x - e, z), hz = H.heightAt(x, z + e) - H.heightAt(x, z - e); var nx = -hx / (2 * e), nz = -hz / (2 * e), l = Math.sqrt(nx * nx + 1 + nz * nz); return { x: nx / l, y: 1 / l, z: nz / l }; };
+    H.inWaterArea = function (x, z) { for (var i = 0; i < H.water.length; i++) if (ell(H.water[i], x, z) < 1) return true; return false; };
+    H.waterLevel = function (x, z) { for (var i = 0; i < H.water.length; i++) if (ell(H.water[i], x, z) < 1.4) return H.water[i].level; return -99; };
+    H.onPath = function (x, z) { if (!def.path) return false; var p = project(def.path, x, z); return p.d < 1.1; };
+    H.surfaceAt = function (x, z) {
+      if (H.inWaterArea(x, z)) return 'water';
+      var rg = ell(g, x, z); if (rg < 1) return 'green'; if (rg < 1 + 1.4 / Math.min(g.rx, g.rz)) return 'fringe';
+      for (var i = 0; i < H.bunkers.length; i++) if (ell(H.bunkers[i], x, z) < 1) return 'sand';
+      if (def.tees) for (var k in def.tees) { var t = def.tees[k]; if (Math.abs(x - t[0]) < 4 && Math.abs(z - t[1]) < 5.5) return 'tee'; }
+      if (H.onPath(x, z)) return 'path';
+      var p = project(def.line, x, z);
+      if (p.s > H.len + 45 || (p.s < 1 && z > (def.behind || 12))) return 'ob';
+      if (p.d > H.ob) return 'ob';
+      var fw = def.fairway; if (fw && p.s >= fw.from && p.s <= fw.to && p.d < interp(fw.width, p.s) + (def.range ? 0 : Math.sin(p.s * 0.08) * 1.2)) return 'fairway';
+      if (def.range && p.d < H.rough) return 'fairway';
+      if (p.d < H.rough) return 'rough';
+      return 'deep';
+    };
+    // trees, planted from the definition's rows and clumps, kept off the play areas
+    var TR = rng((def.seed || 7) * 31 + 5);
+    (def.treeRows || []).forEach(function (row) {
+      for (var s = row.from; s < row.to; s += row.gap) {
+        var j = (TR() - 0.5) * row.gap * 0.8, off = row.off + (TR() - 0.5) * row.spread, pt = pointAt(def.line, s + j, off * row.side);
+        addTree(pt[0], pt[1], TR);
+      }
+    });
+    (def.clumps || []).forEach(function (c) { for (var i = 0; i < c.n; i++) { var a = TR() * 6.28, r = Math.sqrt(TR()) * c.r; addTree(c.x + Math.cos(a) * r, c.z + Math.sin(a) * r, TR); } });
+    function addTree(x, z, R2) {
+      var su = H.surfaceAt(x, z); if (su === 'fairway' || su === 'green' || su === 'fringe' || su === 'sand' || su === 'water' || su === 'tee' || su === 'path') return;
+      if (H.trees.some(function (t) { return Math.hypot(t.x - x, t.z - z) < 4.5; })) return;
+      var pine = R2() < 0.35, h = pine ? 11 + R2() * 7 : 9 + R2() * 6, r = pine ? 2.6 + R2() * 0.8 : 3.4 + R2() * 1.6;
+      H.trees.push({ x: x, z: z, y: H.heightAt(x, z), h: h, r: r, tr: pine ? 0.3 : 0.38, pine: pine });
+    }
+    // a bucket grid so the ball only checks nearby trees
+    var cell = 12, grid = {};
+    H.trees.forEach(function (t) { var k = Math.floor(t.x / cell) + ',' + Math.floor(t.z / cell); (grid[k] = grid[k] || []).push(t); });
+    H.treesNear = function (x, z) { var cx = Math.floor(x / cell), cz = Math.floor(z / cell), out = []; for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) { var l = grid[(cx + i) + ',' + (cz + j)]; if (l) for (var q = 0; q < l.length; q++) out.push(l[q]); } return out; };
+    H.setPin = function (i) { var p = H.pins[i % H.pins.length]; H.pin = { x: p[0], z: p[1], y: H.heightAt(p[0], p[1]) }; H.pinIndex = i % H.pins.length; };
+    if (H.pins && H.pins.length) H.setPin(0);
+    H.bounds = def.bounds;
+    return H;
+  }
+  function pointAt(line, s, side) {
+    var acc = 0;
+    for (var i = 0; i < line.length - 1; i++) {
+      var a = line[i], b = line[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (s <= acc + L || i === line.length - 2) { var t = Math.max(0, Math.min(1.3, (s - acc) / L)), dx = (b[0] - a[0]) / L, dz = (b[1] - a[1]) / L; return [a[0] + dx * L * t - dz * side, a[1] + dz * L * t + dx * side]; }
+      acc += L;
+    }
+    return line[line.length - 1];
+  }
+
+  // ---------------------------------------------------------------- the test hole and the range ----------------------------------------------------------------
+  // "Willow Bend", a 390-yard par 4 bending right, a fairway bunker left at the corner, a pond short-right of a
+  // green that slopes back to front with a ridge across the middle.
+  var TEST = {
+    name: 'Willow Bend', par: 4, seed: 11,
+    line: [[0, 0], [0, -150], [14, -252], [30, -345]],
+    elev: [[0, 6], [60, 4], [200, 0.5], [290, 1.5], [360, 3]],
+    fairway: { from: 55, to: 330, width: [[55, 14], [150, 17], [230, 15], [300, 12], [330, 11]] },
+    tees: { back: [0, 12], mid: [0, 0], fwd: [0, -28] },
+    green: { x: 30, z: -345, rx: 13, rz: 16, rot: 0.25, tilt: [-0.004, -0.021], bumps: [[27, -345, 0.24, 3.2], [35, -352, -0.14, 2.5], [24, -337, 0.1, 2]] },
+    pins: [[31, -351], [25, -338], [35, -340], [28, -356]],
+    bunkers: [{ x: -16, z: -226, rx: 7, rz: 4.2, rot: 0.3, depth: 0.8 }, { x: 14, z: -343, rx: 3.8, rz: 7, rot: 0.2, depth: 0.9 }, { x: 34, z: -364, rx: 7, rz: 3.3, rot: 0.25, depth: 0.8 }, { x: 22, z: -178, rx: 4.5, rz: 3, rot: -0.2, depth: 0.7 }],
+    water: [{ x: 50, z: -316, rx: 15, rz: 12, rot: -0.4, level: 0.2 }],
+    path: [[18, 6], [22, -140], [38, -250], [52, -360]],
+    treeRows: [{ from: 10, to: 330, gap: 11, off: 33, spread: 10, side: -1 }, { from: 10, to: 220, gap: 12, off: 36, spread: 10, side: 1 }, { from: 250, to: 380, gap: 10, off: 34, spread: 8, side: 1 }],
+    clumps: [{ x: 38, z: -205, r: 7, n: 5 }, { x: -24, z: -372, r: 9, n: 6 }, { x: 58, z: -380, r: 10, n: 6 }],
+    rough: 26, ob: 52, wind: { speed: 2.7, dir: 0.9 },
+    bounds: { x0: -75, x1: 115, z0: -420, z1: 40 }
+  };
+  var RANGE = {
+    name: 'Driving range', par: 0, seed: 3, range: true, flat: true,
+    line: [[0, 0], [0, -320]], elev: [[0, 0.8], [40, 0], [320, 0]],
+    fairway: { from: 0, to: 320, width: [[0, 55], [320, 55]] }, tees: { mid: [0, 0] },
+    green: { x: 0, z: -600, rx: 1, rz: 1 }, pins: [],
+    targets: [50, 100, 150, 200, 250].map(function (yd, i) { return { yd: yd, x: [-14, 10, -8, 12, -4][i], z: -yd * 0.9144, r: 6 + i * 1.5 }; }),
+    treeRows: [{ from: 0, to: 340, gap: 12, off: 66, spread: 8, side: -1 }, { from: 0, to: 340, gap: 12, off: 66, spread: 8, side: 1 }],
+    rough: 58, ob: 90, wind: { speed: 1.8, dir: 1.3 },
+    bounds: { x0: -95, x1: 95, z0: -360, z1: 30 }
+  };
+  // how far along the center line a tee sits: forward tees are ahead of the line's start (+), back tees behind it (-).
+  // Used to aim a tee shot down the fairway and to give each tee box its own yardage (Phase 3).
+  function teeS(line, t) { var p = project(line, t[0], t[1]); return p.s > 0.5 ? p.s : -Math.hypot(t[0] - line[0][0], t[1] - line[0][1]); }
+  return { build: build, project: project, pointAt: pointAt, teeS: teeS, TEST: TEST, RANGE: RANGE, rng: rng, ell: ell };
+})();
+if (typeof module !== 'undefined') module.exports = GC;
+</script>
+<script>
+if (typeof module !== 'undefined' && typeof GC === 'undefined') { var GC = require('./course.js'); } // eslint-disable-line no-var
+/* Pin High hole and course generator (no DOM; runs in Node for the checks). Seeded: the same seed always gives the
+   same course, so a round can be replayed and shared. Holes follow rules: par 3/4/5 lengths, fairways with doglegs
+   and landing zones, fairway and greenside bunkers, ponds, trees, elevation changes, green size and contours, pin
+   positions. Every hole passes quick fairness checks before it is used (pins on gentle slopes, dry landing zones,
+   no water across the fairway's middle, green clear of water); tools/gencheck.js plays hundreds of them with a
+   simple golfer to prove they can be reached in regulation. */
+var GG = (function () {
+  'use strict';
+  var YD = 0.9144;
+  var rng = GC.rng;
+  var NAME_A = ['Maple', 'Heron', 'Pine', 'Cedar', 'Willow', 'Fox', 'Eagle', 'Silver', 'Stone', 'Meadow', 'Oak', 'Lark', 'Birch', 'Hawk', 'Clover', 'Aspen', 'Quail', 'Juniper', 'Bramble', 'Sparrow'];
+  var NAME_B = ['Run', 'Creek', 'Hollow', 'Ridge', 'Glen', 'Bluff', 'Meadows', 'Springs', 'Point', 'Crossing', 'Valley', 'Downs', 'Brook', 'Heights', 'Landing', 'Park'];
+  var HOLE_WORDS = ['Long Walk', 'The Turn', 'Cedar Corner', 'Duck Pond', 'High Tee', 'Lookout', 'Short Shot', 'Wishbone', 'Twin Oaks', 'Big Easy', 'The Gate', 'Crow’s Nest', 'Quiet Pines', 'Sandy Bend', 'Split Decision', 'Hilltop', 'Home Stretch', 'The Moat', 'Lone Pine', 'Ridge Run', 'Bramble Patch', 'Kingfisher', 'Low Road', 'The Saddle'];
+  function r2(v) { return Math.round(v * 100) / 100; }
+  function rot(x, z, a) { return [x * Math.cos(a) - z * Math.sin(a), x * Math.sin(a) + z * Math.cos(a)]; }
+  // a point along the hole's center line s meters from the tee, "off" meters to the right
+  function at(line, s, off) { return GC.pointAt(line, s, off || 0); }
+  function headingAt(line, s) { var a = at(line, s), b = at(line, s + 1); return Math.atan2(b[0] - a[0], -(b[1] - a[1])); }
+
+  // ---------------------------------------------------------------- one hole ----------------------------------------------------------------
+  function hole(seed, par, yards, windDef) {
+    var R = rng(seed), total = yards * YD, line = [[0, 0]], L1, t1, t2;
+    var pick = function (a, b) { return a + R() * (b - a); }, sign = function () { return R() < 0.5 ? -1 : 1; };
+    if (par === 3) { var a = pick(-0.18, 0.18); line.push([Math.sin(a) * total, -Math.cos(a) * total]); }
+    else if (par === 4) {
+      L1 = Math.min(total - 105, pick(212, 245)); t1 = R() < 0.22 ? 0 : sign() * pick(0.16, 0.55);
+      line.push([0, -L1]); var d2 = rot(0, -(total - L1), t1); line.push([d2[0], -L1 + d2[1]]);
+    } else {
+      L1 = pick(215, 242); var L2 = pick(185, 215), L3 = Math.max(55, total - L1 - L2); t1 = R() < 0.25 ? 0 : sign() * pick(0.15, 0.45); t2 = sign() * pick(0.1, 0.5);
+      line.push([0, -L1]); var q = rot(0, -L2, t1); var p2 = [q[0], -L1 + q[1]]; line.push(p2); var q2 = rot(0, -L3, t1 + t2); line.push([p2[0] + q2[0], p2[1] + q2[1]]);
+    }
+    var len = 0; for (var i = 0; i < line.length - 1; i++) len += Math.hypot(line[i + 1][0] - line[i][0], line[i + 1][1] - line[i][1]);
+    var end = line[line.length - 1], hd = headingAt(line, len - 2);
+    // elevation: a raised or sunken tee, rolls in between, the green up or down
+    var e0 = pick(-1.5, 7), eg = pick(-3.5, 4.5), elev = [[0, e0], [Math.min(60, len * 0.2), e0 - 1.2]];
+    if (par > 3) elev.push([len * 0.55, pick(-2, 2.5)]);
+    elev.push([len - 20, eg]); elev.push([len + 30, eg + 0.8]);
+    // fairway
+    var fairway = null;
+    if (par > 3) {
+      var w1 = pick(14, 18), w2 = pick(12, 16), wg = pick(9.5, 12);
+      var widths = [[pick(55, 85), pick(10, 13)], [L1 - 20, w1], [L1 + 25, w1 - 1]];
+      if (par === 5) widths.push([L1 + 190, w2]);
+      widths.push([len - 30, wg]); widths.push([len - 16, wg - 1]);
+      widths.sort(function (x, y) { return x[0] - y[0]; });
+      fairway = { from: widths[0][0], to: len - 16, width: widths };
+    } else if (R() < 0.5) fairway = { from: len - 45, to: len - 16, width: [[len - 45, 7], [len - 16, 9]] };
+    // green
+    var green = { x: end[0], z: end[1], rx: pick(10, 13.5), rz: pick(12, 16.5), rot: -hd + pick(-0.4, 0.4), tilt: null, bumps: [] };
+    var tiltA = hd + pick(-0.9, 0.9), tiltM = pick(0.011, 0.02); // mostly back to front (downhill toward the tee)
+    green.tilt = [r2(Math.sin(tiltA) * tiltM), r2(-Math.cos(tiltA) * tiltM)]; // rises away from the tee
+    var nb = 2 + Math.floor(R() * 2);
+    for (var k = 0; k < nb; k++) { var ba = R() * 6.28, br = Math.sqrt(R()) * 0.7; green.bumps.push([r2(green.x + Math.cos(ba) * green.rx * br), r2(green.z + Math.sin(ba) * green.rz * br), r2(sign() * pick(0.1, 0.26)), r2(pick(2, 3.6))]); }
+    // bunkers
+    var bunkers = [];
+    if (par > 3) {
+      var nfb = 1 + (R() < 0.5 ? 1 : 0);
+      for (k = 0; k < nfb; k++) { var sd = sign(), s = L1 + pick(-15, 30), off = sd * (w1 + pick(1, 6)), bp = at(line, s, off); bunkers.push({ x: r2(bp[0]), z: r2(bp[1]), rx: r2(pick(4.5, 8)), rz: r2(pick(3, 4.5)), rot: r2(-headingAt(line, s) + pick(-0.4, 0.4)), depth: 0.4 }); }
+    }
+    var ngb = 1 + Math.floor(R() * 3), used = [];
+    for (k = 0; k < ngb; k++) {
+      var ga, tries = 0; do { ga = hd + Math.PI + pick(-2.3, 2.3); tries++; } while (tries < 20 && used.some(function (u) { return Math.abs(Math.atan2(Math.sin(u - ga), Math.cos(u - ga))) < 0.9; }));
+      used.push(ga);
+      var gr = 1.32, gx = green.x + Math.sin(ga) * green.rx * gr * 1.05, gz = green.z - Math.cos(ga) * green.rz * gr * 1.05;
+      bunkers.push({ x: r2(gx), z: r2(gz), rx: r2(pick(3.5, 6.5)), rz: r2(pick(2.5, 3.8)), rot: r2(-ga + Math.PI / 2), depth: 0.9 });
+    }
+    // water
+    var water = [];
+    if (R() < (par === 3 ? 0.5 : 0.38)) {
+      if (par === 3 || R() < 0.45) { // in front of the green, a little to one side
+        var ws = len - pick(38, 55), wo = sign() * pick(4, 14), wp = at(line, ws, wo);
+        water.push({ x: r2(wp[0]), z: r2(wp[1]), rx: r2(pick(10, 16)), rz: r2(pick(7, 11)), rot: r2(-headingAt(line, ws) + pick(-0.5, 0.5)), level: 0 });
+      } else { // beside the landing zone
+        var ls = L1 + pick(-10, 35), lo = sign() * ((fairway ? w1 : 12) + pick(12, 20)), lp = at(line, ls, lo);
+        water.push({ x: r2(lp[0]), z: r2(lp[1]), rx: r2(pick(12, 20)), rz: r2(pick(9, 14)), rot: r2(pick(-1, 1)), level: 0 });
+      }
+    }
+    // trees: down both sides, and a clump on the inside of a dogleg
+    var treeRows = [{ from: 10, to: len - 10, gap: pick(9, 13), off: pick(31, 37), spread: 9, side: -1 }, { from: 10, to: len - 10, gap: pick(9, 13), off: pick(31, 37), spread: 9, side: 1 }];
+    var clumps = [];
+    if (t1) { var cp = at(line, L1 + 12, (t1 > 0 ? 1 : -1) * 26); clumps.push({ x: r2(cp[0]), z: r2(cp[1]), r: pick(6, 10), n: 5 + Math.floor(R() * 4) }); }
+    var bk = at(line, len + 28, pick(-15, 15)); clumps.push({ x: r2(bk[0]), z: r2(bk[1]), r: pick(8, 12), n: 5 + Math.floor(R() * 4) });
+    // cart path down one side
+    var ps = sign(), path = [0, len * 0.33, len * 0.66, len + 10].map(function (s2) { var pp = at(line, s2, ps * 21); return [r2(pp[0]), r2(pp[1])]; });
+    path[0] = [r2(ps * 18), 8];
+    // tees
+    var back = pick(12, 28) * (par === 3 ? 0.6 : 1), fwd = pick(18, 42) * (par === 3 ? 0.5 : 1);
+    var tees = { back: [0, r2(back)], mid: [0, 0], fwd: [0, r2(-fwd)] };
+    var xs = [], zs = []; line.forEach(function (p) { xs.push(p[0]); zs.push(p[1]); });
+    var bounds = { x0: Math.floor(Math.min.apply(0, xs) - 78), x1: Math.ceil(Math.max.apply(0, xs) + 78), z0: Math.floor(Math.min.apply(0, zs) - 62), z1: Math.ceil(back + 22) };
+    var def = { par: par, seed: seed, line: line.map(function (p) { return [r2(p[0]), r2(p[1])]; }), elev: elev.map(function (e) { return [r2(e[0]), r2(e[1])]; }), fairway: fairway, tees: tees, green: green, pins: [], bunkers: bunkers, water: water, path: path,
+      treeRows: treeRows, clumps: clumps, rough: r2(pick(24, 28)), ob: r2(pick(48, 58)), wind: windDef, bounds: bounds, behind: back + 14 };
+    return def;
+  }
+  // pins: four spots on gentle slopes, spread over the green
+  function pins(H, seed) {
+    var R = rng(seed * 7 + 3), g = H.green, out = [];
+    for (var q = 0; q < 4; q++) for (var t = 0; t < 25; t++) {
+      var a = (q + R()) * Math.PI / 2, r = 0.25 + R() * 0.42, c = Math.cos(g.rot || 0), s = Math.sin(g.rot || 0), u = Math.cos(a) * r * g.rx, v = Math.sin(a) * r * g.rz;
+      var x = g.x + u * c - v * s, z = g.z + u * s + v * c, n = H.normalAt(x, z), sl = Math.hypot(n.x, n.z) / n.y;
+      if (sl <= 0.03 && H.surfaceAt(x, z) === 'green' && Math.hypot(n.x, n.z) >= 0 && !out.some(function (p) { return Math.hypot(p[0] - x, p[1] - z) < 4; })) { out.push([r2(x), r2(z)]); break; }
+    }
+    return out;
+  }
+  // quick fairness checks; returns a reason when the hole is unfair
+  function unfair(H, def) {
+    if (H.pins.length < 3) return 'pins';
+    if (H.surfaceAt(0, 0) !== 'tee') return 'tee';
+    var g = H.green;
+    for (var a = 0; a < 6.28; a += 0.4) { var x = g.x + Math.cos(a) * g.rx * 1.25, z = g.z + Math.sin(a) * g.rz * 1.25; if (H.inWaterArea(x, z) && GC.ell(g, x, z) < 1.25) return 'green water'; }
+    if (H.inWaterArea(g.x, g.z)) return 'green water';
+    if (def.fairway) {
+      for (var s = def.fairway.from; s < def.fairway.to; s += 5) { var p = GC.pointAt(def.line, s, 0), su = H.surfaceAt(p[0], p[1]); if (su === 'water') return 'water on fairway'; if (su === 'sand' && Math.abs(s - (def.fairway.from)) > 0) return 'bunker on center line'; }
+      // the tee-shot landing zone: fairway across, dry
+      var L = Math.hypot(def.line[1][0], def.line[1][1]);
+      for (var ds = -25; ds <= 20; ds += 5) for (var off = -8; off <= 8; off += 4) { var lp = GC.pointAt(def.line, L + ds, off); if (H.surfaceAt(lp[0], lp[1]) !== 'fairway') return 'landing zone'; }
+    }
+    // a clear line in: no tree trunk within 3 m of the center line over the last 60 m
+    var last = H.len;
+    for (var s2 = last - 60; s2 < last; s2 += 4) { var cp = GC.pointAt(def.line, s2, 0); if (H.treesNear(cp[0], cp[1]).some(function (t) { return Math.hypot(t.x - cp[0], t.z - cp[1]) < t.r + 1; })) return 'trees in the way'; }
+    return null;
+  }
+  function buildHole(seed, par, yards, windDef, name) {
+    for (var k = 0; k < 40; k++) {
+      var def = hole(seed * 131 + k * 7919, par, yards, windDef), H = GC.build(def);
+      H.pins = pins(H, seed + k); def.pins = H.pins;
+      if (H.pins.length) H.setPin(0);
+      if (!unfair(H, def)) { def.name = name; H.name = name; return H; }
+    }
+    return null;
+  }
+  // ---------------------------------------------------------------- a course ----------------------------------------------------------------
+  var PARS9 = [[4, 5, 3, 4, 4, 3, 5, 4, 4], [4, 3, 5, 4, 4, 4, 3, 5, 4], [5, 4, 3, 4, 4, 5, 4, 3, 4], [4, 4, 5, 3, 4, 4, 3, 4, 5], [4, 3, 4, 5, 4, 3, 4, 4, 5]];
+  // 18 holes (Phase 3) = the seed's 9-hole course as the front nine (so "Play <course> again" over 18 starts on the holes
+  // you know) + a back nine made from a second seed outside the range new rounds use, same day's wind, no repeated names
+  function course18(seed) {
+    var f = course(seed, 9), b = course(100000 + (seed * 7 + 13) % 99991, 9), used = f.holes.map(function (h) { return h.name; }), spare = HOLE_WORDS.filter(function (w) { return used.indexOf(w) < 0; });
+    b.holes.forEach(function (h, j) {
+      if (used.indexOf(h.name) >= 0) h.name = spare.filter(function (w) { return used.indexOf(w) < 0; })[0];
+      used.push(h.name); h.n = 10 + j; h.wind = f.holes[j].wind;
+    });
+    return { seed: seed, name: f.name, holes: f.holes.concat(b.holes), par: f.par + b.par };
+  }
+  function course(seed, holes) {
+    if (holes === 18) return course18(seed);
+    var R = rng(seed * 17 + 1), pars = [];
+    while (pars.length < (holes || 9)) pars = pars.concat(PARS9[Math.floor(R() * PARS9.length)]);
+    pars = pars.slice(0, holes || 9);
+    var windSp = R() < 0.2 ? R() * 1.5 : 1.5 + R() * 4.2, windDir = R() * 6.28, names = HOLE_WORDS.slice(), list = [];
+    for (var i = 0; i < pars.length; i++) {
+      var p = pars[i], yards = Math.round(p === 3 ? 135 + R() * 60 : p === 4 ? 330 + R() * 100 : 485 + R() * 70);
+      var nm = names.splice(Math.floor(R() * names.length), 1)[0];
+      list.push({ n: i + 1, par: p, yards: yards, seed: (seed * 101 + i * 37) >>> 0, name: nm, wind: { speed: +(windSp * (0.8 + R() * 0.4)).toFixed(2), dir: +(windDir + (R() - 0.5) * 0.6).toFixed(2) } });
+    }
+    return { seed: seed, name: courseName(seed), holes: list, par: pars.reduce(function (a, b) { return a + b; }, 0) };
+  }
+  function courseName(seed) { var N = rng(seed * 29 + 5); N(); return NAME_A[Math.floor(N() * NAME_A.length)] + ' ' + NAME_B[Math.floor(N() * NAME_B.length)]; }
+  function holeOf(C, i) { var h = C.holes[i], H = null; for (var j = 0; j < 8 && !H; j++) H = buildHole(h.seed + j * 7777, h.par, h.yards, h.wind, h.name); if (H) { H.n = h.n; H.yardsCard = h.yards; } return H; }
+  return { hole: hole, pins: pins, unfair: unfair, buildHole: buildHole, course: course, holeOf: holeOf };
+})();
+
+/* Pin High round rules (Phase 3; no DOM, checked by tools/check.js). They live in this file because the build inlines a
+   fixed set of source files. Turn order by the rules of golf (honours on the tee, then farthest from the hole), match
+   play status and result, skins with carryovers, stroke play placings. Players are "seats" 0-3 in the order picked. */
+var GR = (function () {
+  'use strict';
+  // honours: lowest score on the previous hole tees off first; a tie keeps the order the players teed off in last time
+  function honours(order, scores) {
+    return order.slice().sort(function (a, b) { var d = (scores[a] == null ? 99 : scores[a]) - (scores[b] == null ? 99 : scores[b]); return d || order.indexOf(a) - order.indexOf(b); });
+  }
+  // who plays next: on the tee, the next player in honour order who hasn't hit yet; after that the ball farthest from
+  // the hole (a player who re-tees after out of bounds is simply farthest). balls[seat] = { teed, done, dist }.
+  function next(order, balls) {
+    var i, s;
+    for (i = 0; i < order.length; i++) { s = order[i]; if (!balls[s].done && !balls[s].teed) return s; }
+    var best = -1;
+    for (i = 0; i < order.length; i++) { s = order[i]; if (balls[s].done) continue; if (best < 0 || balls[s].dist > balls[best].dist + 1e-6) best = s; }
+    return best;
+  }
+  // match and skins: a hole is settled when nobody still playing can tie the best score already in the hole (their
+  // strokes so far are already as many). Returns true when the remaining balls can be picked up.
+  function settled(balls) {
+    var best = null, open = 0;
+    balls.forEach(function (b) { if (b.done) { if (best == null || b.score < best) best = b.score; } else open++; });
+    if (best == null || !open) return !open;
+    return balls.every(function (b) { return b.done || b.strokes >= best; });
+  }
+  // match play between seats 0 and 1 over n holes. up > 0 = the first player is ahead.
+  function match(sA, sB, n, names) {
+    names = names || ['A', 'B'];
+    var up = 0, played = 0, won = [0, 0], halved = 0, per = [];
+    for (var i = 0; i < n; i++) {
+      if (sA[i] == null || sB[i] == null) break;
+      played++;
+      if (sA[i] < sB[i]) { up++; won[0]++; per.push(0); } else if (sB[i] < sA[i]) { up--; won[1]++; per.push(1); } else { halved++; per.push(-1); }
+      if (Math.abs(up) > n - played) break; // decided: the rest are not played
+    }
+    var left = n - played, lead = Math.abs(up), who = up > 0 ? names[0] : names[1], over = lead > left || left === 0, text, result = '';
+    if (over) {
+      if (!lead) { text = 'Match halved'; result = 'halved'; }
+      else if (!left) { result = lead + ' up'; text = who + ' wins ' + result; }
+      else { result = lead + ' & ' + left; text = who + ' wins ' + result; }
+    } else if (!lead) text = 'All square' + (played ? ' with ' + left + ' to play' : '');
+    else text = who + ' ' + lead + ' up with ' + left + ' to play' + (lead === left ? ' (dormie)' : '');
+    return { up: up, played: played, left: left, over: over, winner: over ? (up > 0 ? 0 : up < 0 ? 1 : -1) : null, text: text, result: result, won: won, halved: halved, per: per };
+  }
+  // short status for a scorecard cell after hole i: "AS", "G 2" (who is up by how many)
+  function matchCell(sA, sB, i, initials) { var m = match(sA.slice(0, i + 1), sB.slice(0, i + 1), 999); return m.up === 0 ? 'AS' : (m.up > 0 ? initials[0] : initials[1]) + Math.abs(m.up); }
+  // skins: each hole is worth one skin plus any carried over; a hole is won only by a player with the lowest score on
+  // their own; a tie carries everything to the next hole. What is still carried after the last hole is left unclaimed.
+  function skins(scores, n) {
+    var P = scores.length, won = [], carry = 0, per = [];
+    for (var k = 0; k < P; k++) won.push(0);
+    for (var i = 0; i < n; i++) {
+      var row = scores.map(function (s) { return s[i]; });
+      if (row.some(function (v) { return v == null; })) break;
+      var lo = Math.min.apply(0, row), at = []; row.forEach(function (v, s) { if (v === lo) at.push(s); });
+      var value = 1 + carry;
+      if (at.length === 1) { won[at[0]] += value; per.push({ winner: at[0], value: value }); carry = 0; }
+      else { per.push({ winner: -1, value: value }); carry = value; }
+    }
+    return { won: won, per: per, carry: carry, holes: per.length };
+  }
+  // stroke play: totals, and the winners (lowest total; a tie is shared)
+  function stroke(scores) {
+    var tot = scores.map(function (s) { return s.reduce(function (a, b) { return a + (b || 0); }, 0); }), lo = Math.min.apply(0, tot), w = [];
+    tot.forEach(function (t, k) { if (t === lo) w.push(k); });
+    return { totals: tot, winners: w };
+  }
+  return { honours: honours, next: next, settled: settled, match: match, matchCell: matchCell, skins: skins, stroke: stroke };
+})();
+if (typeof module !== 'undefined') { module.exports = GG; GG.GR = GR; }
+</script>
+<script>
+/* Pin High scene (three.js): stylized low-poly terrain with smooth shading and colors by surface, a finer mesh for the
+   green, water, instanced trees, tee markers, the flag (it waves), the ball with its shadow and flight trail, the aim
+   ring, the shot-arc and putt-line previews, the slope grid (dots drifting downhill), range targets with yardage
+   signs, sky, fog and one sun with soft shadows that follow the action. GScene.build(THREE, canvas) -> api. */
+var GScene = (function () {
+  'use strict';
+  var COL = {
+    fairway: [0x57c043, 0x6bd656], rough: [0x45a53a, 0x4bab3f], deep: [0x37893a, 0x3d8f3e], sand: [0xf0dca4, 0xe9d296], green: [0x86ef70, 0x90f47a],
+    fringe: [0x5ccd4d, 0x61d352], tee: [0x6ad656, 0x72dc5e], water: [0x2f6f93, 0x2f6f93], path: [0xcfc8b6, 0xc8c0ac], ob: [0x327f35, 0x377f38]
+  };
+  function build(T, canvas, opts) {
+    opts = opts || {};
+    var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFShadowMap;
+    renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+    var scene = new T.Scene(), camera = new T.PerspectiveCamera(50, 1, 0.05, 900);
+    var SKY = 0x8fd0ff, HORIZON = 0xd9f0ff;
+    scene.fog = new T.Fog(HORIZON, 180, 520);
+    // sky dome
+    var skyGeo = new T.SphereGeometry(800, 24, 12), skyCol = [], cTop = new T.Color(0x4aa6f0), cHor = new T.Color(HORIZON), pos = skyGeo.attributes.position;
+    for (var i = 0; i < pos.count; i++) { var t = Math.max(0, pos.getY(i) / 800); var c = cHor.clone().lerp(cTop, Math.pow(t, 0.6)); skyCol.push(c.r, c.g, c.b); }
+    skyGeo.setAttribute('color', new T.Float32BufferAttribute(skyCol, 3));
+    var sky = new T.Mesh(skyGeo, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false, depthWrite: false })); scene.add(sky);
+    // light
+    scene.add(new T.HemisphereLight(0xe8f6ff, 0x4a7a3a, 1.05));
+    var sun = new T.DirectionalLight(0xfff3dc, 2.1); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+    var sc = sun.shadow.camera; sc.left = -45; sc.right = 45; sc.top = 45; sc.bottom = -45; sc.near = 1; sc.far = 260; sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
+    scene.add(sun); scene.add(sun.target);
+    var pickables = [], ray = new T.Raycaster(), holeGroup = null, H = null, flag = null, flagGeo = null, cup = null, dots = null, dotBase = null, dotDir = null, dotCol = null;
+
+    // ---------------- building a hole ----------------
+    function surfColor(su, x, z, out) {
+      var c = COL[su] || COL.rough, stripe = su === 'fairway' ? (Math.floor((z + 1000) / 9) % 2) : su === 'green' ? ((Math.floor((x + 1000) / 2.2) + Math.floor((z + 1000) / 2.2)) % 2) : su === 'rough' || su === 'deep' ? (Math.sin(x * 0.3) * Math.cos(z * 0.23) > 0 ? 1 : 0) : 0;
+      out.setHex(c[stripe]);
+      return out;
+    }
+    function terrainMesh(x0, x1, z0, z1, step, filter, lift) {
+      var nx = Math.floor((x1 - x0) / step) + 1, nz = Math.floor((z1 - z0) / step) + 1, P = [], C = [], I = [], col = new T.Color(), keep = [];
+      for (var j = 0; j < nz; j++) for (var i = 0; i < nx; i++) {
+        var x = x0 + i * step, z = z0 + j * step, y = H.heightAt(x, z) + (lift || 0), su = H.surfaceAt(x, z);
+        if (su === 'water') su = 'water';
+        P.push(x, y, z); surfColor(su, x, z, col);
+        if (su !== 'fairway' && su !== 'green' && su !== 'sand') { var v = 0.94 + 0.06 * Math.sin(x * 0.7 + z * 0.3); col.multiplyScalar(v); }
+        C.push(col.r, col.g, col.b); keep.push(!filter || filter(x, z));
+      }
+      for (j = 0; j < nz - 1; j++) for (i = 0; i < nx - 1; i++) {
+        var a = j * nx + i, b = a + 1, c2 = a + nx, d = c2 + 1;
+        if (filter && !(keep[a] && keep[b] && keep[c2] && keep[d])) continue;
+        I.push(a, c2, b, b, c2, d);
+      }
+      var g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('color', new T.Float32BufferAttribute(C, 3)); g.setIndex(I); g.computeVertexNormals();
+      return g;
+    }
+    function label(text, w, h, bg, fg) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d');
+      x.fillStyle = bg; x.beginPath(); x.roundRect ? x.roundRect(0, 0, w, h, h * 0.25) : x.rect(0, 0, w, h); x.fill();
+      x.fillStyle = fg; x.font = '900 ' + Math.round(h * 0.62) + 'px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, w / 2, h / 2 + 2);
+      var tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; return tex;
+    }
+    function setHole(hole) {
+      if (holeGroup) { scene.remove(holeGroup); holeGroup.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } }); }
+      H = hole; holeGroup = new T.Group(); scene.add(holeGroup);
+      var b = H.bounds;
+      // the ground
+      var ground = new T.Mesh(terrainMesh(b.x0, b.x1, b.z0, b.z1, 1.6), new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 }));
+      ground.receiveShadow = true; holeGroup.add(ground); pickables = [ground];
+      // a skirt of far land so the edges don't show
+      var far = new T.Mesh(new T.PlaneGeometry(1600, 1600), new T.MeshStandardMaterial({ color: 0x3a8a3a, roughness: 1 })); far.rotation.x = -Math.PI / 2; far.position.set((b.x0 + b.x1) / 2, H.heightAt(0, 0) - 6, (b.z0 + b.z1) / 2); holeGroup.add(far);
+      // hills around
+      var hillMat = new T.MeshStandardMaterial({ color: 0x5aa56a, roughness: 1, flatShading: true });
+      for (var k = 0; k < 14; k++) { var a = k / 14 * Math.PI * 2, rr = 330 + (k % 3) * 60, hill = new T.Mesh(new T.ConeGeometry(70 + (k * 37 % 50), 30 + (k * 23 % 30), 7), hillMat); hill.position.set((b.x0 + b.x1) / 2 + Math.cos(a) * rr, H.heightAt(0, 0) - 8, (b.z0 + b.z1) / 2 + Math.sin(a) * rr * 1.2); holeGroup.add(hill); }
+      // the green, finer
+      if (!H.range) {
+        var g = H.green, ext = Math.max(g.rx, g.rz) * 1.5 + 2;
+        var gm = new T.Mesh(terrainMesh(g.x - ext, g.x + ext, g.z - ext, g.z + ext, 0.33, function (x, z) { return GC.ell(g, x, z) < 1.42; }, 0.015), new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+        gm.receiveShadow = true; holeGroup.add(gm); pickables.push(gm);
+      }
+      // water
+      H.water.forEach(function (w) {
+        var wg = new T.CircleGeometry(1, 40); wg.rotateX(-Math.PI / 2);
+        var wm = new T.Mesh(wg, new T.MeshStandardMaterial({ color: 0x3aa9e8, roughness: 0.15, metalness: 0.15, transparent: true, opacity: 0.88 }));
+        wm.scale.set(w.rx * 1.18, 1, w.rz * 1.18); wm.rotation.y = -(w.rot || 0); wm.position.set(w.x, w.level, w.z); wm.receiveShadow = true; holeGroup.add(wm);
+      });
+      // trees: two kinds, instanced
+      var decid = H.trees.filter(function (t) { return !t.pine; }), pines = H.trees.filter(function (t) { return t.pine; });
+      var m4 = new T.Matrix4(), q = new T.Quaternion(), s3 = new T.Vector3(), p3 = new T.Vector3(), ccol = new T.Color();
+      function inst(geo, mat, list, fn) { if (!list.length) return; var im = new T.InstancedMesh(geo, mat, list.length); im.castShadow = true; im.receiveShadow = true; list.forEach(function (t, i) { fn(t, i); im.setMatrixAt(i, m4); }); holeGroup.add(im); return im; }
+      var trunkGeo = new T.CylinderGeometry(0.6, 1, 1, 6); trunkGeo.translate(0, 0.5, 0);
+      inst(trunkGeo, new T.MeshStandardMaterial({ color: 0x7a5234, roughness: 1 }), H.trees, function (t) { var th = t.h - t.r * (t.pine ? 1.8 : 1.3); p3.set(t.x, t.y - 0.2, t.z); s3.set(t.tr * 1.3, th + 0.2, t.tr * 1.3); q.identity(); m4.compose(p3, q, s3); });
+      var leafGeo = new T.IcosahedronGeometry(1, 1), leafMat = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+      var li = inst(leafGeo, leafMat, decid, function (t, i) { p3.set(t.x, t.y + t.h - t.r * 0.9, t.z); s3.set(t.r, t.r * 0.85, t.r); q.setFromAxisAngle(new T.Vector3(0, 1, 0), t.x * 13.1); m4.compose(p3, q, s3); });
+      if (li) decid.forEach(function (t, i) { ccol.setHSL(0.27 + ((t.x * 7 + t.z * 3) % 10) / 200, 0.55, 0.32 + ((t.x + t.z) % 7) / 90); li.setColorAt(i, ccol); });
+      var pineGeo = new T.ConeGeometry(1, 1, 7); pineGeo.translate(0, 0.5, 0);
+      var pi = inst(pineGeo, leafMat, pines, function (t) { p3.set(t.x, t.y + t.h * 0.3, t.z); s3.set(t.r, t.h * 0.75, t.r); q.identity(); m4.compose(p3, q, s3); });
+      if (pi) pines.forEach(function (t, i) { ccol.setHSL(0.36, 0.45, 0.24 + ((t.x + t.z) % 5) / 100); pi.setColorAt(i, ccol); });
+      // tee markers
+      if (H.tees) Object.keys(H.tees).forEach(function (k2) {
+        var tp = H.tees[k2], col = k2 === 'back' ? 0x2d6cdf : k2 === 'fwd' ? 0xe8354a : 0xf4f4f4;
+        [-3, 3].forEach(function (dx) { var m = new T.Mesh(new T.SphereGeometry(0.18, 10, 8), new T.MeshStandardMaterial({ color: col, roughness: 0.4 })); m.position.set(tp[0] + dx, H.heightAt(tp[0] + dx, tp[1]) + 0.16, tp[1]); m.castShadow = true; holeGroup.add(m); });
+      });
+      // range targets
+      (H.targets || []).forEach(function (tg) {
+        var disc = new T.Mesh(new T.CircleGeometry(tg.r, 28), new T.MeshStandardMaterial({ color: 0x86ee72, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2 })); disc.rotation.x = -Math.PI / 2; disc.position.set(tg.x, H.heightAt(tg.x, tg.z) + 0.03, tg.z); holeGroup.add(disc);
+        var ring = new T.Mesh(new T.RingGeometry(tg.r * 0.45, tg.r * 0.5, 28), new T.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = -Math.PI / 2; ring.position.set(tg.x, H.heightAt(tg.x, tg.z) + 0.05, tg.z); holeGroup.add(ring);
+        holeGroup.add(pole(tg.x, tg.z, 0xffd21e));
+        var sign = new T.Sprite(new T.SpriteMaterial({ map: label(tg.yd + '', 128, 64, '#ffffff', '#1d2a5a'), depthTest: true })); sign.scale.set(3.6, 1.8, 1); sign.position.set(tg.x + (tg.x < 0 ? -1 : 1) * (tg.r + 4), H.heightAt(tg.x, tg.z) + 1.6, tg.z); holeGroup.add(sign);
+      });
+      // the flag and cup
+      if (H.pin) { var fp = flagPole(); holeGroup.add(fp); placeFlag(); }
+      // slope grid dots (for putting)
+      dots = null;
+      if (!H.range) buildDots();
+      aimRing.visible = false; arc.visible = false; putt.visible = false;
+    }
+    function pole(x, z, col) {
+      var gp = new T.Group(), y = H.heightAt(x, z);
+      var st = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 2.6, 6), new T.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.4 })); st.position.set(x, y + 1.3, z); st.castShadow = true; gp.add(st);
+      var fl = new T.Mesh(new T.PlaneGeometry(0.9, 0.55), new T.MeshStandardMaterial({ color: col, side: T.DoubleSide, roughness: 0.7 })); fl.position.set(x + 0.45, y + 2.3, z); fl.castShadow = true; gp.add(fl);
+      return gp;
+    }
+    function flagPole() {
+      var gp = new T.Group();
+      var st = new T.Mesh(new T.CylinderGeometry(0.025, 0.025, 2.4, 6), new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })); st.position.y = 1.2; st.castShadow = true; gp.add(st);
+      flagGeo = new T.PlaneGeometry(0.8, 0.5, 8, 3); flagGeo.translate(0.4, 0, 0);
+      var fl = new T.Mesh(flagGeo, new T.MeshStandardMaterial({ color: 0xff3d4f, side: T.DoubleSide, roughness: 0.7 })); fl.position.y = 2.12; fl.castShadow = true; gp.add(fl);
+      cup = new T.Mesh(new T.CircleGeometry(0.11, 20), new T.MeshBasicMaterial({ color: 0x0c140c, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); cup.rotation.x = -Math.PI / 2; cup.position.y = 0.035; gp.add(cup);
+      var rim = new T.Mesh(new T.RingGeometry(0.11, 0.13, 20), new T.MeshBasicMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); rim.rotation.x = -Math.PI / 2; rim.position.y = 0.036; gp.add(rim);
+      flag = gp; return gp;
+    }
+    function placeFlag() { if (flag && H.pin) { flag.position.set(H.pin.x, H.heightAt(H.pin.x, H.pin.z), H.pin.z); } }
+    function buildDots() {
+      var g = H.green, ext = Math.max(g.rx, g.rz) + 2, P = [], base = [], dir = [], C = [], gap = 0.75;
+      for (var x = g.x - ext; x <= g.x + ext; x += gap) for (var z = g.z - ext; z <= g.z + ext; z += gap) {
+        if (GC.ell(g, x, z) > 1.12) continue;
+        var n = H.normalAt(x, z), sl = Math.hypot(n.x, n.z) / n.y, dx = n.x, dz = n.z, l = Math.hypot(dx, dz) || 1;
+        base.push(x, z); dir.push(dx / l, dz / l, sl); P.push(x, H.heightAt(x, z) + 0.04, z);
+        var c = new T.Color(); c.setHSL(Math.max(0, 0.62 - sl * 9), 0.95, 0.6); C.push(c.r, c.g, c.b);
+      }
+      var geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new T.Float32BufferAttribute(C, 3));
+      var dc = document.createElement('canvas'); dc.width = dc.height = 32; var dx2 = dc.getContext('2d'); dx2.fillStyle = '#fff'; dx2.beginPath(); dx2.arc(16, 16, 13, 0, 7); dx2.fill();
+      var dtex = new T.CanvasTexture(dc);
+      dots = new T.Points(geo, new T.PointsMaterial({ size: 0.16, map: dtex, alphaTest: 0.4, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false }));
+      dots.visible = false; dotBase = base; dotDir = dir; holeGroup.add(dots);
+    }
+    function updateDots(t) {
+      if (!dots || !dots.visible) return;
+      var pa = dots.geometry.attributes.position, n = dotBase.length / 2;
+      for (var i = 0; i < n; i++) {
+        var sl = dotDir[i * 3 + 2], sp = 0.25 + sl * 30, ph = ((t * sp + i * 0.37) % 1 + 1) % 1, off = (ph - 0.5) * 0.7 * Math.min(1, sl * 40 + 0.15);
+        var x = dotBase[i * 2] + dotDir[i * 3] * off, z = dotBase[i * 2 + 1] + dotDir[i * 3 + 1] * off;
+        pa.setXYZ(i, x, H.heightAt(x, z) + 0.04, z);
+      }
+      pa.needsUpdate = true;
+    }
+
+    // ---------------- the ball, trail, aim, previews ----------------
+    var ball = new T.Mesh(new T.SphereGeometry(1, 16, 12), new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 })); ball.castShadow = true; scene.add(ball);
+    var blob = new T.Mesh(new T.CircleGeometry(1, 16), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false })); blob.rotation.x = -Math.PI / 2; scene.add(blob);
+    var TRAIL = 600, trailGeo = new T.BufferGeometry(); trailGeo.setAttribute('position', new T.Float32BufferAttribute(new Float32Array(TRAIL * 3), 3)); trailGeo.setDrawRange(0, 0);
+    var trail = new T.Line(trailGeo, new T.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })); trail.frustumCulled = false; scene.add(trail); var trailN = 0;
+    var aimRing = new T.Group();
+    var ar1 = new T.Mesh(new T.RingGeometry(1.6, 2.1, 36), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false })); ar1.rotation.x = -Math.PI / 2; aimRing.add(ar1);
+    var ar2 = new T.Mesh(new T.CircleGeometry(0.45, 16), new T.MeshBasicMaterial({ color: 0xffd21e, depthTest: false })); ar2.rotation.x = -Math.PI / 2; aimRing.add(ar2);
+    aimRing.renderOrder = 5; ar1.renderOrder = 5; ar2.renderOrder = 5; scene.add(aimRing);
+    var arcGeo = new T.BufferGeometry(); arcGeo.setAttribute('position', new T.Float32BufferAttribute(new Float32Array(400 * 3), 3)); arcGeo.setDrawRange(0, 0);
+    var arc = new T.Line(arcGeo, new T.LineDashedMaterial({ color: 0xffe066, dashSize: 1.2, gapSize: 0.8, transparent: true, opacity: 0.95 })); arc.frustumCulled = false; scene.add(arc);
+    var puttGeo = new T.BufferGeometry(); puttGeo.setAttribute('position', new T.Float32BufferAttribute(new Float32Array(600 * 3), 3)); puttGeo.setDrawRange(0, 0);
+    var putt = new T.Line(puttGeo, new T.LineDashedMaterial({ color: 0xffffff, dashSize: 0.15, gapSize: 0.12 })); putt.frustumCulled = false; scene.add(putt);
+    function setPath(line, pts) {
+      var pa = line.geometry.attributes.position, n = Math.min(pts.length, pa.count);
+      for (var i = 0; i < n; i++) pa.setXYZ(i, pts[i][0], pts[i][1], pts[i][2]);
+      pa.needsUpdate = true; line.geometry.setDrawRange(0, n); line.computeLineDistances(); line.visible = n > 1;
+    }
+    function setBall(p, camPos) {
+      var d = camPos ? Math.hypot(camPos.x - p.x, camPos.y - p.y, camPos.z - p.z) : 5, s = Math.max(0.045, d * 0.0055);
+      ball.scale.setScalar(s); ball.position.set(p.x, p.y + (s - 0.02135), p.z);
+      var gy = H ? H.heightAt(p.x, p.z) : 0, hgt = p.y - gy; blob.scale.setScalar(s * (1 + Math.min(4, hgt * 0.15))); blob.position.set(p.x, gy + 0.03, p.z); blob.material.opacity = 0.3 / (1 + hgt * 0.08);
+    }
+    // the other players' balls (Phase 3): a ball each plus a marker pin in the player's colour with their initial, drawn
+    // over everything and kept the same size on screen so a ball 200 m away still shows where it is
+    var others = [], markTex = {};
+    function markerTex(color, letter) {
+      var key = color + letter; if (markTex[key]) return markTex[key];
+      var c = document.createElement('canvas'); c.width = 64; c.height = 88; var x = c.getContext('2d');
+      x.fillStyle = color; x.strokeStyle = '#ffffff'; x.lineWidth = 5;
+      x.beginPath(); x.arc(32, 30, 26, Math.PI * 0.8, Math.PI * 2.2); x.lineTo(32, 84); x.closePath(); x.fill(); x.stroke();
+      x.fillStyle = '#fff'; x.font = '900 32px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(letter, 32, 32);
+      var tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; markTex[key] = tex; return tex;
+    }
+    function setOthers(list, camPos) {
+      while (others.length < list.length) {
+        var o = { ball: new T.Mesh(new T.SphereGeometry(1, 12, 10), new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 })), pin: new T.Sprite(new T.SpriteMaterial({ depthTest: false, transparent: true })) };
+        o.pin.center.set(0.5, 0); o.pin.renderOrder = 8; scene.add(o.ball); scene.add(o.pin); others.push(o);
+      }
+      others.forEach(function (o, i) {
+        var b = list[i]; o.ball.visible = o.pin.visible = !!b; if (!b) return;
+        var d = camPos ? Math.hypot(camPos.x - b.x, camPos.y - b.y, camPos.z - b.z) : 5, s = Math.max(0.045, d * 0.0055), m = Math.max(0.35, d * 0.05);
+        o.ball.scale.setScalar(s); o.ball.position.set(b.x, b.y + s - 0.02135, b.z);
+        var tex = markerTex(b.color, b.letter); if (o.pin.material.map !== tex) { o.pin.material.map = tex; o.pin.material.needsUpdate = true; }
+        o.pin.scale.set(m * 0.73, m, 1); o.pin.position.set(b.x, b.y + s * 2, b.z);
+      });
+    }
+    function trailReset() { trailN = 0; trailGeo.setDrawRange(0, 0); }
+    function trailAdd(p) { if (trailN >= TRAIL) return; trailGeo.attributes.position.setXYZ(trailN++, p.x, p.y, p.z); trailGeo.attributes.position.needsUpdate = true; trailGeo.setDrawRange(0, trailN); }
+    function setAim(x, z, show) { aimRing.visible = !!show; if (show) aimRing.position.set(x, H.heightAt(x, z) + 0.08, z); }
+
+    // ---------------- per frame ----------------
+    var clock = 0;
+    function frame(dt, focus) {
+      clock += dt;
+      if (flagGeo) { var pa = flagGeo.attributes.position; for (var i = 0; i < pa.count; i++) { var x = pa.getX(i); pa.setZ(i, Math.sin(clock * 5 + x * 6) * 0.06 * x); } pa.needsUpdate = true; }
+      if (flag && H && H.wind) flag.rotation.y = -H.wind.dir + Math.PI / 2 + Math.sin(clock * 1.3) * 0.12;
+      updateDots(clock);
+      if (focus) { sun.position.set(focus.x + 60, focus.y + 110, focus.z + 40); sun.target.position.set(focus.x, focus.y, focus.z); }
+      sky.position.copy(camera.position);
+      renderer.render(scene, camera);
+    }
+    // Full screen (0.3.0): the canvas fills the phone, but the view is framed as before on the part below the floating top
+    // row (top px down): the extra strip above it just shows more sky, so the ball sits above the swing pad as it did.
+    function resize(w, h, top) {
+      renderer.setSize(w, h, false); top = top || 0;
+      var hs = Math.max(1, h - top);
+      camera.aspect = w / hs;
+      if (top > 0) camera.setViewOffset(w, hs, 0, -top, w, h); else camera.clearViewOffset();
+      camera.updateProjectionMatrix();
+    }
+    function pick(nx, ny) { ray.setFromCamera(new T.Vector2(nx * 2 - 1, -(ny * 2 - 1)), camera); var hit = ray.intersectObjects(pickables, false)[0]; return hit ? { x: hit.point.x, y: hit.point.y, z: hit.point.z } : null; }
+    function project(x, y, z) { var v = new T.Vector3(x, y, z).project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2, behind: v.z > 1 }; }
+    return { renderer: renderer, scene: scene, camera: camera, setHole: setHole, setFog: function (far) { scene.fog.far = far; scene.fog.near = far * 0.35; }, setBall: setBall, setOthers: setOthers, trailReset: trailReset, trailAdd: trailAdd, setAim: setAim,
+      setArc: function (pts) { setPath(arc, pts); }, hideArc: function () { arc.visible = false; }, setPutt: function (pts) { setPath(putt, pts); }, hidePutt: function () { putt.visible = false; },
+      showDots: function (v) { if (dots) dots.visible = !!v; }, placeFlag: placeFlag, frame: frame, resize: resize, project: project, pick: pick, get flag() { return flag; } };
+  }
+  return { build: build };
+})();
+</script>
+<script>
+/* Pin High sounds: synthesized with Web Audio (no audio files). */
+var GHSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, amb = false, ambT = 0, breeze = null;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; try { ac = new AC(); } catch (e) { return null; } master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination); }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay, type) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.max(1, Math.floor(a.sampleRate * dur)), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.5);
+    var s = a.createBufferSource(); s.buffer = buf; var bp = a.createBiquadFilter(); bp.type = type || 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  // course ambience: a soft breeze and birds now and then
+  function ambTick() {
+    if (!amb || !on) return;
+    var a = ctx(); if (!a) return;
+    if (!breeze) {
+      var len = a.sampleRate * 2, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0), last = 0;
+      for (var i = 0; i < len; i++) { last = last * 0.985 + (Math.random() * 2 - 1) * 0.015; d[i] = last * 6; }
+      var s = a.createBufferSource(); s.buffer = buf; s.loop = true; var f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; var g = a.createGain(); g.gain.value = 0.05;
+      s.connect(f); f.connect(g); g.connect(master); s.start(); breeze = { s: s, g: g };
+    }
+    if (Math.random() < 0.5) { var base = 2200 + Math.random() * 1600, n = 2 + Math.floor(Math.random() * 3); for (var k = 0; k < n; k++) tone('sine', base, base * (1.15 + Math.random() * 0.2), 0.08, 0.035, k * 0.12); }
+  }
+  setInterval(function () { if (amb && on) ambTick(); }, 3500);
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); if (!on && breeze) { try { breeze.s.stop(); } catch (e) { /* ignore */ } breeze = null; } },
+    setAmbience: function (v) { amb = !!v; if (!amb && breeze) { try { breeze.s.stop(); } catch (e) { /* ignore */ } breeze = null; } else ambTick(); },
+    unlock: function () { if (on) ctx(); },
+    whoosh: function (p) { noise(900 + p * 900, 0.8, 0.28, 0.25 + p * 0.3); },
+    strike: function (kind, q) {
+      if (kind === 'dr') { noise(3500, 1.4, 0.07, 0.9); tone('square', 1900, 900, 0.05, 0.06); tone('triangle', 420, 260, 0.1, 0.1); }
+      else if (kind === 'pt') { tone('sine', 1200, 900, 0.05, 0.14); noise(4000, 5, 0.03, 0.2); }
+      else { noise(5200, 3, 0.04, 0.7); tone('triangle', 2400, 1600, 0.04, 0.08); tone('sine', 700, 500, 0.06, 0.06); }
+      if (q != null && q < 0.6) noise(700, 1, 0.1, 0.3, 0.02);
+    },
+    bounce: function (su, v) { var g = Math.min(1, v / 20); if (su === 'sand') noise(300, 1, 0.12, 0.2 + g * 0.3); else if (su === 'path') tone('triangle', 1500, 900, 0.04, 0.05 + g * 0.08); else noise(900, 1.5, 0.05, 0.1 + g * 0.3); },
+    cup: function () { [0, 0.07, 0.13].forEach(function (d, i) { noise(2600 - i * 400, 5, 0.05, 0.5 - i * 0.1, d); }); tone('sine', 240, 120, 0.2, 0.18, 0.18); },
+    lip: function () { tone('triangle', 1700, 1100, 0.05, 0.08); },
+    splash: function () { noise(900, 0.6, 0.5, 0.7); noise(3000, 1, 0.25, 0.3, 0.05); tone('sine', 500, 140, 0.25, 0.08); },
+    sand: function () { noise(250, 0.8, 0.25, 0.5); },
+    leaves: function () { noise(3000, 0.6, 0.3, 0.25); },
+    trunk: function () { tone('triangle', 300, 180, 0.08, 0.2); noise(800, 2, 0.06, 0.4); },
+    tick: function () { tone('sine', 1500, 0, 0.03, 0.05); },
+    cheer: function (big) { if (!on) return; var f = big ? [523, 659, 784, 1047, 1319] : [659, 784, 1047]; f.forEach(function (x, i) { tone('triangle', x, 0, i === f.length - 1 ? 0.5 : 0.15, 0.2, i * 0.09); }); if (big) noise(4000, 0.8, 0.9, 0.15, 0.4); },
+    aww: function () { tone('triangle', 392, 330, 0.3, 0.12); tone('triangle', 330, 262, 0.45, 0.12, 0.28); },
+    ding: function () { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); }, sign: function () { noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Pin High app (Phase 3): rounds for 1-4 players on generated courses (gen.js), 9 or 18 holes, stroke play, match play and
+   skins, with profiles (Glenn, Cindy) and guests, tee boxes, the order of play and a pass-the-phone banner; plus
+   Both swing systems (upright 3-click meter and swipe), club / shot type / spin choices, assist previews, ball
+   flight, putting with the slope grid, the cameras (flyover, behind the ball, overhead map, ball follow, landing,
+   low putting view), the HUD with a mini-map, every lie (tee, fairway, fringe, rough, deep rough, sand, cart path,
+   uphill / downhill, ball above / below the feet), penalties (water, out of bounds, unplayable), free relief from
+   the cart path, gimmes and pick-up at double par, the scorecard, and resuming a round. three.js loads from /shared. */
+(function () {
+  'use strict';
+  var S = GHSound, T = null, SC = null, YD = GF.YD, FT = 0.3048;
+
+  // ================= storage =================
+  var store = Goobs.store('golf');
+  var settings = { sound: false, amb: true, swing: 'meter', assist: 'easy', adEvery: 3, gimme: 0, pickup: false };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); if (['meter', 'swipe'].indexOf(settings.swing) < 0) settings.swing = 'meter'; if (['easy', 'pro', 'tour'].indexOf(settings.assist) < 0) settings.assist = 'easy'; if ([0, 2, 4].indexOf(settings.gimme) < 0) settings.gimme = 0; })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { seen: false, finished: 0, lastAdAt: 0, best: 0, longest: 0, rounds: 0, lastSeed: 0, lastHoles: 9, bestRound: null, me: 'glenn', guests: [], setup: null };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+
+  // ================= players (Phase 3) =================
+  // Two saved profiles, Glenn and Cindy, each with their own swing (3-click / swipe), help level and tee box, plus
+  // guests typed in for a round. Their first swing and help settings come from the Phase 2 settings, so nothing
+  // changes for someone who already played. "me" is who is playing the range and the practice hole.
+  var TEES = { back: 'Back', mid: 'Middle', fwd: 'Forward' }, TEECOL = { back: '#2d6cdf', mid: '#f4f4f4', fwd: '#e8354a' };
+  var SWINGS = { meter: '3-click', swipe: 'Swipe' }, ASSISTS = { easy: 'Easy', pro: 'Pro', tour: 'Tour' }, MODES = { stroke: 'Stroke play', match: 'Match play', skins: 'Skins' };
+  var GUESTCOL = ['#ffb020', '#8a5cff', '#1fbf8f', '#ff6b3d'];
+  var profiles = store.get('profiles', null) || {};
+  [['glenn', 'Glenn', '#3d7bff'], ['cindy', 'Cindy', '#ff4fa3']].forEach(function (d) {
+    var p = profiles[d[0]] || {}; profiles[d[0]] = p; p.id = d[0]; p.name = d[1]; p.color = d[2];
+    if (!SWINGS[p.swing]) p.swing = settings.swing; if (!ASSISTS[p.assist]) p.assist = settings.assist; if (!TEES[p.tee]) p.tee = 'mid';
+  });
+  function saveProfiles() { store.set('profiles', profiles); }
+  if (!profiles[meta.me]) meta.me = 'glenn';
+  if (!Array.isArray(meta.guests)) meta.guests = [];
+  function copyPlayer(p) { return { id: p.guest ? null : p.id, name: p.name, color: p.color, swing: SWINGS[p.swing] ? p.swing : 'meter', assist: ASSISTS[p.assist] ? p.assist : 'easy', tee: TEES[p.tee] ? p.tee : 'mid', guest: !!p.guest }; }
+  // profiles keep their colours; guests take the first guest colour nobody else has
+  function colorsFor(list) { var used = list.filter(function (p) { return !p.guest; }).map(function (p) { return p.color; }); return list.map(function (p) { if (!p.guest) return p.color; var c = GUESTCOL.filter(function (x) { return used.indexOf(x) < 0; })[0] || GUESTCOL[0]; used.push(c); return c; }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function dot(p) { return '<i class="pdot" style="background:' + p.color + '"></i>'; }
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return FS.isOpen() || isOpen('ovEnd') || isOpen('ovCard') || isOpen('ovSettings') || isOpen('ovHelp') || isOpen('ovMenu') || isOpen('ovPlayers') || isOpen('ovTurn') || GoobsAds.isOpen(); }
+  function yd(m) { return Math.round(m / YD); }
+  function ft(m) { return Math.round(m / FT); }
+
+  // ================= round state =================
+  var H = null, mode = 'menu', phase = 'idle', pos = null, lie = 'tee', yaw = 0, clubIdx = 0, shotType = 'full', spin = { x: 0, y: 0 }, strokes = 0, prevSpot = null;
+  var ball = null, pre = null, speedMul = 1, acc = 0, flyT = 0, landCam = null, unevenAim = 0, unevenTxt = '', flyover = null, mapView = false, lastResult = null, trailK = 0;
+  var aimDist = 100, puttScale = 5, slopeLie = 0;
+  // a round: the course comes back from its seed, so only the seed and the scores are saved
+  // Phase 3 round: { v: 2, seed, name, mode: stroke|match|skins, pars (9 or 18), i (hole), players, order (tee order this
+  // hole), sc[seat] = { scores, putts, fir, gir, pens, picked }, cur = the hole in play: { turn, balls[seat] } }. The shell's
+  // menu tile reads name, pars, i and done, so those keep their Phase 2 meaning.
+  var round = store.get('round', null), C = null, holeStats = { putts: 0, pens: 0, fir: null, gir: false }, history = store.get('history', []) || [], turn = 0;
+  if (round && !round.pars) round = null;
+  function blankSc() { return { scores: [], putts: [], fir: [], gir: [], pens: [], picked: [] }; }
+  // a Phase 2 round saved before the update carries on as a one-player round for whoever plays the range
+  if (round && !round.v) {
+    var r1 = round, c1 = r1.cur;
+    round = { v: 2, seed: r1.seed, name: r1.name, mode: 'stroke', pars: r1.pars, i: r1.i, players: [copyPlayer(profiles[meta.me])], order: [0],
+      sc: [{ scores: r1.scores || [], putts: r1.putts || [], fir: r1.fir || [], gir: r1.gir || [], pens: r1.pens || [], picked: r1.picked || [] }],
+      cur: c1 ? { turn: 0, balls: [{ x: c1.x, z: c1.z, px: c1.px, pz: c1.pz, strokes: c1.strokes, putts: c1.putts, pens: c1.pens, fir: c1.fir, gir: c1.gir, teed: c1.strokes > 0, done: false }] } : null, done: r1.done, started: r1.started };
+  }
+  function saveRound() { store.set('round', round); }
+  function onCourse() { return mode === 'hole' || mode === 'round'; }
+  function sum(a) { return a.reduce(function (x, y) { return x + (y || 0); }, 0); }
+  function toParOf(r, k) { var d = 0; r.sc[k || 0].scores.forEach(function (sc, i) { if (sc != null) d += sc - r.pars[i]; }); return d; }
+  function parText(d) { return d === 0 ? 'E' : d > 0 ? '+' + d : '\u2212' + (-d); }
+  // holes finished by everyone
+  function played(r) { var n = 0; for (var i = 0; i < r.pars.length; i++) if (r.sc.every(function (s) { return s.scores[i] != null; })) n++; return n; }
+  function nP() { return round && round.players ? round.players.length : 1; }
+  function multi() { return mode === 'round' && !!round && round.players.length > 1; }
+  // the player whose swing, help and tees are in use: this turn's player in a round, else "me"
+  function P() { if (mode === 'round' && round && round.players) return round.players[turn] || round.players[0]; return profiles[meta.me] || profiles.glenn; }
+  function setPref(k, v) { var p = P(); p[k] = v; if (p.id && profiles[p.id] && profiles[p.id] !== p) profiles[p.id][k] = v; saveProfiles(); if (mode === 'round' && round) saveRound(); }
+  function matchOf(r) { return GR.match(r.sc[0].scores, r.sc[1].scores, r.pars.length, [r.players[0].name, r.players[1].name]); }
+  function skinsOf(r) { return GR.skins(r.sc.map(function (s) { return s.scores; }), r.pars.length); }
+  // short labels for scorecard cells ("G", "C"); two players starting with the same letter get two letters, then a number
+  function initials(r) {
+    var a = r.players.map(function (p) { return p.name.charAt(0).toUpperCase(); });
+    a = a.map(function (x, k) { return a.filter(function (y) { return y === x; }).length > 1 ? r.players[k].name.slice(0, 2) : x; });
+    return a.map(function (x, k) { return a.filter(function (y) { return y === x; }).length > 1 ? x.charAt(0) + (k + 1) : x; });
+  }
+  function clubs() { return GF.CLUBS; }
+  function club() { return GF.CLUBS[clubIdx]; }
+  function dirV() { return GF.v3(Math.sin(yaw), 0, -Math.cos(yaw)); }
+  function toPin() { if (!H.pin) return null; return Math.hypot(H.pin.x - pos.x, H.pin.z - pos.z); }
+
+  function loadHole(def, pinIdx) {
+    H = def.heightAt ? def : GC.build(def);
+    if (H.pins && H.pins.length) H.setPin(pinIdx == null ? Math.floor(Math.random() * H.pins.length) : pinIdx % H.pins.length);
+    SC.setHole(H); buildMini(); cam.p = null;
+  }
+  function freshStats() { holeStats = { putts: 0, pens: 0, fir: null, gir: false }; }
+  function startHole() {
+    mode = 'hole'; loadHole(GC.TEST); strokes = 0; freshStats(); prevSpot = null;
+    var t = teeOf(P()); pos = GF.v3(t[0], H.heightAt(t[0], t[1]) + GF.R, t[1]);
+    flyover = { t: 0 }; phase = 'flyover'; setupShot(true); phase = 'flyover'; hideUI(true);
+    msg(H.name + '<small>Par ' + H.par + ' · ' + holeYards() + ' yards · tap to skip</small>', 3500);
+  }
+  // each player's own tee box (the range and old holes only have the middle one)
+  function teeKey(p) { p = p || P(); return H.tees && H.tees[p.tee] ? p.tee : 'mid'; }
+  function teeOf(p) { return H.tees[teeKey(p)]; }
+  function startRange() {
+    mode = 'range'; loadHole(GC.RANGE); strokes = 0; clubIdx = 0; freshStats();
+    var t = H.tees.mid; pos = GF.v3(t[0], H.heightAt(t[0], t[1]) + GF.R, t[1]); yaw = 0;
+    setupShot(); msg('Driving range<small>Targets at 50 to 250 yards. Hit away!</small>', 2600);
+  }
+  // ---- a round: 1-4 players, 9 or 18 holes, stroke play, match play or skins ----
+  // setup = { players: [player], mode, holes }; without one, the last setup picked (Phase 2 rounds: just "me")
+  function lastSetup() {
+    var s = meta.setup || {}, pl = (s.players || [{ id: meta.me }]).map(function (q) { return q.guest ? q : profiles[q.id]; }).filter(Boolean);
+    if (!pl.length) pl = [profiles[meta.me]];
+    return { players: pl, mode: s.mode || 'stroke', holes: s.holes === 18 ? 18 : 9 };
+  }
+  function newRound(seed, setup) {
+    seed = seed || 1 + Math.floor(Math.random() * 99998); setup = setup || lastSetup();
+    var holes = setup.holes === 18 ? 18 : 9, pl = setup.players.slice(0, 4).map(copyPlayer), cols = colorsFor(pl);
+    pl.forEach(function (p, k) { p.color = cols[k]; });
+    var md = MODES[setup.mode] ? setup.mode : 'stroke'; if ((md === 'match' && pl.length !== 2) || (md === 'skins' && pl.length < 2)) md = 'stroke';
+    C = GG.course(seed, holes);
+    round = { v: 2, seed: seed, name: C.name, mode: md, pars: C.holes.map(function (h) { return h.par; }), i: 0, players: pl, order: pl.map(function (p, k) { return k; }),
+      sc: pl.map(blankSc), cur: null, started: Date.now() };
+    if (pl.length === 1 && pl[0].id) meta.me = pl[0].id;
+    saveMeta(); saveRound(); playHole(0);
+  }
+  function resumeRound() { if (!round) { newRound(); return; } C = GG.course(round.seed, round.pars.length); playHole(round.i, true); }
+  function playHole(i, resume) {
+    mode = 'round'; round.i = i; if (!C || C.seed !== round.seed || C.holes.length !== round.pars.length) C = GG.course(round.seed, round.pars.length);
+    loadHole(GG.holeOf(C, i), (round.seed + i * 3) % 4);
+    if (resume && round.cur) {
+      var k = nextSeat();
+      if (k < 0) { loadBall(round.cur.turn || 0); holeComplete(); return; } // closed between the last putt and the card
+      loadBall(k); setupShot(true);
+      msg('Hole ' + (i + 1) + ' \u00b7 ' + H.name + '<small>Welcome back: ' + (multi() ? esc(P().name) + ', ' : '') + 'shot ' + (strokes + 1) + ', ' + yd(toPin()) + ' yards to go</small>', 2800);
+      if (multi()) showTurn();
+      return;
+    }
+    // honours: the lowest score on the last hole tees off first
+    if (i > 0) round.order = GR.honours(round.order, round.sc.map(function (s) { return s.scores[i - 1]; }));
+    round.cur = { turn: round.order[0], balls: round.players.map(function (p) { var t = teeOf(p); return { x: t[0], z: t[1], px: null, pz: null, strokes: 0, putts: 0, pens: 0, fir: null, gir: false, teed: false, done: false }; }) };
+    loadBall(round.order[0]);
+    flyover = { t: 0 }; setupShot(true); phase = 'flyover'; hideUI(true);
+    msg('Hole ' + (i + 1) + ' \u00b7 ' + H.name + '<small>Par ' + H.par + ' \u00b7 ' + yardsText() + ' \u00b7 tap to skip</small>', 3500);
+  }
+  // yards from a tee box: the center line's length less how far along it the tee sits (back tees add, forward take off)
+  function holeYards(k) { return yd(H.len - GC.teeS(H.line, H.tees[k || teeKey()])); }
+  function yardsText() {
+    if (!multi()) return holeYards() + ' yards';
+    var ks = []; ['back', 'mid', 'fwd'].forEach(function (k) { if (round.players.some(function (p) { return teeKey(p) === k; })) ks.push(k); });
+    return ks.map(function (k) { return holeYards(k); }).join(' / ') + ' yards';
+  }
+  // ---- whose ball: each player's ball, strokes and hole stats live in round.cur.balls; the one in play is loaded
+  // into the working variables (pos, strokes, holeStats, prevSpot) and written back after every shot ----
+  function loadBall(k) {
+    turn = k; round.cur.turn = k; var b = round.cur.balls[k];
+    strokes = b.strokes; holeStats = { putts: b.putts, pens: b.pens, fir: b.fir, gir: b.gir };
+    pos = GF.v3(b.x, H.heightAt(b.x, b.z) + GF.R, b.z);
+    prevSpot = b.px != null ? GF.v3(b.px, H.heightAt(b.px, b.pz) + GF.R, b.pz) : null;
+  }
+  function storeBall() {
+    if (mode !== 'round' || !round || !round.cur) return; var b = round.cur.balls[turn];
+    b.strokes = strokes; b.putts = holeStats.putts; b.pens = holeStats.pens; b.fir = holeStats.fir; b.gir = holeStats.gir;
+    b.x = +pos.x.toFixed(2); b.z = +pos.z.toFixed(2); b.px = prevSpot ? +prevSpot.x.toFixed(2) : null; b.pz = prevSpot ? +prevSpot.z.toFixed(2) : null;
+  }
+  // golf's order of play (GR.next): tee shots in honour order, then whoever is farthest from the hole
+  function nextSeat() { return GR.next(round.order, round.cur.balls.map(function (b) { return { teed: b.teed, done: b.done, dist: H.pin ? Math.hypot(H.pin.x - b.x, H.pin.z - b.z) : 0 }; })); }
+  function advance() {
+    storeBall(); saveRound();
+    var k = nextSeat();
+    if (k < 0) { holeComplete(); return; }
+    var sw = k !== turn; loadBall(k); setupShot(true);
+    if (sw) showTurn();
+  }
+  // the hand-over banner: pass the phone; that player's swing, help and tees are already set
+  function showTurn() {
+    var p = P(), d = toPin(), onG = lie === 'green';
+    $('turnCard').style.setProperty('--pc', p.color);
+    $('turnName').textContent = p.name + '\u2019s turn';
+    $('turnInfo').innerHTML = 'Hole ' + (round.i + 1) + ' \u00b7 ' + (strokes === 0 && lie === 'tee' ? 'on the tee, ' + holeYards() + ' yards' : 'shot ' + (strokes + 1) + ', ' + (onG ? ft(d) + ' ft' : yd(d) + ' yards') + ' to the pin') + '<br><small>' + statusFor(turn) + '</small>';
+    $('turnPrefs').innerHTML = '<span>' + SWINGS[p.swing] + (p.swing === 'meter' ? ' meter' : '') + '</span><span>' + ASSISTS[p.assist] + ' help</span><span><i class="tdot" style="background:' + TEECOL[teeKey(p)] + '"></i>' + TEES[teeKey(p)] + ' tees</span>';
+    $('ovTurn').classList.add('show');
+  }
+  // one line about how a player stands in the round
+  function statusFor(k) {
+    var r = round; if (!r) return '';
+    if (r.mode === 'match') return matchOf(r).text;
+    if (r.mode === 'skins') { var sk = skinsOf(r); return 'Skins: ' + r.players.map(function (p, j) { return esc(p.name) + ' ' + sk.won[j]; }).join(', ') + (sk.carry ? ' \u00b7 ' + sk.carry + ' riding on this hole' : ''); }
+    var n = r.sc[k].scores.filter(function (x) { return x != null; }).length;
+    return n ? esc(r.players[k].name) + ': ' + parText(toParOf(r, k)) + ' after ' + n + (n === 1 ? ' hole' : ' holes') : 'Stroke play, ' + r.pars.length + ' holes';
+  }
+  // ready for the next shot: pick a club, aim at the pin, set up the preview
+  function setupShot(keepClub) {
+    lie = H.surfaceAt(pos.x, pos.z); if (lie === 'ob' || lie === 'water') lie = 'rough';
+    var d = mode === 'range' ? 200 : toPin();
+    if (onCourse()) {
+      yaw = Math.atan2(H.pin.x - pos.x, -(H.pin.z - pos.z));
+      // off the tee of a par 4 or 5, aim down the fairway rather than straight at a flag round the corner
+      // (measured from this player's tee box: forward tees start further along the line, back tees behind it)
+      if (lie === 'tee' && H.par > 3) { var c0 = GF.autoClub(d, lie), fp = GC.pointAt(H.line, Math.min(H.len - 60, GC.teeS(H.line, [pos.x, pos.z]) + c0.carry * 1.05), 0); yaw = Math.atan2(fp[0] - pos.x, -(fp[1] - pos.z)); }
+    }
+    if (onCourse()) {
+      var c = (lie === 'green' || (lie === 'fringe' && d < 15)) ? GF.CLUBS[GF.CLUBS.length - 1] : GF.autoClub(d * 1.0, lie);
+      if (mode === 'range' && keepClub) c = club();
+      clubIdx = GF.CLUBS.indexOf(c);
+    }
+    shotType = 'full'; spin = { x: 0, y: 0 }; syncSpin(); speedMul = 1; ball = null; mapView = false;
+    phase = 'aim'; meterReset(); hideUI(false); readout(false);
+    SC.trailReset(); SC.showDots(club().putter); computeUneven(); computeAim(); hud();
+    $('btnDrop').classList.toggle('show', canDrop());
+    if (mode === 'round' && round && round.cur) { storeBall(); saveRound(); } // saved at every shot: resume comes back here
+  }
+  function computeUneven() {
+    var d = dirV(), right = GF.cross(d, GF.v3(0, 1, 0)), hb = H.heightAt(pos.x, pos.z), hf = H.heightAt(pos.x - right.x * 0.9, pos.z - right.z * 0.9), diff = hb - hf;
+    unevenAim = club().putter ? 0 : Math.max(-0.07, Math.min(0.07, -diff * 0.35));
+    var along = (H.heightAt(pos.x + d.x * 1.2, pos.z + d.z * 1.2) - H.heightAt(pos.x - d.x * 1.2, pos.z - d.z * 1.2)) / 2.4;
+    slopeLie = club().putter || lie === 'tee' ? 0 : Math.max(-0.25, Math.min(0.25, along));
+    var bits = [];
+    if (!club().putter && Math.abs(diff) >= 0.06) bits.push(diff > 0 ? 'Ball above feet' : 'Ball below feet');
+    if (Math.abs(slopeLie) >= 0.045) bits.push(slopeLie > 0 ? 'Uphill lie' : 'Downhill lie');
+    unevenTxt = bits.join(' \u00b7 ');
+  }
+  function greenside() { return H.green && Math.hypot(pos.x - H.green.x, pos.z - H.green.z) < 35; }
+  function nominalCarry(c) { var Sf = GF.SURF[lie] || GF.SURF.fairway, t = GF.SHOTS[shotType] || GF.SHOTS.full; return c.carry * Math.sqrt(Sf.dist) * Math.pow(t.speed, 1.45); }
+  function swingInput(power, acc2, strike, curve) {
+    return { club: club(), power: power, acc: acc2, strike: strike, spinX: Math.max(-1, Math.min(1, spin.x + (curve || 0))), spinY: spin.y, type: club().putter ? 'full' : shotType, lie: lie, aim: unevenAim, slope: club().putter ? 0 : slopeLie, dir: dirV(), pos: GF.v3(pos.x, pos.y, pos.z), puttScale: puttScale, greenside: greenside() };
+  }
+  function computeAim() {
+    var c = club(), d = dirV();
+    if (c.putter) {
+      var dp = toPin() || 5; puttScale = Math.max(3, Math.min(36, dp * 2)); aimDist = dp;
+      SC.hideArc();
+      if (P().assist === 'easy' && H.pin) { var sh = GF.makeShot(H, swingInput(Math.min(1, (dp + 0.4) / puttScale), 0, 1, 0)), path = []; var b = GF.launch(H, sh), n = 0; while ((b.state === 'roll') && n < 240 * 20) { GF.step(H, b); if (n % 6 === 0) path.push([b.p.x, b.p.y + 0.02, b.p.z]); n++; } path.push([b.p.x, b.p.y + 0.02, b.p.z]); SC.setPutt(path); }
+      else SC.hidePutt();
+      SC.setAim(0, 0, false);
+    } else {
+      SC.hidePutt();
+      aimDist = nominalCarry(c);
+      var ax = pos.x + d.x * aimDist, az = pos.z + d.z * aimDist;
+      if (P().assist === 'tour') { SC.hideArc(); SC.setAim(ax, az, true); }
+      else {
+        var sh2 = GF.makeShot(H, swingInput(1, 0, 1, 0)), b2 = GF.launch(H, sh2), pts = [], k = 0;
+        while (b2.state === 'fly' && k < 240 * 12) { GF.step(H, b2); if (k % 8 === 0) pts.push([b2.p.x, b2.p.y, b2.p.z]); k++; }
+        var land = b2.carry || b2.p;
+        if (P().assist === 'easy') { pts.push([land.x, land.y + 0.05, land.z]); SC.setArc(pts); } else SC.hideArc();
+        SC.setAim(land.x, land.z, true);
+      }
+    }
+    drawMini();
+  }
+
+  // ================= the shot =================
+  function hit(power, acc2, strike, curve) {
+    if (phase !== 'aim' && phase !== 'swing') return;
+    var sw = swingInput(power, acc2, strike, curve), shot = GF.makeShot(H, sw);
+    pre = GF.simulate(H, shot); // the same shot run ahead, for the landing camera
+    ball = GF.launch(H, shot); prevSpot = GF.v3(pos.x, pos.y, pos.z); strokes++; flyT = 0; acc = 0; trailK = 0; speedMul = 1;
+    if (club().putter) holeStats.putts++; $('btnDrop').classList.remove('show');
+    if (mode === 'round' && round && round.cur) round.cur.balls[turn].teed = true; // off the tee: now it's farthest-from-the-hole order
+    var land = pre.events.filter(function (e) { return e.t === 'land'; })[0];
+    landCam = null;
+    if (land && !club().putter) {
+      var lx = land.x, lz = land.z, back = GF.norm(GF.v3(pos.x - lx, 0, pos.z - lz)), side = GF.cross(back, GF.v3(0, 1, 0)), dist = Math.hypot(lx - pos.x, lz - pos.z);
+      var off = Math.min(28, 8 + dist * 0.12), sx = lx + back.x * off + side.x * off * 0.55, sz = lz + back.z * off + side.z * off * 0.55;
+      landCam = { x: sx, y: H.heightAt(sx, sz) + 3 + off * 0.18, z: sz, t: preLandT(), lx: lx, lz: lz };
+    }
+    phase = 'flight'; hideUI(true); SC.hideArc(); SC.hidePutt(); SC.setAim(0, 0, false); SC.showDots(club().putter); SC.trailReset();
+    S.whoosh(Math.min(1, power)); S.strike(club().putter ? 'pt' : club().id === 'dr' || club().id === '3w' ? 'dr' : 'iron', strike);
+    if (onCourse() && club().id === 'dr' && strokes === 1) meta.drives = (meta.drives || 0) + 1;
+  }
+  function preLandT() { var b = GF.launch(H, GF.makeShot(H, swingInput(1, 0, 1, 0))); return 0; }
+  function stepFlight(dt) {
+    acc += dt * speedMul; var n = 0;
+    while (acc >= GF.DT && n < 240) {
+      acc -= GF.DT; n++; flyT += GF.DT;
+      GF.step(H, ball);
+      ball.events.forEach(function (e) {
+        if (e.t === 'bounce') S.bounce(e.s, e.v); else if (e.t === 'splash') S.splash(); else if (e.t === 'holed') S.cup(); else if (e.t === 'lip') S.lip();
+        else if (e.t === 'leaves') S.leaves(); else if (e.t === 'trunk') S.trunk(); else if (e.t === 'land' && e.s === 'sand') S.sand();
+      });
+      ball.events = [];
+      if (++trailK % 6 === 0 && ball.state === 'fly') SC.trailAdd(ball.p);
+      if (ball.state !== 'fly' && ball.state !== 'roll') { finishShot(); return; }
+    }
+  }
+  function finishShot() {
+    phase = 'result';
+    var b = ball, dist = Math.hypot(b.p.x - prevSpot.x, b.p.z - prevSpot.z), carry = b.carry ? Math.hypot(b.carry.x - prevSpot.x, b.carry.z - prevSpot.z) : dist;
+    var next = 1700, text = '', firstShot = strokes - holeStats.pens === 1 && H.par > 3;
+    if (b.state === 'holed') { pos = GF.v3(H.pin.x, H.pin.y, H.pin.z); if (strokes <= H.par - 2) holeStats.gir = true; S.cup(); setTimeout(function () { holeOut(); }, 900); return; }
+    if (b.state === 'water') {
+      strokes++; holeStats.pens++; if (firstShot) holeStats.fir = false; var dp = dropPoint(b.lastDry); pos = dp;
+      text = 'Splash!<small>Water: 1-stroke penalty. Dropped where it crossed.</small>'; S.aww(); next = 2600;
+    } else {
+      var su = H.surfaceAt(b.p.x, b.p.z);
+      if (su === 'ob' && onCourse()) { strokes++; holeStats.pens++; if (firstShot) holeStats.fir = false; pos = prevSpot; text = 'Out of bounds<small>Stroke and distance: play again from where you hit.</small>'; S.aww(); next = 2600; }
+      else {
+        pos = GF.v3(b.p.x, b.p.y, b.p.z);
+        if (onCourse()) { if (firstShot) holeStats.fir = su === 'fairway'; if (su === 'green' && strokes <= H.par - 2) holeStats.gir = true; }
+        if (mode === 'range') { text = ''; readout(true, b, carry, dist); next = 2600; if (club().id === 'dr' && dist > meta.longest) { meta.longest = dist; saveMeta(); } }
+        else if (su === 'path') { pos = pathRelief(pos); text = 'Cart path<small>Free drop beside the path \u00b7 ' + yd(toPin()) + ' yards to the pin</small>'; next = 2300; }
+        else if (club().putter) { var left = toPin(); text = left < 0.6 ? 'So close!<small>' + Math.max(1, Math.round(left / 0.0254)) + ' inches left</small>' : 'Putt: ' + ft(dist) + ' ft<small>' + ft(left) + ' ft to go</small>'; }
+        else text = (GF.SURF[su] ? GF.SURF[su].name : su) + '<small>' + yd(dist) + ' yards \u00b7 ' + yd(toPin()) + ' to the pin</small>';
+        // pace of play: gimmes on the green, and picking up at double par
+        if (onCourse() && settings.gimme && su === 'green' && toPin() <= settings.gimme * FT) {
+          msg('Gimme!<small>' + ft(toPin()) + ' ft: that one\u2019s good</small>', 1500); strokes++; holeStats.putts++; S.cup();
+          setTimeout(function () { holeOut('gimme'); }, 1300); return;
+        }
+      }
+    }
+    if (mode === 'round' && settings.pickup && strokes >= 2 * H.par) { msg('Picked up<small>Double par: on to the next one</small>', 1600); setTimeout(function () { holeOut('picked'); }, 1400); return; }
+    if (text) msg(text, next);
+    setTimeout(function () {
+      if (phase !== 'result') return;
+      if (mode === 'range') { var t = H.tees.mid; pos = GF.v3(t[0], H.heightAt(t[0], t[1]) + GF.R, t[1]); }
+      if (mode === 'round') advance(); // the same player again, or the next one by the order of play
+      else setupShot(mode === 'range');
+    }, next);
+  }
+  // relief spots: never nearer the hole, off the path, clear of tree trunks
+  function treeClear(x, z, r) { return !H.treesNear(x, z).some(function (t) { return Math.hypot(t.x - x, t.z - z) < t.tr + r; }); }
+  function pinDist(x, z) { return Math.hypot(H.pin.x - x, H.pin.z - z); }
+  function pathRelief(p) {
+    var d0 = pinDist(p.x, p.z);
+    for (var r = 0.5; r <= 10; r += 0.5) for (var a = 0; a < 6.28; a += 0.13) {
+      var x = p.x + Math.cos(a) * (r + 0.7), z = p.z + Math.sin(a) * (r + 0.7), su = H.surfaceAt(x, z), su0 = H.surfaceAt(p.x + Math.cos(a) * r, p.z + Math.sin(a) * r);
+      if (su0 !== 'path' && su !== 'path' && su !== 'water' && su !== 'ob' && pinDist(x, z) >= d0 - 0.01 && treeClear(x, z, 0.8)) return GF.v3(x, H.heightAt(x, z) + GF.R, z);
+    }
+    return p;
+  }
+  var LIEQ = { fairway: 5, tee: 5, fringe: 4, rough: 3, deep: 1, sand: 0 };
+  function canDrop() {
+    if (!onCourse() || phase !== 'aim' || strokes === 0 || lie === 'green' || lie === 'fringe') return false;
+    return lie === 'rough' || lie === 'deep' || lie === 'sand' || !treeClear(pos.x, pos.z, 3.5);
+  }
+  function twoClubs() {
+    var d0 = pinDist(pos.x, pos.z), best = null;
+    for (var r = 1.2; r <= 2.21; r += 0.5) for (var a = 0; a < 6.28; a += 0.26) {
+      var x = pos.x + Math.cos(a) * r, z = pos.z + Math.sin(a) * r, su = H.surfaceAt(x, z);
+      if (pinDist(x, z) < d0 - 0.01 || LIEQ[su] == null || (lie === 'sand') !== (su === 'sand') || !treeClear(x, z, 0.8)) continue;
+      var score = LIEQ[su] * 10 + Math.min(8, H.treesNear(x, z).reduce(function (m, t) { return Math.min(m, Math.hypot(t.x - x, t.z - z)); }, 8));
+      if (!best || score > best.score) best = { x: x, z: z, score: score };
+    }
+    return best;
+  }
+  function backOnLine() {
+    var away = GF.norm(GF.v3(pos.x - H.pin.x, 0, pos.z - H.pin.z));
+    for (var s2 = 2; s2 <= 60; s2 += 1) { var x = pos.x + away.x * s2, z = pos.z + away.z * s2, su = H.surfaceAt(x, z); if ((su === 'fairway' || su === 'rough' || su === 'fringe' || su === 'tee') && treeClear(x, z, 3)) return { x: x, z: z }; }
+    return null;
+  }
+  function openDrop() {
+    if (!canDrop()) return;
+    var opts = [], sand = lie === 'sand';
+    if (prevSpot) opts.push({ label: 'Replay from the last spot (+1)', red: true, go: function () { takeDrop(prevSpot, 1, 'Back where you last hit'); } });
+    var tc = twoClubs(); if (tc) opts.push({ label: 'Two club lengths away (+1)', red: !opts.length, go: function () { takeDrop(tc, 1, 'Two club lengths'); } });
+    var bl = backOnLine(); if (bl) opts.push({ label: sand ? 'Back on the line, out of the sand (+2)' : 'Back on the line (+1)', go: function () { takeDrop(bl, sand ? 2 : 1, 'Back on the line'); } });
+    opts.push({ label: 'Play it as it lies', go: function () { } });
+    showCard('Unplayable lie?', 'Take a drop for a penalty, or play it from where it is.', opts, true);
+  }
+  function takeDrop(p, pen, text) { strokes += pen; holeStats.pens += pen; pos = GF.v3(p.x, H.heightAt(p.x, p.z) + GF.R, p.z); msg(text + '<small>+' + pen + ' penalty stroke' + (pen > 1 ? 's' : '') + '</small>', 2200); setupShot(); }
+  // water: back on dry land where it crossed, a couple of meters further from the hole
+  function dropPoint(p) {
+    var away = H.pin ? GF.norm(GF.v3(p.x - H.pin.x, 0, p.z - H.pin.z)) : GF.v3(0, 0, 1), x = p.x, z = p.z;
+    for (var i = 0; i < 40; i++) { var su = H.surfaceAt(x, z); if (su !== 'water' && su !== 'ob' && !(H.treesNear(x, z).some(function (t) { return Math.hypot(t.x - x, t.z - z) < 2; }))) break; x += away.x * 1; z += away.z * 1; }
+    x += away.x * 2; z += away.z * 2;
+    return GF.v3(x, H.heightAt(x, z) + GF.R, z);
+  }
+  function scoreName(s, par) { if (s === 1) return 'Hole in one!'; var d = s - par; return d <= -3 ? 'Albatross!' : d === -2 ? 'Eagle!' : d === -1 ? 'Birdie!' : d === 0 ? 'Par' : d === 1 ? 'Bogey' : d === 2 ? 'Double bogey' : (d > 0 ? '+' : '') + d; }
+  function holeOut(how) {
+    phase = 'done';
+    if (mode === 'round' && round && round.cur) { playerDone(how); return; }
+    meta.finished++; saveMeta();
+    if (!meta.best || strokes < meta.best) meta.best = strokes; saveMeta();
+    var nm = scoreName(strokes, H.par); if (strokes <= H.par) S.cheer(strokes < H.par); else S.aww();
+    showCard(nm, H.name + ', par ' + H.par + ': <b>' + strokes + '</b> strokes.' + (meta.best ? '<br><small>Your best here: ' + meta.best + '</small>' : ''), [
+      { label: 'Play it again', red: true, go: function () { between(startHole); } },
+      { label: 'Driving range', go: function () { between(startRange); } }]);
+  }
+  // a player's ball is in (or picked up): the score goes on their card, and the hole goes on until everyone is in
+  function putScore(k, b, picked) { var s = round.sc[k], i = round.i; s.scores[i] = b.score; s.putts[i] = b.putts; s.fir[i] = b.fir; s.gir[i] = b.gir; s.pens[i] = b.pens; s.picked[i] = !!picked || b.how === 'picked'; }
+  function playerDone(how) {
+    var k = turn, b = round.cur.balls[k], par = H.par, score = how === 'picked' ? 2 * par : strokes;
+    storeBall(); b.done = true; b.score = score; b.how = how || '';
+    putScore(k, b); saveRound();
+    if (nP() === 1) { holeComplete(); return; }
+    if (how !== 'picked' && score <= par) S.cheer(score < par);
+    msg(esc(P().name) + ': ' + (how === 'picked' ? 'picked up' : scoreName(score, par)) + '<small>' + score + (score === 1 ? ' stroke' : ' strokes') + (how === 'gimme' ? ' with a gimme' : '') + '</small>', 1900);
+    // match play and skins: once nobody still putting out can tie the best score in the hole, their balls are picked up
+    // (scored one more than they have, marked "picked up" on the card)
+    if (round.mode !== 'stroke' && GR.settled(round.cur.balls)) round.cur.balls.forEach(function (o, j) { if (!o.done) { o.done = true; o.score = o.strokes + 1; o.how = 'conceded'; putScore(j, o, true); } });
+    saveRound();
+    setTimeout(function () { if (mode === 'round' && round && round.cur && phase === 'done') advance(); }, 1800);
+  }
+  // everyone is in: the hole-out card (one player: as in Phase 2; more: everyone's score and how the game stands)
+  function holeComplete() {
+    phase = 'done'; meta.finished++; saveMeta();
+    var r = round, i = r.i, last = i >= r.pars.length - 1, over = r.mode === 'match' && matchOf(r).over, how = r.cur ? r.cur.balls[0].how : '';
+    r.cur = null; if (last || over) r.done = true; else r.i = i + 1;
+    saveRound();
+    var btns = r.done ? [{ label: over && !last ? 'The match is over: see the result' : 'See the final card', red: true, go: finishRound }] : [
+      { label: 'Next hole', red: true, go: function () { between(function () { playHole(r.i); }); } },
+      { label: 'Menu', go: function () { openMenu(); } }];
+    var par = r.pars[i];
+    if (r.players.length === 1) {
+      var sc = r.sc[0], score = sc.scores[i], nm = how === 'picked' ? 'Picked up' : scoreName(score, par);
+      if (how !== 'picked' && score <= par) S.cheer(score < par); else S.aww();
+      showCard(nm, 'Hole ' + (i + 1) + ', par ' + par + ': <b>' + score + '</b>' + (how === 'gimme' ? ' (with a gimme)' : '') + ' · ' + sc.putts[i] + (sc.putts[i] === 1 ? ' putt' : ' putts') +
+        '<br>Round: <b>' + parText(toParOf(r)) + '</b> after ' + played(r) + (played(r) === 1 ? ' hole' : ' holes') + cardTable(r, -1, true), btns);
+      return;
+    }
+    var best = Math.min.apply(0, r.sc.map(function (s) { return s.scores[i]; })), title;
+    if (r.mode === 'match') { var w = matchOf(r).per[i]; title = w === -1 ? 'Hole halved' : r.players[w].name + ' wins the hole'; }
+    else if (r.mode === 'skins') { var h = skinsOf(r).per[i]; title = h.winner >= 0 ? r.players[h.winner].name + ' wins ' + h.value + (h.value === 1 ? ' skin' : ' skins') : 'Tied: ' + h.value + (h.value === 1 ? ' skin carries' : ' skins carry') + ' over'; }
+    else { var lows = r.players.filter(function (p, k) { return r.sc[k].scores[i] === best; }); title = lows.length === r.players.length ? 'Everyone made ' + best : lows.length > 1 ? lows.map(function (p) { return p.name; }).join(' & ') + ' share the low score' : lows[0].name + (best < par ? ': ' + scoreName(best, par).replace('!', '') : ' has the low score'); }
+    if (best <= par) S.cheer(best < par); else S.aww();
+    showCard(title, 'Hole ' + (i + 1) + ', par ' + par + holeTable(r, i) + '<span class="cstat">' + modeLine(r) + '</span>', btns);
+  }
+  function names(list) { return list.map(function (p) { return esc(p.name); }).join(' & '); }
+  // stroke play: who leads and by how much
+  function leaderText(r) {
+    var tp = r.players.map(function (p, k) { return toParOf(r, k); }), lo = Math.min.apply(0, tp), at = r.players.filter(function (p, k) { return tp[k] === lo; });
+    if (at.length > 1) return names(at) + ' tied at ' + parText(lo);
+    var second = Math.min.apply(0, tp.filter(function (v) { return v !== lo; }));
+    return esc(at[0].name) + ' leads by ' + (second - lo) + ' (' + parText(lo) + ')';
+  }
+  function modeLine(r) { return r.mode === 'stroke' ? leaderText(r) : statusFor(0); }
+  // one hole, everyone: score (with its birdie / bogey mark), putts, and the round so far
+  function holeTable(r, i) {
+    var sk = r.mode === 'skins' ? skinsOf(r) : null, m = r.mode === 'match' ? matchOf(r) : null;
+    var h = '<table class="htable"><tr><th></th><th>Score</th><th>Putts</th><th>' + (sk ? 'Skins' : m ? 'Holes won' : 'Round') + '</th></tr>';
+    r.players.forEach(function (p, k) {
+      var s = r.sc[k], sc = s.scores[i];
+      h += '<tr><td>' + dot(p) + esc(p.name) + '</td><td><span class="sc-n ' + scClass(sc, r.pars[i]) + (s.picked[i] ? ' sc-pick' : '') + '">' + sc + '</span>' + (s.picked[i] ? '<small> picked up</small>' : '') + '</td><td>' + (s.putts[i] || 0) + '</td><td><b>' + (sk ? sk.won[k] : m ? m.won[k] : parText(toParOf(r, k))) + '</b></td></tr>';
+    });
+    return h + '</table>';
+  }
+  // standings for the scorecard and the results: stroke play by score, skins by skins won, match by holes won
+  function standings(r) {
+    var sk = r.mode === 'skins' ? skinsOf(r) : null, m = r.mode === 'match' ? matchOf(r) : null;
+    var rows = r.players.map(function (p, k) { return { p: p, k: k, tot: sum(r.sc[k].scores), tp: toParOf(r, k), n: r.sc[k].scores.filter(function (x) { return x != null; }).length, sk: sk ? sk.won[k] : 0 }; });
+    rows.sort(function (a, b) { return (sk ? b.sk - a.sk : 0) || (m ? m.won[b.k] - m.won[a.k] : 0) || a.tp - b.tp || a.k - b.k; });
+    var h = '<table class="htable"><tr><th></th>' + (sk ? '<th>Skins</th>' : m ? '<th>Holes won</th>' : '') + '<th>To par</th><th>Strokes</th><th>Thru</th></tr>';
+    rows.forEach(function (q) { h += '<tr><td>' + dot(q.p) + esc(q.p.name) + '</td>' + (sk ? '<td><b>' + q.sk + '</b></td>' : m ? '<td><b>' + m.won[q.k] + '</b></td>' : '') + '<td>' + (sk || m ? '' : '<b>') + parText(q.tp) + (sk || m ? '' : '</b>') + '</td><td>' + (q.n ? q.tot : '') + '</td><td>' + q.n + '</td></tr>'; });
+    return h + '</table>';
+  }
+  // a finished round goes into the history and each profile's best rounds (stroke play only, where every stroke counts);
+  // also when the app was closed on the last hole's card. Returns "new best" notes for the results card.
+  function recordRound(r) {
+    var notes = [], n = r.pars.length, par = sum(r.pars), key = n === 18 ? 'best18' : 'best9';
+    var pl = r.players.map(function (p, k) { var s = r.sc[k]; return { name: p.name, id: p.id, total: sum(s.scores), toPar: toParOf(r, k), putts: sum(s.putts) }; });
+    if (r.mode === 'skins') { var sk = skinsOf(r); pl.forEach(function (q, k) { q.skins = sk.won[k]; }); }
+    history.unshift({ seed: r.seed, name: r.name, holes: n, mode: r.mode, date: Date.now(), par: par, players: pl, result: r.mode === 'match' ? matchOf(r).text : '', total: pl[0].total, scores: r.sc[0].scores.slice(), putts: pl[0].putts });
+    history = history.slice(0, 30); store.set('history', history);
+    meta.rounds++; meta.lastSeed = r.seed; meta.lastHoles = n;
+    if (r.mode === 'stroke' && played(r) === n) pl.forEach(function (q) {
+      var pf = q.id && profiles[q.id]; if (!pf) return;
+      if (!pf[key] || q.toPar < pf[key].toPar) { if (pf[key]) notes.push('New best ' + n + '-hole round for ' + q.name + '!'); pf[key] = { toPar: q.toPar, total: q.total, name: r.name, date: Date.now() }; }
+      if (n === 9 && (!meta.bestRound || q.toPar < meta.bestRound.toPar)) meta.bestRound = { toPar: q.toPar, name: r.name };
+    });
+    saveProfiles(); saveMeta();
+    round = null; store.set('round', null);
+    return notes;
+  }
+  if (round && round.done) recordRound(round);
+  function bestText(p) {
+    var pf = p.id && profiles[p.id]; if (!pf) return '';
+    return ['best9', 'best18'].filter(function (k) { return pf[k]; }).map(function (k) { return esc(pf.name) + '’s best ' + (k === 'best9' ? 9 : 18) + ': ' + parText(pf[k].toPar) + ' (' + pf[k].total + ') at ' + esc(pf[k].name); }).join('<br>');
+  }
+  function finishRound() {
+    var r = round, notes = recordRound(r), again = { players: r.players, mode: r.mode, holes: r.pars.length };
+    var btns = [
+      { label: 'Play ' + r.name + ' again', red: true, go: function () { between(function () { newRound(r.seed, again); }); } },
+      { label: 'New round', go: function () { openPlayers(); } },
+      { label: 'Menu', go: function () { openMenu(); } }];
+    var tail = (notes.length ? '<span class="newbest">' + notes.map(esc).join('<br>') + '</span>' : '') + '<small class="bests">' + r.players.map(bestText).filter(Boolean).join('<br>') + '</small>';
+    if (r.players.length === 1) {
+      var total = sum(r.sc[0].scores), d = total - sum(r.pars);
+      if (d <= 0) S.cheer(d < 0);
+      showCard(r.name + ' done!', '<b>' + total + '</b> strokes, <b>' + parText(d) + '</b> for the round.' + cardTable(r, -1, true) + summaryHtml(r) + tail, btns);
+      return;
+    }
+    S.cheer(true);
+    var title, line = '';
+    if (r.mode === 'match') { var m = matchOf(r); title = m.text; line = m.halved ? m.halved + (m.halved === 1 ? ' hole' : ' holes') + ' halved' : ''; }
+    else if (r.mode === 'skins') {
+      var sk = skinsOf(r), mx = Math.max.apply(0, sk.won), top = r.players.filter(function (p, k) { return sk.won[k] === mx; });
+      title = top.length === 1 ? top[0].name + ' wins the skins' : 'Skins shared'; line = sk.carry ? sk.carry + (sk.carry === 1 ? ' skin was' : ' skins were') + ' still riding after the last hole: nobody takes ' + (sk.carry === 1 ? 'it' : 'them') + '.' : 'Every skin was won.';
+    } else { var st = GR.stroke(r.sc.map(function (s) { return s.scores; })); title = st.winners.length === 1 ? r.players[st.winners[0]].name + ' wins!' : st.winners.map(function (k) { return r.players[k].name; }).join(' & ') + ' tie!'; }
+    showCard(title, r.name + ' · ' + MODES[r.mode] + ', ' + r.pars.length + ' holes' + standings(r) + (line ? '<span class="cstat">' + line + '</span>' : '') + cardTable(r, -1, true) + tail, btns);
+  }
+  // ---- scorecard ----
+  function scClass(sc, par) { var d = sc - par; return d <= -2 ? 'sc-eagle' : d === -1 ? 'sc-birdie' : d === 0 ? '' : d === 1 ? 'sc-bogey' : 'sc-double'; }
+  // 18 holes: two tables, Out and In
+  function cardTable(r, cur, compact) { var n = r.pars.length, h = ''; for (var a = 0; a < n; a += 9) h += nineTable(r, a, Math.min(n, a + 9), cur, compact); return h; }
+  function nineTable(r, a, b, cur, compact) {
+    var solo = r.players.length === 1, lab = r.pars.length > 9 ? (a === 0 ? 'Out' : 'In') : 'Tot', i;
+    function tds(fn, tot) { var s = ''; for (var j = a; j < b; j++) s += '<td' + (j === cur ? ' class="cur"' : '') + '>' + fn(j) + '</td>'; return s + '<td class="tot">' + (tot == null ? '' : tot) + '</td>'; }
+    function part(arr) { var t = 0, any = false; for (var j = a; j < b; j++) if (arr[j] != null) { t += arr[j]; any = true; } return any ? t : ''; }
+    var h = '<table class="sctable' + (solo ? '' : ' multi') + '"><tr><th>Hole</th>';
+    for (i = a; i < b; i++) h += '<th' + (i === cur ? ' class="cur"' : '') + '>' + (i + 1) + '</th>';
+    h += '<th>' + lab + '</th></tr><tr><td>Par</td>' + tds(function (j) { return r.pars[j]; }, part(r.pars)) + '</tr>';
+    r.players.forEach(function (p, k) {
+      var s = r.sc[k];
+      h += '<tr><td>' + (solo ? 'Score' : dot(p) + esc(p.name.slice(0, 6))) + '</td>' + tds(function (j) {
+        var sc = s.scores[j]; return sc != null ? '<span class="sc-n ' + scClass(sc, r.pars[j]) + (s.picked[j] ? ' sc-pick' : '') + '">' + sc + '</span>' : j === cur && (solo || (r.cur && r.cur.turn === k)) ? '•' : '';
+      }, part(s.scores)) + '</tr>';
+    });
+    if (solo && !compact) { var s0 = r.sc[0]; h += '<tr><td>Putts</td>' + tds(function (j) { return s0.scores[j] != null ? s0.putts[j] : ''; }, part(s0.scores.map(function (x, j) { return x != null ? s0.putts[j] : null; }))) + '</tr>'; }
+    if (r.mode === 'match') { var ini = initials(r); h += '<tr class="mrow"><td>Match</td>' + tds(function (j) { return r.sc[0].scores[j] != null && r.sc[1].scores[j] != null ? GR.matchCell(r.sc[0].scores, r.sc[1].scores, j, ini) : ''; }, null) + '</tr>'; }
+    if (r.mode === 'skins') { var sk = skinsOf(r), ini2 = initials(r); h += '<tr class="mrow"><td>Skins</td>' + tds(function (j) { var q = sk.per[j]; return !q ? '' : q.winner >= 0 ? ini2[q.winner] + '<sup>' + q.value + '</sup>' : '–'; }, null) + '</tr>'; }
+    return h + '</table>';
+  }
+  function summaryHtml(r) {
+    var s = r.sc[0], fw = 0, fwN = 0, gr = 0; s.scores.forEach(function (sc, i) { if (sc == null) return; if (r.pars[i] > 3) { fwN++; if (s.fir[i]) fw++; } if (s.gir[i]) gr++; });
+    return '<div class="scsum"><div>To par<b>' + parText(toParOf(r)) + '</b></div><div>Fairways<b>' + fw + '/' + fwN + '</b></div><div>Greens<b>' + gr + '/' + played(r) + '</b></div></div>';
+  }
+  function openCard() {
+    if (mode !== 'round' || !round) { msg('Scorecard<small>Start a round from Menu, New round</small>', 2200); return; }
+    storeBall();
+    var r = round, solo = r.players.length === 1, inPlay = !!r.cur, note;
+    $('cardTitle').textContent = r.name;
+    if (solo) note = 'Hole ' + (r.i + 1) + ': ' + H.name + ', par ' + H.par + ' · ' + (inPlay ? strokes + (strokes === 1 ? ' stroke' : ' strokes') + ' so far' : 'finished') + '. Penalties this round: ' + (sum(r.sc[0].pens) + (inPlay ? holeStats.pens : 0)) + '.';
+    else note = 'Hole ' + (r.i + 1) + ': ' + H.name + ', par ' + H.par + (inPlay ? ' · ' + r.players.map(function (p, k) { var b = r.cur.balls[k]; return esc(p.name) + ' ' + (b.done ? 'in with ' + b.score : b.strokes + (b.strokes === 1 ? ' stroke' : ' strokes')); }).join(', ') : '') + '.';
+    $('cardBody').innerHTML = (solo && r.pars.length === 9 ? '' : '<p class="cstat">' + (solo ? '' : MODES[r.mode] + ', ') + r.pars.length + ' holes</p>') + '<div class="sclegend"><span><i class="sc-eagle"></i>Eagle</span><span><i class="sc-birdie"></i>Birdie</span><span><i class="sc-bogey"></i>Bogey</span><span><i class="sc-double"></i>Double+</span></div>' +
+      cardTable(r, inPlay ? r.i : -1, false) + (solo ? summaryHtml(r) : '<p class="cstat">' + modeLine(r) + '</p>' + standings(r)) + '<p class="note">' + note + '</p>';
+    $('ovCard').classList.add('show');
+  }
+  // ---- menu ----
+  function menuSync() {
+    var res = $('goResume'), rep2 = $('goReplay'), nr = $('goRound');
+    res.hidden = !(round && !round.done); if (!res.hidden) res.textContent = 'Resume ' + round.name + ', hole ' + (round.i + 1) + (round.players.length > 1 ? ' (' + round.players.map(function (p) { return p.name; }).join(', ') + ')' : '');
+    nr.className = 'btn' + (res.hidden ? ' red' : '');
+    rep2.hidden = !meta.lastSeed; if (!rep2.hidden) rep2.textContent = 'Play ' + GG.course(meta.lastSeed, meta.lastHoles === 18 ? 18 : 9).name + ' again';
+  }
+  function openMenu() { menuSync(); $('ovMenu').classList.add('show'); }
+
+  // ================= swing: 3-click meter =================
+  var M = { state: 'idle', v: 0, power: 0, t0: 0 }, UP = 1.05, ZW = 0.035, LOW = -0.15;
+  function meterReset() { M.state = 'idle'; M.v = 0; M.power = 0; drawMeter(); $('padtip').textContent = P().swing === 'meter' ? (club().putter ? 'Tap to start the putt' : 'Tap to start your swing') : (club().putter ? 'Pull down, then push up to putt' : 'Pull down to load, swipe up to swing'); }
+  function meterTap() {
+    if (phase !== 'aim' && phase !== 'swing') return;
+    S.unlock();
+    if (M.state === 'idle') { M.state = 'up'; M.v = 0; phase = 'swing'; S.tick(); $('padtip').textContent = 'Tap to set the power'; }
+    else if (M.state === 'up') { M.power = M.v; M.state = 'down'; S.tick(); $('padtip').textContent = 'Tap in the green zone'; }
+    else if (M.state === 'down') { finishMeter(M.v); }
+  }
+  function finishMeter(v) {
+    M.state = 'done';
+    var a = -Math.max(-1, Math.min(1, v / 0.14)); if (Math.abs(v) < ZW) a *= 0.25; // inside the zone: nearly pure
+    hit(M.power, a, 1 - Math.min(0.6, Math.abs(v) * 2), 0);
+  }
+  function stepMeter(dt) {
+    if (M.state === 'up') { M.v += dt / UP; if (M.v >= 1.1) { M.v = 1.1; M.power = 1.1; M.state = 'down'; $('padtip').textContent = 'Tap in the green zone'; } }
+    else if (M.state === 'down') { var over = Math.max(0, M.power - 1); M.v -= dt / 0.75 * (1 + over * 4); if (M.v <= LOW) finishMeter(LOW); }
+    drawMeter();
+  }
+  function my(v) { return ((v - LOW) / (1.1 - LOW) * 100).toFixed(2) + '%'; }
+  function drawMeter() {
+    var mz = $('mzone'); mz.style.bottom = my(-ZW); mz.style.height = (2 * ZW / (1.1 - LOW) * 100).toFixed(2) + '%';
+    document.querySelector('.vmeter .m100').style.bottom = my(1); document.querySelector('.vmeter .mlab.top').style.bottom = my(1); document.querySelector('.vmeter .mlab.zone').style.bottom = my(0);
+    $('mhead').style.bottom = my(M.state === 'idle' ? 0 : M.v);
+    $('mfill').style.height = M.state === 'up' ? my(M.v) : M.state === 'down' || M.state === 'done' ? my(M.power) : '0%';
+    $('mpow').style.display = M.state === 'down' || M.state === 'done' ? 'block' : 'none'; $('mpow').style.bottom = my(M.power);
+  }
+  function drawSwipe(pw) { $('mfill').style.height = pw > 0 ? my(pw) : '0%'; }
+
+  // ================= swing: swipe =================
+  var SW = null, PULL = 150;
+  function swipeDown(e) {
+    if (phase !== 'aim') return; S.unlock();
+    SW = { id: e.pointerId, x0: e.clientX, y0: e.clientY, low: { x: e.clientX, y: e.clientY, t: performance.now() }, fwd: false, pts: [], power: 0 };
+    phase = 'swing';
+    try { $('pad').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+  function swipeMove(e) {
+    if (!SW || e.pointerId !== SW.id) return;
+    var x = e.clientX, y = e.clientY, now = performance.now();
+    if (!SW.fwd) {
+      if (y >= SW.low.y) { SW.low = { x: x, y: y, t: now }; SW.power = Math.min(1.1, Math.max(0, (y - SW.y0) / PULL)); }
+      else if (SW.low.y - y > 18 && SW.power > 0.04) { SW.fwd = true; SW.pts = [[SW.low.x, SW.low.y, SW.low.t]]; }
+      drawSwipe(SW.power);
+    }
+    if (SW.fwd) { SW.pts.push([x, y, now]); if (SW.y0 - y > 60) swipeRelease(); }
+  }
+  function swipeUp(e) { if (!SW || e.pointerId !== SW.id) return; if (SW.fwd) swipeRelease(); else { SW = null; phase = 'aim'; drawSwipe(0); } }
+  function swipeRelease() {
+    var s = SW; SW = null; if (!s || s.pts.length < 2) { phase = 'aim'; return; }
+    var a = s.pts[0], b = s.pts[s.pts.length - 1], dx = b[0] - a[0], dy = a[1] - b[1], L = Math.hypot(dx, dy) || 1;
+    var ang = Math.atan2(dx, dy) * 180 / Math.PI, accv = Math.max(-1, Math.min(1, ang / (club().putter ? 20 : 14)));
+    // curve: how far the path bows away from the straight line (bowing left = draw, right = fade)
+    var dev = 0; s.pts.forEach(function (p) { var c = ((p[0] - a[0]) * dy + (p[1] - a[1]) * dx) / L; if (Math.abs(c) > Math.abs(dev)) dev = c; });
+    var curve = club().putter ? 0 : Math.max(-1, Math.min(1, -dev / L * 4));
+    var dur = Math.max(0.02, (b[2] - a[2]) / 1000), speed = L / dur, strike = Math.max(0.4, Math.min(1, 1 - Math.abs(Math.log(speed / 1000)) * 0.35));
+    if (club().putter) strike = 1;
+    drawSwipe(0);
+    hit(s.power, accv, strike, curve);
+  }
+
+  // ================= cameras =================
+  var cam = { p: null, l: null };
+  function setCam(p, l, k) { if (!cam.p) { cam.p = p; cam.l = l; } else { cam.p = lerp3(cam.p, p, k); cam.l = lerp3(cam.l, l, k); } }
+  function lerp3(a, b, t) { return GF.v3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t); }
+  function updateCamera(dt) {
+    var k = 1 - Math.exp(-dt * 4), d = dirV(), up = GF.v3(0, 1, 0);
+    if (phase === 'flyover' && flyover) {
+      flyover.t += dt; var u = Math.min(1, flyover.t / 6), s = u * H.len;
+      var p = GC.pointAt(H.line, s - 40, 0), l = GC.pointAt(H.line, s + 60, 0);
+      setCam(GF.v3(p[0], H.heightAt(p[0], p[1]) + 45 - u * 25, p[1]), GF.v3(l[0], H.heightAt(l[0], l[1]), l[1]), 1 - Math.exp(-dt * 2.5));
+      if (flyover.t > 6.5) endFlyover();
+      return;
+    }
+    if (mapView && (phase === 'aim' || phase === 'swing')) {
+      var mz = (pos.z + (H.pin ? H.pin.z : pos.z - 200)) / 2, mxx = (pos.x + (H.pin ? H.pin.x : pos.x)) / 2, span = Math.max(80, Math.hypot(pos.z - (H.pin ? H.pin.z : pos.z - 200), pos.x - (H.pin ? H.pin.x : pos.x)));
+      setCam(GF.v3(mxx, H.heightAt(mxx, mz) + span * 1.15, mz + span * 0.18), GF.v3(mxx, H.heightAt(mxx, mz), mz), k * 1.5); return;
+    }
+    if (phase === 'aim' || phase === 'swing' || phase === 'done') {
+      // behind the ball, tipped down so the ball sits above the swing controls
+      var putt = club().putter, back = putt ? 3.4 : 6.5, hgt = putt ? 1.5 : 2.6, ahead = putt ? 12 : 40, pitch = putt ? 0.3 : 0.22;
+      var cy = pos.y + hgt, ly = cy - Math.tan(pitch) * (ahead + back);
+      setCam(GF.v3(pos.x - d.x * back, cy, pos.z - d.z * back), GF.v3(pos.x + d.x * ahead, ly, pos.z + d.z * ahead), k * 2); return;
+    }
+    if ((phase === 'flight' || phase === 'result') && ball) {
+      var b = ball.p;
+      if (club().putter) { setCam(GF.v3(prevSpot.x - d.x * 3.2, prevSpot.y + 1.6, prevSpot.z - d.z * 3.2), GF.v3(b.x, b.y, b.z), k * 2); return; }
+      var useLand = landCam && (flyT > (landSec() - 1.4) || ball.state !== 'fly');
+      if (useLand) { setCam(GF.v3(landCam.x, landCam.y, landCam.z), GF.v3(b.x, b.y, b.z), 1 - Math.exp(-dt * 3)); return; }
+      var v = ball.v, vh = Math.hypot(v.x, v.z) || 1;
+      setCam(GF.v3(b.x - v.x / vh * 9, b.y + 3 + (b.y - H.heightAt(b.x, b.z)) * 0.15, b.z - v.z / vh * 9), GF.v3(b.x + v.x / vh * 6, b.y, b.z + v.z / vh * 6), 1 - Math.exp(-dt * 5));
+    }
+  }
+  function landSec() { if (!pre) return 99; if (pre._land == null) { var b = GF.launch(H, GF.makeShot(H, lastInput || swingInput(1, 0, 1, 0))), n = 0; while (b.state === 'fly' && n < 240 * 20) { GF.step(H, b); n++; } pre._land = n * GF.DT; } return pre._land; }
+  var lastInput = null;
+  function endFlyover() { flyover = null; phase = 'aim'; hideUI(false); computeAim(); hud(); if (multi()) showTurn(); }
+
+  // ================= HUD =================
+  function hud() {
+    if (!H) return;
+    var pin = toPin();
+    if (mode === 'range') $('hHole').innerHTML = '<b>Driving range</b>' + (meta.longest ? '<br><small>Longest drive ' + yd(meta.longest) + ' yd</small>' : '');
+    else if (mode === 'round' && round && multi()) $('hHole').innerHTML = '<b>' + (round.i + 1) + '. ' + H.name + '</b> \u00b7 Par ' + H.par + '<br>' + dot(P()) + '<b>' + esc(P().name) + '</b> \u00b7 Shot ' + (strokes + 1) + ' \u00b7 ' + hudStatus();
+    else if (mode === 'round' && round) $('hHole').innerHTML = '<b>' + (round.i + 1) + '. ' + H.name + '</b> \u00b7 Par ' + H.par + '<br>' + holeYards() + ' yd \u00b7 Shot ' + (strokes + 1) + ' \u00b7 Round ' + parText(toParOf(round));
+    else $('hHole').innerHTML = '<b>' + H.name + '</b> · Par ' + H.par + ' · ' + holeYards() + ' yd<br>Shot ' + (strokes + 1) + (strokes ? ' · ' + strokes + (strokes === 1 ? ' stroke' : ' strokes') + ' so far' : '');
+    var elev = H.pin ? H.pin.y - pos.y : 0, line2 = '';
+    if (onCourse()) line2 = (club().putter ? 'Putt · ' + ft(pin) + ' ft' : yd(pin) + ' yd to pin') + ' · ' + (elev >= 0 ? '▲ ' : '▼ ') + (club().putter ? Math.abs(Math.round(elev / 0.0254)) + ' in' : Math.abs(ft(elev)) + ' ft') + '<br>' + (GF.SURF[lie] ? GF.SURF[lie].name : lie) + (unevenTxt ? ' · ' + unevenTxt : '') + (club().putter ? ' · meter ' + ft(puttScale) + ' ft' : '');
+    else line2 = (GF.SURF[lie] ? GF.SURF[lie].name : lie) + ' · aim ' + yd(aimDist) + ' yd';
+    $('hShot').innerHTML = line2;
+    var c = club(); $('clubName').textContent = c.name; $('clubDist').textContent = c.putter ? 'putt ' + ft(puttScale) + ' ft' : 'carry ' + yd(nominalCarry(c)) + ' yd';
+    $('btnType').textContent = GF.SHOTS[shotType].name; $('btnType').disabled = !!c.putter; $('btnType').style.opacity = c.putter ? 0.4 : 1;
+    var w = H.wind || { speed: 0, dir: 0 }; $('hWindMph').textContent = Math.round(w.speed * 2.237);
+    windArrow();
+    $('pad').classList.toggle('swipe', P().swing === 'swipe'); $('meter').classList.toggle('swipe', P().swing === 'swipe');
+  }
+  // the game in a few words for the hole pill: "Round E", "G 2 up", "Worth 3 skins"
+  function hudStatus() {
+    var r = round, ini = initials(r);
+    if (r.mode === 'match') { var m = matchOf(r); return m.up === 0 ? 'All square' : ini[m.up > 0 ? 0 : 1] + ' ' + Math.abs(m.up) + ' up'; }
+    if (r.mode === 'skins') { var v = skinsOf(r).carry + 1; return 'Worth ' + v + (v === 1 ? ' skin' : ' skins'); }
+    return 'Round ' + parText(toParOf(r, turn));
+  }
+  function windArrow() { var w = H && H.wind || { dir: 0 }, camYaw = cam.p && cam.l ? Math.atan2(cam.l.x - cam.p.x, -(cam.l.z - cam.p.z)) : yaw; $('windArrow').parentNode.style.transform = 'rotate(' + ((w.dir - camYaw) * 180 / Math.PI).toFixed(1) + 'deg)'; }
+  var msgT = 0;
+  function msg(html, ms) { var el = $('msg'); el.innerHTML = html; el.classList.add('show'); clearTimeout(msgT); msgT = setTimeout(function () { el.classList.remove('show'); }, ms || 1800); }
+  function readout(show, b, carry, total) {
+    var el = $('readout'); if (!show) { el.classList.remove('show'); return; }
+    var off = b.p.x - prevSpot.x, sh = lastShot || {};
+    el.innerHTML = '<div>Carry<b>' + yd(carry) + ' yd</b></div><div>Total<b>' + yd(total) + ' yd</b></div><div>' + (off >= 0 ? 'Right' : 'Left') + '<b>' + Math.abs(yd(off)) + ' yd</b></div>' +
+      '<div>Ball speed<b>' + Math.round((sh.speed || 0) * 2.237) + ' mph</b></div><div>Launch<b>' + ((sh.launch || 0) * 180 / Math.PI).toFixed(1) + '°</b></div><div>Spin<b>' + Math.round((sh.back || 0) * 30 / Math.PI) + ' rpm</b></div>';
+    el.classList.add('show');
+  }
+  var lastShot = null;
+  function hideUI(v) { $('stage').classList.toggle('hideui', !!v); }
+  // mini-map: a little top-down picture of the hole
+  var miniImg = null;
+  function buildMini() {
+    var c = document.createElement('canvas'), W = 120, Hh = 180; c.width = W; c.height = Hh; var x = c.getContext('2d'), b = H.bounds;
+    var sx = W / (b.x1 - b.x0), sz = Hh / (b.z1 - b.z0), s = Math.min(sx, sz), ox = (W - (b.x1 - b.x0) * s) / 2, oz = (Hh - (b.z1 - b.z0) * s) / 2;
+    var COLS = { fairway: '#6fd75a', rough: '#3f9a36', deep: '#2f7a2e', sand: '#f0dca4', green: '#8df07a', fringe: '#66d055', tee: '#6ad656', water: '#3aa9e8', path: '#cfc8b6', ob: '#24532a' };
+    for (var px = 0; px < W; px += 2) for (var py = 0; py < Hh; py += 2) { var wx = b.x0 + (px - ox) / s, wz = b.z0 + (py - oz) / s; x.fillStyle = COLS[H.surfaceAt(wx, wz)] || '#24532a'; x.fillRect(px, py, 2, 2); }
+    x.fillStyle = 'rgba(20,70,30,.9)'; H.trees.forEach(function (t) { x.beginPath(); x.arc(ox + (t.x - b.x0) * s, oz + (t.z - b.z0) * s, Math.max(1.2, t.r * s), 0, 7); x.fill(); });
+    miniImg = { c: c, s: s, ox: ox, oz: oz };
+  }
+  function drawMini() {
+    var cv = $('mini'), x = cv.getContext('2d'); if (!miniImg || !pos) return; var b = H.bounds, m = miniImg;
+    function P(wx, wz) { return [m.ox + (wx - b.x0) * m.s, m.oz + (wz - b.z0) * m.s]; }
+    x.clearRect(0, 0, 120, 180); x.drawImage(m.c, 0, 0);
+    var p = P(pos.x, pos.z), d = dirV();
+    if (phase === 'aim' || phase === 'swing') { var a = P(pos.x + d.x * aimDist, pos.z + d.z * aimDist); x.strokeStyle = '#ffd21e'; x.lineWidth = 2; x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(a[0], a[1]); x.stroke(); }
+    if (H.pin) { var q = P(H.pin.x, H.pin.z); x.fillStyle = '#ff3d4f'; x.beginPath(); x.arc(q[0], q[1], 3.5, 0, 7); x.fill(); }
+    otherBalls().forEach(function (o) { var q2 = P(o.x, o.z); x.fillStyle = o.color; x.strokeStyle = '#fff'; x.lineWidth = 1.5; x.beginPath(); x.arc(q2[0], q2[1], 3.5, 0, 7); x.fill(); x.stroke(); });
+    var bp = ball && phase === 'flight' ? P(ball.p.x, ball.p.z) : p; x.fillStyle = multi() ? round.players[turn].color : '#fff'; x.strokeStyle = '#1b1f33'; x.lineWidth = 1.5; x.beginPath(); x.arc(bp[0], bp[1], 3.5, 0, 7); x.fill(); x.stroke();
+  }
+
+  // ================= cards, sheets =================
+  function showCard(title, html, buttons, col) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#gh-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = ''; box.classList.toggle('col', !!col || buttons.length > 2);
+    buttons.forEach(function (b) { var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label; el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
+  function between(next) { if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; } next(); }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Aim</b>: drag left or right on the course to turn. The ring shows where the ball will land (Easy and Pro help) or where you are aiming (Tour). The map button shows the hole from above; tap the map to aim at a spot.',
+      '<b>Club</b>: picked for the distance; change it with ‹ ›. <b>Shot</b> button: Full, Punch (low), Chip, Flop (high, soft) or Bump &amp; run. The <b>ball</b> button sets spin: low on the ball = backspin, high = topspin, left = draw, right = fade.',
+      '<b>3-click meter</b>: tap to start, tap again to set the power (past the white line is over 100%: longer but harder to control), then tap when the marker comes back to the <b>green zone</b>. Early = hook (curves left), late = slice (curves right).',
+      '<b>Swipe</b>: pull your finger down in the swing pad to load power, then swipe straight up. A crooked swipe hooks or slices, a curved one draws or fades, a smooth quick swipe hits it pure.',
+      '<b>Putting</b>: the meter is scaled to the putt (it shows how many feet a full meter rolls on flat ground). The dots flow downhill: faster, warmer dots mean more slope. Easy help shows the putt line.',
+      'Wind (top right) pushes the ball more the higher it flies. Rough, deep rough and sand cost distance and spin. An uphill lie flies higher and shorter, a downhill lie lower; with the ball above your feet it goes left, below your feet right (the aim allows for it).',
+      '<b>Penalties</b>: water costs 1 stroke and a drop where it crossed. Out of bounds: 1 stroke and play again from the same spot. In trouble (rough, sand, under trees) the <b>Unplayable?</b> button offers a drop for 1 stroke. The cart path gives a free drop.',
+      '<b>A round</b>: 9 or 18 holes on a course made for you (every hole is checked to be fair). The scorecard (in the Menu) shows birdies in red circles, eagles in gold, bogeys in blue squares. Settings has gimmes and picking up at double par to keep things moving. Leave any time: <b>Resume</b> brings you back to the same shot.',
+      '<b>Players</b>: Menu, <b>New round</b>: pick up to 4 players (Glenn, Cindy, guests). Each has their own swing, help and tees (back = blue markers, middle = white, forward = red). Pass the phone when the banner says whose turn it is. The first player tees off first; after that the lowest score on the last hole has the honour, and once everyone is off the tee the ball farthest from the hole plays next. Coloured pins show where the others are.',
+      '<b>Games</b>: <b>Stroke play</b> (every stroke counts, lowest total wins); <b>Match play</b> for 2 (win holes: \u201c2 up with 3 to play\u201d; it ends when one of you can\u2019t be caught); <b>Skins</b> for 2-4 (each hole is worth a skin; ties carry it over to the next hole, so a big hole can be worth several). In match play and skins, once you can\u2019t tie the best score on a hole your ball is picked up.',
+      'During the flight, tap the course to speed it up.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+
+  // ================= input on the course =================
+  var drag = null;
+  function canvasDown(e) {
+    if (sheetOpen()) return; S.unlock();
+    if (phase === 'flyover') { endFlyover(); return; }
+    if (phase === 'flight') { speedMul = 3; return; }
+    if (phase === 'result') return;
+    if (mapView && phase === 'aim') { var r = $('cv').getBoundingClientRect(), p = SC.pick((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); if (p) aimAt(p.x, p.z); return; }
+    if (phase === 'aim') drag = { id: e.pointerId, x: e.clientX, yaw0: yaw };
+  }
+  function canvasMove(e) { if (!drag || e.pointerId !== drag.id) return; yaw = drag.yaw0 + (e.clientX - drag.x) * (club().putter ? 0.0018 : 0.004); computeUneven(); computeAimSoon(); hud(); }
+  function canvasUp(e) { if (drag && e.pointerId === drag.id) { drag = null; computeAim(); } }
+  var aimTimer = 0; function computeAimSoon() { clearTimeout(aimTimer); aimTimer = setTimeout(computeAim, 60); drawMini(); }
+  function aimAt(x, z) {
+    yaw = Math.atan2(x - pos.x, -(z - pos.z)); var d = Math.hypot(x - pos.x, z - pos.z);
+    if (!club().putter) { var c = GF.autoClub(d, lie); clubIdx = GF.CLUBS.indexOf(c); }
+    mapView = false; computeUneven(); computeAim(); hud();
+  }
+
+  // everyone else's ball still in play on this hole, for the markers and the mini-map
+  function otherBalls() {
+    if (!multi() || !round.cur || phase === 'flyover') return [];
+    var ini = initials(round), out = [];
+    round.cur.balls.forEach(function (b, k) { if (k === turn || b.done) return; out.push({ x: b.x, y: H.heightAt(b.x, b.z) + GF.R, z: b.z, color: round.players[k].color, letter: ini[k] }); });
+    return out;
+  }
+  // ================= loop =================
+  var lastT = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 1 / 60; lastT = now;
+    if (!H) return;
+    if (!sheetOpen() && !document.hidden) {
+      if (phase === 'flight' && ball) stepFlight(dt);
+      if (P().swing === 'meter') stepMeter(dt);
+    }
+    updateCamera(dt);
+    SC.camera.position.set(cam.p.x, cam.p.y, cam.p.z); SC.camera.lookAt(cam.l.x, cam.l.y, cam.l.z);
+    var bp = ball && (phase === 'flight' || phase === 'result') ? ball.p : pos;
+    if (ball && ball.state === 'holed' && phase === 'result') bp = GF.v3(H.pin.x, H.pin.y - 0.2, H.pin.z);
+    SC.setBall(bp, cam.p);
+    SC.setOthers(otherBalls(), cam.p);
+    if (phase === 'flight') drawMini();
+    windArrow();
+    SC.setFog(mapView && phase === 'aim' ? 2000 : 520);
+    SC.frame(dt, bp);
+  }
+  // the camera frames the space below the floating top row (where the hole and wind pills start), as the old stage did
+  function resize() { var r = $('stage').getBoundingClientRect(), top = $('hud').getBoundingClientRect().top - r.top - 8; SC.resize(r.width, r.height, Math.max(0, Math.min(r.height * 0.3, top))); }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('setSound').checked = settings.sound; $('setAmb').checked = settings.amb; S.setEnabled(settings.sound); S.setAmbience(settings.amb); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function segSync() {
+    var p = P(), inRound = mode === 'round' && !!round;
+    $('setWho').innerHTML = inRound ? 'Swing and help for ' + dot(p) + esc(p.name) + (multi() ? ' (this turn)' : '') : 'Who\u2019s practising';
+    $('segMe').hidden = inRound;
+    $('teeNote').textContent = inRound ? 'A new tee box starts on the next hole.' : 'The practice hole has all three tees; the range just one.';
+    $('setPickup').checked = settings.pickup;
+    [['segMe', meta.me], ['segSwing', p.swing], ['segAssist', p.assist], ['segTee', p.tee], ['segGimme', String(settings.gimme)]].forEach(function (s) { Array.prototype.forEach.call($(s[0]).querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === s[1]); }); });
+    $('assistNote').textContent = { easy: 'Easy: the whole shot arc and the putt line.', pro: 'Pro: only where the ball will land.', tour: 'Tour: no previews, just your aim.' }[P().assist];
+  }
+  function syncSpin() { var sx = spin.x * 50, sy = -spin.y * 50; $('spinDot').style.left = (50 + sx * 0.7) + '%'; $('spinDot').style.top = (50 + sy * 0.7) + '%'; $('spinBigDot').style.left = (50 + sx * 0.8) + '%'; $('spinBigDot').style.top = (50 + sy * 0.8) + '%'; }
+  // ================= new round: who's playing (Phase 3) =================
+  // 1-4 players pass the phone. Glenn and Cindy are saved profiles (their swing, help and tees are saved as they're
+  // changed here); guests get a name and their own settings for the round (the last few are offered again). The list
+  // order is the tee-off order on the first hole. Then the game (stroke / match / skins), 9 or 18 holes, and the course.
+  var pick = null;
+  function openPlayers(again) {
+    var s = lastSetup();
+    pick = { players: s.players.map(function (p) { return p.guest ? copyPlayer(p) : p; }), mode: s.mode, holes: s.holes, course: again && meta.lastSeed ? 'last' : 'new' };
+    if (again) pick.holes = meta.lastHoles === 18 ? 18 : 9;
+    drawPicker(); $('ovPlayers').classList.add('show');
+  }
+  function segBtns(map, cur, tees) { return Object.keys(map).map(function (k) { return '<button data-v="' + k + '"' + (k === cur ? ' class="on"' : '') + '>' + (tees ? '<i class="tdot" style="background:' + TEECOL[k] + '"></i>' : '') + map[k] + '</button>'; }).join(''); }
+  function bestShort(p) { var pf = profiles[p.id]; if (!pf) return ''; var a = []; if (pf.best9) a.push('best 9: ' + parText(pf.best9.toPar)); if (pf.best18) a.push('best 18: ' + parText(pf.best18.toPar)); return a.join(' · '); }
+  function modeOk(m, n) { return m === 'stroke' ? n >= 1 : m === 'match' ? n === 2 : n >= 2; }
+  function drawPicker() {
+    var pl = pick.players, n = pl.length, cols = colorsFor(pl), chips = '';
+    ['glenn', 'cindy'].forEach(function (id) { var p = profiles[id], on = pl.indexOf(p) >= 0; chips += '<button class="pchip' + (on ? ' on' : '') + '" data-add="' + id + '">' + dot(p) + p.name + (on ? ' ✓' : '') + '</button>'; });
+    meta.guests.forEach(function (g, j) { if (pl.some(function (q) { return q.guest && q.name === g.name; })) return; chips += '<button class="pchip" data-recent="' + j + '">+ ' + esc(g.name) + '</button>'; });
+    chips += '<button class="pchip add" data-recent="-1">+ Guest</button>';
+    $('pChips').innerHTML = chips;
+    $('pChips').classList.toggle('full', n >= 4);
+    $('pList').innerHTML = pl.map(function (p, k) {
+      return '<div class="pcard" data-k="' + k + '" style="--pc:' + cols[k] + '"><div class="phead"><span class="pnum">' + (k + 1) + '</span>' +
+        (p.guest ? '<input class="pname" maxlength="12" value="' + esc(p.name) + '" aria-label="Guest name" autocomplete="off">' : '<b>' + p.name + '</b>') +
+        '<small>' + (p.guest ? 'guest' : bestShort(p)) + '</small><span class="pbtns">' + (k > 0 ? '<button class="pmini" data-up="' + k + '" aria-label="Tee off earlier">↑</button>' : '') + '<button class="pmini" data-rm="' + k + '" aria-label="Remove">×</button></span></div>' +
+        '<div class="pprefs"><div class="seg sm" data-pref="swing">' + segBtns(SWINGS, p.swing) + '</div><div class="seg sm" data-pref="assist">' + segBtns(ASSISTS, p.assist) + '</div></div>' +
+        '<div class="seg sm" data-pref="tee">' + segBtns(TEES, p.tee, true) + '</div></div>';
+    }).join('') || '<p class="note">Tap a name to add a player.</p>';
+    if (!modeOk(pick.mode, n)) pick.mode = 'stroke';
+    Array.prototype.forEach.call($('segMode').querySelectorAll('button'), function (b) { var v = b.getAttribute('data-v'); b.classList.toggle('on', v === pick.mode); b.disabled = !modeOk(v, n); });
+    $('modeNote').textContent = { stroke: n > 1 ? 'Every stroke counts; lowest total wins. Honours on the tee, then farthest from the hole plays.' : 'Every stroke counts, as before.', match: 'Hole by hole: the lower score wins the hole. Ends when one player is up by more holes than are left.', skins: 'Each hole is worth a skin. A tie carries it to the next hole; win a hole outright to take everything riding on it.' }[pick.mode] + (n === 1 ? ' Match play needs 2 players, skins 2-4.' : n > 2 && pick.mode !== 'match' ? ' Match play is for 2 players.' : '');
+    Array.prototype.forEach.call($('segHoles').querySelectorAll('button'), function (b) { b.classList.toggle('on', +b.getAttribute('data-v') === pick.holes); });
+    var last = $('segCourse').querySelector('[data-v="last"]'); last.hidden = !meta.lastSeed; if (meta.lastSeed) last.textContent = GG.course(meta.lastSeed, 9).name + ' again';
+    Array.prototype.forEach.call($('segCourse').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === pick.course); });
+    $('goTeeOff').disabled = !n; $('goTeeOff').textContent = n ? 'Tee off' + (n > 1 ? ': ' + pl[0].name + ' first' : '') : 'Add a player';
+  }
+  function cleanName(v) { return String(v || '').replace(/[<>&"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12); }
+  function pickerClick(e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    var pl = pick.players, k;
+    if (b.hasAttribute('data-add')) { var p = profiles[b.getAttribute('data-add')], at = pl.indexOf(p); if (at >= 0) pl.splice(at, 1); else if (pl.length < 4) pl.push(p); }
+    else if (b.hasAttribute('data-recent')) {
+      if (pl.length >= 4) return;
+      var j = +b.getAttribute('data-recent'), g = meta.guests[j], nm = 'Guest', q = 1;
+      if (!g) { while (pl.some(function (x) { return x.name === nm; })) nm = 'Guest ' + (++q); }
+      pl.push(copyPlayer({ guest: true, name: g ? g.name : nm, swing: g ? g.swing : 'meter', assist: g ? g.assist : 'easy', tee: g ? g.tee : 'mid' }));
+    }
+    else if (b.hasAttribute('data-rm')) pl.splice(+b.getAttribute('data-rm'), 1);
+    else if (b.hasAttribute('data-up')) { k = +b.getAttribute('data-up'); var t = pl[k]; pl[k] = pl[k - 1]; pl[k - 1] = t; }
+    else if (b.closest('[data-pref]')) {
+      var seg = b.closest('[data-pref]'), pc = seg.closest('.pcard'), pp = pl[+pc.getAttribute('data-k')], pref = seg.getAttribute('data-pref');
+      pp[pref] = b.getAttribute('data-v'); if (!pp.guest) saveProfiles();
+    }
+    else if (b.closest('#segMode')) pick.mode = b.getAttribute('data-v');
+    else if (b.closest('#segHoles')) pick.holes = +b.getAttribute('data-v');
+    else if (b.closest('#segCourse')) pick.course = b.getAttribute('data-v');
+    else return;
+    drawPicker();
+  }
+  function teeOff() {
+    var pl = pick.players; if (!pl.length) return;
+    pl.forEach(function (p) { if (p.guest) p.name = cleanName(p.name) || 'Guest'; });
+    // remember the setup for next time, and the guests (newest first, up to 6)
+    meta.setup = { players: pl.map(function (p) { return p.guest ? { guest: true, name: p.name, swing: p.swing, assist: p.assist, tee: p.tee } : { id: p.id }; }), mode: pick.mode, holes: pick.holes };
+    pl.filter(function (p) { return p.guest && !/^Guest( \d+)?$/.test(p.name); }).reverse().forEach(function (p) { meta.guests = meta.guests.filter(function (g) { return g.name !== p.name; }); meta.guests.unshift({ name: p.name, swing: p.swing, assist: p.assist, tee: p.tee }); });
+    meta.guests = meta.guests.slice(0, 6); saveMeta();
+    $('ovPlayers').classList.remove('show');
+    var seed = pick.course === 'last' && meta.lastSeed ? meta.lastSeed : 0, setup = { players: pl, mode: pick.mode, holes: pick.holes };
+    between(function () { newRound(seed, setup); });
+  }
+  // Full screen (0.3.0): the kit floats back, Sound and Menu over the course. Scorecard, Course & range (the game's own
+  // start card: resume, new course, practice hole, range, how to) and Settings move into the Menu sheet; the ball and
+  // the swing meter wait while it's open.
+  var FS = null;
+  function menuInfo() {
+    if (!H) return '';
+    if (mode === 'range') return '<b>Driving range</b>' + (meta.longest ? ' · longest drive ' + yd(meta.longest) + ' yd' : '');
+    if (mode === 'round' && round) return '<b>' + round.name + '</b> · hole ' + (round.i + 1) + ' of ' + round.pars.length + ' · ' + (round.players.length > 1 ? MODES[round.mode] + ': ' + modeLine(round) : parText(toParOf(round)));
+    return '<b>' + H.name + '</b> (practice) · par ' + H.par;
+  }
+  function init() {
+    FS = Goobs.fullscreen({ overlay: true, menu: ['btnCard', 'btnNewRound', 'btnMenu', 'btnSettings'], info: menuInfo });
+    Goobs.themePicker($('themes'));
+    var cvs = $('cv');
+    cvs.addEventListener('pointerdown', canvasDown); cvs.addEventListener('pointermove', canvasMove); cvs.addEventListener('pointerup', canvasUp); cvs.addEventListener('pointercancel', canvasUp);
+    var pad = $('pad');
+    pad.addEventListener('pointerdown', function (e) { e.preventDefault(); if (sheetOpen() || !H) return; if (P().swing === 'meter') meterTap(); else swipeDown(e); });
+    pad.addEventListener('pointermove', swipeMove); pad.addEventListener('pointerup', swipeUp); pad.addEventListener('pointercancel', swipeUp);
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { Goobs.home(); });
+    $('btnMenu').addEventListener('click', openMenu);
+    $('btnCard').addEventListener('click', function () { if (!sheetOpen()) openCard(); });
+    $('btnCloseCard').addEventListener('click', function () { $('ovCard').classList.remove('show'); });
+    $('ovCard').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('btnDrop').addEventListener('click', openDrop);
+    $('goRound').addEventListener('click', function () { $('ovMenu').classList.remove('show'); openPlayers(); });
+    $('btnNewRound').addEventListener('click', function () { openPlayers(); });
+    $('ovPlayers').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); return; } pickerClick(e); });
+    $('pList').addEventListener('input', function (e) { if (!e.target.classList.contains('pname')) return; var k = +e.target.closest('.pcard').getAttribute('data-k'); pick.players[k].name = cleanName(e.target.value) || 'Guest'; });
+    $('goTeeOff').addEventListener('click', teeOff);
+    $('btnClosePlayers').addEventListener('click', function () { $('ovPlayers').classList.remove('show'); });
+    $('turnGo').addEventListener('click', function () { $('ovTurn').classList.remove('show'); S.unlock(); });
+    $('goResume').addEventListener('click', function () { $('ovMenu').classList.remove('show'); resumeRound(); });
+    $('goReplay').addEventListener('click', function () { $('ovMenu').classList.remove('show'); openPlayers(true); });
+    $('goHole').addEventListener('click', function () { $('ovMenu').classList.remove('show'); startHole(); });
+    $('goRange').addEventListener('click', function () { $('ovMenu').classList.remove('show'); startRange(); });
+    $('goHelp').addEventListener('click', function () { openHelp(); });
+    function clubStep(dd) { if (phase !== 'aim') return; var n = GF.CLUBS.length; clubIdx = (clubIdx + dd + n) % n; if (club().putter) shotType = 'full'; SC.showDots(club().putter); computeUneven(); computeAim(); meterReset(); hud(); }
+    $('clubPrev').addEventListener('click', function () { clubStep(-1); }); $('clubNext').addEventListener('click', function () { clubStep(1); });
+    $('btnType').addEventListener('click', function () { if (phase !== 'aim' || club().putter) return; var keys = Object.keys(GF.SHOTS), i = keys.indexOf(shotType); shotType = keys[(i + 1) % keys.length]; computeAim(); hud(); });
+    $('btnMap').addEventListener('click', function () { if (phase !== 'aim') return; mapView = !mapView; msg(mapView ? 'Hole map<small>Tap a spot to aim there</small>' : '', mapView ? 1800 : 1); });
+    $('btnSpin').addEventListener('click', function () { if (phase !== 'aim' || club().putter) return; $('spinpad').classList.add('show'); });
+    $('spinDone').addEventListener('click', function () { $('spinpad').classList.remove('show'); computeAim(); });
+    var sb = $('spinbig'), sDrag = false;
+    function spinAt(e) { var r = sb.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 2 - 1, y = -((e.clientY - r.top) / r.height * 2 - 1), l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } spin = { x: +x.toFixed(2), y: +y.toFixed(2) }; syncSpin(); }
+    sb.addEventListener('pointerdown', function (e) { sDrag = true; spinAt(e); try { sb.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } });
+    sb.addEventListener('pointermove', function (e) { if (sDrag) spinAt(e); }); sb.addEventListener('pointerup', function () { sDrag = false; });
+    $('btnSettings').addEventListener('click', function () { segSync(); $('ovSettings').classList.add('show'); });
+    $('btnCloseSettings').addEventListener('click', function () { $('ovSettings').classList.remove('show'); if (H && phase === 'aim') { computeAim(); meterReset(); hud(); } });
+    $('ovSettings').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    ['segMe', 'segSwing', 'segAssist', 'segTee', 'segGimme'].forEach(function (id) { $(id).addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-v]'); if (!b) return; var v = b.getAttribute('data-v');
+      if (id === 'segMe') { meta.me = v; saveMeta(); } else if (id === 'segSwing') setPref('swing', v); else if (id === 'segAssist') setPref('assist', v); else if (id === 'segTee') setPref('tee', v); else settings.gimme = +v;
+      saveSettings(); segSync();
+    }); });
+    $('setPickup').addEventListener('change', function () { settings.pickup = this.checked; saveSettings(); });
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp); $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); });
+    $('setAmb').addEventListener('change', function () { settings.amb = this.checked; saveSettings(); syncSound(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    syncSound(); syncAds(); segSync(); syncSpin();
+    Goobs.markPlayed('golf');
+    Goobs.initUpdates({ onVersions: function (v) { $('version').textContent = 'Pin High ' + (v.golf || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    import('../../shared/three.module.min.js').then(function (m) {
+      T = m; SC = GScene.build(T, cvs); $('loading').classList.add('hide');
+      if (window.ResizeObserver) new ResizeObserver(resize).observe($('stagewrap')); window.addEventListener('resize', resize); resize();
+      startRange(); openMenu(); if (!meta.seen) openHelp();
+      window.__ghReady = true;
+      requestAnimationFrame(frame);
+    }).catch(function () { $('loading').textContent = 'Couldn’t load the course. Check the connection once, then it works offline.'; window.__ghReady = true; });
+  }
+  // keep a copy of the last launch numbers for the range readout
+  var _hit = hit; hit = function (power, acc2, strike, curve) { lastInput = swingInput(power, acc2, strike, curve); lastShot = GF.makeShot(H, lastInput); _hit(power, acc2, strike, curve); };
+  window.__gh = { get phase() { return phase; }, get pos() { return pos; }, get H() { return H; }, get ball() { return ball; }, get strokes() { return strokes; }, get club() { return club(); }, GF: GF, GC: GC,
+    hit: function (p, a, s, c) { hit(p, a == null ? 0 : a, s == null ? 1 : s, c || 0); }, startHole: startHole, startRange: startRange, aimAt: aimAt, setClub: function (id) { clubIdx = GF.CLUBS.indexOf(GF.clubById(id)); computeAim(); hud(); },
+    place: function (x, z) { pos = GF.v3(x, H.heightAt(x, z) + GF.R, z); setupShot(); },
+    newRound: newRound, resumeRound: resumeRound, playHole: function (i) { playHole(i); }, get round() { return round; }, get mode() { return mode; }, get lie() { return lie; }, get slopeLie() { return slopeLie; }, get holeStats() { return holeStats; },
+    openDrop: openDrop, canDrop: canDrop, openCard: openCard, holeOut: holeOut, set strokes(v) { strokes = v; }, pathRelief: pathRelief, twoClubs: twoClubs, backOnLine: backOnLine,
+    skip: function () { if (phase === 'flyover') endFlyover(); speedMul = 20; }, map: function (v) { mapView = v; }, settings: settings, get SC() { return SC; },
+    get turn() { return turn; }, get P() { return P(); }, profiles: profiles, openPlayers: openPlayers, get pick() { return pick; }, teeOff: teeOff, nextSeat: function () { return nextSeat(); }, GR: GR, openMenu: openMenu,
+    get meta() { return meta; }, others: function () { return otherBalls(); } };
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Perch Pals can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__ppReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#e6f5ff;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Perch Pals didn’t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('perch.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__ppReady) fail('It took too long to start.'); }, 8000);
+})();
+</script>
+<title>Perch Pals</title>
+<style>
+/* Perch Pals styles (themes, UI kit and ad cards come from /shared/goobs.css).
+   Full screen (kit overlay mode): the scene fills the phone edge to edge; the top row (back, Level and Moves-left pills,
+   sound, Menu) and the helper buttons float on it; the branches are laid out in the free box between them (app.js fit()). */
+.brand h1 { font-size: 22px; }
+html.gg-fs-over, html.gg-fs-over body { background: #7cc8ff; }
+.stagewrap { position: fixed; inset: 0; z-index: 0; }
+.stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; background: #9fd6ff; }
+.stage canvas { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+.stage #bg { pointer-events: none; }
+.toast { position: absolute; z-index: 3; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.84); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+/* the top row pills: level (with a thin bar: sets flown of this level) and moves left */
+.pills { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; gap: 6px; }
+.pills .ggpill { position: relative; font-size: 17px; padding: 4px 13px 6px; line-height: 18px; min-width: 0; overflow: hidden; text-align: center; }
+.pills button.ggpill { font-family: inherit; cursor: pointer; }
+.pills .ggpill small { display: block; font-size: 10px; line-height: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; opacity: .6; }
+.pills .ggpill i { font-style: normal; font-size: 13px; opacity: .6; }
+.pills .ggpill .bar { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(0,0,0,.1); overflow: hidden; }
+.pills .ggpill .bar b { display: block; height: 100%; width: 0; background: #3fae4a; border-radius: 2px; transition: width .4s; }
+.pills .ggpill.warn { background: #ffb020; color: #3a2400; }
+.pills .ggpill.out { background: #ef3b4f; color: #fff; }
+/* Restart / Undo / Shuffle / Branch float at the bottom, clear of the home bar */
+html.gg-fs-over .toolbar { position: fixed; z-index: 5; left: calc(env(safe-area-inset-left, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); width: auto; max-width: 560px; margin: 0 auto; }
+html.gg-fs-over .toolbar .tool { box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.93); color: #1b2130; border-color: transparent; }
+html.gg-fs-over .toolbar .tool:disabled { opacity: .55; }
+.tool { position: relative; }
+.tool .cnt { position: absolute; top: 4px; right: 8px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--gold); color: #3a2a00; font-style: normal; font-weight: 800; font-size: 12px; line-height: 20px; }
+.tool.red .cnt { background: #ffffff; color: var(--accent); }
+.cardicon svg { border-radius: 16px; }
+.card .btn small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
+.tippic { display: block; width: 240px; height: 120px; margin: 0 auto 6px; border-radius: 16px; background: linear-gradient(#9fd6ff, #dff3ff); }
+.helplist canvas { display: block; margin: 6px 0 2px; border-radius: 12px; }
+.statsnote { color: var(--muted); text-align: center; margin: 4px 0 0; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="pp-logo" viewBox="0 0 100 100"><defs><linearGradient id="ppbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc8ff"/><stop offset="1" stop-color="#d4f0ff"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#ppbg)"/><rect x="0" y="0" width="12" height="100" fill="#8a5a32"/>
+<path d="M10 66 Q50 61 92 64 Q95 67 92 70 Q50 70 10 73z" fill="#7a4e2a"/><ellipse cx="90" cy="58" rx="8" ry="5" fill="#4fbf55"/><ellipse cx="84" cy="55" rx="6" ry="4" fill="#3fae4a"/>
+<g><path d="M14 52 q-7 -3 -9 3 q4 3 9 1z" fill="#a71d2e"/><circle cx="25" cy="52" r="12" fill="#e8394a"/><ellipse cx="28" cy="56" rx="7" ry="6" fill="#ff9a9a"/><path d="M22 41 l3 -8 l3 6 l2 -4 l2 6z" fill="#e8394a"/><circle cx="29" cy="47" r="2.6" fill="#fff"/><circle cx="29.6" cy="47.2" r="1.5" fill="#1b1f2a"/><path d="M35 48 l6 2 l-6 2z" fill="#ffb21e"/><path d="M22 64 v3 M28 64 v3" stroke="#e08a2a" stroke-width="1.6"/></g>
+<g><path d="M41 52 q-7 -3 -9 3 q4 3 9 1z" fill="#c99c00"/><circle cx="52" cy="52" r="12" fill="#ffd21e"/><ellipse cx="55" cy="56" rx="7" ry="6" fill="#fff5b8"/><path d="M52 40 c-1 -6 6 -7 5 -3" stroke="#c99c00" stroke-width="1.8" fill="none"/><circle cx="56" cy="47" r="2.6" fill="#fff"/><circle cx="56.6" cy="47.2" r="1.5" fill="#1b1f2a"/><path d="M62 48 l6 2 l-6 2z" fill="#ff7a1e"/><path d="M49 64 v3 M55 64 v3" stroke="#e08a2a" stroke-width="1.6"/></g>
+<g><path d="M68 52 q-7 -3 -9 3 q4 3 9 1z" fill="#1a43a8"/><circle cx="79" cy="52" r="12" fill="#2f6ef0"/><ellipse cx="82" cy="56" rx="7" ry="6" fill="#eef3ff"/><ellipse cx="76" cy="38" rx="1.6" ry="4" fill="#1a43a8" transform="rotate(-25 76 38)"/><ellipse cx="79" cy="37" rx="1.6" ry="4.4" fill="#1a43a8"/><ellipse cx="82" cy="38" rx="1.6" ry="4" fill="#1a43a8" transform="rotate(25 82 38)"/><circle cx="83" cy="47" r="2.6" fill="#fff"/><circle cx="83.6" cy="47.2" r="1.5" fill="#1b1f2a"/><path d="M89 48 l6 2 l-6 2z" fill="#2a2f3d"/><path d="M76 64 v3 M82 64 v3" stroke="#e08a2a" stroke-width="1.6"/></g>
+<path d="M30 24 q4 -4 8 0 q4 -4 8 0" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v18"/><path d="M4 16c4 0 9-.5 14-1.5"/><path d="M11 15.5c.5-1.6 1.6-2.8 3-3.5"/><path d="M18 3v6M15 6h6"/></g></symbol>
+<symbol id="i-shuffle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c4 0 6 10 10 10H21"/><path d="M3 17h3.5c1.6 0 2.8-1.6 3.9-3.5M13.6 9.5C14.7 8 15.6 7 16.5 7H21"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/></g></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#pp-logo"/></svg>
+      <h1>Perch Pals</h1>
+    </button>
+    <div class="pills"><button class="ggpill" id="pillLevel" aria-label="How to play">Level 1</button><div class="ggpill" id="pillMoves"></div></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="bg"></canvas>
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnRestart"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span><i class="cnt" id="undoCnt">5</i></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to play</span></button>
+    <button class="tool" id="btnShuffle"><svg viewBox="0 0 24 24"><use href="#i-shuffle"/></svg><span>Shuffle</span><i class="cnt" id="shufCnt">1</i></button>
+    <button class="tool red" id="btnBranch"><svg viewBox="0 0 24 24"><use href="#i-branch"/></svg><span>Branch</span><i class="cnt" id="branchCnt">1</i></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Colour symbols<small>A small shape on each bird's chest, so colours are easy to tell apart (bright sun, colour blindness).</small></div>
+        <span class="switch"><input type="checkbox" id="setSymbols"><span></span></span></label>
+      <label class="row"><div>Sound<small>Chirps, flutters and songs.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Music<small>A gentle plucked tune while you play.</small></div>
+        <span class="switch"><input type="checkbox" id="setMusic"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Perch Pals 0.1.0</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Perch Pals records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- A new twist: a one-line tip the first time it appears -->
+<div class="overlay center" id="ovTip">
+  <div class="card" role="dialog">
+    <canvas class="tippic" id="tipPic" width="240" height="120"></canvas>
+    <h2 id="tipTitle"></h2>
+    <p id="tipText"></p>
+    <div class="actions"><button class="btn red" id="btnTip">Got it</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Perch Pals rules, solver and level maker (no DOM; runs in Node for tools/gen.js and tools/check.js).
+   A level is a set of branches. Each branch lists its birds from the trunk (index 0) out to the free end (last);
+   the end bird is the one you can pick. Every colour has exactly `cap` birds, and a branch holds `cap` birds, so a
+   full branch of one colour is a set: those birds fly away and the branch is empty again. Clear every bird to win.
+   A move: tap a branch, the run of same-colour birds at its free end is picked; tap another branch: as many as fit fly
+   there, if it is empty or its end bird is the same colour.
+   Twists (each modelled here and by the solver):
+     sleepy birds  - colour hidden (grey, eyes shut) until the bird is the end bird; then it wakes up. A sleeping bird
+                     stops a run (you can't pick what you can't see). A full branch of one colour still flies (they wake).
+     big branches  - a level whose branches hold 5 or 6 (and 5 or 6 birds of each colour).
+     cages         - a caged bird can't be picked, and nothing can land on it, until the cage opens after N moves
+                     (moves on the board: an undo closes it again). Birds above it move normally.
+     leafy branch  - covered in leaves until N sets have flown away: nothing can be picked from it or land on it.
+   Cells are small ints: colour (0..13) | 16 if asleep | (cage opens at move t) << 5.
+   Level strings: branches joined by '.', '~N' at a branch's start = leafy (needs N sets), a letter a-n per bird
+   (trunk first), UPPERCASE = asleep, '#t' after a letter = caged until move t. Example: "abCd.~1bbca.da#6c.." */
+var PP = (function () {
+  'use strict';
+  var HID = 16, MAXC = 14;
+  function col(x) { return x & 15; }
+  function hid(x) { return (x & HID) !== 0; }
+  function cageT(x) { return x >> 5; }
+
+  // ---------------- level strings ----------------
+  function parse(str) {
+    var br = [], leaf = [];
+    str.split('.').forEach(function (s) {
+      var cells = [], i = 0, need = 0;
+      if (s.charAt(0) === '~') { i = 1; var d = ''; while (/[0-9]/.test(s.charAt(i))) d += s.charAt(i++); need = +d || 1; }
+      for (; i < s.length; i++) {
+        var ch = s.charAt(i), lo = ch.toLowerCase(), c = lo.charCodeAt(0) - 97, v = c | (ch !== lo ? HID : 0);
+        if (s.charAt(i + 1) === '#') { var t = ''; i += 2; while (/[0-9]/.test(s.charAt(i))) t += s.charAt(i++); i--; v |= (+t) << 5; }
+        cells.push(v);
+      }
+      br.push(cells); leaf.push(need);
+    });
+    return { br: br, leaf: leaf };
+  }
+  function serial(br, leaf) {
+    return br.map(function (b, i) {
+      return (leaf && leaf[i] ? '~' + leaf[i] : '') + b.map(function (v) {
+        var ch = String.fromCharCode(97 + col(v)); if (hid(v)) ch = ch.toUpperCase();
+        return ch + (cageT(v) ? '#' + cageT(v) : '');
+      }).join('');
+    }).join('.');
+  }
+  function colours(br) { var m = 0; br.forEach(function (b) { b.forEach(function (v) { if (col(v) + 1 > m) m = col(v) + 1; }); }); return m; }
+  function birds(br) { var n = 0; br.forEach(function (b) { n += b.length; }); return n; }
+  function capOf(br) { return Math.max(1, Math.round(birds(br) / Math.max(1, colours(br)))); }
+  // the move limit: the solver's count plus a little slack (Splash Sort's rule), and a Continue's bonus
+  function limitFor(m) { return m + Math.max(3, Math.ceil(m * 0.2)); }
+  function bonusFor(limit) { return Math.max(8, Math.ceil(limit * 0.25)); }
+
+  // ---------------- the rules (on any object with br, leaf, cap, used, flown) ----------------
+  function open(s, i) { return (s.leaf[i] || 0) <= s.flown; }
+  function locked(s, v) { return cageT(v) > s.used; }
+  function endOf(b) { return b.length ? b[b.length - 1] : -1; }
+  // how many birds at the free end of branch i can be picked
+  function run(s, i) {
+    var b = s.br[i]; if (!b.length || !open(s, i)) return 0;
+    var e = b[b.length - 1]; if (hid(e) || locked(s, e)) return 0;
+    var c = col(e), n = 0;
+    for (var k = b.length - 1; k >= 0; k--) { var v = b[k]; if (col(v) !== c || hid(v) || locked(s, v)) break; n++; }
+    return n;
+  }
+  // how many birds a move a -> b would carry (0 = not allowed)
+  function canMove(s, a, b) {
+    if (a === b || a < 0 || b < 0 || a >= s.br.length || b >= s.br.length) return 0;
+    var n = run(s, a); if (!n) return 0;
+    var B = s.br[b]; if (!open(s, b) || B.length >= s.cap) return 0;
+    if (B.length) { var e = B[B.length - 1]; if (locked(s, e) || hid(e) || col(e) !== col(endOf(s.br[a]))) return 0; }
+    return Math.min(n, s.cap - B.length);
+  }
+  function full(s, b) { if (b.length !== s.cap) return false; var c = col(b[0]); for (var i = 1; i < b.length; i++) if (col(b[i]) !== c) return false; return true; }
+  // apply a move (already checked): returns what happened, for the animation
+  function apply(s, a, b, n) {
+    var A = s.br[a], B = s.br[b], c = col(endOf(A));
+    for (var i = 0; i < n; i++) B.push(A.pop() & ~HID);
+    s.used++;
+    var woke = -1;
+    if (A.length && hid(A[A.length - 1])) { A[A.length - 1] &= ~HID; woke = A.length - 1; }
+    var flew = null;
+    if (full(s, B)) { flew = B.slice(); s.br[b] = []; s.flown++; }
+    return { a: a, b: b, n: n, c: c, woke: woke, flew: flew };
+  }
+  function solvedS(s) { for (var i = 0; i < s.br.length; i++) if (s.br[i].length) return false; return true; }
+  function cagePending(s) { for (var i = 0; i < s.br.length; i++) for (var k = 0; k < s.br[i].length; k++) if (locked(s, s.br[i][k])) return true; return false; }
+  // a branch whose every bird is the same, visible, free colour and would only shuffle into an empty branch
+  function uniform(s, i) { var r = run(s, i); return r > 0 && r === s.br[i].length; }
+  function legalMoves(s) {
+    var out = [];
+    for (var a = 0; a < s.br.length; a++) { if (!run(s, a)) continue; for (var b = 0; b < s.br.length; b++) if (canMove(s, a, b)) out.push([a, b]); }
+    return out;
+  }
+  // moves that change something: not a whole one-colour branch into an empty one (unless a cage is still counting down,
+  // when any move helps: it ticks the cage)
+  function usefulMoves(s) {
+    var pend = cagePending(s);
+    return legalMoves(s).filter(function (m) { return pend || !(uniform(s, m[0]) && !s.br[m[1]].length); });
+  }
+
+  // ---------------- a game ----------------
+  function create(str, opts) {
+    opts = opts || {};
+    var p = parse(str), g = { start: str, br: p.br, leaf: p.leaf, cap: capOf(p.br), nc: colours(p.br), used: 0, flown: 0, hist: [],
+      undos: opts.undos == null ? 5 : opts.undos, extra: opts.extra == null ? 1 : opts.extra, shuf: opts.shuf == null ? 1 : opts.shuf,
+      added: 0, limit: opts.limit || 0, base: opts.limit || 0, conts: 0 };
+    wakeEnds(g);
+    return g;
+  }
+  function wakeEnds(s) { s.br.forEach(function (b) { if (b.length && hid(b[b.length - 1])) b[b.length - 1] &= ~HID; }); }
+  function snap(g, idx, kind) { var o = { k: kind, used: g.used, flown: g.flown, br: {} }; idx.forEach(function (i) { o.br[i] = g.br[i].slice(); }); return o; }
+  function move(g, a, b) {
+    var n = canMove(g, a, b); if (!n) return null;
+    g.hist.push(snap(g, [a, b], 'm'));
+    var r = apply(g, a, b, n); r.won = solvedS(g); return r;
+  }
+  function undo(g) {
+    if (!g.hist.length || g.undos <= 0) return null;
+    var h = g.hist.pop(); for (var i in h.br) g.br[+i] = h.br[i].slice();
+    g.used = h.used; g.flown = h.flown; g.undos--;
+    return h;
+  }
+  function addBranch(g) { if (g.extra <= 0) return false; g.extra--; g.added++; g.br.push([]); g.leaf.push(0); return true; }
+  function restart(g) {
+    var r = create(g.start, { limit: g.base });
+    for (var k in r) g[k] = r[k];
+    return g;
+  }
+  function solved(g) { return solvedS(g); }
+  function movesLeft(g) { return g.limit ? g.limit - g.used : Infinity; }
+  function outOfMoves(g) { return !!g.limit && g.used >= g.limit && !solvedS(g); }
+  function addMoves(g) { var b = bonusFor(g.base || g.limit); g.limit += b; g.conts++; return b; }
+  function stuck(g) { return !solvedS(g) && !usefulMoves(g).length; }
+
+  // Shuffle: the birds on open branches (except caged ones, which stay put) are mixed again over the same places, every
+  // sleeping bird wakes up (startled), and the new mix is checked solvable from here. Branch lengths stay the same.
+  function shuffle(g, rnd, budget) {
+    if (g.shuf <= 0) return false;
+    rnd = rnd || Math.random;
+    var slots = [], pool = [];
+    g.br.forEach(function (b, i) { if (!open(g, i)) return; b.forEach(function (v, k) { if (cageT(v) && locked(g, v)) return; slots.push([i, k]); pool.push(col(v)); }); });
+    if (pool.length < 2) return false;
+    var best = null;
+    for (var t = 0; t < 40 && !best; t++) {
+      var p = pool.slice();
+      for (var i = p.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), x = p[i]; p[i] = p[j]; p[j] = x; }
+      var br = g.br.map(function (b) { return b.slice(); });
+      slots.forEach(function (sl, q) { br[sl[0]][sl[1]] = p[q]; });
+      var s = { br: br, leaf: g.leaf, cap: g.cap, used: g.used, flown: g.flown };
+      if (br.some(function (b) { return full(s, b); })) continue;
+      if (t < 30) { var pairs = 0; br.forEach(function (b) { for (var m = 1; m < b.length; m++) if (b[m] === b[m - 1]) pairs++; }); if (pairs > Math.max(1, Math.floor(pool.length / 10))) continue; }
+      if (solveState(s, budget || 40000).moves) best = br;
+    }
+    if (!best) return false;
+    g.hist.push(snap(g, g.br.map(function (b, i) { return i; }), 's'));
+    g.br = best; g.shuf--;
+    return true;
+  }
+
+  // ---------------- solver: depth-first with a visited set and move ordering ----------------
+  // s = { br, leaf, cap, used, flown }. Returns { moves: [[a,b],...] or null, nodes }.
+  function keyOf(s) {
+    var pend = cagePending(s), parts = [];
+    for (var i = 0; i < s.br.length; i++) {
+      var b = s.br[i], str = (s.leaf[i] > s.flown ? '~' + s.leaf[i] : '');
+      for (var k = 0; k < b.length; k++) { var v = b[k]; str += String.fromCharCode(48 + (cageT(v) > s.used ? v : (v & 31))); }
+      parts.push(str);
+    }
+    parts.sort();
+    return parts.join('|') + (pend ? '@' + s.used : '');
+  }
+  function options(s, rnd) {
+    var out = [], pend = cagePending(s);
+    for (var a = 0; a < s.br.length; a++) {
+      var r = run(s, a); if (!r) continue;
+      var A = s.br[a], uni = r === A.length, c = col(A[A.length - 1]), below = A.length > r ? A[A.length - r - 1] : -1, emptyUsed = false;
+      for (var b = 0; b < s.br.length; b++) {
+        var n = canMove(s, a, b); if (!n) continue;
+        var B = s.br[b], sc;
+        if (!B.length) {
+          if (emptyUsed) continue; emptyUsed = true;
+          if (uni && !pend) continue;
+          sc = 1 + (n === r && below >= 0 && hid(below) ? 2 : 0) + (uni ? -2 : 0);
+        } else {
+          var completes = B.length + n === s.cap && full({ cap: s.cap }, B.concat(new Array(n).fill(c)));
+          sc = 3 + (completes ? 6 : 0) + (n === r ? 1 : 0) + (n === r && below >= 0 && hid(below) ? 2 : 0);
+        }
+        out.push([a, b, n, sc + (rnd ? rnd() * 2.5 : 0)]);
+      }
+    }
+    out.sort(function (x, y) { return y[3] - x[3]; });
+    return out;
+  }
+  function clone(s) { return { br: s.br.map(function (b) { return b.slice(); }), leaf: s.leaf, cap: s.cap, used: s.used, flown: s.flown }; }
+  function solveState(s0, limit, rnd) {
+    limit = limit || 200000;
+    var start = clone(s0), seen = new Set(), nodes = 0;
+    wakeEnds(start);
+    seen.add(keyOf(start));
+    var path = [], stack = [{ s: start, opts: null, i: 0 }];
+    while (stack.length) {
+      var fr = stack[stack.length - 1];
+      if (!fr.opts) { if (solvedS(fr.s)) return { moves: path.slice(), nodes: nodes }; fr.opts = options(fr.s, rnd); }
+      if (fr.i >= fr.opts.length) { stack.pop(); path.pop(); continue; }
+      var o = fr.opts[fr.i++], ns = clone(fr.s);
+      apply(ns, o[0], o[1], o[2]);
+      var k = keyOf(ns); if (seen.has(k)) continue; seen.add(k);
+      if (++nodes > limit) return { moves: null, nodes: nodes, gaveUp: true };
+      path.push([o[0], o[1]]); stack.push({ s: ns, opts: null, i: 0 });
+    }
+    return { moves: null, nodes: nodes };
+  }
+  function stateOf(str) { var p = parse(str); return { br: p.br, leaf: p.leaf, cap: capOf(p.br), used: 0, flown: 0 }; }
+  function solve(str, limit, rnd) { return solveState(stateOf(str), limit, rnd); }
+  // a short solution: the plain run and a few with shuffled preferences; keep the shortest
+  function shortSolveState(s, tries, limit, seed) {
+    var best = solveState(s, limit), r = rng(seed || 7);
+    if (!best.moves) return null;
+    for (var i = 0; i < (tries || 0); i++) { var s2 = solveState(s, limit, r); if (s2.moves && s2.moves.length < best.moves.length) best = s2; }
+    return best.moves;
+  }
+  function shortSolve(str, tries, limit, seed) { return shortSolveState(stateOf(str), tries, limit, seed); }
+  // a solution from where a game is now (the test hook and the "show me" checks)
+  function solveGame(g, limit) { var r = solveState({ br: g.br, leaf: g.leaf, cap: g.cap, used: g.used, flown: g.flown }, limit || 300000); return r.moves; }
+
+  // ---------------- level recipe ----------------
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  function baseColours(n) {
+    return n <= 1 ? 2 : n <= 2 ? 3 : n <= 3 ? 4 : n <= 5 ? 5 : n <= 8 ? 6 : n <= 12 ? 7 : n <= 17 ? 8 : n <= 24 ? 9 : n <= 34 ? 10 : n <= 49 ? 11 : n <= 79 ? 12 : n <= 119 ? 13 : 14;
+  }
+  // intro levels: each twist appears alone, a colour short, with a one-line tip the first time
+  var INTRO = { 8: 'sleepy', 14: 'big5', 17: 'cage', 22: 'leaves', 31: 'big6' };
+  function recipe(n) {
+    var r = rng(n * 7919 + 13); r(); r();
+    var breather = n > 10 && n % 10 === 0, nc = baseColours(n), x = r();
+    if (n >= 120) nc = x < 0.5 ? 14 : x < 0.8 ? 13 : 12;
+    var tw = {}, intro = INTRO[n] || '';
+    if (intro) { tw[intro === 'big5' || intro === 'big6' ? 'big' : intro] = 1; if (intro === 'big6') tw.big = 6; else if (intro === 'big5') tw.big = 5; nc = Math.max(4, nc - 1); }
+    else if (n > 8 && !breather) {
+      var pool = ['sleepy']; if (n > 14) pool.push('big'); if (n > 17) pool.push('cage'); if (n > 22) pool.push('leaves');
+      for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+      var k = r() < (n < 40 ? 0.55 : 0.75) ? (n >= 40 && r() < 0.35 ? 2 : 1) : 0;
+      pool.slice(0, k).forEach(function (w) { tw[w] = 1; });
+      if (tw.big) tw.big = n > 31 && r() < 0.4 ? 6 : 5;
+    }
+    var cap = tw.big || 4;
+    if (cap === 5) nc = Math.min(nc - 1, 11); else if (cap === 6) nc = Math.min(nc - 2, 9);
+    if (breather) nc = Math.max(4, nc - 3);
+    var units = nc * cap;
+    var rc = { n: n, nc: nc, cap: cap, spares: 2, breather: breather, intro: intro, ragged: n >= 6 && !intro && r() < 0.35,
+      sleepy: tw.sleepy ? Math.min(Math.round(units * (n < 40 ? 0.12 : 0.18)), 3 + Math.floor(nc * 0.9)) : 0,
+      cages: tw.cage ? (n < 40 ? 1 : 1 + Math.floor(r() * 2.2)) : 0,
+      leaves: tw.leaves ? (n >= 60 && r() < 0.3 ? 2 : 1) : 0 };
+    return rc;
+  }
+  function twistsOf(str) { // what a level string contains
+    var p = parse(str), o = { sleepy: 0, cages: 0, leaves: 0, need: 0, cap: capOf(p.br) };
+    p.br.forEach(function (b, i) { if (p.leaf[i]) { o.leaves++; o.need = Math.max(o.need, p.leaf[i]); } b.forEach(function (v) { if (hid(v)) o.sleepy++; if (cageT(v)) o.cages++; }); });
+    return o;
+  }
+
+  // ---------------- level maker ----------------
+  // a well-mixed fill (no branch starts as a set, few same-colour neighbours), then the twists
+  function generate(rc, r) {
+    var cap = rc.cap, nc = rc.nc, nb = nc + rc.spares;
+    for (var tries = 0; tries < 400; tries++) {
+      var lens = []; for (var i = 0; i < nb; i++) lens.push(i < nc ? cap : 0);
+      if (rc.ragged) { // spread the birds over all but one branch: some branches start with 1-3 birds
+        var m = cap + Math.floor(r() * cap * 1.5);
+        for (var q = 0; q < m; q++) {
+          var from = [], to = [];
+          for (var h = 0; h < nb - 1; h++) { if (lens[h] > 1) from.push(h); if (lens[h] < cap) to.push(h); }
+          var a = from[Math.floor(r() * from.length)], b = to[Math.floor(r() * to.length)];
+          if (a !== b && a != null && b != null) { lens[a]--; lens[b]++; }
+        }
+        for (var z = lens.length - 1; z > 0; z--) { var y = Math.floor(r() * (z + 1)), tl = lens[z]; lens[z] = lens[y]; lens[y] = tl; }
+      }
+      var units = []; for (var c = 0; c < nc; c++) for (var k = 0; k < cap; k++) units.push(c);
+      for (var u = units.length - 1; u > 0; u--) { var w = Math.floor(r() * (u + 1)), t = units[u]; units[u] = units[w]; units[w] = t; }
+      var br = [], pos = 0, pairs = 0, bad = false;
+      lens.forEach(function (L) { var b = units.slice(pos, pos + L); pos += L; br.push(b); for (var mm = 1; mm < b.length; mm++) if (b[mm] === b[mm - 1]) pairs++; if (b.length === cap && b.every(function (v) { return v === b[0]; })) bad = true; });
+      if (bad || pairs > Math.max(1, Math.floor(nc * cap / 12))) continue;
+      var leaf = br.map(function () { return 0; });
+      // leafy branch: a full branch, covered until rc.leaves sets have flown
+      if (rc.leaves) { var fulls = []; br.forEach(function (b, i2) { if (b.length === cap) fulls.push(i2); }); if (!fulls.length) continue; leaf[fulls[Math.floor(r() * fulls.length)]] = rc.leaves; }
+      // cages: on or just under a branch's end bird, opening after 3-10 moves
+      var cands = []; br.forEach(function (b, i3) { if (leaf[i3] || !b.length) return; cands.push([i3, b.length - 1]); if (b.length > 1) cands.push([i3, b.length - 2]); });
+      for (var cg = 0; cg < rc.cages && cands.length; cg++) {
+        var pick = cands.splice(Math.floor(r() * cands.length), 1)[0], b2 = br[pick[0]];
+        if (cageT(b2[pick[1]])) { cg--; continue; }
+        b2[pick[1]] |= (3 + Math.floor(r() * (rc.n < 40 ? 5 : 8))) << 5;
+        cands = cands.filter(function (cc) { return cc[0] !== pick[0]; }); // one cage per branch
+      }
+      // sleepy birds: not an end bird, not caged, not under leaves
+      var sl = []; br.forEach(function (b, i4) { if (leaf[i4]) return; for (var k4 = 0; k4 < b.length - 1; k4++) if (!cageT(b[k4])) sl.push([i4, k4]); });
+      for (var s5 = 0; s5 < rc.sleepy && sl.length; s5++) { var p5 = sl.splice(Math.floor(r() * sl.length), 1)[0]; br[p5[0]][p5[1]] |= HID; }
+      return serial(br, leaf);
+    }
+    return null;
+  }
+  function entry(str, sol) { return [str, sol.length]; }
+  // levels past the bank are made on the phone the same way: the same recipe, seeded by the level number, checked solvable
+  function levelBeyond(n) {
+    var r = rng(n * 2654435761 + 97), rc = recipe(n);
+    for (var i = 0; i < 60; i++) {
+      var s = generate(rc, r); if (!s) continue;
+      var sol = shortSolve(s, 2, 50000, n); if (sol) return entry(s, sol);
+    }
+    // never seen in testing: an easier mix of the same size (no twists) with a bigger search
+    var rc2 = { n: n, nc: rc.nc, cap: rc.cap, spares: 2, ragged: false, sleepy: 0, cages: 0, leaves: 0 };
+    for (;;) { var s2 = generate(rc2, r), sol2 = s2 && solve(s2, 400000).moves; if (sol2) return entry(s2, sol2); }
+  }
+  function levelFor(n) { return n <= BANK.length ? BANK[n - 1] : levelBeyond(n); }
+
+  var BANK = [];
+  var api = { HID: HID, MAXC: MAXC, col: col, hid: hid, cageT: cageT, parse: parse, serial: serial, colours: colours, birds: birds, capOf: capOf,
+    limitFor: limitFor, bonusFor: bonusFor, open: open, locked: locked, run: run, canMove: canMove, full: full, apply: apply, cagePending: cagePending,
+    legalMoves: legalMoves, usefulMoves: usefulMoves, create: create, move: move, undo: undo, addBranch: addBranch, restart: restart, solved: solved,
+    movesLeft: movesLeft, outOfMoves: outOfMoves, addMoves: addMoves, stuck: stuck, shuffle: shuffle, keyOf: keyOf, solveState: solveState, solve: solve,
+    shortSolve: shortSolve, shortSolveState: shortSolveState, solveGame: solveGame, rng: rng, baseColours: baseColours, recipe: recipe, INTRO: INTRO,
+    twistsOf: twistsOf, generate: generate, entry: entry, levelBeyond: levelBeyond, levelFor: levelFor,
+    setBank: function (b) { BANK = b; api.BANK = b; }, BANK: BANK };
+  return api;
+})();
+if (typeof module !== 'undefined') module.exports = PP;
+// the banked levels ([level string, solver moves]; tools/gen.js writes this line)
+PP.setBank(/*BANK*/[["abba.baba..",6],["cbaa.bcac.bacb..",9],["dcac.accb.abda.bdbd..",12],["eace.dbad.cbce.cdbd.baae..",17],["bdde.caec.baca.abed.cdeb..",17],["cbeb.badf.fcde.eaca.ddbf.feca..",19],["ade.dffb..edab.cfea.bfd.ea.cbcc",19],["ecad.Baad.ebcd.ecea.Bdcb..",17],["aedf.cea.dc.fdbb..cEd.aFgb.bgeg.gAfc",23],["gaeb.ddbg.bcbf.faeg.cafd.fcag.ceed..",26],["Ebdg.cbfg.facc.Bfa.d.cgeg.Edfa..baed",24],["bee.cadf.gcbg..bgfc.ecfa.dgbf.d.aaed",20],["ecbd.baha.hDda.Cehb.gfde.cfFe.gFga.bhgc..",27],["afdcd.afdcb.ecabe.aeaff.cdfdb.ecbbe..",26],["bbe.dAHd.aecf.hfha.Fbd..eDcg.bg.gchc.fgae",28],["agba.ghba.fChg.Dbee.Cbac.fdhf.hdcd.eFge..",26],["dcba.gfca.gedf.ebgd.bgea.bcea#5.fcfd..",25],["ache.gdie.bbdb.gefi.ihff.agch.dhca.ibac#5.gedf..",30],["defec.gaebd.cbahg.abahh.efhad.bebgg.cfdgc.dchff..",35],["bafb.fbda.cedc.ccaa.fbde.edef..",18],["deeg.adgh.fdfi.echb.cc.geb.cafh.aib..ifhg.badi",29],["gbcg.ffed.~1ahbg.afdb.haeb.hcgc.cdee.adhf..",25],["dfid.hgag.cedh.efcf.ighi.eihb.dcbf.bgbc.eaaa..",32],["hbhe.dfgb.~1afci.fecd.cbda.fagb.iihe.adhg.ecgi..",29],["edbai.idfbi.haecg.bfhca.cfgea.hdedf.bcedc.bghgg.haifi..",42],["hddj.ibad.bahe.cfci.ejfg.hech.jdii.ggjg.acab.fefb..",34],["hbeai.afibg.ddbaf.hcdhi.cfeba.ffigc.ehecg.dcagi.bhegd..",39],["jgdh.gibf.ijah.ejdh.fide.bacc.eagf.bahb.gcdj.eicf..",38],["deba.efhb.gagb.hfca.acjf.fgjd.ihei.~1cgcj.idje.dibh..",32],["ebbf.dcag.abgd.dfdg.ebeg.cfca.efca..",25],["cfbdfd.ebabce.dcfgce.ecgadb.gdaebf.aadaff.cggbge..",35],["ciag.cddb.ghie.fbfa.jbgf.jdef.aeid.cjei.bhhh.cjag..",39],["biac.ihgb.edji.jahf.bgje.afdh.bfac#5.dhjg.cdec.gfie..",36],["ecbha.gdfde.hcfag.cbdef.hibfg.hhiab.eiiaf.acebd.icdgg..",41],["Fbfi..cfgd.icge.aeec.Bkhi.gekd.Kaba.jjHj.gdAc.fdjh.ih.kb",36],["dieb.jgeb.ghfc.kjkk.aage.ddhe.fbag.jiji.fcfh.hdcb.caki..",37],["fkfc.jhdb.bhgi.ikef.gibd.eafa..kcd#3j.beg.idhk.ach.ejcg.aj",47],["beia.fdi.eacf.abj.dgkj..fchh.ecdk.kcbd.jbhe.kji.fga.ggih",37],["jigh.cieg.iddj.kafj.khka.dfef.gebc.kfhb.hgcb.dbei.aacj..",40],["cg..def.ehbe.hafb.cad.fecd.adgb.hafg.ghcb",25],["cigd.debh.ekeh.jaif.ffce.hgak.bcjf.bkhi.agbj.ddak.jcgi..",37],["dhe..cfkb.bkfb.ihej.cbjg.fih.kadg.ggc.cdid.ahi.kfje#10.jaa#7e",35],["IgEf.jddf.BIJd.ehac.ikbj.chEf.befk.ghCg.jgac.kdhi.bkAa..",41],["daggba.fcbfeh.idhebc.gdedhb.ibffgd.gifchi.gcfcea.heiaia.dhcabe..",53],["ccdc.aihj.fehi.kgjg.~1hfic.hbke.ajkd.edfg.fajb.akbe.gdbi..",42],["iecj.gibe.bdfh.hfae.jfb.bac.icga.jcd.hkkf.dadg..ikg.khje",42],["fkej.fgde.cike.dghc.bbdk.ahda.gjgf.bijh.baji.~1kcei.cafh..",39],["Kgda.iaIk.dgfe.bgdg.Iehh.jCba.Dkbe.jfjh.Kcaf.iChj.Becf..",41],["hdeag.fdceb.dahhah.cgaigi.ccdbea..iegcad.dfii.fgfeg.fbhbe.ibhfbc",53],["gdaf.acad.ghbc.hihc.dgie.fbbe.fdfc.ihge.eaib..",29],["jlch.kkda.bfdc.hljc.ihhe.blkd.~1efbg.galc.fgia.jgjb.iedk.efai..",43],["efgac.ecejc#6.gjkha.eafcb.hafhc.jgbki.kfii#5f.iddki.dhabd.hggdk.jebjb..",51],[".~1aihd.cbjh.dfkk.chbj.bfgi.gjd.dk.lali.lblk.eahg.jee.ifca.cgfe",39],["jcajg.kcjkg.bjeeg.aijdb.cdhaf.~1fbigi.kbiee.acdhe.hikhb.dhfgd.cafkf..",51],["Ekeh.Cjfi.IFjh.gijc.khlh.aBcj.fked.bdki.DGLa.gdfb.gcll.eAba..",41],["aajch.~1ddeag.bcjej.kigbd.hfkhi.fjkbh.kfaic.hkabc.iegic.egdbd.ffegj..",50],["fhbi.jleb.aik.aga..cjkc.acef#9.jill.e#10h.ddgb.legf.hdfh.ikjk.cgdb",40],["ajje.gFLb.KAdf.lKDa.lkic.hfcj.cigg.hkbb.ehEd.ecba.hdGf.Jili..",40],["akcl.deah.dffb.cejb.hjkh.iflg.jehg.kckb.ibdf.ieli.aacg.ljgd..",43],["hacc.eage.dbed.cdhb.fcha.ggdf.ifhe.ibii.fbga..",28],["ihced.edcae.aegib.kggig.egjki.cajdh.khfbf.dbfdi.hajfa.bjfck.cbhkj..",55],["bhli.lcdg.iade.~1jijf.bkhd.ahg.fccj..gl.hkkb.cbie.jdfk.fae.aleg",41],["hjLg.LjCh.iGi.cEag.ea..ebk.Abgk.lbDl.ekad.dfki.fjcc.dhhf.jIBf",44],["bedh#9.ebfc.ehdi.diha.baag#4.jhlf.kklc#7.aifc.cbje.ijkl.dklj.fggg..",37],["igh.back.ijg.~2eiah.ah.ebfb.gcid.klla.cbdl.hddj.flkk.jfgc.feje.",41],["cgifh.icekj.fbfdc.dgkdh.bkaej.djfjd.~2acihk.acahe.ahebf.jggeb.bgiki..",51],["ibagfe.hibbbg.gihdac.aibefg.afeacc.dehchg.hcdidf.ebdgef.dficah..",52],["jika.kCb#9d.lbdd.kjBf.Ffhb.IjLg.jclh.aegl.iEik.GHec.adhg.Cea#6f..",41],["~1klbi.eceg.aalh.ekbd.gajb.fjig.dljf.kdcj.fcdh.ihlb.iake.gchf..",43],["bca.dcbc.hhfg.fehb.fiai.egah.gbdg.deia.f.dcie.",32],["edbf.bjjl.ahef.ljbj.dcik.khli.dhck.cgfi.glha.kdeb.faae.gicg..",46],["afeic.bkhdk.ifghh.ekjab.gkjfh.~1gjjch.dabed.jefef.bidak.cbcdg.gicai..",50],["jije.jlfg.fcik.gadb.ebhd.klfb.ecjc.ekhg.dllf.baic.agki.hahd..",45],["fbdd.kiac.acje.bjke.jhjh.bkge.gfha.ilid.ghll.~1efkf.clcb.iadg..",41],["jKac.liGg.gaj#8k.Dgeb.cChf#7.beHf.Heel.kLCj.Iadd.hbib.kdfa.fjli..",37],["bdka.jidl.blea.jhlj.dicc.kfga.gceh.gkbh.ffbd.lfge.ihkc.jeai..",41],["bkkl.deh.cbgd.jdie..iajl.~1dfeg.cbe.haf.bjl.khhf.jcgg.iaca.lfik",39],["kkak.dij.ghgl.fjfe.cfhj.ibic.hdl.lihk.alea.jbad.bcb..~1egfe.gdc",41],["Ledf..jJgd.bh.gia.Jekl.Jfga.KiAk.bglk.Echc.Ladi.Ihf.fchc.dbeb",42],["ejgg.bfha.dibc.hbej.hfha.ecfb.deca.ddcf.ggij.iaij..",31],["dima.cclc.jhid.mfeg.kakg.fgkc.aeef.jlmk.ldlh.abjb.mibg.ijfe.dbhh..",46],["dejj.bdck.~1hfaj.bclg.kgig.mamc.idkl.hbeg.mlal.jfkh.cemh.ifid.abfe..",47],["fmcj.dkih.Mdc.Ehgd..fgia.geAm.Jijc.~1ebjk.Llkl.gKda.iLmb.hCb.fEa.hfb",52],["e.gcmj.fkke.ldbj.ifig.jbgb.ldad.mmch.jacl.kieh.gfel.cafd.bhk..ahmi",42],["kfif.cick.lhdb.caig.ahje.lfej.mcml.addd.jgih..gfag.b.jmk.bmeb.hkel",47],["ldga.eib.kcmd.ickm.cedb.bjlh.ighb.ffg.eghm.eija..flkf.~1kdlh.jaac.mj",46],["ecfg.eimi.Fgf.~1jgha.cjFl.mjh.bDhc..Almi.ehLk.ebKd.bida.JAGk.mbc.kdl",51],["blh.micg.fc.dbki.ahah.gffi.ceae.mmbe..gkhj.lbal.~1kjim.efcd.dgj.kldj",47],["dcdegf.hdbiih.fgiage.eigdfd.bgccbi.cbffhc.dhabef.eabehc.iagaah..",50],["gfac.jich..jec.beba.eji.fha.ggch.dfdf.bheb.gjd.diia",35],["jjbaj.jihkg.eacff.dbedc.cgdbf.gbghd.cidkc.agfba.ikfki.hekae.jiheh..",55],["lkhm.gmfj.hhhg.cifk.bjea.dgba.fbki.lmal.jegd.elma.ddik.cjbf.ceic..",42],["kLkc..Cmi.fJgg.fBcj.edMl.ia.kmeh.cMHl.akeh.bff.jLei.dagh.dDga.bjib",47],["ffegi.bidja.hikfh.chcjf.hejag.ahabe.dbegj.dgdda.kgkbk.ecckj.cbfii..",48],["cjffj.edihg.gbibk.jiiCf.kfeHa.ehcDj.ghcKb.AAFGh.gkadd.EKaeb.bdcji..",51],["adfi.hiil.jmic.gmlg.~1fekc.fmhh.cgjd.kbbc.kflb.eale.bmaa.jdge.hdjk..",45],["fck.dilg.akjc..mflf.mi#4g.cdee.dhee.cam.hkhk.gjb#10j.mflj#10.ibd.aigh.lbab",45],["gbhcab.ifceaa.ehehgc.bbigfg.dfiigf.gedbef.dihbch.hfidcd.acadea..",54],["aidb.jhge.blmm.ekgd.kaaf.cicd.kkhg.flbj.chej.dfjm.bmgf.iehi.allc..",43],["fafg.ieia.bgdj.fbcj.efdj.bgae.hhac.cihc.dhbg.diej..",34],["deachb.hgeiaa.cihfaf.edeagd.bibbie.cbfhgg.eficbd.ihddfh.cgacgf..",51],["gael.lhcd.kBdj.Aafj.igIm#10.ickb.eMce.djfc#3.bGbf.iaDf.hmhl.Jelg.KMhk..",45],["kfkie.hidbd.adeag.cegbb.ihhag.ckgbf.acjgj.icjhf.dfbji.kfked.ejhac..",50],["fdga#10.hjFc.jeHd.gkkf#3.glie.ikdj.mjgc.LHee.kBMm.lbha.BCbc.lIda.iafm..",46],["cgbd.lgeb.mjid.eigm.lafm.lbkk.kghi.cfjm.ehlb.jafc.~1jkce.didh.afha..",52],["bbjf.gfmk.ccdb.aekd.ihhl.hdab.kgaj.iji.egi.aefg.emck.ml..mljd.lchf",43],["cdda.leig.jael.kmhl.jgeh.lbbf.djgb.kkhf.hika.jcai.egmm.mfci.dfbc..",48],["fjgh.fhga.egka.emcc.jkia.lmdd.ibcm.lkci.eka#3h.blgl.fdbf.hijm.edbj..",53],["hefdj.bfaeb.daeid.cdfja.bfkec.gbfbc.gkecj.hjgah.jgdgk.iakih.ikchi..",53],["eeh..hbfh.cidb.igdj.fjf.adig.acja.ceb.fgb.chdi.jage",35],["dhd.cack.gkjaf.ijegd.cbkag.bbad.heeif.dikfk..~1chjei.ifagh.jhcfb.jgbe",53],["caae.caml.bklg.lfeh.ijli.ehjj.akbg.gidd.mdjh.mdmk.fkbg.fcei.fhcb..",50],[".hdel.gbge.lkj.cj.dala.hifm.khfj.~1liab.dckg.jcgi.mebc.ehi.fmfm.dkba",50],["dadij.akkfc.jbbjh.fhfhc.fiaib.dhheg.ecbej.kgegi.bgdag.dfcck.jiaek..",49],["gceh.jIem.ljKg.ceim.alAh.fCec.jBad.Dhbf.Mkgb.hkDd.Jgkf.iali.mblf..",50],["glce.bhmb.alid.mkjh.egfh.bfae.fehi.jljk.klga.fmbc.icam.ckdd.idjg..",48],["hlgc.cbkh.bmgl.fcli.gghi.chba.dmfm.ikdm.~1beka.fdij.jed#9j.jala.keef..",48],["emhh.ijcg.gkkd.kicg.aajm.micd.kalb.jdha.lebf.felb.mlgf.fdjc.bihe..",43],["Jahc.fAkj.jfie.aGkg.mdad.FhCm.glek.iiEk.hlbm.ibjg.lEbd.CmDl.bchf..",43],["ehkb.igjh.aic..jcbj.hcgi.kfd.gjdc.hadf.gkee.aad.fkfb.ieb",36],["ehbghd.ihhcdf.fcegci.ibegac.egadah.gdciab.gdeiai.fdehbf.abffbc..",54],["bggf.lkcm.ngki.bahc.kfe#5d.nljb.kfh..eddl.neia.gha.jbm#4i.jmcd.li.ncah.femj",57],["ffgidd..dgHId.BfhAec.cafbab.chghbh.AChiba.GCbf.deeeie.gfcg.iaEDi",51],["lmLi.kNfh.ldii.nlfm.cfje.hGDj.mjkd.mKdh.ainh.fcAb.cbak.bagj.eGBe.nCGe..",47],["bbah.mFFf.Ldna.cbkb.FLeg.klKj.jlEh.jcDi.mCgj.eikd.higa.mmna.degn.icHn..",51],["jdh..aijb.~1fdcm.hbid.nhhn.mib.eaaj.cfm.genm.kill.eagf.lgc.knkl.gbde.cfjk",44],["cfb.~2mifh.deag.hjll.eeim.gdaj..ajfm.cgke.adcb.mid.hbjc.fhk.llbg.kki",42],["fbhk..bfgjc.djbf.heidh.agafb.hcfii.dake.kgbj.ekagc#6.ikac.ejgdd.jceih",50],["hhIe.mLgg.iAin.jdk.~2dacd..gIfe.bcbk.njef.eblg.NLda.mBc.nLk.fJfh.akc.hmJm",49],["ibhb.chhf.gigi.badc.hidc.dgaf.eebf.acef.edag..",26],["jed.eh.cgbk.engi.kjd..hacd.llbf.imnj.eafa.cgcm.nhmb.jfkn.bihf.klia.mdgl",49],["deke.LDCe.gfj.miij..mil.hFc.jkaj.Blba.ghhc.Igkk.cab.edDf.Hgml.Mbfa",45],["adfj.ilkl.head.bdgb.fhjl.chhg.ebae.gaci.jijf.eglk.~2cdkc.fbik..",45],["jimc.cAIl.Ifmf.agGe.Ahhl.dDke.lcak.bdmf.mbHj.Ldej.ekcb.giFh.gkbj..",44],["acfab.gidck.bcjdk.chdif.ihjef.bkdab.kcihg.ejeba.gikjf.egafh.djhge..",48],["nBef.iHma.iikc.ljee.aNkd.genn.mHal.ckfa.ghjd.jjbh.cBlf.MGBc.ifDl.gDmk..",52],["kgAi.kfk.dbl.hjJb.lbdd.gEhl..Jaee.fGd.kihj.meaa.CGmi.Cfhi.cfmb.lCm",46],["keej.cfkhk.ebcgb.deggi..hgfbi.ifhc.gcbfa.dijj.ak#6j.jaef#10h.dadhk.cidab",58],["kgidj.gibki.fjkec.bhbcc.ijheh.~1beejk.abafa.dcdic.gjkfa.afegd.gfhhd..",51],["chfc.caeh.jjbe.geei.aidh.abid.gddj.igfg.ahcb.fbfj..",38],["ehmk.aail.chke.dclb.gbhl.ggji.jilc.kdhj.fmke.abfi.dmgj.bfed.cmaf..",44],["mGnk.lila.kigm.nhBj.Mebc.hjnc.jKgg.benf.KlHd.dlIe.efhf.aJma.dCbd.cAif..",53],["ccmf.akig.adke.nlng.mmhj.klgb.cflj.necg.fihh.bfjk.edin.jmbi.ddlh.eaba..",46],["ghlm.lkej.biEm.cafh.bdLa.CgKj.fiej.gFEk.kFch.Chaa.djbg.imml.dDib..",44],["nhee.ljkl.dmed.Cklg.jcGh.bjhg.iDbf.bNJk.FEfa.Nmcd.aFgb.inhc.miMa.lkai..",50],["higk.leaf..kjl.iac.jjee.cbfh#10.jkb.~1gkai.cgld.bflb.ahd#9c.gidf.ehd",47],["ncba.mkla..bcfg.dadh.lbm.gn.ejfk.ecfj.cibn.lnim.gdhe.lkg.dhma.heki.fjji",55],["fcjb.lhgl.ddkj.kll.mekh.mcai.midi.fgab.febb.ch.mhec.kaea.idf.gjjg#3.",48],["Bfab.dklm.Glhm.Agjc.KhKe.chDj.lfac.iaij.eige.Gbfe.khdl.dmFc.Bijm..",44],["ceha.igjd.befg.hjbd.fgia.fd.adhj.abic.efi.cgeh.jcb.",37],["gbm.gjBf.hfjd.Dken.iEmb.GGMb.lDnf.eick.lni.fcl.jen.hcck..Haaa.Dkjl.iHam",48],["afjee.beii.egjf.kbhhd.gfakj.bkibj.dji.ghgdk.fghb.cecfa.chacd.iakdc.",54],["falk.lakc.chic.bbeh.dlmc.aijb.fmhg.egje.elah.kgig.jdmb.mjif.fdkd..",49],["lmf.egi.eHam.Kgie.klbf.Cfc.hAb..ehgk.fiAd.Adlb.jBCg.didk.Mjcl.jjhm",46],["ckihb.ahhde.ejjfb.~1ehdae.kfbjd..ekki.aijfg.c.dafjd.gkgib.bacci.cfghg",47],["iajf.iggj.bikb.chcd.mjhm.fjkg.dhee.lcbf.kelh.dkam.aidm.clea.bglf..",49],["kdcfc..gjbk.hfdeg.cdbeg.jje.dfika.hccfa.ifdbb.jiaie.kgig.eajh.ahkbh",50],["cegm.ahab.dmbh..nbei.caf.enj.hni#5m.cei.kgfl.lncd.flgk.ijm.ajhf.bjgd.dlkk",51],["gldf.gmek.cejk.cbck.mbja.iead.hghf.dmkd.ihai.fagf.jcei.hbjl.lblm..",53],["aacj.khfb.hahj.hiig.gbjk.facc.ekd.dbic.fgi..kdef.dej.beg",38],["emIc.Ilaf.lmDc.mIJh.bkfj.ikaj.dkla.GaGh.kgcf.gelc.bhdh.bmJe.ebDf..",49],["Jlce.ianm.hnfc.ebkh.gIMm.bdjh.lmng.BdEi.hdnl.Abkg.kADg.jCff.jAfe.lkic..",50],["cdck.dbfc.gagg.jadg.bmid.fkle.keal.mhji.mlcf.hibm.lahi.~1jefb.kehj..",48],["afaj.~1ilfn.kich.hajf.mmne.hngj.akcb.mmgg.hgkd.ejbe.ilnl.cdbi.kfde.cdbl..",51],["cdef.lkej.jgeh.akgd.jhfd.cgai.kfdb.ccil.fhle.ljma.bmib.kami.bhgm..",45],["mdjj.kfle.hcdi.nagb.bkin..ehca.kmc.gld.jlg.bncm.hgmf.daen.beif.hjki.afl",54],["jkal.jddh.mblb.cdid.acgf.kemf.ilie.aege.mghb.kjcc.ghki.jlaf.hfbm..",50],["Egbl.JFAb.gel#4d.kJgd.ecki.ifcd.jhKh.ldcf.cbmh.MmGk.aili.Aafe.mhbj..",47],["ghgh.lcbb#7.efcc.fjik.adde.gije.dklb.lkjd.fgik.abah.jefi.ahlc..",44],["cdea.dhga.fjfi.cfie.hefc.hgbb.bahd.eacj.gjjg.dbii..",31],["ajdc.ajid.clbh.bajb.Kle.lHMk.hi.gEcc.Ghde.lfmb.ekGm.Dfja.Iif.fKmg.",40],["fcAFc.bdKHf.gjjd.Bbdah..hkCei.ejeih.Kfei.bCegf.aAbKj.igdc.kgiad.gjh",53],["ijng.gbdi.gmja.cjnh.kni#9m.bfch.adek.dmlk.eejm.bfha.bkec.adfh.gllf.icln..",54],["KdIbe.eicgj.CDicf.ajfah.hFCjh.Dgcgf.bkdgk.eabai.EKadh.ihjbb.fGekj..",52],["dbgcih.bddbed.aghbea..fedcg.afiaia.iffch.cha.bbfhg.efcihe.edcgig",54],["afhcgb.fbgieh.ffaedc.aeabdd.gibiha.fihdge.bbihc#8d.fcgceg.dicaeh..",58],["jdfg.jacc.ahnh.inkf.mhfe.majl.fcbn.deil.lhmj.gdkn.ebcb.kmld.giea.bgik..",49],["dbfah.jicdf.ahjbf.gbfbj.haiaj.dcedc.khckg.~1fjkae.gchid.ebigg.kekei..",51],["hbmh.gadl.ggHi.ceFa.eEcf.Cdbk.bbjd.fiJk.KLkn.iAme.lmim.dngj.fAnj.hlCn..",45],["bjeb.ibeg.aha.ddda.gdj.jehf.ghfc.hbc.iefi.iafc..jcg",34],["hbhb.mjgk.nidg.bcad.dgaa.lnmk.elaf.bmee.nlfn.kdhc.ijcj.jihk.ilfg.mcfe..",47],["cEAk.achm.Gjaj.djbk.lbbe.fnff.leib.KGnd.lhEg.ncdi.flik.mhj#6m.GnDi.HMca..",56],["kbae.hlGk#7.LIEd.amFm.cjd.lgdf.edj#10.Li.majb.cicg.kJKf.Bhmh.figh.eabc.",55],["afbj#6.ckga.dhjd.bcih.hlhd.ejlf.fcak.klid.eaeg.ijib#4.bfgc.elkg..",44],["abjkc.cjfhg.bbkke.gedji.hiaji.cddeb.~1jgdha.bcigi.ackhf.gdhff.efaek..",54],["hbik.cef#3d.kacbg.cfgde..kgfdk.eia.jehbh.faej.jdch#10g.dbcag.aiiji.jbhfk",51],["ea.lbj.mflb.aldb.kmj.jfdg.gkhb.cmgd.geic.mhcj.ealh..idef.fiha.kikc",46],["fegaia.decceb.ebfcha.giidid.hagdid.effcab.dgbhgb.gfchhb.cheiaf..",50],["Aajg.bElh.ENnd.kGMj.jdNe.lfbg.hAgb.kIcc.fcnh.jkad.dfem.fhim.iilm.Blkc..",45],["gifa..efe.cjfj.cded.jkec.fbkg.hba.dgi.kaba.bihh.idc.hjgk",36],[".amel.agmj.jdgl.cfle.ceei.dbh.dhlb.kkhj.fbm.fdii.mfak.ci.kgba.cjhg",50],["dl.kinl.gmke.hbba.lfcm.enke.jalg.jnbk.ddgh.~2famg.bicn.fid..ema.jjch.hifc",52],["agdf.lafe.cbbh.ikgi.jihk.dlje.kcjl.ciee.bfda.hjhk.agfb.dglc..",43],["fcadhe.gcfci#7i.aebcfe.dhehbi.bfigaa.biebc#4h.befdfd.ghigdg.cgaadh..",48],[".hgfifg.iebed#8.fhgbhi.fdacb#5.cghd.heaad.bigec.fccfhc.daiaie.daebgb",52],["klgb.cbii.laml.dbjk.imh#9.afj.ejde..glkg.fdei.mkhj.mfch.hcf.baad.gec",45],["bmca.fnlm.adgk#6.banm.kefm.ikhc.befj.dleb.jhhn.cdal.gjhk.cgif.niij.ledg..",48],["hjfeb.cceah.ikchd.bkjgf.dkcib.ggbhi.dibda.eajjk.fifeg.ecak#8h.dfagj..",57],["chka.bMIf.fmhe.Him.jEAe.LFig#7.lFjj.ibg.dce.khd..dlka.cLbg.jcbk.dagm",48],["fbei.jdca.cdeb.cfea.hiaa.hcfj.dedg.ghjg.fijg.hbbi..",37],["Hdic.Emjl.Liad.eade.hbkk.kbh.Ghd.jkfl..Cfej.Jga.cIBm.glMm.fgf.ciba",49],["bkci.kfka.aidl.kdae.eeih.befg.jgjc.dllh.lghb.jbic.hajd.gcff..",39],["cfkfb.~1kaabj.jff..egbc.hgack.iddi.cjaej.jhiag.kdfc.ghhde.ihkgb.ebied",49],["efna.mdc.lbn.ndcg.acgk.mel.fik.hbkf.jdjd.eifj.jhkn.eigb..lmha.ahmc.iblg",54],["glem.dgak.bhcj.eele.ndkd.fbik.icmg..fmc.fhla.can.jhh.iimb.jkn.abld.ngfj",55],["fkdjb.ebjke.hckej.~1fjcfg.ihica.bdkif.kgdhd.edaab.iegja.gbchg.fcahi..",54],["mend..idlm.glck.cnme.cnh.jlaj.nj.aehf.fjdf.mbil.bihh.kga.fgkb.gead.cibk",57],["iaidb.bkhkf.gbeic.iehbg.heeia.cjgcj.kfdfj.hcafe.cajgg.ajdkb.dhkdf..",48],["njbc.mgic.mlen.bfeh.ihih.cbdg.fnnl.mkek.adah.~1jkba.jgfc.lfjl.kead.dmgi..",51],["dcef.hcag.cffb.gibh.dhih.baaf.ddie.begc.geia..",31],["glnl.gkej.mBbh.jNcj.fcbj.KbIn.FiFi.dfeg.Hlch.eakl.Ckda.DMhd.iemm.agna..",50],["gca.lha.jfd.bkjb.Dfk..DhIf.egIe.ljla.DCgh.AfGh.kjLc.ebbk.icie",41],["bgaca.kbhgi.fjjhc.ghabk.cefac.dibke.jeeda.~1bifjd.kdgdg.ifiej.hfkch..",48],["mjn.hifm..laj#10c.ecec.gkln.bbkf.gnlb.mndh.akme.gilh.ja#4b.fgic.dh.fike.ddja",58],["fbal.cgjl.iefm.mdca.acij.blgi.hnan.hdgf.gedn.kbje.hmki.jkec.bmhn.klfd..",57],["ccad.gbgd.ieil.cdeg.klah.dcbb.ffah.lmge.iljm.ejjk.jhmf.hbfm.akik..",43],["ibfb.gfa#8e.fak.kdce.glb#8.jgda.ijcl.iedl.hjh.gdmb.mmji..cca.hkhe.fmlk",45],["mhgd.camh.jbkd.jbfm.iggn.lnce.kbfk.lfhl.jcej.eibi.laid.daga.mhec.kfnn..",53],["dneh.clib.jmia.fljd.bmca.kllh.fbdm.fghg.aeij.nmga.~1nken.gjke.fcbk.hidc..",54],["kcaf.hdhb.kfd.bbba.cjd.ihja..ckea.digi.eegc.gkji.efgh.fj",34],["mika.nean.fkj.bjag.cgfe.hjcb.cfh.nbi.dgmh..limd.elfk.bdeg.ljm.aikc.dhnl",57],["bnki.kei.abfc.heng.ikmf.afha.hjlh.glc.imcd.ejdn..fmc.lbn.lbje.mjgd.gdak",51],["dima.jgfh.kada.bdma.lcie.jbgf.ggkb.iimk.lekb.flje.hjhc.fcme.dhcl..",42],[".ifDm.dDbf.ikf.IJen.gjj.cgen.gehl.dbkh.cjbh.mKg.Lcak.NLl.nfAm.aAcb.hmei",49],["ggla.bibm.ecgh.jlel.cakg.ddkf.mdjj.bjcb.acai.lffh.ekim.hfmi.hedk..",42],["lic.Hacd.LbAf.Eck.cifj..lEbj.iIhk.gjbh.kgEb.ghad.Jelf.gd.aFdk",40],["nmed.dhbj.begd.ljg#6k.infc.kkcn.eigc.bcla.amah.fhej.ffma.nigm#9.~1djli.lhbk..",52],["Cibhfb.echadg.FADFhd.efaEcd.aidgbi.heGBhi.Ediaci.gabech.cfgbFg..",57],["gjbd.ehnd.njnl.hbek.cnhm.dbmf.lgag.ibhj.mfce.gcki.laif.ejfk.klma.daic..",54],["bcce.edbe.hdgg.ifid.ffhg.cada.chbg.hiab.fiea..",31],["jDhc.ibec.elh.bJgd.lEdk.CAk.Fjic.hdg..ael.kHgl.bBkj.iaGf.affi",38],["dcDEg.hfkfa.efDdj.abkah.Kjehg.Dbacb.Gkhcg.ijJfb.hEicj.fieic.KbIag..",52],["mdek.lahj.djik.cf.~1kfli.henf.mabd.dlej.ngi.mclc.jaeb.bmbh.gcai..ggk.nfhn",53],["dfcBea.ihgcHf.IaIcce.iIechd.fhecbg.BEdabd.Afgeab.hHgadg.Ffibdg..",48],["Ifkk.ckbl.gEdl.AIjh.hcg.hdJn.mmj.beeg.bnaf..fgn.Ldm.Ahmc.LJin.acDf.ibke",51],["ghnc.jbll.fglm.kjin.madk.jd.hbnd.ilkb.eck..imgc.fahb.ecj.efgf.~2hnaa.dmie",51],["CAek.mFna.lcCi.Dnff.IbMd.Khji.naeb#10.gegm.afnl#3.hegj.iLjj.hgdm.dlHk.kbcb..",51],["ghecd.gkdef.edjjc.dkeba.aeibj.gjdhc#4.fkhhj.gacbi.ffhia.gkiai.cfbk#7b..",51],["ebiafh.gbehce.ffgdgc.ihcife.cifaib.adc.gahcbb..gdfd.hihde.bdaega",50],[".fig.hgjc.afhd.ecd.jjbj.bied.hfba.iga.abee.cchd.fgi",33],["hmlk.ankc.kajj.ifhh.emnm.lgdg.jncd.afdi.bccb.kjfe.fenm.idga.lbei.bhgl..",55],["gehk.dchk.kjgh.bfcb.efda.djah.fgig.biib.akjd.jefl.alel.iclc..",42],["hiia.fdla.afk.dgj.ejid.cej.behg.aldi.hfc.ckgf.bjeb.khbc.lkgl.",42],["flk.hfjl..kjac.jejm.~2iebk.egdc.maal.egdh.dlhk.ffm.bbmd.icg.baii.hcg",45],["gcefdb.cgeacg.faaahb.ciedhb.gchifd.ebcifg.bedbdf.afehad.iighhi..",47],["khfea.kdbcj.igjcc.kbikf.fbaed.bkhge.~1ibjag.jjchd.fhfgd.idcha.egiae..",50],["~1gnal.hfll.dmjn.bein.mdgj.kfed.kmhl.cejg.imag.hbae.fcdb.chan.ckfi.bijk..",50],["feceib.aagdia.dhhbae.edecdg.fibdea.~1abdcbf.gcgghf.fichhc.ihifgb..",48],["jedbb.haigd.~1aahkk.gedab.ihcfc.jbjik.fehch.bafef.didkg.fiekj.jgcgc..",52],["jddg.hfah.ccbi.dcae.gdbf.fkhk.giie.ejeb.bhkj.ikga.jcfa..",39],["khaia.bbkh#6f.gddjh.kaefk.gechf.iidji.ebaji.jdedc.gbcfh.ackbj.cgfge..",48],["feem.dblk.bmib.lcdc.gafh.algd.gfci.mehb.fkmd.gjei.nhal.ajnk.jjhn.nkic..",49],["dlgj.inld.cjam..ahkb.h.ijbe.idjg.fmlh.khfl.kbm.cfc#7e.kadf.ganc.imgn.eneb",53],["glmc.dge#3f.ngbe.cnae.bmjd.hnnb#8.khea.jfmj.lmfl.dkhc.difb#3.chga.kili.aikj..",52],["jbib.hfml.kifd.cjg.a.kkdb.jgad.kmfl.imea.lhhd..aeic.hlge.cgjb.fmec",45],["eafd.egmh.bccl.dfmf.jgbh.lkma.ikim.~1hajd.iedg.cihc.kklj.fbbj.aelg..",46],["jcf.aflb.jncb.ibkk.fej.~1hgda.hia.ibl..kgnj.agem.nclm.hcml.dehf.gedn.kmid",52],["mgma.hnhc.fblk.aihi.cdem.nafd.ejfg.jcej.fgk#5l.cnkk.jdab.ngle.dibm.ihlb..",52],["cdeha.ghkgi.fbdef.cejch.jbgjk.gifcj.fabdg.ehhjk.baikb.ekida.dfaci..",54],["hbei.fehc.cdbb.abjc.igdh.kfie.gkjc.deag.jhkf.djka.fgai..",37],["aid#10n.kikh.flga.dmjn.hgfg.ecbc.bhim.anje.fhd#9m.ikld.lfjg.bljc.naeb.ekmc..",50],["dcjd.ielj.kcf.kehi.gbgg.ijb.fjka.baig.flfc.chlh.deke.laad.hb.",42],["fcece.bhjjf.fdaec.agiek.bgjbk.ikjha.kdbdi.cgeak.ihbdi.ghhfg.dacjf..",55],["bfei.ahmc.inga.ddmg.bdbj.igke.gljd.bck#3h.jifk.flel#3.nfhk.mnlj.aecn.mhca#4..",57],["nbab.dhcf.amKi.dgNd.nadc..lbhf.MGcn.gifb.lKMa.hg.Mlj.kKhj.eeCi.Fjl.eiej",47],["chjae.jbkgj.acddd.egbfk.iecja.jgkfh.kddab.hciff.hfiek.bceig.higab..",48],["mdbi.khjh.deck.mbgi#7.fjmf.dlcl.lgac.nfkb.ehbj.gdhg.eicf.lamj.nkni.naea..",54],["cnlj.gfia.aenf.kbil.bajk.dbee.nden.hjbj.lmfa.khdc.dcmg.ichh.lifk.gmmg..",48],["dhdi.ldba.lfae.ggka.~1lfci.ccge.ifhf.bkhm.ebgm.naeb.nmkc.hkin.dljj.mjjn..",47],["iifa.jbhf.echh.eeja.dbdc.igej.fhbg.gcfa.ijcd.adbg..",34],["mdbh.kiej#10.fn.bgbe.jlmd.amk.khii.glfb#4.njme.glfa..chk.adnl.jang.dcci.cfhe",54],["~1bdik.bdia.cklj.ggaf.ibgj.lkel.jeic.fafd.hecj.fklc.bhha.gedh..",49],["babl.mjig.cdhf.iakm.cija.fjlh.gbid.lace.bmhe.kffe.gedd.hmlk.jkgc..",42],["~1jjfl.bigg.fdce.ihhi.kije.elgk.dhfg.dfaa.eakc.dchb.ablc.ljbk..",41],["hike.ebbd.ckgb.gkjj.jlgi.fhcl.blfi.adda.ecgf.ckja.lhdh.ieaf..",41],["Fjih.kbCm#7.aBml.Ligi.eEcb.MLfk.jgad.kgAc.dlik.fhce.fegm.dhdj.jbAh..",53],["fadk.faaje.jfhce.~1bfgdk..hcijk.dbke.gbiab.jciac.ekfid.dghhj.hgc.gieb",50],[".becah.~2deaggc.bdfebe.cfbcd.fhehg.fdaig.hedai.gagfh.dcbcif.iihiba",51],["fEdm.immj.mBbh.Gibc.jake#9.LEhf.hjcb.GDgd.cicl.kkeh.ALfi.dglf.aakj..",42],["igde.ifhe.jhjc.cbef.fajg.dhdc.adbf.gcbb.haia.jgie..",33],["djhm.ljee.hklg.idci.adih#7.jbgl.eeab.bkga.fflh.fkmc.bmk#9f.cjic.gdma#9..",48],["nccj.mkeg.fdgi.dhgm.jklk.fnaf.blmb.iakh.hald.~1ejfj.cmai.ibnd.nclg.ehbe..",50],["manj.fddj.hglh.bfji#5.kldj.kned.bakm.fie#10c.gnec.klba.mfbn.gchc.hili.maeg..",54],["hmda.jn.amhk.kfce.addb.fbgj.kgel.fjjl.dhmg.inga.ilcb.ciee.fnnl.bmh..ick",51],["gbkkd.djjgh.hfaif.hcedc.ihkia.jgbce.eakcb.egfdb.bffjd.jagka.heici..",56],["bibc.mjbc.ijhk.gkif.calm.ldkl.ajfb.efig.ahde.dggh.ekmc.fdhl.maej..",47],["jlgc.lnfi.nfka..ndch.edl.hlbj.diba.hajf.iea.kf.mkjc.mgim.cgen.edhb.gbmk",51],["fgegc.ihbjf.fickc.ibach.dbgkd.ahacb.adgfg.jjfae.hkdih.kjedk.ibeej..",52],["eabiac.afbch.ffbdg.bfceed.faddii..gacdbg.gcdeih.hgiafh#6.ceihbe.gh",51],["aahc.gfgi.ghbj.kahg.kdif.ibea.febe.cbck.hikj.ddej.cdfj..",35],["dafe.jmik.dhha.liag.gbkn#4.bnki.jman.ellh.becf.ckih.dnmb.jdge.lfmg.cjcf..",57],["klkg.aiji.feja.cbdf.kldj.giae.chhk.dmcc.gbne.lnfn.ambm.hbij.nefd.lhgm..",56],["hkie.mfef.kbjc.gldc.jlha.aled.lbgj.kbhc.jmgf.mgdf.eabi.amki.hidc..",46],["cmfc.akdl.lnal.iddb.efeb.eheb.kic..gbhm.jgi.kj.hndf.mihm.gjka.fgjn.lanc",48],[".chg.fch.elkc.lnhl.kdm.bngc.ikee#4.fjnh.famg.admd.jibb.ildj.faie.mgb#9j.kna",58],["baigaa.efgbg.fchihb.hhdde.acdih#4c.deaibb.dhfebi.gc..gfeifd.cfegac#6",46],["~2mckj.hkgm.kdaj.lemd.aefi.fbhe.mhig.fjgl.dfcd.kgba.jcni.nbae.cinh.nbll..",52],["gdhgbh.aefcac.eghbec.gbfbca.eiidgd.chfgci.ahibid.fbfdhe.difaea..",58],["hdhaeh.iddfcd.~1dcebac.ieaaah.fgfe.cebg.gghied.ibfgh.bacfib.gcfib.",52],["fbia.kchb..bfgg.j.bhjk.fiki.fckg.heaa.degc.edci.eda.djhj",37],["haEc.gjlf.LmNi.mcji.kclh.DgDc.enmh.Bfkb.ilaf.akdd.GbKf.gmAh.eJin.jenb..",53],[".hl.aeDb.aIDj.bgbc.Ghk#5h.Jlik.flf#4g.ceb#9.Cck.dhji.IEkf.Lajg.eafd",43],["iehj.gehi.jfbb.~1cdfi.lbel.adki.gdlk.gkfa.ahfl#10.jged.accj.hbck..",47],["fjli.Akmh.majc.gLhb.deKm.IfFk.fbha.cCgh.mJbi.gjki.lCla.eded.Gedb..",45],["fhjd.dmkg.mafm.kejb.glfi.elli.~1ebbh.dchd.gemf.biij.kkjc.lgah.acac..",48],["bdle.igle.hick.gjfi.ahee.dfdb.cblh#6.jlck.daha.kicg#6.fkja.bjg#6f..",41],["lbik.eajb.cEhj.FKld.eBgh.Hcab.eiKi.ljCd.ffjg.alkd.fiac.gDGh..",48],["iedkd.cakdi.fhJDg.ebakh.fHdhc.Kbjig.bcEca.Jgcgj.Kaibb.gejFf.IEahf..",49],["cagk.dkba#7.hnig.eakb.jcf.magd.ecik.hibd.bdn#4.jlg..lemn.fief.fhcj.mlmh.nlj",54],["iebh.fea.eaid.bijb.gicf.hbf.ahd.cch.gjae.cjdg.djgf.",33],["ikjd.mgdh.beec.djij.flch.eagk.bbag.mlfe.mkai.kfhb.ghcd.cllj.fima..",44],["hdhc.fkei.bjla.jail.bdch.gdke.hlid.ebgl.ibec.gafa#9.~2jkjf.ckgf#5..",46],["adfdhh.edgbca.cgihcd.ahgedb.ggcebe.ebbfid.fifiac.ahceha.ififbg..",51],["bh.gebl.fjhk.~1ciel.gam.algc.dhma.emfe..ilkd.kmja.bdf.icfb.hjij.gckd",51],["jmei.lkfl.alnb.bddd.cdgh.jegm.jhkn.igjh.mmne.fifk.ckac.bihc.lfan.gabe..",50],["ldhc.dbdi.ale.hlk.afdk.klhg.iebg.ik..jcbh.fbej.afgi.acej.gcfj",43],["ajdc.lcbi.dakh.ciag.ibjf.feea.kill.kcjd.gfeb.khjd.ebgh.lfgh..",40],["gfhi.bnfl.jcga.nndb.lmgc.iemi.hnke.lbdj.jdmd.igfe.kkhe.hjca.fkma.balc..",52],["glfn.ladk.amae.bmjd.begf.khcc.mbhh.iff#5k.ibed.cljm.jgnc.jdel.gian.hkni#4..",48],["ejhk.difg.ebea.aaih.hcej.kbik.cabk.hjff.gibc.dgdd.jcgf..",38],["jnfe.ghak.ihla..jfdb.lcn.mmic.fkcc.gnle.imjb.kghb.aidn.jdfa.em.deh.lbkg",51],["ibejk.EbaEc.dfcIf.gKdhf.Cfeib.hakig.jAcKh.kdgfb.GjDej.dhjac.aHgib..",47],[".egaie.dc.iggd#10k.ehjkg.cei#6k.bfbdh.ajfbd.ckcj.fidgf.hcabh.jbjai.ahkef",52],["IjFh.bDga..Gldh.ca.~2ceim.bhlk.jafa.keJg.KbFk.hi.elgf.bcid.jMme.clMd",56],["egikg.hbefh.jfieh.gjkdk.eccda.jfgib.bcaj#9d.fhaic.bdkc#8a.befhi.jkdga..",57],["cbme.mlng.cdlj.ncna.eing.gakf.damj.dfai.dgck.fmji.hfbj.~1bieh.elkk.bhlh..",52],["Cajad.efEhb.kBcif.dhbjc.IHEfi.kjdkf.Ikfgk.bhaga.bhIAe.dgjgj.Cdegc..",55],["dbkk.fgn.gaj.gina.bdhn.eamm.bdcc.khlf.imlb..fmkj.ilc.ciej.leaj.gfe.hdnh",58],["Ncfc.NMmk.iLhb.ghCg.eilk.bjdk.nbgj.mjEl.daIf.mdaf.haLa.efng.Hike.Bdjc..",58],["ihgg..gjii.gafe.ckeh.fcjc.djcb.eb.hbf.bkdi.fjda.akh.ekda",36],["gbml.hlnk.dgnj.fcme.dibe.mfch.bbin.klfl.kjai.imac.acnh.eggh.adek.jjdf..",46],["bebc.knmh.jkng.mfmj.alhg.agne..fld.fem.gcnj.idi.eckh.klbd.jlbd.iaf.ihac",59],["cbgd.ijca.jhfg.chdb.dmch.iemm.jiai.egeh.ljke.lfdm.fkfa.bbka.lglk..",46],["lefj.lhfk.djbf.kkjd.bbik.hada.glei.digj.hlbc.hgec.ceic.agaf..",43],[".jidb.fihf.lgch#7.glgj.hlek.jack.dagk.cdb.bfee.ai.fha.klij.edcb",42],["akkj.ehbi.egcf.djhl.faca.dldi.gkdb.ceef.blbc.jljf.iiag.khhg..",40],["cef.dAck.aaii.fhf.IeKc.gbbd.Jhke.Lgbj..gCil.Kjhj.lb.fGhd.Aeld",42],["imgk.alcj.ehbc.hdeb.fibn.fjmk.mbag.dfnl.jmek.nhlg.dgaa.cekn.dici.jlhf..",52],["gmgm.kbcn.dfif.jcd#6m.hakj.edal.jicg.keki.nlba.cbhj.nlhg.mede.ffbn.iahl..",54],["gkc.fjbg.eba.ihgb.dfkc.iacd..acef.kej.ahdj.ifhb.hdk.ijeg",40],["hcfdi.hiaec.iacfj.ckgid.ecfgk.gade.jkia.kgjhe.dbfa.bfbb.ebgjk.dhhj.",50],["fbba.~1lcga.aeg.edlg.jdkj.jgib.mham..hkhh.ikif.cebe.li.flmk.dfj.ccdm",45],[".dime.gf.bhgj.klhb.aaei.fleb.dalc.ledj.kmkj.mcc.ghbi.hca.dffm.jkig",43],["figei.cihfc.dgcje.kf.afjg.dbegk.ackef.hjhad.egac.aikjd.bbdbb..~2ihjkh",52],["laha.bhge.fjed.cikl.dfmj.gkaf.ljda.ecgi.bcmh.lbmi.jkbg.fdim.cehk..",53],["cfgcfg.ebiee.bgdbga.~1igcafd.hbafah.aagi..hecid.efbie.dhcibd.hdfhc",49],["kmej.alhb.Lcgl.hdka.Cgbl.ihga.icjm.dadm.FeFb.njen.kedf.HGIi.fCNn.Mkbj..",52],["fjig.bkgf.anld.cchd.ehn#6e.kdke.ahbm.iakj.hdjl.mmci.ngfb.gaje.lnlc.mbif..",53],["ll#4a.hcjh.daak.jih#8d.~1febb.ade..cgi.bghl.ekik.iglf.bdej.fckc.fgj",41],["bdac.igai.kdck.iaeg.chij.hbje.hdgf.adjc.hfff.gbbe.kjke..",37],["dHfm.idcc.Iajb.gBak.klcb.gjij.cDHe.mNbh.eflk.Glel.ifGa.kehn.nmMj.dAfn..",50],["gmce.anlj.lnfh.dfjk.ajkh.igh#8b.gmja#7.iefd.mfie.eacl.kblb.ikcn.chgd.mdnb..",54],["~1ejld.igbh.jiFd.ihkf.bgKg.MGmb.dfCc.aBmd.lcai.acHe.kJha.klej.mfEl..",56],["ibhbgg.efhgec.dbgabh.bhfefd.igdhbf.agfiad.cdieec.iccaie.adcafh..",53],["f.kagf.dllb.jhcm.hdl.ccmi.fjgm.iaae#9.deib.~2fgdk..eijb.mkhh.glcj.kbea#6",41],["jmlm.efgi.efdb.fahg.kem#6c.hdjj.glbc.fiki.mhcl.kjak.blda.ciea#4.hgbd..",46],["ggkb.efif.ieeb.ek..jkcl.ckig.lail.hbf.ddah.dhcf.lha.jjcd.bgja",36],["ehchh#9e.cbhgbf.aicecf.debbdc.bdghgi.dbagfi.dhaaci#10.afeage.ifigdf..",47],["jbjj.fgha.lced.balk.caeh.en..gmmh.cke#5k.bmf.fdb.gihn.ndmc.gnlj.iiad.fkil",55],["gjie.gfik.ekfk.fibb.gchd.fbdj.hjji.caha.abhk.ecae.cdgd..",39],["ehke.jnif.ngmi.afnn.ljmm#9.ccjh.jdge.bdce.~1bgcd.akaa.fkhl.diml.bfli.hbkg..",51],["~2fbbcih.ibdadg.igffba.ecgbfh.fdbaae.aceige.cgcdgi.edchih.fhdhae..",52],["bfada.kjfej.ikdbh.cidca.ibedk.chhgi.gijgj.fhdfe.afcke.bcjab.hkgeg..",54],["fdb.~1hkcn.afaj.gebf.mcki.mcbj.ieh.mhd..nnkg.kiml.fgjg.hld.ebca.dinj.eall",48],["eiba.fkgh.lhae.bgij.kljk.cdel.afce.~1lbfd.kchb.fjgh.igij.cdad..",45],["~1gafebd.cegehf.iacdih.cfhdcg.bifdbe.hfbdhi.aibaca.fiegcd.eggabh..",50],["jlik.bgad.~1cadl.ifel.dfdf.jhej.aghe.bbhj.kgke.gcic.kalc.ihbf..",49],["cjah.jlbl.bdbe.bmhh.minf.acai.gfkj.jdeg.lfch..fikm.kd.egnn.mk.lced.igan",50],[".bHiah.hAfga.aec.hebAg.kjDdh.dkck.dcgd.Cjbjf.GKibe.fIiek.jCfg.bifEj",54],["kgfi.bjc.kdhg..dheb.dai.gjgh.jec.beia.ahf.cckf.ekdf.biaj",37],["ibkm.jclb.nakb.gglj.edca.aejh.egll.hidf.cnjb.kmie.fmnf.kmdh.nich#3.fgda..",52],["jein.fcba.heih.libg.ngkl.ndaf.mgcl.caib.hdfk.fjcj.eamd.hmgn.kkld.ebmj..",59],["lDac.madg.DBDh.ekNe.jkCf.kceh.nmig.Lijj.hBbl.inMb.gafh.fimj.lnfg#7.kcEa..",52],["dHmm.bgih.Clea.iFdf.HFLb.kebc.Eakg.ijji.CMej.ladc.lbmg.kadg.kjhf..",44],["adkch.icdia.jkejg.~1kgfij.ejikg.adcfh.efgah.chffa.kgbbh.dcbbi.bjeed..",49],["gjik.hljn.glmb.kcef.bkia.nmgf.aafe.cdbc.jbnc.lije.~1hdfi.mmal.ehkd.nghd..",47],["nlkk.ahdf.ijbb.ncgh.jmkd.dhkh.jdf#10e.lajf.mlec.mcga.gcia.eigb.fmne.lbni..",51],["ckFm#6.KDeh.AFac.jebf.Jcac.idmg.Bmhj.egla.hbbi.lDjd.iLki.mfhg.kelg..",46],["jcdb.bjin.bljk.njgh.amcf.efmi.gdai.~1efhb.ihea.lmcn.gekh.kadl.dkln.gmfc..",51],["hfdg.bgij.fhjc.dgac.dbei.iiae.aghd.aebh.cffe.cbjj..",31],["gcbf.egjd#7.lkbd.dhl#4i.giek.bdga.clhj.bjac.cafe.khie.fkli.jafh..",43],["mjib.acfd.kag.hmh.jgcl.~1njje.gaid.ebmf.igb.eemi.cnkf.dlk.ancf.dblh..khnl",49],["eccm.jjbd.mkja.cgki.bflh.gma.fdhi.hfd.eik.jlgl.chdl.kbea.mbfe..gia",47],["cfikb.aeije.jfgk.cbfbf..da.eicki.hgbah.dcfbh.ajjg#7.ejkhc.adgik.ehgdd#6",54],["ldbl.jkhi.biae.cdfa.klkh.~1hgfg.fdbc.fjii.ecba.egkl.jcgh.adje..",41],["fdmh.ilgh.jaga.ifeg.egmc.lhim.dklj.lcba.cjfm.chki.ajbb.kbfk.edde..",47],["gcje.dhie.bhbk.elaf.ejfa.glfc.hbad.fhkj.iiad.bklc.igck.gjdl..",46],["jdDg.idbg.hmhg.DMce.echk.Bmje.kcbc.jgbf.ljFi.faAl.lLai.MIka.khfe..",43],["bdJg.fgae.~2cijf.IaLk.Kehf.legh.lBCh.lDDk.bjdb.aihc.jeFg.akic..",46],["ddk.bjci.cech..ejhf.cjdf.igb.faka.gbd.fiba.ajhe.hkgg.kie",36],["dkch.kadh.iamm.lkng.gemd.bjgd.cfnb.ffjl.aclf.hebh.ckia.nbei.jjeg.niml..",48],["gbcaei.iheiha.~1fgdege.haifhb.acbafg.bdcegf.ifidfh.dgacdb.ebcdhc..",55],["la#3j.gkfd.djf..mf.dgad.hbea.ehmb.bhca.mejk.mgli.kiik.cieh.lbcc.jlfg",48],["djbc.cnk.leeg.kjdi.mAi#3a.Imh.acfn.nlbk..dmhj.effh.dbme.HAFl.LKi.cBg.GnGj",49],["gbfjd.dghhg.hdkfg.bhhaj.bjick.bakci.icefe.cakej.fiiaf.dedge.abkcj..",53],["bhhe.anlj.DbMe.gJCl.dknc.fBmg.eina#4.kfeg.dBhm.FCfa.liKc.mgih.kinj.alDj..",48],["fdhh.mcjg.hbjc.fedk.hbmf.eagf.ikja.lldk.badi.emec.kclm#4.ligg.baij..",45],["kech.bajd.imee.fajj.ibhi.hagb.dmfh.iljg.lkme.aggk.mfcf.lcld.kcdb..",46],["mjdc.gkbg.kica.leci.dkbe.hdmj.mahh.aejl.amfd.lghc.ljbk#10.fei#5i.fbg#10f..",48],["cghd.bcae.hdif.ibfh.chef.eiab.abgf.edia.gcdg..",33],["chai.diakj..dggie.agkka.hggde.jhbb.ifbhf.jbkci.ejeac.fjhek.fdbd.cfc",50],["facf.beci.dldb.hkag.ciab.lgil.jkhj.eedh.fjik.ggec.kjad.flhb..",43],["hfBad.gBed.ddHafc.ieAe.baebe.afihgi.iCGHef.icbIhc.bfAgcg..chFdgd",50],["kjhgd.kbfgc.akfcf.jghfi.bieji..dhkh.ejebc.adaa.jcha.kid.igbdb.cgfee",51],["ckgk.bkli.fhib.eehh.aedj.dcjf.lcgf.jlad.aiha.jgib.~2kflb.decg..",39],["bifi.ma.~1lhab.kmil.fhbl.elma..cck.fddg.fkjb.jmc.gjhk.edde.gjah.icge",47],["maJi.LlMc.aIBk.madc.afdi.lBek.hgdf.kHje.cgfb.jGBh#7.cfdm.gike.eljh#4..",50],["fhkb.efk.hceg.innj.bbcm.gcdd#3..aegi.bgae#5.ll.mnim.cdkh.hja.ijmf.~2kjld.anlf",44],["gkaai.hkidf.ejhaj.dfdjc.fbbjg.ckcei.abjeh.heckb.hbdfa.giggd.fckei..",52],["hihk.jffb.iajb.deea.ecgi.eifb.jkdc.hdjg.gafd.khag.kcbc..",40],["aggEbg.cfddbh.cBCigi.gaFefd.hdAeCi.baaehd.ifDaIh.iCfbgf.hBeche..",51],["aefe..cmc.nej.fcjn.fgi.kdkh.amf.ihla.gkhl.eggi.jabl.cmdk.dhbn.bnim.bdlj",55],["iiae.mhb.dflj.ggjh.lif.gcki.jecm.nfbn.deb.akb#6d.jnka.mhal..ecml.ndk#10.cghf",50],["kdnh.emal.dinm.fdim.lccg.ania.kiem.fccd.gnjk.fjlg.blkb#7.fbah.hjgb.ehej..",52],["jeme.aHJl.kdBn.kdhk.inkb.lafh.IGeb.fCma.Acji..nf.Clh.bgjg.nced.lGi.Fmdm",55],["dakd.leei.magd.jlfk.mcba.abkj.ickc.fhli.dnne.hifg.gcfh.gnbb.jmnh.lemj..",54],["ejidb.efdbg.eiggb.~1dgkdb.ahhjc.ckghe.jijhf.kafcc.akied.iacja.fhbkf..",49],["Mhjn.IfHk.Enbd.dLGi.fgda.mbgf.ifmm.Ejkn.Eich.akLb.eban.khjd.alcc.Lcjg..",50],["~2liia.lHdf.bmab.Nfhn.jiDi.kfHb.egmk.eFcb.gmhk.LMAk.jeGn.cjlc.ddcn.jEag..",53],["jcdg.bgbg.hhdk.jhia.iafj.bfgc.iiek.deec.dajk.hfbc.fkae..",40],["eafaid.bccfcb.gihf.ahacg.dhae.biedef.fihbig.adfeg.edgbhc.cgidbh.",50],["km.Lejg.ilbg.hKdj..bDCe.kfj.ldig.BAfa.egdc.mfia.Hmba.fhKe.Mlic.chj",48],["feka.cbkj#3.hbia.glen.efkj.ilbn.fbcd.jgdn.madh.hiej.lami.dggk.~1mhml.ncfc..",49],["kfke.cjag.gjlb.ldhc.hjli.fbhf.~1blig.eabc.kcgi.ekda.idah.fjed..",40],["eidk.ieFm.aHl.~1baen.nfka.agi.gbfl.MbDj.ccjd.chmh.bfNd.KjNl..Hgle.jCGm.ki",49],["jedh.mafi.ljfc.kkai.ldcl.jmdm.gleb.cgjk.bigf.ebed.gchk.mifa.hbah..",49],["cfbacf.gidbbg.dehffi.eeaiaa.ebgihc.haedeh.gcfchc.digdba.~1fhgdib..",49],["khgh.ancc.damh.lfgk.fmcb.mhnd.ndge.fjkb.dina#5.mjfj.ckei.gial.lieb.blje..",59],["hicbg.kckab.beage.jfdia.dheej.jffkh.jgcdf.kgkid.hefab.digah.~1cijbc..",54],["ghij.ihjg.adfg.cebc.afcb.bjca.eihg.aide.bhfd.jfed..",37],["djal.Kfc#8k.jdia.DlGe.dAmb.gEgl.cgm#7h.fhei.HkIm.Cmli.fbcf.jjha.bbEk..",46],["igeg.mhcd.ldbh.lcgh.jmkl.eklf.eaji.mabb.jagk.bkma.chfd.fifd.ecji..",53],["eg.hffc.jbhe.ibmi.kjda.jhg.cbd.iill.lead.flag.hfme.bgcm.dkak..kmjc",46],["kdc.kha.geci.dfdf.hcgl..jlal.akbk.lab.eibi.jhfg.bjh.fiec.jdeg",42],["afbbch.eichCf.fhgEGd.icfFec.fidGBa.edaahg.ChIDea.ghibBe.aidbdg..",52],["edfahb.dccghf.ccefig.gfehdd.aiibai.cbebfb.adieia.cghedg.agbhfh..",59],["gdice.hcagdg.iebif.ghaacf.fhiege.ghbead.fcbecd..hdc#3a.fdbia#9b.hfbi",59],["land.jckm.h.dgbf.fklb.behe.ien.kjfm.gfcn..gdaj.mccg.alij.hkme.bdni.hila",49],["kaejd.idfd.hfgih.affe#4k.jdgce.kdjb.ibcbg..haehc.gfkck.bje#8.bcgh.iijaa",52],["gggf.aike.ckag.kicb.ajjh.ceih.dbfh.babd.djfc.iefh.dkej..",38],["ifbfGh.deAbea.DaebFc.DdIgef.igdgac.hIhbCe.fhccFg.eGbadh.hiciba..",54],["geKi.KEdd.nmng.cFlc.lmdb.FAjh.lekk.nbma.Bjme.ichl.Anba.Ijih.gjdh.Cfgf..",48],["gddbic.egigfb.icdbch..eaf.ihicf.fcfae.cdhagd.ahgef.ebabeh.dbagih",55],["fdki.ldbl.hFhc.dEEa.cgjl.JJcf.IDaj.abKg.elFi.bhkg.aieb.gkch..",42],["ahee.idel.~2ndfb.hbca#6.jadn.nemf.bmhg.fbgd.lgig.jmkc.aklf.jmli.kcki.chjn..",53],["Gcdhbi.ihccHe.Adaedc.gfihfg.BdaFai.iedeff.dBECgb.cheaai.bgfBGh..",54],["ceii.akfk.cchf.aaml.bgln.hecd.gigj.mljd.bglj.debd.nmem.haif.nbjf.kknh..",47],["fjkm.nmcd..jed.hecj.~2binl.dfe.nimb.gaaj.hae.fanm.bkib.ckkl.dghc.fll.ghig",51],["BAKl.Bigm.flgj.~2dmng.hicm.ffge.jlan.dEnm.hbke.Lcii.cjka.Ndhj.Cbdf.EaHk..",47],["cchd.kcgj.bagj.akid.bfgi.bee.hfej.kfd.cgfb.aki..ahhj.die",39],["jhcce.dfajf.bbhIb..jGceg.Jkck.fAibh.hk.DgeJd.ibgah.ageFi.iKdCk.aEdf",50],["kfdb.acch.bldf.gjae.chii.mheg.bni#7e.dagd.gimf.ckhk.kjnm#6.~2nalf.lljm.enjb..",50],["gfib.alka.kgkb.dfbe.ihjl.~2ibga.dche.hflj.aejk.gjcl.fidc.dech..",46],["~1cdif.ehf.embh.cmlj.mgc.aeab.jigj.gig.klbl.fakk.ddim.fhk..lhbd.aejc",48],["eeh.bifc.kljk.kccj.dhfk.ianm.ejnh.ifda.bbja.nbmg.mgdn..ehgd.cgam.f.lill",56],["gehki.GidAb.jabed.kiHfi.gbJfh.cghdc.gKcAc.Dfdaj.ijefc.FkAke.ebHjb..",52],["mgaf.kadd.aeja.idnm.nlkh.gdbc.ibfe.gmjg.hlbn.kflc.~1ehbk.hemn.ijci.jlfc..",55],["klbc.anmd.jech.dafg.leeg.fmnj.hind.kjaa.mlki.nibj.mfbi.eckf.glhh.cgbd..",46],["cebh.eeaf.icek.jick.gall.jhj.aklh.bgk..bdf.dhda.fdg.~1bjgf.clii",41],[".kfig.bjha.ifge.ahci.kbjc.gdb.achj.iafd.ehee.kdgb.kfjd.c",39],["lafd.jmf.bha.kijh.dbee.jkc.cljg.~2egif.kdcd.maeh..fiil.bglb.cha.mgkm",54],["icka.fabg.kjbe.hhb#10d.jgli.ilak#9.iagh.lekc.jcje.hfdl.edb#8f.cfdg..",52],["Kdil.hdFc.Fkld.ihAk.iaCj.kfa.~1hlbj.JhLe.fbe.gej.ggIb..cbg.ecDa",45],["hbdhaf.hidgfd.gabfea.iifbdi.egchbd.dcbabc.cicfge.ecgafe.aegihh..",52],["Djad.cLdc.jAgk.dkLh.fcLh.KhFi.bieh.bjie.bakc.gGel.Jeif.fbag..",45],["lacb.dicc.ekdm.fhib.admf.ngab.kden.lnfi.lfjg.gnjc.bemk.ejgk.hjma.ilhh..",47],["Cbnk.hDBi.Fnef.cDgb.mgLf.Eaaj.hjdi.cLnl.dijm.hcki.Gmek.nhAb.lfem.jagk..",47],["dfkm.dmkh.aklk.lcbi.jhji.cacm.jime.ffgl.aegb.hbce.aljb.fhgi.dedg..",50],["ckfid.fadbg.kahid.caceb.ghjjh.kjbgi.jgcke.iedjh.gfabi.bfekf.dchea..",51],["fkak.idf.caih.kcgb.gbch..eah.jbdc.jjg.dkhe.agfi.ebef.dji",38],["kjgjk.cdkac.idabf.~1bghgk.hfgjd.cceda.iefjh.ijhab.kbebd.ahfec.fegii..",59],["ihkl.ding.hjlj.khc.flak.abgn.hfmg.afbl..edn.mgce.dcmi.kje.fda.ibnc.mjbe",54],["imgg.hdnc.bcfj.enfg.denl.cjal.llej.khim.aedk.iadm.hakb.mkj#10f.icbn.ghbf..",47],["kgfa.ai.dkml.bhch.eglj.flcg.dmej.fghm.ije.bac..abdk.cibi.dmhl.kfej",51],["ani#8j.kmhf.gdki.ih.lijb.llb.cnma.jhne.efnd.cgde.afjm.mkfe.gbcg.kbd#7h.acl.",59],["jCKk.FbLe.fjbe.kkAh.geia.lbdh.ahgd.Iccf.hgfc.Bgai.lJji.edLd..",37],["fbn.giei.nmjm.akh#4.lccg.gdja.lani.fbgm.dkca.ef.eklb#4.dkmf.jdcn.behh..lijh",54],["ckgj.dgmb.fkjb.adff.leel.ieml.jchd.fahj.lgmg.dkkh.acai.bcbi.emih..",47],["bacm.ahfj.adfm.jmfh.iebe.fkek.mdld.igcl.akde.kbih.clgj.gjib.gclh..",51],["akek.kjah.fagi.gchh.igdh.ebcb.jbji.eicf.djde.kfdf.acbg..",38],["fhfc.fgch.alkd.nnhd.mmie.iegl.~1ekca.cbaj.mlnh.lijj.dngb.ikeg.kfma.dbjb..",48],["klgn.aemh.flhf.cjgf.nmnj.dabe.bcad.fbam.ilih.hjlb.kddk.gnjc.imie.cgke..",48],["emgd.jiae.hmdj.ijlf.aekb.clac.bblc.figb.lkdj.kggf#5.hmde.fhai.hckm..",45],["mdgj.bcnd.jimi.gkji.kfnm.gelf.abeg.amhc.bklc.calk.ehnf.ejaf.lhbd.dhni..",49],["diak.ijkl.dbeh.fkdb.a..iegk.ccj.abij.eaff.hlgl.hlcf.dehb.jggc",39],["ed.ijcd.egmc.~1mili.fkfb..mmbl.igh.ajda.kkh.fchg.jalj.dcge.ehla.bkbf",48],["IkcEf.dkdjc.HGCje.bjgAe.gebik.bbfHg.kfheh.ijjbk.diAgi.daaha.cFdFc..",55],["ifka.Efak.iLb.LnEa.mCfe.iDHl.jdgm.adcn.nggg..hbc.jehf.Hji.Kcm.bdjk.mBln",51],["ka.fgkb.ceaf.akcl.ihgh.alf#7j.jfc.eke.ebgg.cbdd.dbih.lijj..ldih",40],["eagf.hiah.bejj.bjcb.iigk.dffc.cdkg.ahde.idek.jbkh.gfca..",38],["hja.laji.dahh.idgk..fcea.jgbc.kkfb.bkgf.ifj.dee.lghi.dcl.lebc",46],["lbna.gKNe.eale.Dbmg.HKJf.hhja.kfcj.Mifm.ifbd.GGDc.llki.njme.icac.dbnh..",53],["Jegi.ckbg.ffhm.dkai.Dcel.JeMc.Lhba.glgi.hjCa.lmdj.iKBe.dhbm.fkFa..",47],["cek.ijca.gfce.~2lhjj.fbjl.emhl..aal.fhfi.mddb.ebig.diak.dckg.gb.hmkm",42],["~1bhjl.mhff.mCGk.ilAf.gjfm.adcb.cmjd.gIkj.eiEl.heHk.clKd.beGb.diAa..",50],["kdjl.hkem.jgia.bjf.bla#7f.ead.kdhf.lke#10g.ncin.dchg.bf.eicm.jnci.aglb.mhnm.",52],["gnfd.dkie#6.mbjj.fibe.chne.agmk.kdmd.lbgc#9.clli.nfah.ljec.ifja.mhgh.abkn..",59],["ibckb.bcggi.aedab.hfeck.jiaab.gdefg.ejgkk.achdi.ikfhh.hfjdf.ejdcj..",50],["kmlf.dmjm.jfhc.eelk.jbck.anib.hnni.glcd.fjig.kghm.cdif.bgaa.aebd.enhl..",56],["gcab.ceai.aehi.difb.fcgf.gedd.igah.fhhb.dceb..",32]]/*BANKEND*/);
+</script>
+<script>
+/* Perch Pals art: every bird, tree and scene is drawn in code on a canvas (no image files).
+   Birds: round, chubby, each colour its own species with its own marking (crest, spots, curl, stripes, mask, streamers,
+   fan crest, spectacles, bow, ear tufts, cap, brow, rosy cheeks, wing bar) and beak colour, so they are easy to tell
+   apart without colour too. Origin of a bird = the middle of its feet; size s = the space one bird takes on a branch. */
+var PA = (function () {
+  'use strict';
+  // body, dark (wing/tail), belly, beak, name
+  var SP = [
+    ['#e8394a', '#a71d2e', '#ff9a9a', '#ffb21e', 'Ruby'],
+    ['#ff8a1e', '#c25a00', '#ffd9a8', '#5a3210', 'Marigold'],
+    ['#ffd21e', '#c99c00', '#fff5b8', '#ff7a1e', 'Sunny'],
+    ['#8fdc3a', '#4f9a14', '#e4ffc6', '#3d4a1a', 'Pip'],
+    ['#1f9e57', '#0d6635', '#9be6ba', '#ffd21e', 'Fern'],
+    ['#22c7d6', '#0b8592', '#c4f8fc', '#ff7a1e', 'Lagoon'],
+    ['#2f6ef0', '#1a43a8', '#eef3ff', '#2a2f3d', 'Bluebell'],
+    ['#8a4ae8', '#5a24a8', '#dcc8ff', '#ffd21e', 'Plum'],
+    ['#ff6fbf', '#c2338a', '#ffd6ec', '#e8394a', 'Rosie'],
+    ['#9a6234', '#5e3615', '#e8c79e', '#ffd21e', 'Cocoa'],
+    ['#a4abb8', '#6b7280', '#f1f3f7', '#24272e', 'Pebble'],
+    ['#263a8a', '#121f55', '#a9b9ff', '#ffd21e', 'Midnight'],
+    ['#f7f8fb', '#c3c8d4', '#ffffff', '#ff7a1e', 'Snowy'],
+    ['#2c2d36', '#121318', '#5c5f73', '#ffcf2a', 'Coal']
+  ];
+  var SLEEPY = ['#a9b2c4', '#7d879c', '#d7dce6', '#c9a87a'];
+  function lighten(hex, k) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return 'rgb(' + Math.round(r + (255 - r) * k) + ',' + Math.round(g + (255 - g) * k) + ',' + Math.round(b + (255 - b) * k) + ')'; }
+
+  // ---------------- colour symbols (Settings: Colour symbols) ----------------
+  function symbol(x, c, sx, sy, s) {
+    x.save(); x.translate(sx, sy); x.fillStyle = 'rgba(255,255,255,.95)'; x.strokeStyle = 'rgba(0,0,0,.55)'; x.lineWidth = s * 0.1; x.lineJoin = 'round'; x.beginPath();
+    var k = c % 14, i;
+    if (k === 0) x.arc(0, 0, s * 0.3, 0, Math.PI * 2);
+    else if (k === 1) x.rect(-s * 0.26, -s * 0.26, s * 0.52, s * 0.52);
+    else if (k === 2) { x.moveTo(0, -s * 0.34); x.lineTo(s * 0.32, s * 0.24); x.lineTo(-s * 0.32, s * 0.24); x.closePath(); }
+    else if (k === 3) { x.moveTo(0, -s * 0.36); x.lineTo(s * 0.3, 0); x.lineTo(0, s * 0.36); x.lineTo(-s * 0.3, 0); x.closePath(); }
+    else if (k === 4) for (i = 0; i < 10; i++) { var a = i / 10 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? s * 0.15 : s * 0.36; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    else if (k === 5) { x.moveTo(-s * 0.1, -s * 0.32); x.lineTo(s * 0.1, -s * 0.32); x.lineTo(s * 0.1, -s * 0.1); x.lineTo(s * 0.32, -s * 0.1); x.lineTo(s * 0.32, s * 0.1); x.lineTo(s * 0.1, s * 0.1); x.lineTo(s * 0.1, s * 0.32);
+      x.lineTo(-s * 0.1, s * 0.32); x.lineTo(-s * 0.1, s * 0.1); x.lineTo(-s * 0.32, s * 0.1); x.lineTo(-s * 0.32, -s * 0.1); x.lineTo(-s * 0.1, -s * 0.1); x.closePath(); }
+    else if (k === 6) x.ellipse(0, 0, s * 0.36, s * 0.18, 0, 0, Math.PI * 2);
+    else if (k === 7) for (i = 0; i < 6; i++) { var a2 = i / 6 * Math.PI * 2; x.lineTo(Math.cos(a2) * s * 0.32, Math.sin(a2) * s * 0.32); }
+    else if (k === 8) { x.moveTo(0, s * 0.3); x.bezierCurveTo(-s * 0.5, -s * 0.05, -s * 0.2, -s * 0.42, 0, -s * 0.14); x.bezierCurveTo(s * 0.2, -s * 0.42, s * 0.5, -s * 0.05, 0, s * 0.3); }
+    else if (k === 9) { x.moveTo(-s * 0.32, s * 0.26); x.lineTo(s * 0.32, -s * 0.26); x.lineTo(s * 0.32, s * 0.26); x.closePath(); }
+    else if (k === 10) { x.arc(0, 0, s * 0.32, 0, Math.PI * 2); x.moveTo(s * 0.14, 0); x.arc(0, 0, s * 0.14, 0, Math.PI * 2, true); }
+    else if (k === 11) { x.moveTo(-s * 0.32, s * 0.2); x.lineTo(-s * 0.32, -s * 0.2); x.lineTo(-s * 0.12, 0); x.lineTo(0, -s * 0.3); x.lineTo(s * 0.12, 0); x.lineTo(s * 0.32, -s * 0.2); x.lineTo(s * 0.32, s * 0.2); x.closePath(); }
+    else if (k === 12) { var d = s * 0.1, e = s * 0.3; x.moveTo(-e, -e + d); x.lineTo(-e + d, -e); x.lineTo(0, -d); x.lineTo(e - d, -e); x.lineTo(e, -e + d); x.lineTo(d, 0); x.lineTo(e, e - d); x.lineTo(e - d, e); x.lineTo(0, d); x.lineTo(-e + d, e); x.lineTo(-e, e - d); x.lineTo(-d, 0); x.closePath(); }
+    else { x.arc(0, 0, s * 0.32, Math.PI * 0.35, Math.PI * 1.65); x.arc(s * 0.12, 0, s * 0.26, Math.PI * 1.55, Math.PI * 0.45, true); x.closePath(); }
+    x.fill('evenodd'); x.stroke(); x.restore();
+  }
+
+  // ---------------- a bird ----------------
+  // o: face (1 right / -1 left), blink (0 open .. 1 shut), tilt (rad), hop (0..1 lift), flap (wing angle, flying),
+  //    fly (true: legs tucked), sleepy (grey, nightcap, zzz), wake (0..1: sleepy -> colour), sym (draw colour symbol),
+  //    glow (selected), happy (closed smiling eyes), alpha, t (seconds, for the zzz)
+  function bird(x, px, py, s, c, o) {
+    o = o || {};
+    var sp = SP[c % SP.length], sleepy = !!o.sleepy, wake = o.wake || 0;
+    x.save(); x.translate(px, py - (o.hop || 0) * s * 0.32);
+    if (o.alpha != null) x.globalAlpha = o.alpha;
+    if (o.face < 0) x.scale(-1, 1);
+    x.scale(s, s);
+    if (o.tilt) { x.translate(0, -0.45); x.rotate(o.tilt); x.translate(0, 0.45); }
+    x.lineJoin = 'round'; x.lineCap = 'round';
+    // shadow under the selected bird
+    if (o.glow) { x.save(); x.shadowColor = 'rgba(255,255,255,.95)'; x.shadowBlur = 18 * s / 40; x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(0, -0.45, 0.5, 0.47, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+    if (sleepy && wake < 1) {
+      drawBody(x, SLEEPY, -1, o, true);
+      if (wake > 0) { x.globalAlpha *= wake; drawBody(x, sp, c, o, false); }
+    } else drawBody(x, sp, c, o, false);
+    x.restore();
+    if (o.sym && !(sleepy && wake < 0.5)) symbol(x, c, px + (o.face < 0 ? -0.06 : 0.06) * s, py - (o.hop || 0) * s * 0.32 - s * 0.36, s * 0.42);
+    if (sleepy && wake < 0.3 && o.t != null) { // zzz
+      x.save(); x.fillStyle = 'rgba(255,255,255,.95)'; x.strokeStyle = 'rgba(40,50,80,.55)'; x.lineWidth = Math.max(1, s * 0.03);
+      x.font = '800 ' + Math.round(s * 0.24) + 'px ui-rounded, -apple-system, system-ui, sans-serif'; x.textAlign = 'center';
+      for (var z = 0; z < 2; z++) { var ph = (o.t * 0.6 + z * 0.5) % 1, zx = px + (o.face < 0 ? -1 : 1) * s * (0.18 + ph * 0.25), zy = py - s * (0.95 + ph * 0.45);
+        x.globalAlpha = Math.sin(ph * Math.PI) * 0.9; x.strokeText('z', zx, zy); x.fillText('z', zx, zy); }
+      x.restore();
+    }
+  }
+  function drawBody(x, sp, c, o, sleepy) {
+    var body = sp[0], dark = sp[1], belly = sp[2], beak = sp[3], fly = !!o.fly;
+    // feet
+    if (!fly) { x.strokeStyle = sleepy ? '#8a8f9c' : '#e08a2a'; x.lineWidth = 0.055; x.beginPath(); x.moveTo(-0.08, -0.1); x.lineTo(-0.1, 0.02); x.moveTo(0.08, -0.1); x.lineTo(0.1, 0.02);
+      x.moveTo(-0.17, 0.02); x.lineTo(-0.02, 0.02); x.moveTo(0.03, 0.02); x.lineTo(0.18, 0.02); x.stroke(); }
+    else { x.strokeStyle = '#e08a2a'; x.lineWidth = 0.05; x.beginPath(); x.moveTo(-0.12, -0.12); x.lineTo(-0.22, -0.06); x.moveTo(-0.02, -0.12); x.lineTo(-0.12, -0.04); x.stroke(); }
+    // tail
+    x.fillStyle = dark; x.beginPath();
+    if (c === 5) { x.moveTo(-0.3, -0.42); x.quadraticCurveTo(-0.62, -0.42, -0.82, -0.16); x.quadraticCurveTo(-0.6, -0.34, -0.36, -0.32); x.closePath();
+      x.moveTo(-0.3, -0.38); x.quadraticCurveTo(-0.58, -0.28, -0.72, -0.02); x.quadraticCurveTo(-0.55, -0.24, -0.32, -0.28); x.closePath(); }
+    else if (c === 13) { x.moveTo(-0.3, -0.46); x.lineTo(-0.66, -0.36); x.lineTo(-0.62, -0.2); x.lineTo(-0.3, -0.28); x.closePath(); }
+    else { x.moveTo(-0.3, -0.5); x.quadraticCurveTo(-0.6, -0.62, -0.66, -0.48); x.quadraticCurveTo(-0.6, -0.34, -0.3, -0.3); x.closePath(); }
+    x.fill();
+    // body
+    var g = x.createRadialGradient(-0.12, -0.66, 0.05, 0, -0.45, 0.5);
+    g.addColorStop(0, lighten(body, 0.35)); g.addColorStop(0.55, body); g.addColorStop(1, dark);
+    x.fillStyle = g; x.beginPath(); x.ellipse(0, -0.45, 0.42 * (1 + (o.squash || 0) * 0.08), 0.41 * (1 - (o.squash || 0) * 0.08), 0, 0, Math.PI * 2); x.fill();
+    if (c === 12 && !sleepy) { x.strokeStyle = 'rgba(80,90,110,.45)'; x.lineWidth = 0.03; x.stroke(); }
+    if (c === 13 && !sleepy) { x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 0.035; x.stroke(); }
+    // belly
+    x.fillStyle = belly; x.beginPath(); x.ellipse(0.12, -0.33, 0.25, 0.22, -0.2, 0, Math.PI * 2); x.fill();
+    if (!sleepy) marks(x, c, sp, 'body', o);
+    // wing (flaps when flying)
+    x.save(); x.translate(-0.04, -0.5); x.rotate(fly ? -(o.flap || 0) * 1.1 : (o.fluff || 0) * 0.15);
+    x.fillStyle = dark; x.beginPath(); x.ellipse(-0.1, 0.06, 0.24, 0.15, 0.35, 0, Math.PI * 2); x.fill();
+    if (c === 13 && !sleepy) { x.strokeStyle = '#ffffff'; x.lineWidth = 0.04; x.beginPath(); x.moveTo(-0.26, 0.05); x.lineTo(0.06, 0.12); x.stroke(); }
+    x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 0.025; x.beginPath(); x.moveTo(-0.2, 0.1); x.lineTo(-0.05, 0.14); x.moveTo(-0.22, 0.02); x.lineTo(-0.04, 0.08); x.stroke();
+    x.restore();
+    // beak
+    x.fillStyle = sleepy ? SLEEPY[3] : beak; x.beginPath();
+    if (c === 13) { x.moveTo(0.33, -0.6); x.lineTo(0.58, -0.53); x.lineTo(0.33, -0.48); }
+    else { x.moveTo(0.34, -0.6); x.lineTo(0.5, -0.54); x.lineTo(0.34, -0.47); }
+    x.closePath(); x.fill(); x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 0.02; x.stroke();
+    // eye
+    var ex = 0.17, ey = -0.62;
+    if (!sleepy && c === 7) { x.strokeStyle = '#ffffff'; x.lineWidth = 0.035; x.beginPath(); x.arc(ex, ey, 0.11, 0, Math.PI * 2); x.stroke(); }
+    if (!sleepy && c === 4) { x.fillStyle = '#0a3d20'; x.beginPath(); x.moveTo(-0.05, -0.68); x.quadraticCurveTo(0.17, -0.74, 0.36, -0.64); x.lineTo(0.36, -0.56); x.quadraticCurveTo(0.17, -0.6, -0.05, -0.58); x.closePath(); x.fill(); }
+    if (!sleepy && c === 13) { x.fillStyle = '#ffcf2a'; x.beginPath(); x.arc(ex, ey, 0.095, 0, Math.PI * 2); x.fill(); }
+    var shut = sleepy ? 1 : Math.max(o.blink || 0, o.happy ? 1 : 0), er = c === 9 ? 0.095 : 0.075;
+    if (shut > 0.85) {
+      x.strokeStyle = '#1b1f2a'; x.lineWidth = 0.04; x.beginPath();
+      if (o.happy && !sleepy) x.arc(ex, ey + 0.02, er * 0.8, Math.PI * 1.1, Math.PI * 1.9); else x.arc(ex, ey - 0.02, er * 0.8, Math.PI * 0.15, Math.PI * 0.85);
+      x.stroke();
+    } else {
+      x.save(); x.translate(ex, ey); x.scale(1, 1 - shut);
+      x.fillStyle = '#ffffff'; x.beginPath(); x.arc(0, 0, er, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#1b1f2a'; x.beginPath(); x.arc(er * 0.25, er * 0.05, er * 0.6, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#ffffff'; x.beginPath(); x.arc(er * 0.45, -er * 0.25, er * 0.22, 0, Math.PI * 2); x.fill();
+      x.restore();
+    }
+    if (!sleepy) marks(x, c, sp, 'head', o);
+    else { // a striped nightcap
+      x.fillStyle = '#5b6fb8'; x.beginPath(); x.moveTo(-0.3, -0.72); x.quadraticCurveTo(0.02, -0.98, 0.22, -0.8); x.quadraticCurveTo(-0.15, -1.0, -0.52, -0.78); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(-0.32, -0.74); x.quadraticCurveTo(-0.05, -0.86, 0.24, -0.78); x.lineTo(0.22, -0.72); x.quadraticCurveTo(-0.05, -0.8, -0.3, -0.68); x.closePath(); x.fillStyle = '#ffffff'; x.fill();
+      x.fillStyle = '#ffffff'; x.beginPath(); x.arc(-0.56, -0.76, 0.07, 0, Math.PI * 2); x.fill();
+    }
+  }
+  function marks(x, c, sp, part, o) {
+    var dark = sp[1];
+    if (part === 'body') {
+      if (c === 1) { x.fillStyle = 'rgba(255,255,255,.85)'; [[-0.2, -0.32, 0.05], [-0.06, -0.2, 0.045], [-0.24, -0.5, 0.04], [0.04, -0.72, 0.035]].forEach(function (d) { x.beginPath(); x.arc(d[0], d[1], d[2], 0, Math.PI * 2); x.fill(); }); }
+      else if (c === 3) { x.strokeStyle = dark; x.lineWidth = 0.05; for (var i = 0; i < 3; i++) { x.beginPath(); x.arc(-0.42 + i * 0.12, -0.45, 0.22, -0.9, -0.2); x.stroke(); } }
+      else if (c === 11) { x.fillStyle = 'rgba(255,255,255,.9)'; [[-0.22, -0.55], [-0.3, -0.4], [-0.12, -0.72]].forEach(function (d) { x.beginPath(); x.arc(d[0], d[1], 0.025, 0, Math.PI * 2); x.fill(); }); }
+      else if (c === 12) { x.fillStyle = '#ffffff'; x.beginPath(); x.moveTo(0.18, -0.2); x.lineTo(0.24, -0.08); x.lineTo(0.3, -0.22); x.closePath(); x.fill(); }
+    } else {
+      if (c === 0) { x.fillStyle = sp[0]; x.beginPath(); x.moveTo(-0.12, -0.82); x.lineTo(-0.02, -1.08); x.lineTo(0.06, -0.86); x.lineTo(0.12, -1.0); x.lineTo(0.18, -0.8); x.closePath(); x.fill();
+        x.fillStyle = '#3a0d14'; x.beginPath(); x.moveTo(0.3, -0.66); x.lineTo(0.42, -0.62); x.lineTo(0.42, -0.45); x.lineTo(0.3, -0.48); x.closePath(); x.fill(); }
+      else if (c === 2) { x.strokeStyle = sp[1]; x.lineWidth = 0.05; x.beginPath(); x.moveTo(0.02, -0.84); x.bezierCurveTo(0.0, -1.06, 0.24, -1.08, 0.2, -0.95); x.bezierCurveTo(0.17, -0.88, 0.08, -0.92, 0.12, -0.97); x.stroke(); }
+      else if (c === 6) { x.fillStyle = sp[1]; [-0.5, -0.15, 0.2].forEach(function (a) { x.save(); x.translate(-0.02, -0.82); x.rotate(a); x.beginPath(); x.ellipse(0, -0.14, 0.05, 0.15, 0, 0, Math.PI * 2); x.fill(); x.restore(); }); }
+      else if (c === 8) { x.fillStyle = '#ff2f7a'; x.save(); x.translate(-0.08, -0.84); x.beginPath(); x.moveTo(0, 0); x.lineTo(-0.16, -0.09); x.lineTo(-0.16, 0.09); x.closePath(); x.moveTo(0, 0); x.lineTo(0.16, -0.09); x.lineTo(0.16, 0.09); x.closePath(); x.fill(); x.beginPath(); x.arc(0, 0, 0.045, 0, Math.PI * 2); x.fill(); x.restore();
+        x.fillStyle = 'rgba(255,60,120,.45)'; x.beginPath(); x.ellipse(0.2, -0.48, 0.07, 0.045, 0, 0, Math.PI * 2); x.fill(); }
+      else if (c === 9) { x.fillStyle = sp[1]; x.beginPath(); x.moveTo(-0.2, -0.78); x.lineTo(-0.24, -1.02); x.lineTo(-0.06, -0.84); x.closePath(); x.moveTo(0.12, -0.84); x.lineTo(0.24, -1.02); x.lineTo(0.28, -0.76); x.closePath(); x.fill(); }
+      else if (c === 10) { x.fillStyle = '#24272e'; x.beginPath(); x.ellipse(0.0, -0.76, 0.32, 0.13, 0.12, Math.PI, Math.PI * 2); x.fill(); x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(0.12, -0.5, 0.1, 0.06, 0, 0, Math.PI * 2); x.fill(); }
+      else if (c === 11) { x.strokeStyle = '#ffffff'; x.lineWidth = 0.035; x.beginPath(); x.moveTo(0.04, -0.74); x.quadraticCurveTo(0.18, -0.8, 0.32, -0.72); x.stroke(); }
+      else if (c === 12) { x.fillStyle = 'rgba(255,120,150,.55)'; x.beginPath(); x.ellipse(0.22, -0.5, 0.075, 0.05, 0, 0, Math.PI * 2); x.fill(); }
+      else if (c === 7) { /* spectacles drawn with the eye */ }
+    }
+  }
+
+  // ---------------- trees ----------------
+  // the trunk: a tall, slightly wavy bark column from top to bottom of the screen; side -1 = left, 1 = right
+  function trunk(x, cxp, w, H, side, sc) {
+    var bark = sc.bark, g = x.createLinearGradient(cxp - w / 2, 0, cxp + w / 2, 0);
+    g.addColorStop(0, shadeHex(bark, side < 0 ? 0.75 : 0.55)); g.addColorStop(0.5, bark); g.addColorStop(1, shadeHex(bark, side < 0 ? 0.55 : 0.75));
+    x.fillStyle = g; x.beginPath(); x.moveTo(cxp - w / 2, -10);
+    for (var y = 0; y <= H + 20; y += 40) x.lineTo(cxp - w / 2 + Math.sin(y / 90 + side) * w * 0.08, y);
+    x.lineTo(cxp + w / 2 + Math.sin(H / 90) * w * 0.08, H + 20);
+    for (var y2 = H + 20; y2 >= -10; y2 -= 40) x.lineTo(cxp + w / 2 + Math.sin(y2 / 80 - side) * w * 0.08, y2);
+    x.closePath(); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = Math.max(1, w * 0.06); x.lineCap = 'round';
+    for (var k = 0; k < H / 34; k++) { var yy = k * 34 + (k % 3) * 9, xx = cxp + ((k * 37) % 7 - 3) / 7 * w * 0.5; x.beginPath(); x.moveTo(xx, yy); x.quadraticCurveTo(xx + w * 0.08, yy + 9, xx, yy + 18); x.stroke(); }
+    if (sc.snow) { x.fillStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.ellipse(cxp, -2, w * 0.6, 8, 0, 0, Math.PI * 2); x.fill(); }
+  }
+  // a branch from the trunk (x0) out to its tip (x1) at height y (the perch line); dir 1 = grows right
+  function branch(x, x0, x1, y, th, dir, sc, seed) {
+    var len = Math.abs(x1 - x0), g = x.createLinearGradient(0, y - th, 0, y + th);
+    g.addColorStop(0, shadeHex(sc.bark, 1.15)); g.addColorStop(1, shadeHex(sc.bark, 0.7));
+    x.fillStyle = g; x.beginPath();
+    x.moveTo(x0, y - th * 0.75); x.quadraticCurveTo(x0 + dir * len * 0.5, y - th * 0.55, x1, y - th * 0.3);
+    x.quadraticCurveTo(x1 + dir * th * 0.4, y, x1, y + th * 0.3);
+    x.quadraticCurveTo(x0 + dir * len * 0.5, y + th * 0.6, x0, y + th * 0.95); x.closePath(); x.fill();
+    // a little twig with leaves near the tip, and one near the trunk
+    x.strokeStyle = shadeHex(sc.bark, 0.8); x.lineWidth = Math.max(1.5, th * 0.35); x.lineCap = 'round';
+    var tx = x1 - dir * th * 0.6; x.beginPath(); x.moveTo(tx, y - th * 0.2); x.quadraticCurveTo(tx + dir * th, y - th * 1.2, tx + dir * th * 1.6, y - th * 1.6); x.stroke();
+    leafCluster(x, tx + dir * th * 1.6, y - th * 1.6, th * 1.1, sc, seed);
+    var bx = x0 + dir * len * 0.08; x.beginPath(); x.moveTo(bx, y + th * 0.5); x.quadraticCurveTo(bx + dir * th * 0.8, y + th * 1.6, bx + dir * th * 1.5, y + th * 1.9); x.stroke();
+    leafCluster(x, bx + dir * th * 1.5, y + th * 1.9, th * 0.85, sc, seed + 3);
+    if (sc.snow) { x.fillStyle = 'rgba(255,255,255,.95)'; x.beginPath(); x.moveTo(x0, y - th * 0.7); x.quadraticCurveTo(x0 + dir * len * 0.5, y - th * 1.25, x1 - dir * th * 0.3, y - th * 0.45); x.quadraticCurveTo(x0 + dir * len * 0.5, y - th * 0.5, x0, y - th * 0.55); x.closePath(); x.fill(); }
+  }
+  function leafCluster(x, lx, ly, r, sc, seed) {
+    var cols = sc.leaves;
+    for (var i = 0; i < 5; i++) {
+      var a = (seed * 1.7 + i * 1.3) % (Math.PI * 2), d = r * (0.2 + (i % 3) * 0.25);
+      x.fillStyle = cols[(i + seed) % cols.length]; x.beginPath(); x.ellipse(lx + Math.cos(a) * d, ly + Math.sin(a) * d * 0.7, r * 0.55, r * 0.32, a, 0, Math.PI * 2); x.fill();
+    }
+    if (sc.blossom) { x.fillStyle = '#ffd1e6'; for (var j = 0; j < 3; j++) { x.beginPath(); x.arc(lx + (j - 1) * r * 0.5, ly - r * 0.2 + (j % 2) * r * 0.35, r * 0.22, 0, Math.PI * 2); x.fill(); } }
+  }
+  function shadeHex(hex, k) { var n = parseInt(hex.slice(1), 16), r = Math.min(255, (n >> 16) * k), g = Math.min(255, ((n >> 8) & 255) * k), b = Math.min(255, (n & 255) * k); return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')'; }
+
+  // ---------------- leaves over a branch (the leafy-branch twist) ----------------
+  // covers the branch from x0 to x1 (birds peek through); need = sets still to fly; a = 1..0 while blowing away
+  function leafCover(x, x0, x1, y, s, need, a, sc, t) {
+    var dir = x1 > x0 ? 1 : -1, len = Math.abs(x1 - x0), n = Math.max(6, Math.round(len / (s * 0.32)));
+    x.save(); x.globalAlpha = a;
+    for (var row = 0; row < 3; row++) for (var i = 0; i < n; i++) {
+      var f = (i + (row % 2) * 0.5) / n, lx = x0 + dir * len * f, ly = y - s * (0.15 + row * 0.33), sw = Math.sin(t * 1.6 + i * 0.9 + row) * 0.12;
+      x.fillStyle = ['#2f8a3a', '#3fa84a', '#56c25b', '#2a7a34'][(i + row) % 4];
+      x.beginPath(); x.ellipse(lx + (1 - a) * dir * s * (i % 3), ly - (1 - a) * s * row, s * 0.3, s * 0.18, (i % 2 ? 0.6 : -0.6) + sw, 0, Math.PI * 2); x.fill();
+    }
+    x.restore();
+    if (a > 0.5 && need > 0) { // a badge: sets still needed
+      var bx = x0 + dir * len * 0.5, by = y - s * 1.05, r = Math.max(11, s * 0.3);
+      x.save(); x.fillStyle = '#ffffff'; x.shadowColor = 'rgba(0,0,0,.3)'; x.shadowBlur = 6; x.beginPath(); x.arc(bx, by, r, 0, Math.PI * 2); x.fill(); x.shadowBlur = 0;
+      x.fillStyle = '#2a7a34'; x.font = '800 ' + Math.round(r * 1.15) + 'px ui-rounded, -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(String(need), bx, by + r * 0.06); x.restore();
+    }
+  }
+  // ---------------- a cage around one bird ----------------
+  // left = moves until it opens; a = 1..0 while it lifts away
+  function cage(x, px, py, s, left, a) {
+    x.save(); x.globalAlpha = a; x.translate(px, py - (1 - a) * s * 0.9);
+    var w = s * 0.52, h = s * 1.02;
+    x.strokeStyle = '#b8862b'; x.lineWidth = Math.max(1.5, s * 0.05); x.lineCap = 'round';
+    for (var i = -2; i <= 2; i++) { var bx = i / 2 * w; x.beginPath(); x.moveTo(bx, 0); x.lineTo(bx, -h + Math.abs(i) * s * 0.06); x.stroke(); }
+    x.beginPath(); x.moveTo(-w, -h + s * 0.12); x.quadraticCurveTo(0, -h - s * 0.32, w, -h + s * 0.12); x.stroke();
+    x.lineWidth = Math.max(2, s * 0.07); x.beginPath(); x.moveTo(-w - s * 0.04, 0); x.lineTo(w + s * 0.04, 0); x.stroke();
+    x.beginPath(); x.arc(0, -h - s * 0.14, s * 0.07, 0, Math.PI * 2); x.stroke();
+    if (left > 0) { var r = Math.max(9, s * 0.2); x.fillStyle = '#ffcf4a'; x.strokeStyle = '#8a5a10'; x.lineWidth = 1.5;
+      x.beginPath(); x.arc(w * 0.85, -s * 0.2, r, 0, Math.PI * 2); x.fill(); x.stroke();
+      x.fillStyle = '#4a2a00'; x.font = '800 ' + Math.round(r * 1.1) + 'px ui-rounded, -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(left), w * 0.85, -s * 0.2 + r * 0.05); }
+    x.restore();
+  }
+
+  // ---------------- scenes ----------------
+  var SCENES = [
+    { id: 'park', name: 'Sunny park', sky: ['#7cc8ff', '#c9ecff'], bark: '#8a5a32', leaves: ['#3fae4a', '#5cc85a', '#2f8f3c'] },
+    { id: 'sunset', name: 'Sunset', sky: ['#5b3f8c', '#ff7a8a', '#ffc070'], bark: '#5e3a2a', leaves: ['#4f7a3a', '#6a8f3e', '#3c6430'] },
+    { id: 'snow', name: 'Snowy day', sky: ['#b9d4ee', '#eef5fd'], bark: '#6e5442', leaves: ['#2f6f52', '#3f8a64', '#245c44'], snow: true },
+    { id: 'spring', name: 'Cherry blossom', sky: ['#ffd6e8', '#fff4f9'], bark: '#6a4636', leaves: ['#ff9cc8', '#ffb8d8', '#f27fb5'], blossom: true },
+    { id: 'island', name: 'Tropical island', sky: ['#36b8f0', '#b8f0ff'], bark: '#9a6a3a', leaves: ['#2fb860', '#4fd070', '#1f9a4c'] },
+    { id: 'night', name: 'Firefly night', sky: ['#0b1736', '#22386e'], bark: '#6a4c3a', leaves: ['#24563a', '#2f6a46', '#1c4630'], night: true }
+  ];
+  function sky(x, W, H, cols) { var g = x.createLinearGradient(0, 0, 0, H); cols.forEach(function (c, i) { g.addColorStop(i / (cols.length - 1), c); }); x.fillStyle = g; x.fillRect(0, 0, W, H); }
+  function hills(x, W, H, y, amp, col, ph) { x.fillStyle = col; x.beginPath(); x.moveTo(0, H); x.lineTo(0, y); for (var i = 0; i <= 24; i++) { var xx = i / 24 * W; x.lineTo(xx, y - Math.sin(i / 24 * Math.PI * 2 * 1.3 + ph) * amp - Math.sin(i / 24 * Math.PI * 5 + ph * 2) * amp * 0.3); } x.lineTo(W, H); x.closePath(); x.fill(); }
+  function cloud(x, cx0, cy, r, col) { x.fillStyle = col; x.beginPath(); x.arc(cx0, cy, r, 0, Math.PI * 2); x.arc(cx0 + r * 0.9, cy + r * 0.2, r * 0.75, 0, Math.PI * 2); x.arc(cx0 - r * 0.9, cy + r * 0.25, r * 0.7, 0, Math.PI * 2); x.arc(cx0 + r * 0.2, cy - r * 0.45, r * 0.7, 0, Math.PI * 2); x.fill(); }
+  // the still picture behind the trees (drawn once per level / resize)
+  function scene(x, W, H, i, skin) {
+    var sc = SCENES[i % SCENES.length];
+    sky(x, W, H, sc.sky);
+    if (sc.id === 'park') {
+      sun(x, W * 0.78, H * 0.1, Math.min(W, H) * 0.07, '#fff3a0', '#ffd84a');
+      cloud(x, W * 0.25, H * 0.12, Math.min(W, H) * 0.05, 'rgba(255,255,255,.9)'); cloud(x, W * 0.6, H * 0.22, Math.min(W, H) * 0.035, 'rgba(255,255,255,.75)');
+      hills(x, W, H, H * 0.8, H * 0.03, '#9fdc7a', 0.5); hills(x, W, H, H * 0.88, H * 0.025, '#6fc35a', 2);
+      for (var f = 0; f < 18; f++) { x.fillStyle = ['#ffffff', '#ffd84a', '#ff8ab0'][f % 3]; x.beginPath(); x.arc((f * 97) % W, H * 0.9 + (f * 41) % (H * 0.08), 3, 0, Math.PI * 2); x.fill(); }
+    } else if (sc.id === 'sunset') {
+      sun(x, W * 0.5, H * 0.66, Math.min(W, H) * 0.16, '#ffe0a0', '#ff9a4a');
+      x.strokeStyle = 'rgba(60,30,70,.55)'; x.lineWidth = 2; x.lineCap = 'round';
+      [[0.3, 0.18], [0.36, 0.2], [0.62, 0.14]].forEach(function (b) { var bx = W * b[0], by = H * b[1]; x.beginPath(); x.moveTo(bx - 7, by - 3); x.quadraticCurveTo(bx - 3, by - 6, bx, by); x.quadraticCurveTo(bx + 3, by - 6, bx + 7, by - 3); x.stroke(); });
+      hills(x, W, H, H * 0.74, H * 0.04, '#7a3f6e', 1); hills(x, W, H, H * 0.84, H * 0.03, '#4e2850', 3);
+    } else if (sc.id === 'snow') {
+      cloud(x, W * 0.3, H * 0.1, Math.min(W, H) * 0.05, 'rgba(255,255,255,.8)'); cloud(x, W * 0.72, H * 0.16, Math.min(W, H) * 0.04, 'rgba(255,255,255,.7)');
+      hills(x, W, H, H * 0.76, H * 0.04, '#dfeaf6', 0.3); hills(x, W, H, H * 0.86, H * 0.025, '#ffffff', 2.2);
+      for (var p = 0; p < 4; p++) pine(x, W * (0.2 + p * 0.2), H * 0.78 + (p % 2) * 10, Math.min(W, H) * 0.06);
+    } else if (sc.id === 'spring') {
+      sun(x, W * 0.2, H * 0.1, Math.min(W, H) * 0.06, '#fffbe0', '#ffe9a8');
+      hills(x, W, H, H * 0.8, H * 0.03, '#c9eab0', 1.2); hills(x, W, H, H * 0.88, H * 0.025, '#a8dc8a', 0.4);
+      for (var b2 = 0; b2 < 5; b2++) { x.fillStyle = 'rgba(255,170,205,.6)'; x.beginPath(); x.arc(W * (0.1 + b2 * 0.2), H * 0.79, Math.min(W, H) * 0.05, 0, Math.PI * 2); x.fill(); }
+    } else if (sc.id === 'island') {
+      sun(x, W * 0.78, H * 0.12, Math.min(W, H) * 0.07, '#fffbd0', '#ffe060');
+      cloud(x, W * 0.3, H * 0.15, Math.min(W, H) * 0.04, 'rgba(255,255,255,.9)');
+      var sea = x.createLinearGradient(0, H * 0.7, 0, H * 0.86); sea.addColorStop(0, '#1fa6c9'); sea.addColorStop(1, '#5fe0e8'); x.fillStyle = sea; x.fillRect(0, H * 0.7, W, H * 0.16);
+      x.strokeStyle = 'rgba(255,255,255,.5)'; x.lineWidth = 2; for (var w2 = 0; w2 < 6; w2++) { var wy = H * (0.73 + w2 * 0.022); x.beginPath(); x.moveTo(W * ((w2 * 0.17) % 0.8), wy); x.lineTo(W * ((w2 * 0.17) % 0.8) + 30, wy); x.stroke(); }
+      x.fillStyle = '#3d9a5a'; x.beginPath(); x.ellipse(W * 0.5, H * 0.71, W * 0.14, H * 0.025, 0, Math.PI, Math.PI * 2); x.fill();
+      x.strokeStyle = '#7a5530'; x.lineWidth = 3; x.beginPath(); x.moveTo(W * 0.52, H * 0.705); x.quadraticCurveTo(W * 0.5, H * 0.66, W * 0.54, H * 0.63); x.stroke();
+      x.fillStyle = '#2f9a4c'; for (var l = 0; l < 5; l++) { x.save(); x.translate(W * 0.54, H * 0.63); x.rotate(-2.6 + l * 0.7); x.beginPath(); x.ellipse(14, 0, 16, 4, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+      x.fillStyle = '#f6dfa4'; x.fillRect(0, H * 0.86, W, H * 0.14); hills(x, W, H, H * 0.86, H * 0.008, '#f6dfa4', 0);
+    } else if (sc.id === 'night') {
+      for (var s = 0; s < 70; s++) { x.fillStyle = 'rgba(255,255,255,' + (0.35 + (s % 5) * 0.12) + ')'; x.beginPath(); x.arc((s * 131.7) % W, (s * 71.3) % (H * 0.65), (s % 3) * 0.5 + 0.6, 0, Math.PI * 2); x.fill(); }
+      var mr = Math.min(W, H) * 0.06; x.fillStyle = 'rgba(255,250,220,.18)'; x.beginPath(); x.arc(W * 0.72, H * 0.12, mr * 2, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#fff6d0'; x.beginPath(); x.arc(W * 0.72, H * 0.12, mr, 0, Math.PI * 2); x.fill(); x.fillStyle = 'rgba(200,190,150,.4)'; x.beginPath(); x.arc(W * 0.7, H * 0.11, mr * 0.2, 0, Math.PI * 2); x.arc(W * 0.745, H * 0.135, mr * 0.13, 0, Math.PI * 2); x.fill();
+      hills(x, W, H, H * 0.8, H * 0.03, '#14284a', 0.8); hills(x, W, H, H * 0.88, H * 0.025, '#0d1c36', 2.5);
+    }
+    if (skin === 'halloween') { // a jack-o'-lantern on the hill and an orange glow
+      var pr = Math.min(W, H) * 0.045, px = W * 0.5, py = H * 0.9;
+      x.fillStyle = 'rgba(255,122,26,.12)'; x.fillRect(0, H * 0.6, W, H * 0.4);
+      x.fillStyle = '#ff7a1a'; x.beginPath(); x.ellipse(px, py, pr * 1.25, pr, 0, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = 'rgba(150,60,0,.6)'; x.lineWidth = 2; x.beginPath(); x.ellipse(px, py, pr * 0.45, pr, 0, 0, Math.PI * 2); x.stroke();
+      x.fillStyle = '#3a7a2a'; x.fillRect(px - 2, py - pr - 6, 4, 8);
+      x.fillStyle = '#ffe680'; x.beginPath(); x.moveTo(px - pr * 0.6, py - pr * 0.2); x.lineTo(px - pr * 0.3, py - pr * 0.5); x.lineTo(px - pr * 0.15, py - pr * 0.15); x.closePath();
+      x.moveTo(px + pr * 0.6, py - pr * 0.2); x.lineTo(px + pr * 0.3, py - pr * 0.5); x.lineTo(px + pr * 0.15, py - pr * 0.15); x.closePath();
+      x.moveTo(px - pr * 0.7, py + pr * 0.2); x.lineTo(px - pr * 0.35, py + pr * 0.45); x.lineTo(px, py + pr * 0.25); x.lineTo(px + pr * 0.35, py + pr * 0.45); x.lineTo(px + pr * 0.7, py + pr * 0.2); x.lineTo(px, py + pr * 0.55); x.closePath(); x.fill();
+    }
+  }
+  function sun(x, sx, sy, r, c0, c1) {
+    var g = x.createRadialGradient(sx, sy, r * 0.2, sx, sy, r * 2.2); g.addColorStop(0, 'rgba(255,255,220,.75)'); g.addColorStop(1, 'rgba(255,255,220,0)'); x.fillStyle = g; x.beginPath(); x.arc(sx, sy, r * 2.2, 0, Math.PI * 2); x.fill();
+    var g2 = x.createRadialGradient(sx - r * 0.3, sy - r * 0.3, r * 0.1, sx, sy, r); g2.addColorStop(0, c0); g2.addColorStop(1, c1); x.fillStyle = g2; x.beginPath(); x.arc(sx, sy, r, 0, Math.PI * 2); x.fill();
+  }
+  function pine(x, px, py, s) { x.fillStyle = '#4f7a6a'; for (var i = 0; i < 3; i++) { x.beginPath(); x.moveTo(px, py - s * (1.6 - i * 0.45)); x.lineTo(px + s * (0.5 + i * 0.15), py - s * (0.7 - i * 0.45)); x.lineTo(px - s * (0.5 + i * 0.15), py - s * (0.7 - i * 0.45)); x.closePath(); x.fill(); }
+    x.fillStyle = '#ffffff'; x.beginPath(); x.moveTo(px, py - s * 1.6); x.lineTo(px + s * 0.22, py - s * 1.25); x.lineTo(px - s * 0.22, py - s * 1.25); x.closePath(); x.fill(); }
+
+  // moving bits drawn every frame over the scene: snow, petals, fireflies, the island's gulls, bats for Halloween
+  var fx = [];
+  function fxInit(i, W, H, skin) {
+    var sc = SCENES[i % SCENES.length]; fx = [];
+    var n = sc.snow ? 40 : sc.blossom ? 22 : sc.night ? 18 : sc.id === 'park' ? 6 : 0;
+    for (var k = 0; k < n; k++) fx.push({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * 10, s: 0.6 + Math.random() * 0.8 });
+    if (skin === 'halloween') for (var b = 0; b < 3; b++) fx.push({ bat: true, x: Math.random() * W, y: H * (0.05 + Math.random() * 0.2), p: Math.random() * 10, s: 1 });
+  }
+  function fxDraw(x, i, W, H, dt, t) {
+    var sc = SCENES[i % SCENES.length];
+    fx.forEach(function (f) {
+      if (f.bat) { f.x += dt * 0.04; if (f.x > W + 30) f.x = -30; var fl = Math.sin(t * 12 + f.p) * 5, by = f.y + Math.sin(t + f.p) * 10;
+        x.fillStyle = '#1a0e24'; x.beginPath(); x.moveTo(f.x, by); x.quadraticCurveTo(f.x - 8, by - 6 - fl, f.x - 14, by - 2 + fl * 0.3); x.quadraticCurveTo(f.x - 8, by + 1, f.x, by + 3); x.quadraticCurveTo(f.x + 8, by + 1, f.x + 14, by - 2 + fl * 0.3); x.quadraticCurveTo(f.x + 8, by - 6 - fl, f.x, by); x.fill(); return; }
+      if (sc.snow) { f.y += dt * 0.03 * f.s; f.x += Math.sin(t + f.p) * 0.3; if (f.y > H + 5) { f.y = -5; f.x = Math.random() * W; }
+        x.fillStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(f.x, f.y, 1.5 + f.s * 1.5, 0, Math.PI * 2); x.fill(); }
+      else if (sc.blossom) { f.y += dt * 0.025 * f.s; f.x += Math.sin(t * 1.3 + f.p) * 0.6 + 0.2; if (f.y > H + 5) { f.y = -5; f.x = Math.random() * W; }
+        x.save(); x.translate(f.x, f.y); x.rotate(t * 2 + f.p); x.fillStyle = 'rgba(255,160,200,.9)'; x.beginPath(); x.ellipse(0, 0, 4 * f.s + 1, 2.4 * f.s + 0.6, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+      else if (sc.night) { f.x += Math.sin(t * 0.7 + f.p) * 0.5; f.y += Math.cos(t * 0.5 + f.p * 2) * 0.4; if (f.x < 0) f.x = W; if (f.x > W) f.x = 0; if (f.y < 0) f.y = H; if (f.y > H) f.y = 0;
+        var gl = 0.5 + 0.5 * Math.sin(t * 2.2 + f.p * 3); var g = x.createRadialGradient(f.x, f.y, 0, f.x, f.y, 10);
+        g.addColorStop(0, 'rgba(255,250,150,' + (0.9 * gl) + ')'); g.addColorStop(1, 'rgba(255,250,150,0)'); x.fillStyle = g; x.beginPath(); x.arc(f.x, f.y, 10, 0, Math.PI * 2); x.fill(); }
+      else if (sc.id === 'park') { f.x += dt * 0.015 * f.s; if (f.x > W + 20) f.x = -20; var by2 = H * 0.06 + (f.p * 30) % (H * 0.2) + Math.sin(t + f.p) * 4;
+        x.strokeStyle = 'rgba(40,60,90,.35)'; x.lineWidth = 1.5; x.beginPath(); var wf = Math.sin(t * 8 + f.p) * 2; x.moveTo(f.x - 5, by2 - wf); x.quadraticCurveTo(f.x - 2, by2 - 3, f.x, by2); x.quadraticCurveTo(f.x + 2, by2 - 3, f.x + 5, by2 - wf); x.stroke(); }
+    });
+  }
+  return { SP: SP, NAMES: SP.map(function (s) { return s[4]; }), COLORS: SP.map(function (s) { return s[0]; }), SCENES: SCENES,
+    bird: bird, symbol: symbol, trunk: trunk, branch: branch, leafCover: leafCover, cage: cage, scene: scene, fxInit: fxInit, fxDraw: fxDraw, shadeHex: shadeHex };
+})();
+</script>
+<script>
+/* Perch Pals sounds: all synthesized with Web Audio (no audio files). Off by default.
+   Each colour of bird has its own chirp (pitch, shape and number of notes); wing flutters are filtered noise; a set
+   flying away sings a little rising song in that bird's voice; a cleared level gets a celebration.
+   Music (optional, its own switch): a gentle plucked pentatonic tune that wanders slowly. */
+var PPSound = (function () {
+  'use strict';
+  var ac = null, master = null, mus = null, on = false, musicOn = false, musTimer = 0;
+  function ctx() {
+    if (!on && !musicOn) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      mus = ac.createGain(); mus.gain.value = 0.22; mus.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay, out) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(out || master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(freq, q, dur, gain, delay, f1) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.max(1, Math.floor(a.sampleRate * dur)), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(freq, t); if (f1) bp.frequency.exponentialRampToValueAtTime(f1, t + dur); bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  // a bird's voice: base pitch, sweep (up/down), notes, waveform
+  var VOICE = [
+    [2200, 1.35, 2, 'sine'], [1700, 0.75, 3, 'sine'], [2600, 1.2, 2, 'triangle'], [3000, 0.85, 4, 'sine'], [1500, 1.5, 1, 'sine'],
+    [2000, 0.7, 2, 'triangle'], [2400, 1.6, 1, 'sine'], [1300, 1.3, 3, 'triangle'], [2800, 1.1, 3, 'sine'], [1100, 0.8, 2, 'sine'],
+    [1900, 1.25, 2, 'sine'], [1600, 0.65, 2, 'triangle'], [3200, 1.15, 2, 'sine'], [1000, 1.4, 2, 'triangle']];
+  function chirp(c, delay, k) {
+    if (!on) return; var v = VOICE[c % VOICE.length], f = v[0] * (k || 1);
+    for (var i = 0; i < v[2]; i++) tone(v[3], f, f * v[1], 0.07, 0.08, (delay || 0) + i * 0.085);
+  }
+  // music: a soft plucked note every so often from a pentatonic scale, wandering up and down
+  var SCALE = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5], mi = 3;
+  function musicStep() {
+    if (!musicOn || !ctx()) return;
+    mi = Math.max(0, Math.min(SCALE.length - 1, mi + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)]));
+    tone('triangle', SCALE[mi], 0, 1.1, 0.16, 0, mus); tone('sine', SCALE[mi] / 2, 0, 1.4, 0.08, 0, mus);
+    if (Math.random() < 0.3) tone('sine', SCALE[Math.min(SCALE.length - 1, mi + 2)], 0, 0.9, 0.07, 0.3, mus);
+  }
+  function setMusic(v) {
+    musicOn = !!v; clearInterval(musTimer);
+    if (musicOn) { ctx(); musTimer = setInterval(musicStep, 640); }
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    setMusic: setMusic,
+    unlock: function () { if (on || musicOn) ctx(); },
+    pick: function (c) { chirp(c, 0, 1.0); },
+    drop: function () { if (on) tone('sine', 700, 520, 0.06, 0.06); },
+    flutter: function (n) { if (!on) return; for (var i = 0; i < Math.min(4, n); i++) { noise(900, 0.9, 0.16, 0.22, i * 0.11, 2200); noise(700, 1.2, 0.08, 0.12, i * 0.11 + 0.08); } },
+    land: function (c, i) { chirp(c, 0, 1.12 + (i || 0) * 0.04); },
+    song: function (c) { if (!on) return; var v = VOICE[c % VOICE.length]; [1, 1.26, 1.5, 2].forEach(function (k, i) { tone(v[3], v[0] * k * 0.5, v[0] * k * 0.5 * 1.08, 0.12, 0.1, i * 0.1); }); noise(1200, 0.7, 0.5, 0.25, 0.3, 3000); },
+    wake: function () { if (on) { tone('sine', 900, 1800, 0.12, 0.07); tone('sine', 1800, 1400, 0.1, 0.05, 0.12); } },
+    cage: function () { if (on) { tone('square', 1200, 900, 0.05, 0.05); tone('triangle', 1600, 0, 0.18, 0.07, 0.05); } },
+    leaves: function () { if (on) { noise(2500, 0.6, 0.45, 0.35); noise(1200, 0.8, 0.35, 0.2, 0.1); } },
+    nope: function () { if (on) tone('sine', 300, 220, 0.1, 0.1); },
+    undo: function () { if (on) { tone('sine', 900, 500, 0.14, 0.08); noise(800, 1, 0.12, 0.15); } },
+    branch: function () { if (on) { tone('triangle', 180, 260, 0.18, 0.18); noise(600, 2, 0.15, 0.25, 0.05); tone('sine', 1560, 0, 0.2, 0.05, 0.16); } },
+    shuffle: function () { if (!on) return; for (var i = 0; i < 6; i++) { noise(1000 + i * 200, 0.8, 0.12, 0.2, i * 0.07, 2600); } [0, 3, 6, 9].forEach(function (c, i) { chirp(c, 0.2 + i * 0.09, 1.1); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, i === 4 ? 0.6 : 0.18, 0.2, i * 0.1); });
+      for (var j = 0; j < 6; j++) chirp(j * 2, 0.55 + j * 0.08, 1.05); noise(4000, 0.8, 0.5, 0.12, 0.45); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.22); tone('sine', 1568, 0, 0.5, 0.18, 0.12); } },
+    sign: function () { if (on) noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Perch Pals app: layout (branches on two trunks), drawing (scene, birds, flights, flocks flying away), taps,
+   helpers (undo, add a branch, shuffle, restart), the move limit with Continue, twist tips, saves, stats, house ads. */
+(function () {
+  'use strict';
+  var S = PPSound;
+
+  // ================= storage =================
+  var store = Goobs.store('perch');
+  var settings = { sound: false, music: false, adEvery: 3, symbols: false };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { level: 1, seen: false, finished: 0, lastAdAt: 0, tips: {} };
+  for (var mk in MD) if (meta[mk] === undefined || meta[mk] === null) meta[mk] = MD[mk];
+  if (!(meta.level >= 1)) meta.level = 1;
+  if (typeof meta.tips !== 'object') meta.tips = {};
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['cleared', 'sets', 'moves', 'undos', 'branches', 'shuffles', 'conts', 'restarts'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovTip') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function fmt(n) { return (n || 0).toLocaleString(); }
+  var made = {};
+  function entryFor(n) { if (n <= PP.BANK.length) return PP.BANK[n - 1]; return made[n] || (made[n] = PP.levelBeyond(n)); }
+  function now() { return performance.now(); }
+
+  // ================= game =================
+  var g = null, levelNo = 1, sel = -1, ending = false;
+  var flights = [], flocks = [], parts = [], arrive = {}, hops = {}, wakes = {}, cageOpenT = {}, leafOpenT = {}, shakes = {}, pendingCheck = false, pendingWin = false, shuffleT = 0;
+  function resetFx() { flights = []; flocks = []; arrive = {}; hops = {}; wakes = {}; cageOpenT = {}; leafOpenT = {}; shakes = {}; sel = -1; pendingCheck = false; pendingWin = false; }
+  function startLevel(n) {
+    levelNo = n; meta.level = n; saveMeta();
+    var e = entryFor(n);
+    g = PP.create(e[0], { limit: PP.limitFor(e[1]) }); g.level = n;
+    ending = false; resetFx(); parts = [];
+    save(); newScene(); renderInfo(); tipsFor();
+  }
+  function save() { if (g && !ending) store.set('game', g); }
+  function load() {
+    var r = store.get('game', null);
+    if (!r || r.level !== meta.level || !Array.isArray(r.br) || !Array.isArray(r.leaf) || typeof r.start !== 'string') return false;
+    if (r.start !== entryFor(r.level)[0] || !(r.cap >= 1) || !(r.limit > 0) || !Array.isArray(r.hist)) return false;
+    if (r.br.length !== r.leaf.length || !r.br.every(function (b) { return Array.isArray(b) && b.length <= r.cap; }) || PP.solved(r)) return false;
+    g = r; levelNo = r.level; ending = false; resetFx(); parts = [];
+    newScene(); renderInfo(); tipsFor(); return true;
+  }
+  function busy(i) {
+    var t = now();
+    for (var f = 0; f < flights.length; f++) if (flights[f].b === i) return true;
+    for (var k = 0; k < flocks.length; k++) if (flocks[k].b === i && t < flocks[k].tGo + 250) return true;
+    return false;
+  }
+  function animating() { var t = now(); return flights.length > 0 || flocks.some(function (f) { return t < f.tGo + 250; }); }
+  function endColour(i) { var b = g.br[i]; return b.length ? PP.col(b[b.length - 1]) : 0; }
+  function tap(i) {
+    if (!g || ending || sheetOpen()) return;
+    S.unlock();
+    if (PP.outOfMoves(g)) { if (!animating()) outOfMoves(); return; }
+    if (i < 0 || i >= g.br.length) { if (sel >= 0) { sel = -1; S.drop(); } return; }
+    if (busy(i)) return;
+    if (sel < 0) {
+      if (!PP.run(g, i)) { S.nope(); shake(i); why(i, true); return; }
+      sel = i; S.pick(endColour(i)); return;
+    }
+    if (sel === i) { sel = -1; S.drop(); return; }
+    var from = sel, n = PP.canMove(g, from, i);
+    if (!n) {
+      if (PP.run(g, i)) { sel = i; S.pick(endColour(i)); shake(from); return; } // pick up the tapped branch instead
+      S.nope(); shake(i); why(i, false); sel = -1; return;
+    }
+    doMove(from, i);
+  }
+  // a short reason when a tap does nothing because of a twist
+  function why(i, picking) {
+    var b = g.br[i];
+    if (!PP.open(g, i)) { var k = g.leaf[i] - g.flown; toast('Hidden in leaves until ' + k + ' more set' + (k > 1 ? 's fly' : ' flies') + ' away'); return; }
+    if (b.length && PP.locked(g, b[b.length - 1])) { var m = PP.cageT(b[b.length - 1]) - g.used; toast('Caged! It opens in ' + m + ' move' + (m > 1 ? 's' : '')); return; }
+    if (!picking && b.length >= g.cap) toast('That branch is full');
+  }
+  var STAG = 95;
+  function doMove(a, b) {
+    var srcLen = g.br[a].length, d0 = g.br[b].length, wasOpen = g.leaf.map(function (x, i) { return PP.open(g, i); });
+    var fromPos = []; for (var j0 = 0; j0 < srcLen; j0++) fromPos.push(slotPos(a, j0));
+    var r = PP.move(g, a, b); if (!r) return;
+    sel = -1; stats.moves++; saveStats();
+    var t = now(), last = t;
+    for (var j = 0; j < r.n; j++) {
+      var P = fromPos[srcLen - 1 - j], Q = slotPos(b, d0 + j), dist = Math.hypot(Q.x - P.x, Q.y - P.y);
+      var f = { c: r.c, a: a, b: b, k1: d0 + j, j: j, P: P, t0: t + j * STAG, dur: Math.min(900, 420 + dist * 0.55) };
+      flights.push(f); arrive[b + ':' + (d0 + j)] = f.t0 + f.dur; last = Math.max(last, f.t0 + f.dur);
+    }
+    S.flutter(r.n);
+    if (r.woke >= 0) { var wt = t + r.n * STAG + 180; wakes[a + ':' + r.woke] = wt; setTimeout(function () { S.wake(); }, wt - t); }
+    // cages that open with this move
+    g.br.forEach(function (br, i) { br.forEach(function (v, k) { if (PP.cageT(v) === g.used) { cageOpenT[i + ':' + k] = last; setTimeout(function () { S.cage(); }, last - t); } }); });
+    if (r.flew) {
+      var fl = { b: b, cols: r.flew, d0: d0, tLand: last, tSing: last + 120, tGo: last + 700, dir: L.br[b] ? L.br[b].dir : 1, sung: false, gone: false };
+      flocks.push(fl); stats.sets++; saveStats();
+      g.leaf.forEach(function (need, i) { if (need && !wasOpen[i] && PP.open(g, i)) { leafOpenT[i] = fl.tGo; setTimeout(function () { S.leaves(); burstLeaves(i); }, fl.tGo - t); } });
+    }
+    pendingCheck = true; pendingWin = !!r.won;
+    save(); renderInfo();
+  }
+  function settle() { // after the birds have landed (and any flock has left): win, out of moves, or stuck
+    if (!pendingCheck || animating()) return;
+    pendingCheck = false;
+    if (pendingWin && PP.solved(g)) { pendingWin = false; setTimeout(win, 650); return; }
+    if (PP.outOfMoves(g)) { outOfMoves(); return; }
+    if (PP.stuck(g)) stuck();
+  }
+  // the move limit ran out: Continue with more moves after a house ad (twice per try), or Restart
+  var MAXCONT = 2;
+  function outOfMoves() {
+    if (!g || ending || isOpen('ovEnd')) return;
+    sel = -1; S.nope();
+    var bonus = PP.bonusFor(g.base || g.limit), left = MAXCONT - g.conts, btns = [];
+    if (left > 0) btns.push({ label: 'Continue +' + bonus + ' moves', sub: 'watch an ad' + (left === 1 ? ' · last one' : ''), red: true, go: function () {
+      showAd(function () { if (!g || ending) return; var b = PP.addMoves(g); stats.conts++; saveStats(); save(); renderInfo(); toast('+' + b + ' moves. Keep sorting!'); S.branch(); pendingCheck = true; });
+    } });
+    btns.push({ label: 'Restart', red: left <= 0, go: function () { restart(); } });
+    showCard('Out of moves', 'All <b>' + g.limit + '</b> moves are used and some birds are still waiting.' + (left > 0 ? '' : ' No more Continues on this try.'), btns);
+  }
+  // no useful move left: offer whatever helpers are left
+  function stuck() {
+    if (!g || ending || isOpen('ovEnd')) return;
+    var btns = [];
+    if (g.undos > 0 && g.hist.length) btns.push({ label: 'Undo', sub: g.undos + ' left', red: true, go: undo });
+    if (g.extra > 0) btns.push({ label: 'Add a branch', sub: 'one per level', red: !btns.length, go: addBranch });
+    if (g.shuf > 0) btns.push({ label: 'Shuffle the birds', sub: 'one per level', red: !btns.length, go: shuffle });
+    btns.push({ label: 'Restart', red: !btns.length, go: function () { restart(); } });
+    showCard('No moves left', btns.length > 1 ? 'The birds are stuck. A helper might get them going again.' : 'Nothing can move anymore. Try this level again?', btns);
+  }
+  function win() {
+    if (ending) return;
+    ending = true; store.del('game');
+    stats.cleared++; saveStats();
+    meta.finished++; meta.level = levelNo + 1; saveMeta();
+    S.win(); for (var i = 0; i < 90; i++) confetti();
+    var used = g.used, lim = g.limit, n = levelNo;
+    setTimeout(function () {
+      showCard('Level ' + n + ' cleared!', 'Every bird found its flock. Done in <b>' + used + '</b> of ' + lim + ' moves.' + (n === PP.BANK.length ? ' That was the last banked level; new ones are made on the phone from here on, forever.' : ''), [
+        { label: 'Next level', red: true, go: function () { between(function () { startLevel(n + 1); }); } }]);
+    }, 900);
+  }
+  function undo() {
+    if (!g || ending || animating() || sheetOpen()) return;
+    if (!g.hist.length) { toast('Nothing to undo'); S.nope(); return; }
+    if (g.undos <= 0) { toast('No undos left on this level'); S.nope(); return; }
+    var h = PP.undo(g); resetFx(); stats.undos++; saveStats(); S.undo(); save(); renderInfo();
+    if (h.k === 's') toast('Shuffle undone');
+  }
+  function addBranch() {
+    if (!g || ending || sheetOpen()) return;
+    if (!PP.addBranch(g)) { toast('One extra branch per level'); S.nope(); return; }
+    stats.branches++; saveStats(); S.branch(); sel = -1; save(); layout(); drawBg(); renderInfo();
+    var i = g.br.length - 1, p = slotPos(i, 0); for (var k = 0; k < 16; k++) parts.push({ x: p.x + Math.random() * L.bl * L.br[i].dir, y: p.y, vx: (Math.random() - 0.5) * 2, vy: -1 - Math.random() * 2, life: 50, t: 0, c: ['#3fae4a', '#5cc85a', '#ffffff'][k % 3], r: 2 + Math.random() * 2.5, g: 0.06 });
+    toast('A new branch grew!'); pendingCheck = true;
+  }
+  function shuffle() {
+    if (!g || ending || animating() || sheetOpen()) return;
+    if (g.shuf <= 0) { toast('One shuffle per level'); S.nope(); return; }
+    if (!PP.shuffle(g)) { toast('These birds can’t be mixed any better right now'); S.nope(); return; }
+    stats.shuffles++; saveStats(); resetFx(); shuffleT = now(); S.shuffle(); save(); renderInfo();
+    g.br.forEach(function (b, i) { b.forEach(function (v, k) { var p = slotPos(i, k); for (var q = 0; q < 2; q++) parts.push({ x: p.x, y: p.y - L.s * 0.5, vx: (Math.random() - 0.5) * 3, vy: -Math.random() * 2.5, life: 36, t: 0, c: PA.COLORS[PP.col(v)], r: 1.8 + Math.random() * 2, g: 0.1, feather: true }); }); });
+    pendingCheck = true;
+  }
+  function restart() { if (!g) return; PP.restart(g); g.level = levelNo; ending = false; resetFx(); stats.restarts++; saveStats(); save(); layout(); drawBg(); renderInfo(); }
+
+  // ================= layout =================
+  // the canvases cover the whole screen; FR = the free box between the floating top row and the helper buttons.
+  // Branches alternate left / right, top to bottom; birds on left branches face right (in), on right branches face left.
+  var cv, cx, bg, bx, W = 300, H = 400, DPR = 1, FR = { x: 0, y: 0, w: 300, h: 400 };
+  var L = { s: 30, sp: 30, bl: 120, rowH: 60, y0: 0, tw: 24, tl: 12, tr: 288, br: [] };
+  function fit() {
+    var st = $('stage'), r = st.getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1);
+    W = Math.max(100, r.width); H = Math.max(100, r.height);
+    var tp = document.querySelector('.top').getBoundingClientRect(), tb = document.querySelector('.toolbar').getBoundingClientRect();
+    var y0 = Math.max(0, tp.bottom - r.top) + 8, y1 = (tb.height ? tb.top - r.top : H) - 6;
+    FR = { x: 0, y: y0, w: W, h: Math.max(120, y1 - y0) };
+    [cv, bg].forEach(function (c) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
+    layout(); drawBg();
+  }
+  function layout() {
+    if (!g) return;
+    var nb = g.br.length, rows = Math.ceil(nb / 2), cap = g.cap;
+    var tw = Math.max(18, Math.min(40, W * 0.07)), gapHalf = 10;
+    var avail = W / 2 - tw * 0.6 - gapHalf;
+    // birds sit a little closer on branches that hold 5 or 6, so they can stay bigger
+    var pack = cap <= 4 ? 0.92 : cap === 5 ? 0.84 : 0.78;
+    var s = Math.min(FR.h / rows * 0.6, avail / (cap * pack + 0.55), 70), sp = s * pack, bl = sp * cap + s * 0.55;
+    var rowH = Math.min(FR.h / rows, s * 2.15), y0 = FR.y + (FR.h - rowH * rows) / 2;
+    var tl = Math.max(tw * 0.25, W / 2 - Math.max(gapHalf, s * 0.5) - bl - tw / 2), tr = W - tl;
+    var brs = [];
+    for (var i = 0; i < nb; i++) {
+      var left = i % 2 === 0, row = Math.floor(i / 2), y = y0 + row * rowH + rowH * 0.8;
+      var x0 = left ? tl + tw / 2 - 2 : tr - tw / 2 + 2, dir = left ? 1 : -1;
+      brs.push({ x0: x0, x1: x0 + dir * bl, y: y, dir: dir, row: row, top: y0 + row * rowH });
+    }
+    L = { s: s, sp: sp, bl: bl, rowH: rowH, y0: y0, rows: rows, tw: tw, tl: tl, tr: tr, br: brs, th: Math.max(5, s * 0.2) };
+  }
+  function slotPos(i, k) { var b = L.br[i]; if (!b) return { x: W / 2, y: H / 2, face: 1 }; return { x: b.x0 + b.dir * L.sp * (k + 0.62), y: b.y - L.th * 0.5, face: b.dir }; }
+  function hit(px, py) {
+    if (!g || !L.br.length) return -1;
+    var row = Math.floor((py - L.y0) / L.rowH);
+    if (py < L.y0 - L.rowH * 0.4 || py > L.y0 + L.rowH * L.rows + L.rowH * 0.3) return -1;
+    row = Math.max(0, Math.min(L.rows - 1, row));
+    var i = row * 2 + (px < W / 2 ? 0 : 1);
+    return i < g.br.length ? i : -1;
+  }
+  var sceneNo = 0;
+  function newScene() { sceneNo = (levelNo - 1) % PA.SCENES.length; layout(); drawBg(); PA.fxInit(sceneNo, W, H, Goobs.skin()); }
+  // the still layer: scene, trunks, branches
+  function drawBg() {
+    if (!bx) return;
+    bx.setTransform(DPR, 0, 0, DPR, 0, 0); bx.clearRect(0, 0, W, H);
+    PA.scene(bx, W, H, sceneNo, Goobs.skin());
+    if (!g) return;
+    var sc = PA.SCENES[sceneNo];
+    L.br.forEach(function (b, i) { PA.branch(bx, b.x0 - b.dir * L.tw * 0.3, b.x1, b.y, L.th, b.dir, sc, i * 3 + 1); });
+    PA.trunk(bx, L.tl, L.tw, H, -1, sc); PA.trunk(bx, L.tr, L.tw, H, 1, sc);
+  }
+
+  // ================= drawing =================
+  function shake(i) { shakes[i] = now(); }
+  function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function phase(i, k) { var x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); }
+  function drawBirdAt(i, k, v, t, extra) {
+    var p = slotPos(i, k), ph = phase(i, k), ts = t / 1000, o = { face: p.face, sym: settings.symbols, t: ts };
+    // idle: blinks, small head tilts, a fluff now and then, and a rare little hop
+    var bl = (ts + ph * 4.1) % 4.1; o.blink = bl < 0.13 ? Math.sin(bl / 0.13 * Math.PI) : 0;
+    o.tilt = Math.sin(ts * 0.9 + ph * 6) > 0.92 ? Math.sin(ts * 3 + ph) * 0.12 : 0;
+    o.fluff = Math.max(0, Math.sin(ts * 0.7 + ph * 9) - 0.85) * 6;
+    var ih = (ts + ph * 7.3) % 7.3; o.hop = ih < 0.28 ? Math.sin(ih / 0.28 * Math.PI) * 0.35 : 0;
+    var hk = hops[i + ':' + k]; if (hk && t > hk && t - hk < 320) o.hop = Math.max(o.hop, Math.sin((t - hk) / 320 * Math.PI) * 0.6);
+    if (PP.hid(v)) o.sleepy = true;
+    var wk = wakes[i + ':' + k];
+    if (wk) { if (t < wk) o.sleepy = true; else if (t - wk < 450) { o.sleepy = true; o.wake = (t - wk) / 450; o.tilt = Math.sin((t - wk) / 40) * 0.12; } }
+    if (o.sleepy) { o.blink = 1; o.tilt = Math.sin(ts * 1.2 + ph * 5) * 0.05; o.hop = 0; }
+    if (shuffleT && t - shuffleT < 500) o.hop = Math.max(o.hop, Math.sin((t - shuffleT) / 500 * Math.PI) * 0.7);
+    var sx = 0; if (shakes[i] && t - shakes[i] < 300) sx = Math.sin((t - shakes[i]) / 25) * L.s * 0.08 * (1 - (t - shakes[i]) / 300);
+    if (extra) { if (extra.lift) { o.hop = 0.45 + Math.abs(Math.sin(t / 170)) * 0.25; o.glow = true; o.blink = 0; } }
+    PA.bird(cx, p.x + sx, p.y, L.s, PP.col(v), o);
+    // the cage
+    var ct = PP.cageT(v);
+    if (ct) {
+      var key = i + ':' + k, op = cageOpenT[key];
+      if (ct > g.used) PA.cage(cx, p.x + sx, p.y, L.s, ct - g.used, 1);
+      else if (op && t < op) PA.cage(cx, p.x + sx, p.y, L.s, 0, 1);
+      else if (op && t - op < 600) PA.cage(cx, p.x + sx, p.y, L.s, 0, 1 - (t - op) / 600);
+    }
+  }
+  function draw(t, dt) {
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
+    PA.fxDraw(cx, sceneNo, W, H, dt, t / 1000);
+    if (!g) return;
+    var sc = PA.SCENES[sceneNo];
+    // birds on their branches
+    for (var i = 0; i < g.br.length; i++) {
+      var b = g.br[i], run = i === sel ? PP.run(g, i) : 0;
+      for (var k = 0; k < b.length; k++) {
+        var ar = arrive[i + ':' + k]; if (ar && t < ar) continue; // still flying in
+        drawBirdAt(i, k, b[k], t, k >= b.length - run ? { lift: true } : null);
+      }
+      // leaves over a covered branch (and blowing away when they clear)
+      var B = L.br[i];
+      if (g.leaf[i]) {
+        var open = PP.open(g, i), lo = leafOpenT[i];
+        if (!open) PA.leafCover(cx, B.x0, B.x1, B.y, L.s, g.leaf[i] - g.flown, 1, sc, t / 1000);
+        else if (lo && t < lo) PA.leafCover(cx, B.x0, B.x1, B.y, L.s, 0, 1, sc, t / 1000);
+        else if (lo && t - lo < 700) PA.leafCover(cx, B.x0, B.x1, B.y, L.s, 0, 1 - (t - lo) / 700, sc, t / 1000);
+      }
+    }
+    // flocks: a finished set sits, sings with a happy hop, then flies off the screen together
+    flocks.forEach(function (f) {
+      var B = L.br[f.b]; if (!B) return;
+      f.cols.forEach(function (v, k) {
+        var p = slotPos(f.b, k), ar = arrive[f.b + ':' + k];
+        if (k >= f.d0 && ar && t < ar) return;
+        var o = { face: p.face, sym: settings.symbols, happy: t > f.tSing };
+        if (t < f.tGo) { if (t > f.tSing) o.hop = Math.abs(Math.sin((t - f.tSing) / 130 + k * 0.6)) * 0.55; PA.bird(cx, p.x, p.y, L.s, PP.col(v), o); return; }
+        var u = (t - f.tGo - k * 70) / 1300; if (u < 0) { o.hop = 0.3; PA.bird(cx, p.x, p.y, L.s, PP.col(v), o); return; }
+        if (u > 1) return;
+        var e = u * u, x = p.x + f.dir * (W * 0.15 + k * L.s * 0.3) * e - f.dir * W * 0.05 * Math.sin(u * Math.PI), y = p.y - (H * 0.9) * e - Math.sin(u * Math.PI) * L.s;
+        o.fly = true; o.flap = 0.5 + 0.5 * Math.sin(t / 45 + k); o.tilt = -0.25 * f.dir; o.face = f.dir; o.happy = false;
+        PA.bird(cx, x, y, L.s * (1 - u * 0.2), PP.col(v), o);
+      });
+    });
+    // birds in the air
+    flights.forEach(function (f) {
+      var Q = slotPos(f.b, f.k1), P = f.P, u = (t - f.t0) / f.dur;
+      if (u < 0) { PA.bird(cx, P.x, P.y, L.s, f.c, { face: P.face, hop: 0.3, sym: settings.symbols }); return; }
+      u = Math.min(1, u); var e = ease(u);
+      var mx = (P.x + Q.x) / 2, my = Math.min(P.y, Q.y) - L.s * 1.2 - Math.abs(Q.x - P.x) * 0.18;
+      var x = (1 - e) * (1 - e) * P.x + 2 * (1 - e) * e * mx + e * e * Q.x, y = (1 - e) * (1 - e) * P.y + 2 * (1 - e) * e * my + e * e * Q.y;
+      var face = Math.abs(Q.x - P.x) > 2 ? (Q.x > P.x ? 1 : -1) : Q.face;
+      if (u > 0.85) face = Q.face;
+      PA.bird(cx, x, y, L.s, f.c, { face: face, fly: u < 0.92, flap: 0.5 + 0.5 * Math.sin(t / 38 + f.j), tilt: u < 0.5 ? -0.15 : 0.1, sym: settings.symbols });
+    });
+    drawParts();
+  }
+  // ================= particles =================
+  function confetti() { parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.4, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, life: 170, t: 0, c: PA.COLORS[Math.floor(Math.random() * PA.COLORS.length)], r: 3 + Math.random() * 3, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, flake: true, g: 0.03 }); }
+  function feathers(i, col) { var p = slotPos(i, 1); for (var k = 0; k < 12; k++) parts.push({ x: p.x + (Math.random() - 0.5) * L.bl * 0.6, y: p.y - L.s * 0.5, vx: (Math.random() - 0.5) * 2.4, vy: -1 - Math.random() * 2, life: 70, t: 0, c: k % 3 ? col : '#ffffff', r: 2 + Math.random() * 2.5, g: 0.05, feather: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.2 }); }
+  function burstLeaves(i) { var B = L.br[i]; if (!B) return; for (var k = 0; k < 22; k++) parts.push({ x: B.x0 + B.dir * Math.random() * L.bl, y: B.y - L.s * Math.random() * 0.8, vx: B.dir * (1 + Math.random() * 3), vy: -1 - Math.random() * 2, life: 80, t: 0, c: ['#2f8a3a', '#3fa84a', '#56c25b'][k % 3], r: 3 + Math.random() * 3, g: 0.04, feather: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 }); }
+  function stepParts() { parts = parts.filter(function (p) { p.t++; p.x += p.vx; p.y += p.vy; p.vy += p.g || 0.12; if (p.flake || p.feather) { p.vx *= 0.985; p.rot = (p.rot || 0) + (p.vr || 0); } return p.t < p.life && p.y < H + 20; }); }
+  function drawParts() {
+    parts.forEach(function (p) {
+      cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c;
+      if (p.flake) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); }
+      else if (p.feather) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot || 0); cx.beginPath(); cx.ellipse(0, 0, p.r * 1.6, p.r * 0.7, 0, 0, Math.PI * 2); cx.fill(); cx.restore(); }
+      else { cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, Math.PI * 2); cx.fill(); }
+    });
+    cx.globalAlpha = 1;
+  }
+
+  // ================= loop =================
+  var lastT = 0;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(60, t - lastT) : 16; lastT = t;
+    // landings: a chirp, and the neighbour hops
+    flights = flights.filter(function (f) {
+      if (t < f.t0 + f.dur) return true;
+      S.land(f.c, f.j); hops[f.b + ':' + (f.k1 - 1)] = t; hops[f.b + ':' + f.k1] = t + 40;
+      return false;
+    });
+    flocks = flocks.filter(function (f) {
+      if (!f.sung && t >= f.tSing) { f.sung = true; S.song(PP.col(f.cols[0])); }
+      if (!f.gone && t >= f.tGo) { f.gone = true; feathers(f.b, PA.COLORS[PP.col(f.cols[0])]); }
+      return t < f.tGo + 70 * f.cols.length + 1400;
+    });
+    stepParts(); draw(t, dt); settle();
+  }
+
+  // ================= info, cards, sheets =================
+  function renderInfo() {
+    if (!g) return;
+    var left = PP.movesLeft(g), pm = $('pillMoves');
+    $('pillLevel').innerHTML = '<small>Level</small>' + fmt(levelNo) + '<span class="bar"><b style="width:' + Math.round(100 * g.flown / Math.max(1, g.nc)) + '%"></b></span>';
+    pm.innerHTML = '<small>Moves left</small>' + Math.max(0, left) + '<i> / ' + g.limit + '</i>';
+    pm.classList.toggle('warn', left > 0 && left <= Math.max(3, Math.round(g.limit * 0.1)));
+    pm.classList.toggle('out', left <= 0);
+    $('undoCnt').textContent = g.undos; $('branchCnt').textContent = g.extra; $('shufCnt').textContent = g.shuf;
+    $('btnUndo').disabled = g.undos <= 0; $('btnBranch').disabled = g.extra <= 0; $('btnShuffle').disabled = g.shuf <= 0;
+  }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2300); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#pp-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) { var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      if (b.sub) { var sm = document.createElement('small'); sm.textContent = b.sub; el.appendChild(sm); } el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; }
+    next();
+  }
+  // ---- twist tips: one line the first time each twist shows up ----
+  var TIPS = {
+    sleepy: ['Sleepy birds', 'Birds in nightcaps are fast asleep: you can’t see their colour or move them. They wake up when they reach the end of their branch.'],
+    big: ['Bigger branches', 'These branches hold more birds, and each colour has that many birds. A full branch of one colour flies away.'],
+    cage: ['Caged birds', 'A caged bird can’t move and nobody can land on it. The number counts the moves until the cage opens (birds above it move as usual).'],
+    leaves: ['Leafy branch', 'A branch hidden in leaves can’t be used until the number of sets on it have flown away. Then the leaves blow off.']
+  };
+  var tipQueue = [];
+  function tipsFor() {
+    if (!g) return;
+    var tw = PP.twistsOf(g.start); tipQueue = [];
+    if (tw.sleepy) tipQueue.push('sleepy'); if (g.cap > 4) tipQueue.push('big'); if (tw.cages) tipQueue.push('cage'); if (tw.leaves) tipQueue.push('leaves');
+    tipQueue = tipQueue.filter(function (k) { return !meta.tips[k]; });
+    nextTip();
+  }
+  function nextTip() {
+    if (!tipQueue.length || !meta.seen) return;
+    var k = tipQueue.shift(); meta.tips[k] = 1; saveMeta();
+    $('tipTitle').textContent = 'New: ' + TIPS[k][0]; $('tipText').textContent = TIPS[k][1];
+    var c = $('tipPic'), x = c.getContext('2d'), d = 2; c.width = 240 * d; c.height = 120 * d; x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, 240, 120);
+    var sc = PA.SCENES[0]; PA.branch(x, 12, 228, 96, 6, 1, sc, 2);
+    var s = 44, xs = [52, 96, 140, 184];
+    if (k === 'sleepy') { PA.bird(x, xs[0], 93, s, 3, { face: 1 }); PA.bird(x, xs[1], 93, s, 7, { face: 1, sleepy: true, t: 0.3 }); PA.bird(x, xs[2], 93, s, 7, { face: 1, sleepy: true, t: 0.9 }); PA.bird(x, xs[3], 93, s, 0, { face: 1 }); }
+    else if (k === 'big') { [40, 76, 112, 148, 184].forEach(function (px) { PA.bird(x, px, 93, 40, 6, { face: 1, happy: px === 184 }); }); }
+    else if (k === 'cage') { PA.bird(x, xs[0], 93, s, 1, { face: 1 }); PA.bird(x, xs[1], 93, s, 5, { face: 1 }); PA.bird(x, xs[2], 93, s, 8, { face: 1 }); PA.cage(x, xs[2], 93, s, 4, 1); }
+    else { PA.bird(x, xs[0], 93, s, 2, { face: 1 }); PA.bird(x, xs[1], 93, s, 10, { face: 1 }); PA.bird(x, xs[2], 93, s, 4, { face: 1 }); PA.leafCover(x, 20, 220, 96, s, 1, 1, sc, 0); }
+    $('ovTip').classList.add('show');
+  }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Tap a branch</b> to pick up the birds at its free end (all the same colour in a row). <b>Tap another branch</b> and they fly over.',
+      'Birds only land on an <b>empty branch</b> or next to a bird of the <b>same colour</b>, and only as many as there is room for.',
+      'When a branch is <b>full of one colour</b>, that little flock sings and <b>flies away</b>, and the branch is free again. Clear every bird to finish the level.',
+      'Each level has a <b>move limit</b> (top: moves left). It is a little more than our solver needed, so it can always be done. An <b>Undo</b> gives its move back. Out of moves? <b>Continue</b> with extra moves after a short ad (twice per try), or <b>Restart</b>.',
+      'Helpers on every level: <b>Undo</b> (5), <b>Branch</b> (one extra branch), <b>Shuffle</b> (mixes the birds again into a mix that can still be solved), and <b>Restart</b>. Every level is checked to be solvable.',
+      'Later on: <b>sleepy birds</b> (nightcaps, colour hidden until they reach the end), <b>bigger branches</b> (5 or 6), <b>caged birds</b> (open after a few moves) and <b>leafy branches</b> (open when sets fly away).',
+      'Settings: <b>Colour symbols</b> put a small shape on each bird. Every colour also has its own look: crest, spots, curl, stripes, mask, streamers and more.',
+      '500 levels are built in, then new ones are made on the phone, without end.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + fmt(stats.cleared) + '</b><span>Levels cleared</span></div><div class="tile"><b>' + fmt(stats.sets) + '</b><span>Flocks flown</span></div><div class="tile"><b>' + fmt(stats.moves) + '</b><span>Moves</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.undos) + '</b><span>Undos</span></div><div class="tile"><b>' + fmt(stats.branches) + '</b><span>Branches added</span></div><div class="tile"><b>' + fmt(stats.shuffles) + '</b><span>Shuffles</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.conts) + '</b><span>Continues</span></div><div class="tile"><b>' + fmt(stats.restarts) + '</b><span>Restarts</span></div><div class="tile"><b>' + fmt(meta.level) + '</b><span>Next level</span></div></div>';
+  }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.fullscreen({ overlay: true, menu: ['btnHelp', 'btnStats', 'btnSettings'], info: function () {
+      if (!g) return '';
+      return '<b>Level ' + fmt(g.level) + '</b> · ' + g.used + ' of ' + g.limit + ' moves · ' + g.flown + ' of ' + g.nc + ' flocks flown · ' + PA.SCENES[sceneNo].name;
+    } });
+    Goobs.themePicker($('themes'));
+    Goobs.onTheme(function () { drawBg(); PA.fxInit(sceneNo, W, H, Goobs.skin()); });
+    cv = $('cv'); cx = cv.getContext('2d'); bg = $('bg'); bx = bg.getContext('2d');
+    cv.addEventListener('pointerdown', function (e) { var r = cv.getBoundingClientRect(); tap(hit(e.clientX - r.left, e.clientY - r.top)); e.preventDefault(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('btnRestart').addEventListener('click', function () { if (!g || ending) return; if (g.hist.length || g.extra < 1 || g.shuf < 1) showCard('Restart this level?', 'The birds go back to where they started.', [{ label: 'Restart', red: true, go: restart }, { label: 'Keep playing', go: function () {} }]); });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnBranch').addEventListener('click', addBranch);
+    $('btnShuffle').addEventListener('click', shuffle);
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); nextTip(); } }
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnCloseHelp').addEventListener('click', closeHelp);
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('pillLevel').addEventListener('click', openHelp);
+    function closeTip() { $('ovTip').classList.remove('show'); setTimeout(nextTip, 200); }
+    $('btnTip').addEventListener('click', closeTip);
+    $('ovTip').addEventListener('click', function (e) { if (e.target === this) closeTip(); });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setMusic').checked = settings.music;
+    $('setMusic').addEventListener('change', function () { settings.music = this.checked; saveSettings(); S.setMusic(settings.music); });
+    $('setSymbols').checked = settings.symbols;
+    $('setSymbols').addEventListener('change', function () { settings.symbols = this.checked; saveSettings(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) { var ro = new ResizeObserver(fit); ro.observe($('stagewrap')); ro.observe(document.querySelector('.toolbar')); ro.observe(document.querySelector('.top')); }
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); if (settings.music) S.setMusic(true);
+    fit();
+    if (!load()) startLevel(meta.level);
+    fit();
+    if (!meta.seen) openHelp();
+    requestAnimationFrame(frame);
+    window.__ppReady = true;
+    Goobs.markPlayed('perch');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Perch Pals ' + (v.perch || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  // hook for automated tests
+  window.__perch = { get g() { return g; }, tap: tap, hit: hit, slotPos: slotPos, startLevel: startLevel, undo: undo, addBranch: addBranch, shuffle: shuffle, restart: restart, outOfMoves: outOfMoves,
+    solution: function () { return g ? PP.shortSolveState({ br: g.br, leaf: g.leaf, cap: g.cap, used: g.used, flown: g.flown }, 10, 150000, g.level) : null; }, check: function () { pendingCheck = true; }, ending: function () { return ending; }, busy: function () { return animating(); }, get L() { return L; }, get FR() { return FR; }, meta: function () { return meta; }, stats: function () { return stats; },
+    // the screen point to tap for branch i (middle of its free birds area, in client coordinates)
+    point: function (i) { var b = L.br[i], r = cv.getBoundingClientRect(); return { x: r.left + (b.x0 + b.x1) / 2, y: r.top + b.y - L.s * 0.5 }; }, PP: PP };
+  init();
+})();
+</script>
+</body>
+</html>

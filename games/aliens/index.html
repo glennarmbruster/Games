@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Star Siege</title>
+<style>
+/* Star Siege styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100%; min-height: 0; gap: 8px; }
+.brand svg { border-radius: 10px; }
+
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 28px); margin: 0 -14px; display: flex; align-items: center; justify-content: center; }
+.screen { position: relative; background: #04050a; border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+.screen canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+.paused { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(4,5,10,.72); color: #f0f4ff; text-align: center; font-weight: 800; }
+.paused.show { display: flex; }
+.paused b { font-size: 26px; letter-spacing: 2px; }
+.paused span { font-size: 15px; opacity: .8; }
+
+/* controls: slide buttons on the left, fire on the right, like the cabinet */
+.pad { width: 100%; max-width: 520px; flex: none; display: flex; align-items: center; gap: 10px; padding-bottom: 2px; }
+.pb { border: 0; padding: 0; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: grid; place-items: center; }
+.pb.dir { width: 84px; height: 76px; border-radius: 20px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.pb.dir svg { width: 38px; height: 38px; }
+.pb.dir.held { background: var(--accent-soft); color: var(--accent); transform: scale(.96); }
+.padmid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pb.small { width: 40px; height: 34px; border-radius: 12px; background: var(--surface-2); color: var(--muted); }
+.pb.small svg { width: 20px; height: 20px; }
+.pb.fire { width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff7a7a, #e0243a 60%, #a8101f); color: #fff;
+  font-weight: 900; font-size: 17px; letter-spacing: 1.5px; box-shadow: 0 6px 0 #7a0a16, 0 10px 18px -6px rgba(0,0,0,.45); }
+.pb.fire.held { transform: translateY(4px); box-shadow: 0 2px 0 #7a0a16, 0 4px 10px -4px rgba(0,0,0,.45); }
+@media (max-height: 700px) { .pb.dir { width: 76px; height: 62px; } .pb.fire { width: 80px; height: 80px; font-size: 15px; } }
+.cardicon svg { border-radius: 16px; }
+
+/* full screen (Goobs.fullscreen, 2026-09-29): the screen reaches the page edges (the kit's gutters are 8px, not 14px) and
+   the controls get a little more room on tall phones, where the arcade screen is limited by the width anyway */
+html.gg-fs .stagewrap { width: calc(100% + 16px); margin: 0 -8px; }
+html.gg-fs .stagewrap { background: #04050a; } /* the black of the arcade screen fills the free band, like a cabinet monitor */
+html.gg-fs .screen { border-radius: 0; box-shadow: none; }
+html.gg-fs .pad { padding-bottom: 4px; }
+@media (min-height: 780px) { html.gg-fs .pb.dir { width: 92px; height: 84px; } html.gg-fs .pb.fire { width: 104px; height: 104px; } }
+html.gg-fs .padmid .pb.small { width: 50px; height: 46px; border-radius: 14px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="ss-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#0b0d18"/>
+<g fill="#ff5a5a"><rect x="38" y="16" width="24" height="6"/><rect x="30" y="22" width="40" height="6"/><rect x="26" y="28" width="48" height="6"/></g>
+<g fill="#f0f4ff"><rect x="34" y="42" width="8" height="6"/><rect x="58" y="42" width="8" height="6"/><rect x="30" y="48" width="40" height="6"/><rect x="24" y="54" width="10" height="6"/><rect x="42" y="54" width="16" height="6"/><rect x="66" y="54" width="10" height="6"/><rect x="30" y="60" width="40" height="6"/><rect x="30" y="66" width="6" height="6"/><rect x="64" y="66" width="6" height="6"/></g>
+<g fill="#48ff68"><rect x="47" y="72" width="6" height="4"/><rect x="44" y="76" width="12" height="4"/><rect x="34" y="80" width="32" height="8"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#ss-logo"/></svg>
+      <h1>Star Siege</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="screen" id="screen">
+      <canvas id="cv" width="224" height="256"></canvas>
+      <div class="paused" id="paused"><b>Paused</b><span>Press Fire to carry on</span></div>
+    </div>
+  </div>
+
+  <div class="pad" id="pad">
+    <button class="pb dir" id="bL" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M15 5l-8 7 8 7z" fill="currentColor"/></svg></button>
+    <button class="pb dir" id="bR" aria-label="Right"><svg viewBox="0 0 24 24"><path d="M9 5l8 7-8 7z" fill="currentColor"/></svg></button>
+    <div class="padmid">
+      <button class="pb small" id="bPause" aria-label="Pause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg></button>
+      <button class="pb small" id="bHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+    </div>
+    <button class="pb fire" id="bFire" aria-label="Fire">FIRE</button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Color strips<small>Tint the top and bottom of the screen like the colored strips on the old cabinet.</small></div>
+        <span class="switch"><input type="checkbox" id="setOverlay"><span></span></span></label>
+      <label class="row"><div>Sound<small>The march, shots and the saucer.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Star Siege</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Star Siege records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist">
+      <li>Hold <b>&#9664;</b> or <b>&#9654;</b> to slide your cannon. Tap <b>FIRE</b> to shoot. Only one of your shots can be on the screen at a time, so make each one count.</li>
+      <li>The aliens march side to side and step down at each edge. They speed up as you shoot them down.</li>
+      <li>Points: bottom rows 10, middle rows 20, top row 30. The saucer that crosses the top is worth 50 to 300.</li>
+      <li>Hide under the four shields. Shots from both sides chew them away.</li>
+      <li>You have 3 cannons and get one more at 1,500 points. If the aliens reach the ground, the game is over.</li>
+      <li>Clear a wave and the next one starts lower.</li>
+    </ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Star Siege pixel art: our own sprites and a 5x7 pixel font. '#' = lit pixel. */
+var SSArt = (function () {
+  'use strict';
+  function S(rows) { return { w: rows[0].length, h: rows.length, rows: rows, bit: function (x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h && this.rows[y].charAt(x) === '#'; } }; }
+  var A = {
+    // 30 points: lantern (top row)
+    lantern: [S([
+      '...##...',
+      '..#..#..',
+      '.######.',
+      '#.####.#',
+      '########',
+      '.#....#.',
+      '#.#..#.#',
+      '.#....#.']), S([
+      '...##...',
+      '..#..#..',
+      '.######.',
+      '#.####.#',
+      '########',
+      '.#....#.',
+      '.#.##.#.',
+      '#......#'])],
+    // 20 points: beetle (rows 2 and 3)
+    beetle: [S([
+      '....###....',
+      '..#######..',
+      '##..###..##',
+      '###########',
+      '#.#.#.#.#.#',
+      '.#########.',
+      '..#.....#..',
+      '.#.......#.']), S([
+      '....###....',
+      '..#######..',
+      '##..###..##',
+      '###########',
+      '.#.#.#.#.#.',
+      '.#########.',
+      '.#.......#.',
+      '..#.....#..'])],
+    // 10 points: blob (bottom two rows)
+    blob: [S([
+      '...######...',
+      '.##########.',
+      '###.####.###',
+      '############',
+      '..###..###..',
+      '.##..##..##.',
+      '##........##',
+      '.#........#.']), S([
+      '...######...',
+      '.##########.',
+      '###.####.###',
+      '############',
+      '..###..###..',
+      '.##..##..##.',
+      '.##......##.',
+      '..##....##..'])],
+    cannon: S([
+      '......#......',
+      '.....###.....',
+      '.....###.....',
+      '..#########..',
+      '.###########.',
+      '#############',
+      '#############',
+      '##.#######.##']),
+    cannonBoom: [S([
+      '.....#..#.......',
+      '..#......#..#...',
+      '.....#.#....#...',
+      '...#.####..#....',
+      '.#..######...#..',
+      '...##########...',
+      '.############.#.',
+      '################']), S([
+      '#.....#....#...#',
+      '...#....#.......',
+      '..#..#.....#.#..',
+      '.....##.#.#.....',
+      '#..######..#....',
+      '..##########.#..',
+      '.############...',
+      '################'])],
+    saucer: S([
+      '......####......',
+      '....########....',
+      '..############..',
+      '.#.#.#.##.#.#.#.',
+      '################',
+      '.###..####..###.',
+      '..#....##....#..']),
+    saucerBoom: S([
+      '#...#..#...#..#.....',
+      '..#...#..#...#...#..',
+      '....######.######...',
+      '.#.#############..#.',
+      '...##############...',
+      '..#..##########..#..',
+      '#...#..#...#..#...#.',
+      '..#.....#.....#.....']),
+    alienBoom: S([
+      '.#...#...#...',
+      '..#..#..#....',
+      '...#...#...#.',
+      '##.........##',
+      '...#.....#...',
+      '..#..#..#..#.',
+      '.#...#...#...',
+      '#....#....#..']),
+    shotBoom: S([
+      '#...#..#',
+      '..#...#.',
+      '.######.',
+      '########',
+      '.######.',
+      '..#..#..',
+      '.#..#..#',
+      '#...#...']),
+    bombBoom: S([
+      '..#...',
+      '#...#.',
+      '.####.',
+      '######',
+      '.####.',
+      '#.##.#',
+      '..#...',
+      '#...#.']),
+    // alien shots: 3 wide, 8 tall, 4 frames each
+    bombs: [
+      [S(['.#.', '.#.', '.#.', '.#.', '.#.', '##.', '.#.', '.##']), S(['.#.', '.#.', '.#.', '.##', '.#.', '.#.', '##.', '.#.']), S(['.#.', '.##', '.#.', '.#.', '##.', '.#.', '.#.', '.#.']), S(['##.', '.#.', '.#.', '.##', '.#.', '.#.', '.#.', '.#.'])], // twister (aims at you)
+      [S(['.#.', '.#.', '.#.', '.#.', '.#.', '.#.', '###', '.#.']), S(['.#.', '.#.', '.#.', '.#.', '###', '.#.', '.#.', '.#.']), S(['.#.', '.#.', '###', '.#.', '.#.', '.#.', '.#.', '.#.']), S(['###', '.#.', '.#.', '.#.', '.#.', '.#.', '.#.', '.#.'])], // spike
+      [S(['#..', '.#.', '..#', '.#.', '#..', '.#.', '..#', '.#.']), S(['.#.', '..#', '.#.', '#..', '.#.', '..#', '.#.', '#..']), S(['..#', '.#.', '#..', '.#.', '..#', '.#.', '#..', '.#.']), S(['.#.', '#..', '.#.', '..#', '.#.', '#..', '.#.', '..#'])] // zigzag
+    ],
+    // splash masks: what a hit bites out of a shield
+    biteShot: S(['#..#...#', '..####..', '.######.', '########', '########', '.######.', '..####..', '#..#.#.#']),
+    biteBomb: S(['#.#...', '.####.', '######', '.####.', '######', '.####.', '#.##.#', '..#...'])
+  };
+  // shield: a rounded bunker with an arch underneath, 22 x 16
+  A.shield = S([
+    '.......########.......',
+    '.....############.....',
+    '...################...',
+    '..##################..',
+    '.####################.',
+    '.####################.',
+    '######################',
+    '######################',
+    '######################',
+    '######################',
+    '######################',
+    '#########....#########',
+    '########......########',
+    '#######........#######',
+    '#######........#######',
+    '#######........#######']);
+
+  // 5x7 font
+  var F = {
+    '0': ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'], '1': ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+    '2': ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#####'], '3': ['#####', '...#.', '..#..', '...#.', '....#', '#...#', '.###.'],
+    '4': ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'], '5': ['#####', '#....', '####.', '....#', '....#', '#...#', '.###.'],
+    '6': ['..##.', '.#...', '#....', '####.', '#...#', '#...#', '.###.'], '7': ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'],
+    '8': ['.###.', '#...#', '#...#', '.###.', '#...#', '#...#', '.###.'], '9': ['.###.', '#...#', '#...#', '.####', '....#', '...#.', '.##..'],
+    A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'], B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
+    C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'], D: ['###..', '#..#.', '#...#', '#...#', '#...#', '#..#.', '###..'],
+    E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'], F: ['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+    G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.####'], H: ['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    I: ['.###.', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'], J: ['..###', '...#.', '...#.', '...#.', '...#.', '#..#.', '.##..'],
+    K: ['#...#', '#..#.', '#.#..', '##...', '#.#..', '#..#.', '#...#'], L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'], N: ['#...#', '#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#'],
+    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], P: ['####.', '#...#', '#...#', '####.', '#....', '#....', '#....'],
+    Q: ['.###.', '#...#', '#...#', '#...#', '#.#.#', '#..#.', '.##.#'], R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+    S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'], T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+    U: ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], V: ['#...#', '#...#', '#...#', '#...#', '#...#', '.#.#.', '..#..'],
+    W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '#.#.#', '.#.#.'], X: ['#...#', '#...#', '.#.#.', '..#..', '.#.#.', '#...#', '#...#'],
+    Y: ['#...#', '#...#', '.#.#.', '..#..', '..#..', '..#..', '..#..'], Z: ['#####', '....#', '...#.', '..#..', '.#...', '#....', '#####'],
+    '-': ['.....', '.....', '.....', '#####', '.....', '.....', '.....'], '=': ['.....', '.....', '#####', '.....', '#####', '.....', '.....'],
+    '?': ['.###.', '#...#', '....#', '...#.', '..#..', '.....', '..#..'], '!': ['..#..', '..#..', '..#..', '..#..', '..#..', '.....', '..#..'],
+    '*': ['.....', '#.#.#', '.###.', '#####', '.###.', '#.#.#', '.....'], '.': ['.....', '.....', '.....', '.....', '.....', '.....', '..#..'],
+    ':': ['.....', '..#..', '.....', '.....', '.....', '..#..', '.....'], '<': ['...#.', '..#..', '.#...', '#....', '.#...', '..#..', '...#.'],
+    '>': ['.#...', '..#..', '...#.', '....#', '...#.', '..#..', '.#...'], "'": ['..#..', '..#..', '.#...', '.....', '.....', '.....', '.....'],
+    ' ': ['.....', '.....', '.....', '.....', '.....', '.....', '.....']
+  };
+  return { sprites: A, font: F };
+})();
+if (typeof module !== 'undefined') module.exports = SSArt;
+</script>
+<script>
+/* Star Siege game logic (no DOM). Modeled on the 1978 arcade alien shooter.
+   Runs at a fixed 60 ticks a second on the arcade's 224 x 256 screen (portrait).
+   Arcade behavior kept: the rack moves one alien per tick (so it ripples and speeds up as aliens fall),
+   steps 2 pixels (the last alien 3 to the right), drops 8 at an edge, and freezes while an alien explodes;
+   three alien shots (one aims at you, two follow fixed column lists), reload time shrinks as your score grows,
+   shots speed up when 8 or fewer aliens are left; the bonus saucer comes every 25.6 seconds while 8 or more
+   aliens are left, from the side set by your shot count, and its value follows the shot count through a
+   15-step list; each wave starts lower (9-step list); one extra cannon at 1,500; shields and the ground
+   line erode. Everything is deterministic, like the original. */
+var SS = (function () {
+  'use strict';
+  var A = (typeof SSArt !== 'undefined' ? SSArt : require('./art.js')).sprites;
+  var W = 224, H = 256, PLAYER_Y = 216, SHIELD_Y = 192, GROUND_Y = 239, TOP_Y = 32, SAUCER_Y = 40;
+  var SHIELD_X = [32, 77, 122, 167], START_X = 24, START_Y = 128, PMIN = 16, PMAX = W - 16 - 13;
+  var WAVE_DROP = [0, 24, 40, 48, 48, 48, 56, 56, 56];
+  var SAUCER_PTS = [100, 50, 50, 100, 150, 100, 100, 50, 300, 100, 100, 100, 50, 150, 100];
+  var PLUNGER_COLS = [1, 7, 1, 1, 1, 4, 11, 1, 6, 3, 1, 1, 11, 9, 2, 8];
+  var ZIGZAG_COLS = [11, 1, 6, 3, 1, 1, 11, 9, 2, 8, 2, 11, 4, 7, 10];
+  var SAUCER_EVERY = 1536, EXTRA_AT = 1500;
+  var TYPES = ['blob', 'blob', 'beetle', 'beetle', 'lantern'], POINTS = [10, 10, 20, 20, 30]; // by row, bottom row first
+
+  function typeOf(i) { return TYPES[Math.floor(i / 11)]; }
+  function spriteOf(i, f) { return A[typeOf(i)][f]; }
+  function offOf(i) { return Math.floor((16 - A[typeOf(i)][0].w) / 2); }
+  function waveDrop(w) { return w <= 9 ? WAVE_DROP[w - 1] : WAVE_DROP[1 + (w - 2) % 8]; }
+  function newShields() { var out = []; for (var k = 0; k < 4; k++) { var s = []; for (var y = 0; y < 16; y++) for (var x = 0; x < 22; x++) s.push(A.shield.bit(x, y) ? 1 : 0); out.push(s); } return out; }
+  function newGround() { var g = []; for (var x = 0; x < W; x++) g.push(1); return g; }
+
+  function create() {
+    var st = { t: 0, score: 0, lives: 3, wave: 0, extraGiven: false, shots: 0, killed: 0, phase: 'ready', phaseT: 0, over: false, invaded: false };
+    startWave(st);
+    st.phase = 'ready'; st.phaseT = 0;
+    return st;
+  }
+  function startWave(st) {
+    st.wave++;
+    st.alive = []; st.ax = []; st.ay = []; st.af = [];
+    st.ref = { x: START_X, y: START_Y + waveDrop(st.wave) }; st.dir = 1; st.cur = 0; st.noteT = 0; st.note = 0;
+    for (var i = 0; i < 55; i++) { st.alive.push(1); st.ax.push(st.ref.x + (i % 11) * 16 + offOf(i)); st.ay.push(st.ref.y - Math.floor(i / 11) * 16); st.af.push(0); }
+    st.left = 55;
+    st.player = { x: PMIN, alive: true };
+    st.pshot = { on: false, x: 0, y: 0 };
+    st.pboom = null; // { x, y, t }
+    st.aboom = null; // alien explosion { x, y, t }
+    st.bombs = [0, 1, 2].map(function (k) { return { on: false, type: k, x: 0, y: 0, steps: 0, f: 0 }; });
+    st.bboom = []; // bomb explosions { x, y, t }
+    st.plIdx = 0; st.zzIdx = 0;
+    st.saucer = { on: false, x: 0, vx: 0, t: SAUCER_EVERY, boom: 0, show: 0, pts: 0 };
+    st.shields = newShields();
+    st.ground = newGround();
+  }
+
+  // ---------- pixel tests ----------
+  function shieldAt(st, x, y) {
+    if (y < SHIELD_Y || y >= SHIELD_Y + 16) return -1;
+    for (var k = 0; k < 4; k++) { var sx = x - SHIELD_X[k]; if (sx >= 0 && sx < 22) return st.shields[k][(y - SHIELD_Y) * 22 + sx] ? k : -1; }
+    return -1;
+  }
+  function bite(st, mask, cx, cy) { // clear shield pixels under the mask, centred on (cx, cy)
+    var x0 = cx - Math.floor(mask.w / 2), y0 = cy - Math.floor(mask.h / 2);
+    for (var y = 0; y < mask.h; y++) for (var x = 0; x < mask.w; x++) {
+      if (!mask.bit(x, y)) continue;
+      var px = x0 + x, py = y0 + y;
+      if (py < SHIELD_Y || py >= SHIELD_Y + 16) continue;
+      for (var k = 0; k < 4; k++) { var sx = px - SHIELD_X[k]; if (sx >= 0 && sx < 22) st.shields[k][(py - SHIELD_Y) * 22 + sx] = 0; }
+    }
+  }
+  function clearShieldBox(st, x0, y0, w, h) {
+    for (var y = y0; y < y0 + h; y++) {
+      if (y < SHIELD_Y || y >= SHIELD_Y + 16) continue;
+      for (var x = x0; x < x0 + w; x++) for (var k = 0; k < 4; k++) { var sx = x - SHIELD_X[k]; if (sx >= 0 && sx < 22) st.shields[k][(y - SHIELD_Y) * 22 + sx] = 0; }
+    }
+  }
+  function spriteHit(spr, sx, sy, px, py) { return spr.bit(px - sx, py - sy); }
+
+  // ---------- rules ----------
+  function reloadRate(score) { return score < 200 ? 48 : score < 1000 ? 16 : score < 2000 ? 11 : score < 3000 ? 8 : 7; }
+  function bombSpeed(st) { return st.left <= 8 ? 5 : 4; }
+  function lowestIn(st, col) { for (var r = 0; r < 5; r++) { var i = r * 11 + col; if (st.alive[i]) return i; } return -1; }
+  function addScore(st, n, ev) {
+    st.score += n;
+    if (!st.extraGiven && st.score >= EXTRA_AT) { st.extraGiven = true; st.lives++; ev.push('extra'); }
+  }
+
+  // input: { left, right, fire (pressed since last tick) }. Returns a list of sound events.
+  function tick(st, input) {
+    var ev = [];
+    st.t++;
+    if (st.phase === 'over') return ev;
+    if (st.phase === 'ready') { if (++st.phaseT >= 100) { st.phase = 'play'; st.phaseT = 0; } return ev; }
+    if (st.phase === 'dying') { dying(st, ev); return ev; }
+    if (st.phase === 'clear') { if (++st.phaseT >= 70) { startWave(st); st.phase = 'ready'; st.phaseT = 40; } return ev; }
+
+    // player
+    var p = st.player;
+    if (input.left && !input.right && p.x > PMIN) p.x--;
+    if (input.right && !input.left && p.x < PMAX) p.x++;
+    if (input.fire && !st.pshot.on && !st.pboom) { st.pshot = { on: true, x: p.x + 6, y: PLAYER_Y - 4 }; st.shots++; ev.push('fire'); }
+    if (st.pshot.on) movePlayerShot(st, ev);
+    if (st.pboom && --st.pboom.t <= 0) st.pboom = null;
+
+    // aliens: one per tick; the whole rack stands still while an alien explodes
+    if (st.aboom) { if (--st.aboom.t <= 0) st.aboom = null; }
+    else if (st.left > 0) stepAlien(st, ev);
+    if (st.phase !== 'play') return ev;
+
+    // alien shots: one of the three each tick
+    var b = st.bombs[st.t % 3];
+    if (b.on) moveBomb(st, b, ev); else tryFire(st, b);
+    st.bboom = st.bboom.filter(function (x) { return --x.t > 0; });
+    if (st.phase !== 'play') return ev;
+
+    // bonus saucer
+    saucer(st, ev);
+
+    // march beat: one note per rack step, never faster than every 5 ticks
+    if (st.noteT > 0) st.noteT--;
+
+    if (st.left === 0 && !st.aboom) { st.phase = 'clear'; st.phaseT = 0; if (st.saucer.on) ev.push('ufoOff'); st.saucer.on = false; }
+    return ev;
+  }
+
+  function stepAlien(st, ev) {
+    var i = st.cur;
+    while (i < 55 && !st.alive[i]) i++;
+    if (i >= 55) { rackEnd(st, ev); return; }
+    st.ax[i] = st.ref.x + (i % 11) * 16 + offOf(i); st.ay[i] = st.ref.y - Math.floor(i / 11) * 16; st.af[i] ^= 1;
+    var spr = spriteOf(i, 0);
+    if (st.ay[i] + 8 > SHIELD_Y) clearShieldBox(st, st.ax[i], st.ay[i], spr.w, 8);
+    if (st.ay[i] + 8 >= PLAYER_Y) { invade(st, ev); return; }
+    st.cur = i + 1;
+    var j = st.cur; while (j < 55 && !st.alive[j]) j++;
+    if (j >= 55) rackEnd(st, ev);
+  }
+  function rackEnd(st, ev) {
+    st.cur = 0;
+    var minX = 1e9, maxX = -1e9;
+    for (var i = 0; i < 55; i++) if (st.alive[i]) { var x = st.ref.x + (i % 11) * 16 + offOf(i); minX = Math.min(minX, x); maxX = Math.max(maxX, x + spriteOf(i, 0).w); }
+    var dx = st.dir > 0 ? (st.left === 1 ? 3 : 2) : -2;
+    if ((dx > 0 && maxX + dx > W - 8) || (dx < 0 && minX + dx < 8)) { st.ref.y += 8; st.dir = -st.dir; }
+    else st.ref.x += dx;
+    if (st.noteT <= 0) { ev.push('step' + st.note); st.note = (st.note + 1) % 4; st.noteT = 5; }
+  }
+  function invade(st, ev) {
+    st.invaded = true; st.lives = 1; killPlayer(st, ev);
+  }
+
+  function movePlayerShot(st, ev) {
+    var s = st.pshot;
+    s.y -= 4;
+    if (s.y <= TOP_Y) { s.on = false; st.pboom = { x: s.x - 3, y: TOP_Y, t: 16 }; return; }
+    for (var py = s.y; py < s.y + 4; py++) {
+      // the saucer
+      var u = st.saucer;
+      if (u.on && py >= SAUCER_Y && py < SAUCER_Y + 7 && spriteHit(A.saucer, Math.floor(u.x), SAUCER_Y, s.x, py)) {
+        u.on = false; u.pts = SAUCER_PTS[st.shots % 15]; u.boom = 24; u.show = 70; u.bx = Math.floor(u.x);
+        addScore(st, u.pts, ev); s.on = false; ev.push('ufoOff'); ev.push('ufoHit'); u.t = SAUCER_EVERY; return;
+      }
+      // aliens
+      for (var i = 0; i < 55; i++) {
+        if (!st.alive[i]) continue;
+        var ay = st.ay[i], ax = st.ax[i];
+        if (py < ay || py >= ay + 8 || s.x < ax || s.x >= ax + 12) continue;
+        if (!spriteHit(spriteOf(i, st.af[i]), ax, ay, s.x, py)) continue;
+        st.alive[i] = 0; st.left--; st.killed++;
+        st.aboom = { x: ax + Math.floor(spriteOf(i, 0).w / 2) - 6, y: ay, t: 16 };
+        addScore(st, POINTS[Math.floor(i / 11)], ev); ev.push('alienDie'); s.on = false; return;
+      }
+      // alien shots
+      for (var k = 0; k < 3; k++) {
+        var b = st.bombs[k];
+        if (b.on && s.x >= b.x && s.x < b.x + 3 && py >= b.y && py < b.y + 8) {
+          b.on = false; s.on = false; st.pboom = { x: s.x - 3, y: py - 4, t: 16 }; return;
+        }
+      }
+      // shields
+      if (shieldAt(st, s.x, py) >= 0) { bite(st, A.biteShot, s.x, py - 2); s.on = false; return; }
+    }
+  }
+
+  function tryFire(st, b) {
+    if (st.left === 0 || !st.player.alive) return;
+    var rate = reloadRate(st.score);
+    for (var k = 0; k < 3; k++) { var o = st.bombs[k]; if (o !== b && o.on && o.steps < rate) return; }
+    var col;
+    if (b.type === 0) { // aims: the column over the cannon
+      col = Math.floor((st.player.x + 6 - st.ref.x) / 16);
+      if (col < 0 || col > 10) return;
+    } else if (b.type === 1) {
+      if (st.left === 1) return;
+      col = PLUNGER_COLS[st.plIdx] - 1; st.plIdx = (st.plIdx + 1) % PLUNGER_COLS.length;
+    } else {
+      if (st.saucer.on) return;
+      col = ZIGZAG_COLS[st.zzIdx] - 1; st.zzIdx = (st.zzIdx + 1) % ZIGZAG_COLS.length;
+    }
+    var i = lowestIn(st, col);
+    if (i < 0) return;
+    b.on = true; b.steps = 0; b.f = 0;
+    b.x = st.ax[i] + Math.floor(spriteOf(i, 0).w / 2) - 1; b.y = st.ay[i] + 8;
+  }
+  function moveBomb(st, b, ev) {
+    var sp = bombSpeed(st);
+    b.y += sp; b.steps++; b.f = (b.f + 1) % 4;
+    var spr = A.bombs[b.type][b.f];
+    // hits the ground
+    if (b.y + 8 >= GROUND_Y) {
+      b.on = false; st.bboom.push({ x: b.x - 1, y: GROUND_Y - 8, t: 12 });
+      for (var gx = b.x - 1; gx <= b.x + 3; gx++) if (gx >= 0 && gx < W && (gx + st.t) % 2) st.ground[gx] = 0;
+      return;
+    }
+    // the cannon
+    var p = st.player;
+    for (var y = 0; y < 8; y++) for (var x = 0; x < 3; x++) {
+      if (!spr.bit(x, y)) continue;
+      var px = b.x + x, py = b.y + y;
+      if (py >= PLAYER_Y && py < PLAYER_Y + 8 && A.cannon.bit(px - p.x, py - PLAYER_Y)) { b.on = false; killPlayer(st, ev); return; }
+      if (shieldAt(st, px, py) >= 0) { b.on = false; bite(st, A.biteBomb, b.x + 1, py + 1); st.bboom.push({ x: b.x - 1, y: py - 4, t: 8 }); return; }
+    }
+  }
+  function killPlayer(st, ev) {
+    if (!st.player.alive) return;
+    st.player.alive = false; st.phase = 'dying'; st.phaseT = 0;
+    st.pshot.on = false;
+    if (st.saucer.on) { st.saucer.on = false; ev.push('ufoOff'); }
+    ev.push('playerDie');
+  }
+  function dying(st, ev) {
+    st.phaseT++;
+    if (st.phaseT === 110) {
+      st.lives--;
+      st.bombs.forEach(function (b) { b.on = false; });
+      st.bboom = [];
+      if (st.lives <= 0 || st.invaded) { st.lives = 0; st.phase = 'over'; st.over = true; ev.push('over'); }
+    }
+    if (st.phaseT >= 160) { st.player = { x: PMIN, alive: true }; st.phase = 'play'; st.phaseT = 0; st.saucer.t = Math.max(st.saucer.t, 300); }
+  }
+  function saucer(st, ev) {
+    var u = st.saucer;
+    if (u.boom > 0) u.boom--;
+    else if (u.show > 0) u.show--;
+    if (u.on) {
+      u.x += u.vx;
+      if (u.x < 0 || u.x > W - 16) { u.on = false; u.t = SAUCER_EVERY; ev.push('ufoOff'); }
+      return;
+    }
+    if (u.t > 0) { u.t--; return; }
+    if (st.left >= 8 && !st.bombs[2].on && u.boom === 0 && u.show === 0) {
+      u.on = true;
+      if (st.shots % 2) { u.x = 8; u.vx = 0.75; } else { u.x = W - 8 - 16; u.vx = -0.75; }
+      ev.push('ufoOn');
+    }
+  }
+
+  return {
+    W: W, H: H, PLAYER_Y: PLAYER_Y, SHIELD_Y: SHIELD_Y, SHIELD_X: SHIELD_X, GROUND_Y: GROUND_Y, SAUCER_Y: SAUCER_Y, TOP_Y: TOP_Y,
+    POINTS: POINTS, SAUCER_PTS: SAUCER_PTS, EXTRA_AT: EXTRA_AT,
+    create: create, tick: tick, spriteOf: spriteOf, typeOf: typeOf, reloadRate: reloadRate
+  };
+})();
+if (typeof module !== 'undefined') module.exports = SS;
+</script>
+<script>
+/* Star Siege drawing: every frame is plotted pixel by pixel on the 224 x 256 arcade screen,
+   then scaled up by a whole number of device pixels so it stays crisp. The color overlay tints
+   bands of the screen like the colored strips on the old cabinet's glass. */
+var SSDraw = (function () {
+  'use strict';
+  var A = SSArt.sprites, FONT = SSArt.font, W = SS.W, H = SS.H;
+  var buf = null, img = null, px = null, native = null, nctx = null, overlay = true;
+  function rgb(r, g, b) { return (255 << 24) | (b << 16) | (g << 8) | r; }
+  var WHITE = rgb(240, 244, 255), RED = rgb(255, 72, 72), GREEN = rgb(72, 255, 104), BLACK = rgb(4, 5, 10);
+  function colorAt(x, y) {
+    if (!overlay) return WHITE;
+    if (y >= 32 && y < 56) return RED;
+    if (y >= 184) return GREEN;
+    return WHITE;
+  }
+  function init() {
+    native = document.createElement('canvas'); native.width = W; native.height = H;
+    nctx = native.getContext('2d');
+    img = nctx.createImageData(W, H);
+    px = new Uint32Array(img.data.buffer);
+  }
+  function clear() { px.fill(BLACK); }
+  function dot(x, y, c) { if (x >= 0 && y >= 0 && x < W && y < H) px[y * W + x] = c == null ? colorAt(x, y) : c; }
+  function spr(s, x, y, c) { x = Math.floor(x); y = Math.floor(y); for (var j = 0; j < s.h; j++) { var r = s.rows[j]; for (var i = 0; i < s.w; i++) if (r.charCodeAt(i) === 35) dot(x + i, y + j, c); } }
+  function text(str, x, y, c) {
+    str = String(str).toUpperCase();
+    for (var k = 0; k < str.length; k++) {
+      var g = FONT[str[k]] || FONT[' '];
+      for (var j = 0; j < 7; j++) for (var i = 0; i < 5; i++) if (g[j].charCodeAt(i) === 35) dot(x + k * 8 + i, y + j, c);
+    }
+  }
+  function center(str, y, c) { text(str, Math.floor((W - String(str).length * 8) / 2) + 1, y, c); }
+  function pad4(n) { return ('0000' + n).slice(-Math.max(4, String(n).length)); }
+
+  function header(score, hi) {
+    text('SCORE', 16, 8); center('HI-SCORE', 8);
+    text(pad4(score), 24, 22); center(pad4(hi), 22);
+  }
+  function footer(st) {
+    for (var x = 0; x < W; x++) if (!st || st.ground[x]) dot(x, SS.GROUND_Y);
+    var lives = st ? st.lives : 3;
+    text(String(lives), 8, 243);
+    for (var k = 0; k < Math.min(6, lives - 1); k++) spr(A.cannon, 24 + k * 16, 242);
+  }
+
+  function game(st, hi, blink) {
+    clear();
+    header(st.score, hi);
+    // saucer
+    var u = st.saucer;
+    if (u.on) spr(A.saucer, u.x, SS.SAUCER_Y);
+    else if (u.boom > 0) spr(A.saucerBoom, u.bx - 2, SS.SAUCER_Y - 1);
+    else if (u.show > 0) text(String(u.pts), u.bx + (u.pts >= 100 ? -4 : 0), SS.SAUCER_Y);
+    // aliens
+    if (st.phase !== 'ready' || st.phaseT > 20 || st.wave > 0) for (var i = 0; i < 55; i++) if (st.alive[i]) spr(SS.spriteOf(i, st.af[i]), st.ax[i], st.ay[i]);
+    if (st.aboom) spr(A.alienBoom, st.aboom.x, st.aboom.y);
+    // shields
+    for (var k = 0; k < 4; k++) { var sh = st.shields[k], x0 = SS.SHIELD_X[k]; for (var n = 0; n < sh.length; n++) if (sh[n]) dot(x0 + n % 22, SS.SHIELD_Y + Math.floor(n / 22)); }
+    // shots
+    st.bombs.forEach(function (b) { if (b.on) spr(A.bombs[b.type][b.f], b.x, b.y); });
+    st.bboom.forEach(function (b) { spr(A.bombBoom, b.x, b.y); });
+    if (st.pshot.on) for (var j = 0; j < 4; j++) dot(st.pshot.x, st.pshot.y + j);
+    if (st.pboom) spr(A.shotBoom, st.pboom.x, st.pboom.y);
+    // cannon
+    if (st.player.alive) { if (st.phase !== 'ready' || blink) spr(A.cannon, st.player.x, SS.PLAYER_Y); }
+    else if (st.phase === 'dying' && st.phaseT < 110) spr(A.cannonBoom[Math.floor(st.phaseT / 6) % 2], st.player.x - 1, SS.PLAYER_Y);
+    footer(st);
+    if (st.phase === 'ready') center(st.wave > 1 ? 'WAVE ' + st.wave : 'GET SET', 136);
+    if (st.phase === 'over') center('GAME OVER', 48);
+  }
+  function title(hi, best, blink) {
+    clear();
+    header(0, hi);
+    center('STAR SIEGE', 64);
+    center('- POINTS -', 96);
+    var rows = [[A.saucer, '= ? BONUS'], [A.lantern[0], '= 30'], [A.beetle[0], '= 20'], [A.blob[0], '= 10']];
+    rows.forEach(function (r, k) { var y = 116 + k * 16; spr(r[0], 64 - Math.floor(r[0].w / 2), y); text(r[1], 84, y); });
+    if (blink) center('PRESS FIRE', 196);
+    footer(null);
+  }
+  function present(cv) {
+    nctx.putImageData(img, 0, 0);
+    var c = cv.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.drawImage(native, 0, 0, cv.width, cv.height);
+  }
+  return { init: init, game: game, title: title, present: present, setOverlay: function (v) { overlay = !!v; } };
+})();
+</script>
+<script>
+/* Star Siege sounds: synthesized with Web Audio (no audio files). The march is our own four-note pattern. */
+var SSSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false, ufo = null;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(dur, f0, f1, gain) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime, len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(f); f.connect(g); g.connect(master); s.start(t);
+  }
+  var MARCH = [73, 92, 69, 58]; // our own beat
+  function ufoOn() {
+    var a = ctx(); if (!a || ufo) return;
+    var o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
+    o.type = 'square'; o.frequency.value = 520; lfo.type = 'triangle'; lfo.frequency.value = 7; lg.gain.value = 160;
+    lfo.connect(lg); lg.connect(o.frequency); g.gain.value = 0.045; o.connect(g); g.connect(master);
+    o.start(); lfo.start(); ufo = { o: o, l: lfo, g: g };
+  }
+  function ufoOff() { if (!ufo) return; try { ufo.g.gain.setTargetAtTime(0.0001, ac.currentTime, 0.02); ufo.o.stop(ac.currentTime + 0.1); ufo.l.stop(ac.currentTime + 0.1); } catch (e) { /* ignore */ } ufo = null; }
+  function play(e) {
+    if (!on) return;
+    if (e.indexOf('step') === 0) { var f = MARCH[+e.slice(4)]; tone('square', f, f * 0.94, 0.09, 0.22); return; }
+    switch (e) {
+      case 'fire': tone('square', 1400, 300, 0.16, 0.08); noise(0.1, 6000, 800, 0.12); break;
+      case 'alienDie': noise(0.28, 3000, 200, 0.35); tone('square', 300, 60, 0.2, 0.08); break;
+      case 'playerDie': noise(1.1, 2500, 90, 0.5); tone('sawtooth', 140, 40, 0.9, 0.12); break;
+      case 'ufoOn': ufoOn(); break;
+      case 'ufoOff': ufoOff(); break;
+      case 'ufoHit': [880, 1175, 1480, 1760, 1480, 1760].forEach(function (fq, i) { tone('square', fq, 0, 0.07, 0.07, i * 0.06); }); break;
+      case 'extra': [660, 880, 1320].forEach(function (fq, i) { tone('square', fq, 0, 0.12, 0.08, i * 0.1); }); break;
+      case 'over': [392, 330, 262, 196].forEach(function (fq, i) { tone('square', fq, 0, 0.25, 0.08, i * 0.22); }); break;
+    }
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); else ufoOff(); },
+    unlock: function () { if (on) ctx(); },
+    play: play, stopAll: ufoOff
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = SSSound, TICK = 1000 / 60;
+
+  // ================= storage =================
+  var store = Goobs.store('aliens');
+  var settings = { sound: false, adEvery: 3, overlay: true };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { hi: 0, seenHelp: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { games: 0, best: 0, bestWave: 0, aliens: 0, saucers: 0, shots: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+
+  // ================= state =================
+  // mode: 'title' | 'game'; paused: the game waits for Fire
+  var st = null, mode = 'title', paused = false, acc = 0, lastT = 0, blinkT = 0, overShown = false, saucersAtStart = 0;
+  var input = { left: false, right: false, fire: false };
+  function newGame() {
+    st = SS.create(); mode = 'game'; paused = false; overShown = false; acc = 0;
+    store.del('run'); S.stopAll();
+  }
+  function saveRun() { if (mode === 'game' && st && !st.over) store.set('run', st); else store.del('run'); }
+  function resumeRun() {
+    var r = store.get('run', null);
+    if (!r || r.over || !Array.isArray(r.alive) || r.alive.length !== 55) return false;
+    st = r; mode = 'game'; paused = true; overShown = false;
+    return true;
+  }
+  function pause() { if (mode !== 'game' || st.over || paused) return; paused = true; S.stopAll(); if (st.saucer.on) st._ufo = true; saveRun(); showPaused(); }
+  function unpause() { if (!paused) return; paused = false; showPaused(); lastT = performance.now(); acc = 0; if (st && st.saucer.on) S.play('ufoOn'); }
+  function showPaused() { $('paused').classList.toggle('show', paused); }
+
+  // ================= loop (fixed 60 ticks a second) =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(250, t - lastT); lastT = t;
+    blinkT += dt;
+    var blink = Math.floor(blinkT / 400) % 2 === 0;
+    if (mode === 'game' && st) {
+      if (!paused && !sheetOpen() && !document.hidden) {
+        acc += dt;
+        var n = 0;
+        while (acc >= TICK && n < 6) {
+          var ev = SS.tick(st, input);
+          input.fire = false;
+          for (var k = 0; k < ev.length; k++) onEvent(ev[k]);
+          acc -= TICK; n++;
+        }
+        if (n >= 6) acc = 0;
+      } else acc = 0;
+      SSDraw.game(st, Math.max(meta.hi, st.score), blink);
+      if (st.over && !overShown) { overShown = true; setTimeout(gameOver, 1800); }
+    } else SSDraw.title(meta.hi, stats.best, blink);
+    SSDraw.present($('cv'));
+  }
+  function onEvent(e) {
+    S.play(e);
+    if (e === 'alienDie') stats.aliens++;
+    else if (e === 'ufoHit') stats.saucers++;
+    else if (e === 'fire') stats.shots++;
+  }
+
+  // ================= game over =================
+  function gameOver() {
+    var newHi = st.score > meta.hi;
+    if (newHi) meta.hi = st.score;
+    meta.finished++; saveMeta();
+    stats.games++; stats.best = Math.max(stats.best, st.score); stats.bestWave = Math.max(stats.bestWave, st.wave); saveStats();
+    store.del('run');
+    showCard(newHi ? 'New high score!' : 'Game over', 'Score <b>' + fmt(st.score) + '</b> · wave ' + st.wave + (st.invaded ? '<br>The aliens landed.' : '') + '<br>High score ' + fmt(meta.hi), [
+      { label: 'Play again', red: true, go: function () { between(newGame); } },
+      { label: 'Title screen', go: function () { mode = 'title'; st = null; } }]);
+  }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#ss-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () {}, onStep: function () {} }, done); }
+  // house ads only between games, never during one
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      showAd(next);
+      return;
+    }
+    next();
+  }
+
+  // ================= screen size: as big as the space allows =================
+  // Whole device pixels per arcade pixel keep it crisp, but rounding down costs up to 13% of the width on a phone (373 of
+  // 390 points on an iPhone 15 at 3x, 336 of 375 on an SE at 2x). When it would cost more than 3%, use the exact fit: at
+  // 2x and 3x the uneven pixels (5 or 6 device pixels each) can't be seen (full screen, 2026-09-29).
+  function fit() {
+    var wrap = $('stagewrap'), cv = $('cv'), dpr = window.devicePixelRatio || 1;
+    var aw = wrap.clientWidth, ah = wrap.clientHeight;
+    if (!aw || !ah) return;
+    var exact = Math.min(aw * dpr / SS.W, ah * dpr / SS.H), s = Math.floor(exact);
+    if (s < exact * 0.97) s = exact;
+    if (s < 1) s = 1;
+    var w = Math.floor(SS.W * s), h = Math.floor(SS.H * s);
+    cv.width = w; cv.height = h;
+    cv.style.width = (w / dpr) + 'px'; cv.style.height = (h / dpr) + 'px';
+  }
+
+  // ================= controls =================
+  function holdButton(id, onDown, onUp) {
+    var el = $(id), ids = {};
+    function count() { return Object.keys(ids).length; }
+    el.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); ids[e.pointerId] = 1;
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      el.classList.add('held'); S.unlock(); onDown();
+    });
+    function up(e) { delete ids[e.pointerId]; if (!count()) { el.classList.remove('held'); if (onUp) onUp(); } }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+  function fire() {
+    if (sheetOpen()) return;
+    if (mode === 'title') { between(newGame); return; }
+    if (paused) { unpause(); return; }
+    if (st && st.over) return;
+    input.fire = true;
+  }
+
+  // ================= sheets =================
+  function renderStats() {
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + fmt(meta.hi) + '</b><span>High score</span></div><div class="tile"><b>' + stats.bestWave + '</b><span>Best wave</span></div>' +
+      '<div class="tile"><b>' + stats.games + '</b><span>Games</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.aliens) + '</b><span>Aliens</span></div><div class="tile"><b>' + fmt(stats.saucers) + '</b><span>Saucers</span></div>' +
+      '<div class="tile"><b>' + (stats.shots ? Math.round(stats.aliens / stats.shots * 100) : 0) + '%</b><span>Hit rate</span></div></div>';
+  }
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+    if (settings.sound && st && st.saucer.on && !paused) S.play('ufoOn');
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    $(btn).addEventListener('click', function () { if (onOpen) onOpen(); pause(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+
+  function init() {
+    SSDraw.init(); SSDraw.setOverlay(settings.overlay);
+    Goobs.themePicker($('themes'));
+    holdButton('bL', function () { input.left = true; }, function () { input.left = false; });
+    holdButton('bR', function () { input.right = true; }, function () { input.right = false; });
+    holdButton('bFire', fire);
+    $('bPause').addEventListener('click', function () { if (paused) unpause(); else pause(); });
+    $('screen').addEventListener('click', function () { if (paused) unpause(); else if (mode === 'title') fire(); });
+    document.addEventListener('keydown', function (e) {
+      if (sheetOpen()) return;
+      if (e.key === 'ArrowLeft') input.left = true;
+      else if (e.key === 'ArrowRight') input.right = true;
+      else if ((e.key === ' ' || e.key === 'ArrowUp') && !e.repeat) { fire(); e.preventDefault(); }
+      else if (e.key === 'p') { if (paused) unpause(); else pause(); }
+    });
+    document.addEventListener('keyup', function (e) { if (e.key === 'ArrowLeft') input.left = false; if (e.key === 'ArrowRight') input.right = false; });
+    $('btnHome').addEventListener('click', function () { pause(); saveRun(); Goobs.home(); });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('bHelp', 'ovHelp', 'btnCloseHelp');
+    // full screen (2026-09-29): Stats, Settings and How to play live in the Menu; the game pauses while it is open
+    Goobs.fullscreen({
+      menu: ['bHelp', 'btnStats', 'btnSettings'],
+      info: function () { return 'High score <b>' + fmt(meta.hi) + '</b> &middot; best wave <b>' + stats.bestWave + '</b>'; },
+      onOpen: function () { pause(); }
+    });
+    $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); });
+    $('setOverlay').checked = settings.overlay;
+    $('setOverlay').addEventListener('change', function () { settings.overlay = this.checked; saveSettings(); SSDraw.setOverlay(settings.overlay); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); saveRun(); } });
+    window.addEventListener('pagehide', function () { pause(); saveRun(); });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('stagewrap'));
+    window.addEventListener('resize', fit);
+    syncSound(); syncAds(); fit();
+    resumeRun(); showPaused();
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    Goobs.markPlayed('aliens');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); saveRun(); },
+      onVersions: function (v) { $('version').textContent = 'Star Siege ' + (v.aliens || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  // hook for automated tests
+  window.__ss = { get st() { return st; }, get mode() { return mode; }, get paused() { return paused; }, input: input, newGame: newGame, fire: fire, meta: meta };
+  init();
+})();
+</script>
+</body>
+</html>

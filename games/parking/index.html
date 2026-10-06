@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Lot Escape can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__leReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eef4f0;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Lot Escape didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('parking.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__leReady) fail('It took too long to start.'); }, 6000);
+})();
+</script>
+<title>Lot Escape</title>
+<style>
+/* Lot Escape styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+.brand h1 { font-size: 22px; }
+.stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; align-items: stretch; justify-content: center; }
+.stage { position: relative; flex: 1; border-radius: 18px; overflow: hidden; touch-action: none; margin: 0 10px; background: #7cc86a; box-shadow: var(--shadow); }
+[data-theme="dark"] .stage, [data-theme="blue"] .stage { background: #2f5a3a; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.toast { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); max-width: 92%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: rgba(20,24,36,.82); color: #fff; font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+.cardicon svg { border-radius: 16px; }
+/* full screen (kit): the counters are pills in the top row, so the game's name is hidden there (the Menu shows it)
+   and the stage (grass) runs to the very edges of the screen: the lot is width-bound on a phone, so every px counts. */
+html.gg-fs .top .brand h1 { display: none; }
+html.gg-fs .top .brand { flex: none; }
+.ttpills { flex: 1 1 auto; width: auto; min-width: 0; min-height: 0; justify-content: flex-end; gap: 6px; padding: 0; cursor: pointer; }
+.ttpills .ggpill { flex: none; }
+@media (max-width: 385px) { .ttpills { gap: 4px; } .ttpills .ggpill { padding: 7px 8px; font-size: 15px; } .ttpills .ggpill small { font-size: 12px; } } /* pills fit an SE */
+.ttpills.tight .ggpill { padding-left: 7px; padding-right: 7px; }
+.ttpills.tight .ggpill small { display: none; }
+.ttpills .ggpill small { font-size: 13px; font-weight: 700; color: var(--muted); }
+html.gg-fs .stagewrap { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); }
+html.gg-fs .stage { margin: 0; border-radius: 0; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="le-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#4a5568"/>
+<g stroke="#fff" stroke-width="2.5" stroke-dasharray="7 6" opacity=".7"><path d="M34 8v84M66 8v84"/></g>
+<rect x="12" y="18" width="18" height="30" rx="6" fill="#ff5a5a" stroke="#2b1f2a" stroke-width="2.5"/><rect x="15" y="22" width="12" height="7" rx="2" fill="#bfe6ff"/>
+<rect x="40" y="40" width="18" height="30" rx="6" fill="#ffd21e" stroke="#2b1f2a" stroke-width="2.5"/><rect x="43" y="44" width="12" height="7" rx="2" fill="#bfe6ff"/>
+<rect x="70" y="26" width="18" height="44" rx="6" fill="#3a8cff" stroke="#2b1f2a" stroke-width="2.5"/><rect x="73" y="30" width="12" height="7" rx="2" fill="#bfe6ff"/>
+<path d="M49 30v-18M43 18l6-7 6 7" stroke="#7af07a" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></g></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L15 9"/><path d="M17 3v3M20.5 4.5l-2 2M21 9h-3M13 5l1.5 1.5"/><path d="M15 9l-2-2" /></g></symbol>
+<symbol id="i-shuffle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c5 0 6 10 11 10H21M18 14l3 3-3 3"/><path d="M3 17h3.5c1.8 0 3-1.3 4-3M13.5 9c1-1.3 2.2-2 4-2H21M18 4l3 3-3 3"/></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#le-logo"/></svg>
+      <h1>Lot Escape</h1>
+    </button>
+    <!-- full screen: the level / cars-left / moves counters sit in the top row as pills (was its own row) -->
+    <div class="info ttpills" id="info"></div>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnRestart"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-bulb"/></svg><span>Hint</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Engines, horns and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Lot Escape</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Lot Escape records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Lot Escape rules (no DOM; runs in Node for the tests).
+   A parking lot is a w × h grid. Cars are 2 long (trucks 3), lying across ('h') or up-down ('v'), with a front.
+   A car can only move along its own line: it slides until the next square is taken (a car, a tree, a cone) or it
+   leaves the lot, and then it drives away. Moving into something right away is a bump. Empty the lot to win.
+   Levels are made from the level number. A level is kept only if it can be emptied by driving cars straight out one
+   after another (some car can always leave), so every level can be cleared. */
+var PJ = (function () {
+  'use strict';
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  var COLORS = 10;
+  function cells(c) { var out = []; for (var i = 0; i < c.len; i++) out.push(c.dir === 'h' ? [c.x + i, c.y] : [c.x, c.y + i]); return out; }
+  function grid(L) {
+    var gd = []; for (var y = 0; y < L.h; y++) { gd.push([]); for (var x = 0; x < L.w; x++) gd[y].push(-1); }
+    (L.rocks || []).forEach(function (r) { gd[r[1]][r[0]] = -2; });
+    L.cars.forEach(function (c) { if (c.gone) return; cells(c).forEach(function (p) { gd[p[1]][p[0]] = c.id; }); });
+    return gd;
+  }
+  // how far a car would go (sign +1 = right/down, -1 = left/up); exit = leaves the lot
+  function slide(L, c, sign, gd) {
+    gd = gd || grid(L);
+    var n = 0, x = c.x, y = c.y;
+    for (;;) {
+      var hx, hy; // the square in front of the moving end
+      if (c.dir === 'h') { hx = sign > 0 ? x + c.len + n : x - 1 - n; hy = y; } else { hx = x; hy = sign > 0 ? y + c.len + n : y - 1 - n; }
+      if (hx < 0 || hy < 0 || hx >= L.w || hy >= L.h) return { dist: n, exit: true };
+      var v = gd[hy][hx]; if (v !== -1) return { dist: n, exit: false, blocker: v };
+      n++;
+    }
+  }
+  function canExit(L, c, gd) { return slide(L, c, 1, gd).exit ? 1 : slide(L, c, -1, gd).exit ? -1 : 0; }
+
+  // ---------------- levels ----------------
+  function recipe(n) {
+    var sizes = [[4, 4], [4, 5], [5, 5], [5, 6], [6, 6], [6, 7], [6, 8], [7, 8], [7, 9], [7, 10]];
+    var si = Math.min(sizes.length - 1, n <= 1 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 10 ? 3 : n <= 18 ? 4 : n <= 30 ? 5 : n <= 50 ? 6 : n <= 80 ? 7 : n <= 130 ? 8 : 9);
+    var fill = Math.min(0.86, 0.55 + n * 0.006), rounds = Math.min(9, 2 + Math.floor(Math.sqrt(n) * 0.7)), rocks = n < 12 ? 0 : Math.min(4, Math.floor((n - 8) / 15));
+    if (n % 10 === 0 && n > 10) { rounds = Math.max(2, rounds - 3); fill -= 0.1; }
+    return { w: sizes[si][0], h: sizes[si][1], fill: fill, rounds: rounds, rocks: rocks, trucks: n < 5 ? 0 : 0.18 };
+  }
+  // waves of cars that can drive straight out; returns the number of waves, or 0 if it gets stuck
+  function waves(L) {
+    var M = { w: L.w, h: L.h, rocks: L.rocks, cars: L.cars.map(function (c) { return { id: c.id, x: c.x, y: c.y, len: c.len, dir: c.dir, gone: false }; }) }, left = M.cars.length, rounds = 0, first = 0;
+    while (left) {
+      var gd = grid(M), out = M.cars.filter(function (c) { return !c.gone && canExit(M, c, gd); });
+      if (!out.length) return { rounds: 0 };
+      if (!rounds) first = out.length;
+      out.forEach(function (c) { c.gone = true; }); left -= out.length; rounds++;
+    }
+    return { rounds: rounds, first: first };
+  }
+  function build(n) {
+    var R = recipe(n), r = rng(n * 2654435761 + 11), best = null;
+    for (var attempt = 0; attempt < 400; attempt++) {
+      var L = { n: n, w: R.w, h: R.h, cars: [], rocks: [] }, occ = {};
+      function free(x, y) { return x >= 0 && y >= 0 && x < L.w && y < L.h && !occ[x + ',' + y]; }
+      for (var k = 0; k < R.rocks; k++) { var rx = Math.floor(r() * L.w), ry = Math.floor(r() * L.h); if (free(rx, ry)) { occ[rx + ',' + ry] = 1; L.rocks.push([rx, ry]); } }
+      var target = Math.floor(L.w * L.h * R.fill), used = L.rocks.length, tries = 0;
+      while (used < target && tries++ < 600) {
+        var len = r() < R.trucks ? 3 : 2, dir = r() < 0.5 ? 'h' : 'v';
+        var x = Math.floor(r() * (dir === 'h' ? L.w - len + 1 : L.w)), y = Math.floor(r() * (dir === 'v' ? L.h - len + 1 : L.h));
+        var c = { id: L.cars.length, x: x, y: y, len: len, dir: dir }, ok = cells(c).every(function (p) { return free(p[0], p[1]); });
+        if (!ok) continue;
+        // no car may start parallel and right in line with an edge gap that lets everything leave at once: keep it mixed
+        c.face = r() < 0.5 ? 1 : -1; c.color = Math.floor(r() * COLORS);
+        cells(c).forEach(function (p) { occ[p[0] + ',' + p[1]] = 1; }); used += len; L.cars.push(c);
+      }
+      var wv = waves(L);
+      if (!wv.rounds) continue;
+      var score = Math.abs(wv.rounds - R.rounds) * 3 + Math.max(0, wv.first - Math.max(2, Math.ceil(L.cars.length / 4)));
+      if (!best || score < best.score) best = { L: L, score: score, rounds: wv.rounds };
+      if (score === 0) break;
+    }
+    best.L.rounds = best.rounds;
+    return best.L;
+  }
+
+  // ---------------- play ----------------
+  function create(n) { var L = build(n); return { n: n, w: L.w, h: L.h, rocks: L.rocks, cars: L.cars.map(function (c) { return { id: c.id, x: c.x, y: c.y, len: c.len, dir: c.dir, face: c.face, color: c.color, gone: false }; }), moves: 0, bumps: 0, hist: [], won: false }; }
+  // move car id: sign +1/-1 along its line (or 0 = the way it faces). Returns { dist, exit, blocker, sign }
+  function move(g, id, sign) {
+    var c = g.cars[id]; if (!c || c.gone || g.won) return null;
+    if (!sign) sign = c.face;
+    var s = slide(g, c, sign);
+    if (s.dist === 0 && !s.exit) { g.bumps++; return { dist: 0, exit: false, blocker: s.blocker, sign: sign, bump: true }; }
+    g.hist.push({ id: id, x: c.x, y: c.y, face: c.face });
+    if (c.dir === 'h') c.x += sign * s.dist; else c.y += sign * s.dist;
+    c.face = sign; g.moves++;
+    if (s.exit) c.gone = true;
+    g.won = g.cars.every(function (q) { return q.gone; });
+    return { dist: s.dist, exit: s.exit, blocker: s.blocker, sign: sign, won: g.won };
+  }
+  function undo(g) { var h = g.hist.pop(); if (!h) return null; var c = g.cars[h.id]; c.x = h.x; c.y = h.y; c.face = h.face; c.gone = false; g.won = false; g.moves++; return h.id; }
+  function hint(g) { var gd = grid(g), best = null; g.cars.forEach(function (c) { if (c.gone || best) return; var e = canExit(g, c, gd); if (e) best = { id: c.id, sign: e }; }); return best; }
+  function left(g) { return g.cars.filter(function (c) { return !c.gone; }).length; }
+  return { rng: rng, COLORS: COLORS, cells: cells, grid: grid, slide: slide, canExit: canExit, recipe: recipe, waves: waves, build: build, create: create, move: move, undo: undo, hint: hint, left: left };
+})();
+if (typeof module !== 'undefined') module.exports = PJ;
+</script>
+<script>
+/* Lot Escape art: top-down cars, trucks, trees and cones drawn in code. LArt.car(x, color, len, cs) draws a car
+   pointing up (front at the top), centred on (0, 0), len squares long, cs px per square. */
+var LArt = (function () {
+  'use strict';
+  var BODY = [['#ff4d4d', '#c81e2e'], ['#ff9a2e', '#d86a10'], ['#ffd21e', '#d8a10a'], ['#5ad15a', '#2e9a3a'], ['#2fd0c8', '#169a96'], ['#3a8cff', '#1e5ad0'], ['#9a6aff', '#6a3ad8'], ['#ff7ac8', '#d84a9a'], ['#f4f6fa', '#b8c0cc'], ['#3a4050', '#1c2030']];
+  var OL = '#1f1a26';
+  function rr(x, X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
+  function car(x, color, len, cs) {
+    var col = BODY[color % BODY.length], w = cs * 0.74, L = len * cs - cs * 0.2, t = -L / 2, lw = Math.max(1, cs * 0.035);
+    // shadow
+    rr(x, -w / 2 + cs * 0.05, t + cs * 0.07, w, L, cs * 0.2); x.fillStyle = 'rgba(0,0,0,.28)'; x.fill();
+    // wheels
+    x.fillStyle = '#1a1a22'; [[t + cs * 0.3], [t + L - cs * 0.3]].forEach(function (wy) { rr(x, -w / 2 - cs * 0.05, wy[0] - cs * 0.13, cs * 0.12, cs * 0.26, cs * 0.04); x.fill(); rr(x, w / 2 - cs * 0.07, wy[0] - cs * 0.13, cs * 0.12, cs * 0.26, cs * 0.04); x.fill(); });
+    if (len >= 3) {
+      // truck: cab at the front, cargo box behind
+      var cab = cs * 0.95;
+      rr(x, -w / 2, t, w, cab, cs * 0.18); var g1 = x.createLinearGradient(-w / 2, 0, w / 2, 0); g1.addColorStop(0, col[1]); g1.addColorStop(0.5, col[0]); g1.addColorStop(1, col[1]); x.fillStyle = g1; x.fill(); x.lineWidth = lw; x.strokeStyle = OL; x.stroke();
+      rr(x, -w * 0.36, t + cs * 0.14, w * 0.72, cs * 0.24, cs * 0.06); x.fillStyle = '#bfe6ff'; x.fill(); x.stroke();
+      rr(x, -w / 2 - cs * 0.02, t + cab - cs * 0.02, w + cs * 0.04, L - cab + cs * 0.02, cs * 0.08); var g2 = x.createLinearGradient(-w / 2, 0, w / 2, 0); g2.addColorStop(0, '#c8ccd6'); g2.addColorStop(0.5, '#f7f8fb'); g2.addColorStop(1, '#c8ccd6'); x.fillStyle = g2; x.fill(); x.stroke();
+      x.strokeStyle = 'rgba(40,40,60,.25)'; x.lineWidth = lw; for (var k = 1; k < 5; k++) { var ly = t + cab + (L - cab) * k / 5; x.beginPath(); x.moveTo(-w / 2 + cs * 0.06, ly); x.lineTo(w / 2 - cs * 0.06, ly); x.stroke(); }
+      x.fillStyle = col[0]; x.fillRect(-w / 2 + cs * 0.02, t + cab + (L - cab) * 0.42, w - cs * 0.04, cs * 0.1);
+    } else {
+      rr(x, -w / 2, t, w, L, cs * 0.24); var g = x.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, col[1]); g.addColorStop(0.45, col[0]); g.addColorStop(0.7, col[0]); g.addColorStop(1, col[1]); x.fillStyle = g; x.fill(); x.lineWidth = lw; x.strokeStyle = OL; x.stroke();
+      // windshield, roof, rear window
+      x.beginPath(); x.moveTo(-w * 0.36, t + L * 0.36); x.lineTo(-w * 0.3, t + L * 0.2); x.quadraticCurveTo(0, t + L * 0.16, w * 0.3, t + L * 0.2); x.lineTo(w * 0.36, t + L * 0.36); x.closePath(); x.fillStyle = '#bfe6ff'; x.fill(); x.stroke();
+      rr(x, -w * 0.34, t + L * 0.37, w * 0.68, L * 0.3, cs * 0.08); x.fillStyle = 'rgba(255,255,255,.25)'; x.fill();
+      x.beginPath(); x.moveTo(-w * 0.32, t + L * 0.69); x.lineTo(w * 0.32, t + L * 0.69); x.lineTo(w * 0.27, t + L * 0.8); x.lineTo(-w * 0.27, t + L * 0.8); x.closePath(); x.fillStyle = '#9fd0f0'; x.fill(); x.stroke();
+      x.beginPath(); x.moveTo(-w * 0.2, t + L * 0.08); x.quadraticCurveTo(0, t + L * 0.04, w * 0.2, t + L * 0.08); x.lineWidth = lw; x.strokeStyle = 'rgba(255,255,255,.6)'; x.stroke();
+    }
+    // lights
+    x.fillStyle = '#fff6a0'; x.beginPath(); x.ellipse(-w * 0.3, t + cs * 0.06, cs * 0.08, cs * 0.05, 0, 0, 7); x.ellipse(w * 0.3, t + cs * 0.06, cs * 0.08, cs * 0.05, 0, 0, 7); x.fill();
+    x.fillStyle = '#ff3a3a'; x.fillRect(-w * 0.38, t + L - cs * 0.07, cs * 0.14, cs * 0.05); x.fillRect(w * 0.38 - cs * 0.14, t + L - cs * 0.07, cs * 0.14, cs * 0.05);
+    // mirrors
+    x.fillStyle = col[1]; x.fillRect(-w / 2 - cs * 0.07, t + L * (len >= 3 ? 0.12 : 0.3), cs * 0.08, cs * 0.06); x.fillRect(w / 2 - cs * 0.01, t + L * (len >= 3 ? 0.12 : 0.3), cs * 0.08, cs * 0.06);
+  }
+  function tree(x, cs, seed) {
+    x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc(cs * 0.05, cs * 0.07, cs * 0.42, 0, 7); x.fill();
+    [[0, 0, 0.42, '#2e8a3a'], [-0.12, -0.1, 0.28, '#3fae4a'], [0.12, -0.02, 0.24, '#4cc05a'], [-0.02, 0.14, 0.22, '#3fae4a']].forEach(function (b) { x.beginPath(); x.arc(b[0] * cs, b[1] * cs, b[2] * cs, 0, 7); x.fillStyle = b[3]; x.fill(); });
+    x.beginPath(); x.arc(-0.14 * cs, -0.16 * cs, 0.08 * cs, 0, 7); x.fillStyle = 'rgba(220,255,180,.5)'; x.fill();
+  }
+  function cone(x, cs) {
+    x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(-cs * 0.3 + cs * 0.05, -cs * 0.3 + cs * 0.06, cs * 0.6, cs * 0.6);
+    x.fillStyle = '#2a2a33'; x.fillRect(-cs * 0.3, -cs * 0.3, cs * 0.6, cs * 0.6);
+    x.beginPath(); x.arc(0, 0, cs * 0.24, 0, 7); x.fillStyle = '#ff7a1e'; x.fill(); x.beginPath(); x.arc(0, 0, cs * 0.15, 0, 7); x.fillStyle = '#ffffff'; x.fill(); x.beginPath(); x.arc(0, 0, cs * 0.08, 0, 7); x.fillStyle = '#ff7a1e'; x.fill();
+  }
+  return { car: car, tree: tree, cone: cone, BODY: BODY };
+})();
+</script>
+<script>
+/* Lot Escape sounds: synthesized with Web Audio (no audio files). */
+var LESound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; try { ac = new AC(); } catch (e) { return null; } master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination); }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noise(freq, q, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.5);
+    var s = a.createBufferSource(); s.buffer = buf; var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q;
+    var g = a.createGain(); g.gain.value = gain; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); }, unlock: function () { if (on) ctx(); },
+    vroom: function (exit) { tone('sawtooth', 70, exit ? 160 : 110, exit ? 0.5 : 0.25, 0.07); noise(300, 1, exit ? 0.4 : 0.2, 0.25); },
+    stop: function () { noise(1600, 3, 0.1, 0.15); },
+    honk: function () { tone('square', 415, 0, 0.16, 0.08); tone('square', 523, 0, 0.16, 0.06); tone('square', 415, 0, 0.14, 0.08, 0.2); tone('square', 523, 0, 0.14, 0.06, 0.2); },
+    bump: function () { noise(250, 1, 0.12, 0.6); },
+    undo: function () { tone('sine', 700, 440, 0.12, 0.09); },
+    hint: function () { tone('sine', 988, 0, 0.12, 0.1); tone('sine', 1319, 0, 0.18, 0.1, 0.1); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone('triangle', f, 0, i === 4 ? 0.6 : 0.18, 0.24, i * 0.1); }); noise(4000, 0.8, 0.5, 0.12, 0.45); },
+    ding: function () { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); }, sign: function () { noise(900, 3, 0.07, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Lot Escape app: the lot, cars that slide and drive away, swipes and taps, bumps and honks, undo, hint, restart,
+   level flow, saves, stats and house ads. */
+(function () {
+  'use strict';
+  var S = LESound;
+
+  // ================= storage =================
+  var store = Goobs.store('parking');
+  var settings = { sound: false, adEvery: 3 };
+  (function () { var s = store.get('settings', {}) || {}; for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k]; settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0)); })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { level: 1, seen: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  ['cleared', 'moves', 'bumps', 'cars', 'hints', 'undos'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  function saveStats() { store.set('stats', stats); }
+
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || GoobsAds.isOpen(); }
+  function fmt(n) { return (n || 0).toLocaleString(); }
+
+  // ================= game =================
+  var g = null, view = {}, parts = [], signs = [], hintId = -1, hintT = 0, ending = false;
+  function startLevel(n) {
+    g = PJ.create(n); meta.level = n; saveMeta(); ending = false; parts = []; signs = []; hintId = -1;
+    view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: 0, shake: 0 }; });
+    save(); layout(); renderInfo();
+  }
+  function save() { if (g && !g.won) store.set('game', g); else store.del('game'); }
+  function load() {
+    var r = store.get('game', null);
+    if (!r || r.n !== meta.level || !Array.isArray(r.cars) || r.won) return false;
+    g = r; view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: c.gone ? 99 : 0, shake: 0 }; }); layout(); renderInfo(); return true;
+  }
+  function moveCar(id, sign) {
+    if (!g || g.won || ending || sheetOpen()) return;
+    S.unlock();
+    var c = g.cars[id], r = PJ.move(g, id, sign); if (!r) return;
+    hintId = -1;
+    if (r.bump) {
+      S.bump(); S.honk(); stats.bumps++; saveStats();
+      view[id].shake = 1; view[id].nudge = r.sign;
+      if (r.blocker >= 0) { view[r.blocker].shake = 1; signs.push({ id: r.blocker, t: 0 }); }
+      return;
+    }
+    var v = view[id]; v.sign = r.sign;
+    if (r.exit) { v.exiting = true; v.out = 0; S.vroom(true); stats.cars++; } else S.vroom(false);
+    stats.moves++; saveStats(); save(); renderInfo();
+    if (r.won) setTimeout(win, 900);
+  }
+  function win() {
+    if (ending) return; ending = true;
+    stats.cleared++; saveStats(); meta.finished++; meta.level = g.n + 1; saveMeta(); store.del('game');
+    S.win(); for (var i = 0; i < 80; i++) parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.5, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, t: 0, life: 170, c: ['#ffd21e', '#ff5a5a', '#3a8cff', '#5ad15a', '#ff7ac8'][i % 5], r: 3 + Math.random() * 3, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
+    setTimeout(function () {
+      showCard('Lot cleared!', 'Level ' + g.n + ' in <b>' + g.moves + '</b> moves' + (g.bumps ? ' (' + g.bumps + ' bump' + (g.bumps === 1 ? '' : 's') + ')' : '') + '.', [
+        { label: 'Next level', red: true, go: function () { between(function () { startLevel(g.n + 1); }); } }]);
+    }, 900);
+  }
+  function undo() {
+    if (!g || ending || sheetOpen()) return;
+    var id = PJ.undo(g); if (id == null) { toast('Nothing to undo'); return; }
+    var c = g.cars[id]; view[id] = { x: c.x, y: c.y, out: 0, shake: 0 }; stats.undos++; saveStats(); S.undo(); save(); renderInfo();
+  }
+  function hint() {
+    if (!g || ending || sheetOpen()) return;
+    var h = PJ.hint(g); if (!h) return; hintId = h.id; hintT = performance.now(); stats.hints++; saveStats(); S.hint();
+  }
+  function restart() { if (g) startLevel(g.n); }
+
+  // ================= layout and input =================
+  var cv, cx, W = 300, H = 400, DPR = 1, cs = 40, ox = 0, oy = 0, cache = {};
+  function fit() { var r = $('stage').getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1); W = Math.max(100, r.width); H = Math.max(100, r.height); cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); layout(); }
+  // full screen: across, the margin is just the road (0.8 of a square each side) plus a sliver of grass, because the lot
+  // is width-bound on a phone (was a whole square each side); up and down it keeps the full square
+  function layout() { if (!g) return; cs = Math.min(W / (g.w + 1.75), H / (g.h + 2), 70); ox = (W - g.w * cs) / 2; oy = (H - g.h * cs) / 2; cache = {}; }
+  function cellAt(px, py) { var x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs); return [x, y]; }
+  function carAt(px, py) {
+    var p = cellAt(px, py), best = -1;
+    g.cars.forEach(function (c) { if (c.gone) return; PJ.cells(c).forEach(function (q) { if (q[0] === p[0] && q[1] === p[1]) best = c.id; }); });
+    if (best < 0) { // forgiving: the nearest car within half a square
+      var bd = cs * 0.6; g.cars.forEach(function (c) { if (c.gone) return; PJ.cells(c).forEach(function (q) { var d = Math.hypot(ox + (q[0] + 0.5) * cs - px, oy + (q[1] + 0.5) * cs - py); if (d < bd) { bd = d; best = c.id; } }); });
+    }
+    return best;
+  }
+  var down = null;
+  function onDown(e) { if (!g || sheetOpen()) return; var r = cv.getBoundingClientRect(); var x = e.clientX - r.left, y = e.clientY - r.top, id = carAt(x, y); down = { id: id, x: x, y: y, t: performance.now() }; e.preventDefault(); }
+  function onUp(e) {
+    if (!down) return; var d = down; down = null; if (d.id < 0) return;
+    var r = cv.getBoundingClientRect(), dx = e.clientX - r.left - d.x, dy = e.clientY - r.top - d.y, c = g.cars[d.id];
+    var along = c.dir === 'h' ? dx : dy;
+    if (Math.abs(along) > 14) moveCar(d.id, along > 0 ? 1 : -1);
+    else if (Math.hypot(dx, dy) < 14) moveCar(d.id, 0);   // a tap: the way the car faces
+    else moveCar(d.id, (c.dir === 'h' ? dx : dy) >= 0 ? 1 : -1);
+  }
+
+  // ================= drawing =================
+  function carSprite(c) {
+    var key = c.color + ':' + c.len + ':' + Math.round(cs * 10); if (cache[key]) return cache[key];
+    var L = c.len * cs, cvs = document.createElement('canvas'); cvs.width = Math.ceil((cs + 8) * DPR); cvs.height = Math.ceil((L + 8) * DPR);
+    var x = cvs.getContext('2d'); x.scale(DPR, DPR); x.translate((cs + 8) / 2, (L + 8) / 2); LArt.car(x, c.color, c.len, cs);
+    cache[key] = { c: cvs, w: cs + 8, h: L + 8 }; return cache[key];
+  }
+  function rr(X, Y, w, h, r) { cx.beginPath(); cx.moveTo(X + r, Y); cx.arcTo(X + w, Y, X + w, Y + h, r); cx.arcTo(X + w, Y + h, X, Y + h, r); cx.arcTo(X, Y + h, X, Y, r); cx.arcTo(X, Y, X + w, Y, r); cx.closePath(); }
+  function draw(now) {
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
+    if (!g) return;
+    var lw = g.w * cs, lh = g.h * cs, rd = cs * 0.8;
+    // grass details
+    for (var i = 0; i < 30; i++) { var gx = (i * 71 % 100) / 100 * W, gy = (i * 37 % 100) / 100 * H; cx.fillStyle = 'rgba(40,110,40,.25)'; cx.beginPath(); cx.arc(gx, gy, 3 + i % 4, 0, 7); cx.fill(); }
+    // road around the lot
+    rr(ox - rd, oy - rd, lw + rd * 2, lh + rd * 2, rd); cx.fillStyle = '#4a4f5c'; cx.fill();
+    cx.setLineDash([cs * 0.3, cs * 0.3]); cx.strokeStyle = 'rgba(255,230,120,.8)'; cx.lineWidth = Math.max(1.5, cs * 0.05);
+    rr(ox - rd / 2, oy - rd / 2, lw + rd, lh + rd, rd / 2); cx.stroke(); cx.setLineDash([]);
+    // the lot
+    rr(ox, oy, lw, lh, cs * 0.12); cx.fillStyle = '#6a7080'; cx.fill();
+    cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = Math.max(1, cs * 0.03);
+    for (var x = 1; x < g.w; x++) { cx.beginPath(); cx.moveTo(ox + x * cs, oy + cs * 0.12); cx.lineTo(ox + x * cs, oy + lh - cs * 0.12); cx.stroke(); }
+    for (var y = 1; y < g.h; y++) { cx.setLineDash([cs * 0.12, cs * 0.12]); cx.beginPath(); cx.moveTo(ox + cs * 0.12, oy + y * cs); cx.lineTo(ox + lw - cs * 0.12, oy + y * cs); cx.stroke(); cx.setLineDash([]); }
+    rr(ox, oy, lw, lh, cs * 0.12); cx.lineWidth = Math.max(2, cs * 0.07); cx.strokeStyle = '#f4f4f0'; cx.stroke();
+    // trees and cones
+    (g.rocks || []).forEach(function (p, i) { cx.save(); cx.translate(ox + (p[0] + 0.5) * cs, oy + (p[1] + 0.5) * cs); if (i % 2) LArt.cone(cx, cs); else LArt.tree(cx, cs, i); cx.restore(); });
+    // cars
+    var dt = 1 / 60, speed = 16 * cs;
+    g.cars.forEach(function (c) {
+      var v = view[c.id]; if (!v) return;
+      if (c.gone && !v.exiting && v.out >= 99) return;
+      // slide toward the car's square; exiting cars keep going off the screen
+      var tx = c.x, ty = c.y, px = ox + v.x * cs, py = oy + v.y * cs;
+      if (v.exiting) {
+        v.out += dt * (4 + v.out * 3);
+        var ex = c.dir === 'h' ? v.sign * v.out * cs * 3 : 0, ey = c.dir === 'v' ? v.sign * v.out * cs * 3 : 0;
+        px = ox + c.x * cs + ex; py = oy + c.y * cs + ey;
+        if (px < -cs * 4 || px > W + cs * 4 || py < -cs * 4 || py > H + cs * 4) { v.exiting = false; v.out = 99; return; }
+      } else {
+        var d = Math.hypot(tx - v.x, ty - v.y), step = speed * dt / cs;
+        if (d > step) { v.x += (tx - v.x) / d * step; v.y += (ty - v.y) / d * step; } else { if (d > 0.01) S.stop(); v.x = tx; v.y = ty; }
+        px = ox + v.x * cs; py = oy + v.y * cs;
+      }
+      var sx = 0, sy = 0; if (v.shake > 0) { v.shake = Math.max(0, v.shake - 0.05); var sh = Math.sin(now / 18) * cs * 0.05 * v.shake; if (c.dir === 'h') sx = sh; else sy = sh; }
+      var sp = carSprite(c), w2 = c.dir === 'h' ? c.len * cs : cs, h2 = c.dir === 'v' ? c.len * cs : cs;
+      var ang = c.dir === 'v' ? (c.face > 0 ? Math.PI : 0) : (c.face > 0 ? Math.PI / 2 : -Math.PI / 2);
+      cx.save(); cx.translate(px + w2 / 2 + sx, py + h2 / 2 + sy); cx.rotate(ang);
+      if (c.id === hintId && Math.floor((now - hintT) / 250) % 2 === 0) { cx.shadowColor = 'rgba(255,240,120,1)'; cx.shadowBlur = cs * 0.5; }
+      cx.drawImage(sp.c, -sp.w / 2, -sp.h / 2, sp.w, sp.h); cx.restore();
+    });
+    // "!" over a car that got bumped
+    signs = signs.filter(function (s) { s.t += dt; return s.t < 1; });
+    signs.forEach(function (s) { var c = g.cars[s.id], v = view[s.id]; if (!c || c.gone) return; var w2 = c.dir === 'h' ? c.len * cs : cs; var bx = ox + v.x * cs + w2 / 2, by = oy + v.y * cs - cs * 0.2 - Math.sin(s.t * Math.PI) * cs * 0.2;
+      cx.globalAlpha = 1 - Math.max(0, s.t - 0.7) / 0.3; cx.beginPath(); cx.arc(bx, by, cs * 0.28, 0, 7); cx.fillStyle = '#fff'; cx.fill(); cx.lineWidth = 2; cx.strokeStyle = '#e8354a'; cx.stroke();
+      cx.fillStyle = '#e8354a'; cx.font = '900 ' + Math.round(cs * 0.4) + 'px system-ui, sans-serif'; cx.textAlign = 'center'; cx.fillText('!', bx, by + cs * 0.14); cx.globalAlpha = 1; });
+    parts = parts.filter(function (p) { p.t++; p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.rot += p.vr; return p.t < p.life && p.y < H + 20; });
+    parts.forEach(function (p) { cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); });
+    cx.globalAlpha = 1;
+  }
+  function frame(now) { requestAnimationFrame(frame); draw(now); }
+
+  // ================= info, cards, sheets =================
+  // full screen: when the pills don't fit the top row (an SE with big numbers), drop their unit words
+  function fitPills() {
+    var el = $('info'), w = 0; if (!el) return; el.classList.remove('tight');
+    Array.prototype.forEach.call(el.children, function (c) { w += c.offsetWidth + 6; });
+    if (w > el.clientWidth + 6) el.classList.add('tight');
+  }
+  // full screen: two pills in the top row instead of the old LEVEL / CARS LEFT row (frees ~50px)
+  function renderInfo() { if (!g) return; $('info').innerHTML = '<span class="ggpill"><small>Lv</small> ' + g.n + '</span><span class="ggpill">' + PJ.left(g) + ' <small>cars</small> · ' + g.moves + ' <small>moves</small></span>'; fitPills(); }
+  var toastT = 0;
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2000); }
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#le-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) { var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label; el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); }); box.appendChild(el); });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
+  function between(next) { if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; } next(); }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      '<b>Swipe a car</b> forward or backward to drive it. <b>Tap</b> a car to drive it the way it faces.',
+      'Cars only move along their own line. A car keeps going until it touches something, or reaches the road and <b>drives away</b>.',
+      'Driving straight into something is a <b>bump</b> (and a honk). Trees and cones never move.',
+      '<b>Empty the lot</b> to win. Every level can be cleared by driving cars out one after another.',
+      '<b>Undo</b> and <b>Hint</b> are free and unlimited. <b>Restart</b> puts the lot back how it started.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    $('statsBody').innerHTML = '<div class="tiles"><div class="tile"><b>' + fmt(stats.cleared) + '</b><span>Lots cleared</span></div><div class="tile"><b>' + fmt(stats.cars) + '</b><span>Cars out</span></div><div class="tile"><b>' + fmt(stats.moves) + '</b><span>Moves</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.bumps) + '</b><span>Bumps</span></div><div class="tile"><b>' + fmt(stats.hints) + '</b><span>Hints</span></div><div class="tile"><b>' + fmt(stats.undos) + '</b><span>Undos</span></div></div>';
+  }
+
+  // ================= wiring =================
+  function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    cv = $('cv'); cx = cv.getContext('2d');
+    cv.addEventListener('pointerdown', onDown); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', function () { down = null; });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
+    $('btnRestart').addEventListener('click', function () { if (g && g.moves) showCard('Restart this lot?', 'All the cars go back where they started.', [{ label: 'Restart', red: true, go: restart }, { label: 'Keep playing', go: function () {} }]); });
+    $('btnUndo').addEventListener('click', undo); $('btnHint').addEventListener('click', hint);
+    $('btnHelp').addEventListener('click', openHelp);
+    // full screen (kit): How to, Stats and Settings live in the Menu; Restart / Undo / Hint stay on screen
+    Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'],
+      info: function () { return g ? 'Level <b>' + g.n + '</b> · <b>' + PJ.left(g) + '</b> cars left · <b>' + g.moves + '</b> moves' : ''; } });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
+    $('btnCloseHelp').addEventListener('click', closeHelp); $('ovHelp').addEventListener('click', function (e) { if (e.target === this) closeHelp(); });
+    $('info').addEventListener('click', openHelp);
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('stagewrap'));
+    window.addEventListener('resize', fit);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    window.addEventListener('pagehide', save);
+    syncSound(); syncAds(); fit();
+    if (!load()) startLevel(meta.level);
+    fit();
+    if (!meta.seen) openHelp();
+    requestAnimationFrame(frame);
+    window.__leReady = true;
+    Goobs.markPlayed('parking');
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Lot Escape ' + (v.parking || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+  }
+  window.__le = { get g() { return g; }, moveCar: moveCar, startLevel: startLevel, PJ: PJ, undo: undo, hint: hint };
+  init();
+})();
+</script>
+</body>
+</html>

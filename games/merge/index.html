@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Number Nook</title>
+<style>
+/* Number Nook styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+:root {
+  --nn-board: #d9ddef; --nn-cell: #eceef8; --nn-ink: #3b3f73;
+  --tr-board: #cfe3e8; --tr-cell: #e3f0f2;
+}
+:root[data-theme="dark"] { --nn-board: #1d2030; --nn-cell: #272b3e; --tr-board: #16272c; --tr-cell: #1f3338; }
+:root[data-theme="blue"] { --nn-board: #13284a; --nn-cell: #1b335a; --tr-board: #123040; --tr-cell: #1a3d50; }
+
+.brand svg { border-radius: 10px; }
+.brand h1 { font-size: 20px; letter-spacing: -.3px; white-space: nowrap; }
+@media (max-width: 385px) { .brand h1 { font-size: 18px; } }
+.modes button { white-space: nowrap; }
+
+/* board sizes (Classic only) */
+.sizes { display: flex; gap: 6px; width: 100%; justify-content: center; flex: none; }
+.sizes button {
+  flex: 1; max-width: 76px; height: 30px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--muted); font-weight: 700; font-size: 14px; padding: 0;
+}
+.sizes button.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.sizes.hide { display: none; }
+
+/* next card (Trios) */
+.nextbox { display: flex; align-items: center; gap: 10px; }
+.nextcard {
+  width: 30px; height: 40px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 13px;
+  box-shadow: 0 3px 0 rgba(0,0,0,.18); transition: background .15s;
+}
+.nextcard.bonus { width: auto; min-width: 30px; padding: 0 6px; font-size: 12px; }
+
+/* board */
+.boardwrap { position: relative; width: min(calc(100vw - 28px), calc(100vh - 330px), 540px); aspect-ratio: 1 / 1; flex: none; }
+@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100dvh - 330px), 540px); } }
+.board { position: absolute; inset: 0; border-radius: 16px; background: var(--nn-board); box-shadow: var(--shadow); touch-action: none; overflow: hidden; }
+.board.trios { background: var(--tr-board); }
+.bg, .layer { position: absolute; inset: 0; }
+.bg i { position: absolute; border-radius: 10%; background: var(--nn-cell); }
+.board.trios .bg i { background: var(--tr-cell); border-radius: 12%; }
+.layer { pointer-events: none; }
+
+/* tiles: positioned with transform so moves can animate */
+.tl {
+  position: absolute; left: 0; top: 0; display: grid; place-items: center; border-radius: 10%;
+  font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1;
+  transition: transform .11s ease-in-out; will-change: transform; user-select: none; -webkit-user-select: none;
+}
+.tl.nt { transition: none; }
+.tl span { display: block; }
+.tl.pop span, .tl.pop { animation: tpop .2s ease-out; }
+@keyframes tpop { 0% { scale: 1; } 45% { scale: 1.16; } 100% { scale: 1; } }
+.tl.appear { animation: tappear .18s ease-out both; }
+@keyframes tappear { 0% { scale: 0; opacity: 0; } 100% { scale: 1; opacity: 1; } }
+
+/* Classic colors (our own palette) */
+.c2 { background: #eef1ff; color: #3b3f73; }
+.c4 { background: #dbe2ff; color: #3b3f73; }
+.c8 { background: #ffc46b; color: #fff; }
+.c16 { background: #ffa24d; color: #fff; }
+.c32 { background: #ff7a59; color: #fff; }
+.c64 { background: #ff4f6a; color: #fff; }
+.c128 { background: #c77dff; color: #fff; box-shadow: 0 0 10px 1px rgba(199,125,255,.45); }
+.c256 { background: #9a6bff; color: #fff; box-shadow: 0 0 12px 2px rgba(154,107,255,.5); }
+.c512 { background: #5a7cff; color: #fff; box-shadow: 0 0 14px 2px rgba(90,124,255,.5); }
+.c1024 { background: #25b5f0; color: #fff; box-shadow: 0 0 16px 3px rgba(37,181,240,.55); }
+.c2048 { background: #16cf97; color: #fff; box-shadow: 0 0 20px 4px rgba(22,207,151,.6); }
+.cbig { background: #1b1f3a; color: #ffd66b; box-shadow: 0 0 18px 3px rgba(255,214,107,.4); }
+:root[data-theme="dark"] .c2, :root[data-theme="blue"] .c2 { background: #dfe3f7; }
+
+/* Trios cards: a thick bottom edge, like a playing card lying on the table */
+.board.trios .tl { border-radius: 12%; box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+.t1 { background: #4fa8ff; color: #fff; box-shadow: 0 4px 0 #2e7fd1 !important; }
+.t2 { background: #ff5f7e; color: #fff; box-shadow: 0 4px 0 #d23d5c !important; }
+.t3 { background: #fffdf7; color: #2b2f4a; box-shadow: 0 4px 0 #e0c98f !important; }
+.t3.hi { color: #ff4f6a; }
+.nextcard.t3 { color: transparent; }
+
+.floats { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.float {
+  position: absolute; left: 70px; top: -44px; font-weight: 900; font-size: 22px; color: var(--accent);
+  animation: rise .8s ease-out forwards;
+}
+@keyframes rise { 0% { opacity: 0; transform: translateY(10px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
+.spacer { flex: 1; min-height: 0; }
+.cardicon svg { border-radius: 16px; }
+.tally { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+.tally span { background: var(--surface-2); border-radius: 8px; padding: 3px 8px; font-size: 13px; font-weight: 700; }
+
+/* Chain Cube (3D) */
+.chainwrap { position: relative; width: 100%; flex: 1 1 auto; min-height: 260px; border-radius: 18px; overflow: hidden; display: none;
+  background: linear-gradient(#bfe3ff, #eef6ff 60%, #f4f5f9); box-shadow: var(--shadow); }
+:root[data-theme="dark"] .chainwrap { background: linear-gradient(#1b2340, #262d4a 60%, #1a1d25); }
+:root[data-theme="blue"] .chainwrap { background: linear-gradient(#143260, #1c3d6e 60%, #13233b); }
+.chainwrap.show { display: block; }
+.chainwrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.chainmsg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+.chainmsg.hide { display: none; }
+.app.chainmode .boardwrap, .app.chainmode .sizes, .app.chainmode .spacer { display: none; }
+.app.chainmode #btnUndo { display: none; }
+.nextcube { width: 32px; height: 32px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 13px; box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+#cfloats .float { left: 50%; top: 18%; transform: translateX(-50%); }
+
+/* Full screen (1.2.0, Glenn: "every game full screen"): the board is as big as the free box (.ggfit) allows, the Chain
+   Cube tray fills that box; Undo stays at the bottom, the rest is in the Menu. */
+html.gg-fs .boardwrap { width: min(100cqw, 100cqh, 720px); }
+html.gg-fs .chainwrap { position: absolute; inset: 0; min-height: 0; width: auto; }
+html.gg-fs .spacer { display: none; }
+html.gg-fs .app.chainmode .toolbar { display: none; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="nn-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#5a54f0"/>
+<rect x="14" y="14" width="34" height="34" rx="8" fill="#eef1ff"/><rect x="52" y="14" width="34" height="34" rx="8" fill="#ffc46b"/>
+<rect x="14" y="52" width="34" height="34" rx="8" fill="#ff7a59"/><rect x="52" y="52" width="34" height="34" rx="8" fill="#1fcf9a"/>
+<g font-family="-apple-system,system-ui,sans-serif" font-weight="900" text-anchor="middle"><text x="31" y="39" font-size="20" fill="#3b3f73">2</text><text x="69" y="39" font-size="20" fill="#fff">8</text>
+<text x="31" y="77" font-size="17" fill="#fff">32</text><text x="69" y="76" font-size="13" fill="#fff">2048</text></g></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#nn-logo"/></svg>
+      <h1>Number Nook</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="classic">Classic 2048</button>
+    <button data-mode="trios">Trios</button>
+    <button data-mode="chain">Chain Cube</button>
+  </div>
+
+  <div class="sizes" id="sizes">
+    <button data-size="3">3&times;3</button><button data-size="4">4&times;4</button><button data-size="5">5&times;5</button><button data-size="6">6&times;6</button>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="ggfit" id="fit">
+  <div class="boardwrap" id="boardwrap">
+    <div class="board" id="board"><div class="bg" id="bg"></div><div class="layer" id="layer"></div></div>
+    <div class="floats" id="floats"></div>
+  </div>
+  <div class="chainwrap" id="chainwrap"><div class="chainmsg" id="chainMsg">Loading&hellip;</div><div class="floats" id="cfloats"></div></div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span id="undoLabel">Undo</span></button>
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New game</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Slides, pops and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Number Nook</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2 id="helpTitle">How to play</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Number Nook game logic (no DOM). Each mode follows its best-known original as closely as possible.
+   Tiles are objects { id, v } so the screen can animate each one from where it was to where it went.
+   Directions: 0 up, 1 right, 2 down, 3 left. */
+var NN = (function () {
+  'use strict';
+  function rnd() { try { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; } catch (e) { return Math.random(); } }
+  function mkState(n) { var g = { n: n, cells: [], nextId: 1, score: 0 }; for (var i = 0; i < n * n; i++) g.cells.push(null); return g; }
+  function tile(g, v) { return { id: g.nextId++, v: v }; }
+  function empties(g) { var e = []; for (var i = 0; i < g.cells.length; i++) if (!g.cells[i]) e.push(i); return e; }
+  // the cells of each line, listed from the edge the tiles move toward
+  function lines(n, dir) {
+    var out = [];
+    for (var a = 0; a < n; a++) {
+      var L = [];
+      for (var b = 0; b < n; b++) {
+        var r, c;
+        if (dir === 0) { r = b; c = a; } else if (dir === 2) { r = n - 1 - b; c = a; }
+        else if (dir === 3) { r = a; c = b; } else { r = a; c = n - 1 - b; }
+        L.push(r * n + c);
+      }
+      out.push(L);
+    }
+    return out;
+  }
+  function maxTile(g) { var m = 0; g.cells.forEach(function (t) { if (t && t.v > m) m = t.v; }); return m; }
+
+  // ================= Classic 2048 =================
+  // Swipe: every tile slides as far as it can; two equal tiles that meet merge once per move.
+  // After a move that changed the board, a 2 (90%) or a 4 (10%) appears in a random empty cell.
+  // Score = the sum of every merged tile. Reaching 2048 wins; you may keep going. No move left = game over.
+  var classic = {
+    WIN: 2048,
+    create: function (n) { var g = mkState(n || 4); g.won = false; g.over = false; classic.spawn(g); classic.spawn(g); return g; },
+    spawn: function (g) {
+      var e = empties(g);
+      if (!e.length) return null;
+      var i = e[Math.floor(rnd() * e.length)], t = tile(g, rnd() < 0.9 ? 2 : 4);
+      g.cells[i] = t;
+      return { i: i, t: t };
+    },
+    // returns null if nothing moved, else { slides: [{id, to}], merges: [{to, ids:[a,b], t}], gained, spawn }
+    move: function (g, dir) {
+      var n = g.n, slides = [], merges = [], gained = 0, moved = false, next = g.cells.slice();
+      lines(n, dir).forEach(function (L) {
+        var out = [], last = null; // last: the previous placed tile, if it can still merge
+        L.forEach(function (idx) {
+          var t = g.cells[idx];
+          if (!t) return;
+          if (last && !last.merged && last.t.v === t.v) {
+            var to = L[out.length - 1], nt = tile(g, t.v * 2);
+            merges.push({ to: to, ids: [last.t.id, t.id], t: nt });
+            slides.push({ id: t.id, to: to });
+            out[out.length - 1] = nt; last = { t: nt, merged: true };
+            gained += nt.v; moved = true;
+          } else {
+            var dest = L[out.length];
+            if (dest !== idx) moved = true;
+            slides.push({ id: t.id, to: dest });
+            out.push(t); last = { t: t, merged: false };
+          }
+        });
+        for (var k = 0; k < n; k++) next[L[k]] = out[k] || null;
+      });
+      if (!moved) return null;
+      g.cells = next; g.score += gained;
+      var sp = classic.spawn(g), res = { slides: slides, merges: merges, gained: gained, spawn: sp, won: false };
+      if (!g.won && maxTile(g) >= classic.WIN) { g.won = true; res.won = true; }
+      g.over = !classic.canMove(g);
+      return res;
+    },
+    canMove: function (g) {
+      var n = g.n;
+      for (var i = 0; i < n * n; i++) {
+        var t = g.cells[i];
+        if (!t) return true;
+        var r = Math.floor(i / n), c = i % n;
+        if (c < n - 1 && g.cells[i + 1] && g.cells[i + 1].v === t.v) return true;
+        if (r < n - 1 && g.cells[i + n] && g.cells[i + n].v === t.v) return true;
+      }
+      return false;
+    }
+  };
+
+  // ================= Trios (Threes-style) =================
+  // 4x4. A swipe moves every tile ONE step. A 1 and a 2 make 3; from 3 up, two equal tiles make double.
+  // One merge or shift per line per swipe; the tiles behind it follow. The next tile (shown ahead) slides in
+  // at the far edge of one of the lines that moved. Next tiles come from a shuffled deck of four 1s, four 2s and
+  // four 3s; once the top tile reaches 48, a "bonus" draw (1 in 21) can bring a bigger tile (6 up to top/8).
+  // Game over when no swipe moves anything. Score: each tile of 3 or more is worth 3^(doublings from 3 + 1).
+  var trios = {
+    create: function () {
+      var g = mkState(4); g.deck = []; g.over = false;
+      var spots = []; for (var i = 0; i < 16; i++) spots.push(i);
+      for (var k = 0; k < 9; k++) { var j = Math.floor(rnd() * spots.length), idx = spots.splice(j, 1)[0]; g.cells[idx] = tile(g, trios.draw(g, true)); }
+      g.next = trios.draw(g); g.bonus = g.nextBonus || false;
+      return g;
+    },
+    draw: function (g, plain) {
+      var top = maxTile(g);
+      g.nextBonus = false;
+      if (!plain && top >= 48 && rnd() < 1 / 21) {
+        var opts = []; for (var v = 6; v <= top / 8; v *= 2) opts.push(v);
+        if (opts.length) {
+          var pick = Math.floor(rnd() * opts.length), lo = Math.max(0, Math.min(pick - Math.floor(rnd() * 3), opts.length - 3));
+          g.nextBonus = opts.slice(lo, lo + 3); // up to 3 values, one of them the real one (shown on the next card)
+          return opts[pick];
+        }
+      }
+      if (!g.deck.length) {
+        g.deck = [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
+        for (var s = g.deck.length - 1; s > 0; s--) { var t = Math.floor(rnd() * (s + 1)), x = g.deck[s]; g.deck[s] = g.deck[t]; g.deck[t] = x; }
+      }
+      return g.deck.pop();
+    },
+    canMerge: function (a, b) { return (a === 1 && b === 2) || (a === 2 && b === 1) || (a >= 3 && a === b); },
+    // what one swipe would do, without changing anything: per line, the index where it moves from (or -1)
+    plan: function (g, dir) {
+      return lines(4, dir).map(function (L) {
+        for (var k = 1; k < 4; k++) {
+          var a = g.cells[L[k - 1]], b = g.cells[L[k]];
+          if (!b) continue;
+          if (!a || trios.canMerge(a.v, b.v)) return { L: L, k: k };
+        }
+        return { L: L, k: -1 };
+      });
+    },
+    move: function (g, dir) {
+      var plan = trios.plan(g, dir), slides = [], merges = [], movedLines = [];
+      plan.forEach(function (p) {
+        if (p.k < 0) return;
+        var L = p.L, a = g.cells[L[p.k - 1]], b = g.cells[L[p.k]];
+        if (a) {
+          var nt = tile(g, a.v + b.v);
+          merges.push({ to: L[p.k - 1], ids: [a.id, b.id], t: nt });
+          slides.push({ id: b.id, to: L[p.k - 1] });
+          g.cells[L[p.k - 1]] = nt;
+        } else { slides.push({ id: b.id, to: L[p.k - 1] }); g.cells[L[p.k - 1]] = b; }
+        for (var k = p.k + 1; k < 4; k++) {
+          var t = g.cells[L[k]];
+          if (t) slides.push({ id: t.id, to: L[k - 1] });
+          g.cells[L[k - 1]] = t;
+        }
+        g.cells[L[3]] = null;
+        movedLines.push(L);
+      });
+      if (!movedLines.length) return null;
+      var line = movedLines[Math.floor(rnd() * movedLines.length)], at = line[3], nt2 = tile(g, g.next);
+      g.cells[at] = nt2;
+      var res = { slides: slides, merges: merges, spawn: { i: at, t: nt2, from: dir }, bonus: g.bonus };
+      g.next = trios.draw(g); g.bonus = g.nextBonus;
+      g.score = trios.score(g);
+      g.over = !trios.canMove(g);
+      return res;
+    },
+    canMove: function (g) { for (var d = 0; d < 4; d++) if (trios.plan(g, d).some(function (p) { return p.k >= 0; })) return true; return false; },
+    tileScore: function (v) { if (v < 3) return 0; var k = Math.round(Math.log(v / 3) / Math.LN2); return Math.pow(3, k + 1); },
+    score: function (g) { var s = 0; g.cells.forEach(function (t) { if (t) s += trios.tileScore(t.v); }); return s; },
+    // what the "next" card shows: its color for 1, 2 and 3; for a bonus tile, the values it could be
+    nextLabel: function (g) { return g.bonus ? g.bonus.join(' ') : ''; }
+  };
+
+  return { classic: classic, trios: trios, lines: lines, maxTile: maxTile, rnd: rnd };
+})();
+if (typeof module !== 'undefined') module.exports = NN;
+</script>
+<script>
+/* Number Nook sounds: synthesized with Web Audio (no audio files). */
+var NNSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function knock(freq, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.07);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 3;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+    tone('sine', freq * 0.35, freq * 0.25, 0.09, gain * 0.5, delay);
+  }
+  function swish(delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.09);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len) * 0.6;
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(900, t); bp.frequency.linearRampToValueAtTime(2200, t + 0.09); bp.Q.value = 1.2;
+    var g = a.createGain(); g.gain.value = 0.35;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    slide: function () { if (on) swish(); },
+    // a pop whose pitch climbs with the tile made (2 -> low, 2048 -> high)
+    merge: function (v) { if (!on) return; var k = Math.max(1, Math.log(v) / Math.LN2), f = 300 * Math.pow(1.12, k); tone('sine', f, f * 1.5, 0.12, 0.35); tone('triangle', f * 2, 0, 0.08, 0.12, 0.02); },
+    spawn: function () { if (on) knock(2400, 0.12); },
+    bump: function () { if (on) tone('triangle', 160, 120, 0.1, 0.18); },
+    over: function () { if (!on) return; [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.3, i * 0.2); }); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) knock(900, 0.3); }
+  };
+})();
+</script>
+<script>
+/* Number Nook: Chain Cube mode (Chain Cube: 2048 3D-style). three.js draws, cannon-es does the physics;
+   both come from /shared and are loaded the first time this mode opens.
+   A numbered cube waits at the near end of a long tray. Drag left or right to line it up, let go to shoot it forward.
+   Two cubes with the same number merge into one double cube, which hops up toward the nearest cube of its new number,
+   so merges can chain. If a cube is left behind the red line once things settle, the game is over. */
+var NNChain = (function () {
+  'use strict';
+  var T = null, C = null;                       // THREE, CANNON
+  var W = 5, LEN = 12, LINE = 2.3, START_Z = 0.9, SIZE = 1, SPEED = 20, GRAV = -30;
+  var SPAWN = [[2, 30], [4, 25], [8, 19], [16, 13], [32, 8], [64, 5]];
+  var COLORS = { 2: '#eef1ff', 4: '#dbe2ff', 8: '#ffc46b', 16: '#ffa24d', 32: '#ff7a59', 64: '#ff4f6a', 128: '#c77dff', 256: '#9a6bff',
+    512: '#5a7cff', 1024: '#25b5f0', 2048: '#16cf97' };
+  var BIG = ['#1b1f3a', '#2d1b3a', '#3a1b1f', '#1b3a2d', '#3a2d1b'];
+
+  var host = null, canvas = null, renderer = null, scene = null, camera = null, world = null, mats = {}, geo = null;
+  var floorMat = null, cubeMat = null, checking = false, cubes = [], held = null, heldX = 0, dragging = false, shotAt = 0, state = 'idle', hooks = {}, raf = 0, running = false;
+  var score = 0, top = 2, nextVal = 2, pendingMerges = [], lineMesh = null, guide = null, lastT = 0, acc = 0;
+
+  function rnd() { try { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; } catch (e) { return Math.random(); } }
+  function pick() { var tot = 0, r, i; SPAWN.forEach(function (s) { tot += s[1]; }); r = rnd() * tot; for (i = 0; i < SPAWN.length; i++) { r -= SPAWN[i][1]; if (r <= 0) return SPAWN[i][0]; } return 2; }
+  function label(v) {
+    if (v < 10000) return String(v);
+    var u = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+    for (var i = 0; i < u.length; i++) if (v >= u[i][0]) { var x = v / u[i][0]; return (x >= 100 ? Math.round(x) : Math.round(x * 10) / 10) + u[i][1]; }
+    return String(v);
+  }
+  function colorOf(v) { return COLORS[v] || BIG[Math.round(Math.log(v) / Math.LN2) % BIG.length]; }
+  function inkOf(v) { return v <= 4 ? '#3b3f73' : v >= 4096 ? '#ffd66b' : '#ffffff'; }
+  function material(v) {
+    if (mats[v]) return mats[v];
+    var c = document.createElement('canvas'); c.width = c.height = 256;
+    var x = c.getContext('2d');
+    x.fillStyle = colorOf(v); x.fillRect(0, 0, 256, 256);
+    x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 18; x.strokeRect(9, 9, 238, 238);
+    x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(18, 18, 220, 40);
+    var t = label(v), fs = t.length <= 1 ? 150 : t.length === 2 ? 130 : t.length === 3 ? 104 : t.length === 4 ? 82 : 68;
+    x.font = '900 ' + fs + 'px -apple-system,system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.lineWidth = fs * 0.08; x.strokeStyle = 'rgba(0,0,0,.25)'; x.strokeText(t, 128, 136);
+    x.fillStyle = inkOf(v); x.fillText(t, 128, 136);
+    var tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
+    mats[v] = new T.MeshLambertMaterial({ map: tex });
+    return mats[v];
+  }
+
+  // ---------------- scene ----------------
+  function build() {
+    renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    scene = new T.Scene();
+    camera = new T.PerspectiveCamera(50, 1, 0.1, 100);
+    scene.add(new T.HemisphereLight(0xffffff, 0x8890b0, 1.6));
+    var sun = new T.DirectionalLight(0xffffff, 1.4); sun.position.set(-4, 10, -3); scene.add(sun);
+    // the tray: floor, low side walls, a back wall
+    var floor = new T.Mesh(new T.BoxGeometry(W, 0.4, LEN), new T.MeshLambertMaterial({ color: 0xd9ddef }));
+    floor.position.set(0, -0.2, LEN / 2 - 0.2); floor.scale.z = (LEN + 0.4) / LEN; scene.add(floor);
+    var stripes = new T.MeshLambertMaterial({ color: 0xcfd4ea });
+    for (var i = 1; i < 5; i++) { var s = new T.Mesh(new T.BoxGeometry(0.03, 0.01, LEN), stripes); s.position.set(-W / 2 + i, 0.005, LEN / 2); scene.add(s); }
+    var wallM = new T.MeshLambertMaterial({ color: 0x5a54f0 });
+    [-1, 1].forEach(function (k) { var w = new T.Mesh(new T.BoxGeometry(0.3, 0.7, LEN), wallM); w.position.set(k * (W / 2 + 0.15), 0.15, LEN / 2); scene.add(w); });
+    var back = new T.Mesh(new T.BoxGeometry(W + 0.6, 1.2, 0.3), wallM); back.position.set(0, 0.4, LEN + 0.15); scene.add(back);
+    var near = new T.Mesh(new T.BoxGeometry(W + 0.6, 0.35, 0.3), wallM); near.position.set(0, -0.02, -0.2); scene.add(near);
+    lineMesh = new T.Mesh(new T.BoxGeometry(W, 0.02, 0.08), new T.MeshBasicMaterial({ color: 0xff3b4f })); lineMesh.position.set(0, 0.012, LINE); scene.add(lineMesh);
+    guide = new T.Mesh(new T.BoxGeometry(0.06, 0.01, LEN - START_Z - 0.6), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
+    guide.position.set(0, 0.012, START_Z + (LEN - START_Z) / 2); scene.add(guide);
+    geo = new T.BoxGeometry(SIZE, SIZE, SIZE);
+    // turn the top face's number around so it reads the right way up from behind the tray
+    var uv = geo.attributes.uv; for (var k = 8; k < 12; k++) uv.setXY(k, 1 - uv.getX(k), 1 - uv.getY(k)); uv.needsUpdate = true;
+
+    world = new C.World({ gravity: new C.Vec3(0, GRAV, 0) });
+    world.allowSleep = true;
+    world.defaultContactMaterial.friction = 0.3; world.defaultContactMaterial.restitution = 0.12;
+    // cubes glide on the tray floor (cannon's friction is strong, so the floor's number is tiny): a lone shot reaches the far wall
+    floorMat = new C.Material('floor'); cubeMat = new C.Material('cube');
+    world.addContactMaterial(new C.ContactMaterial(floorMat, cubeMat, { friction: 0.0022, restitution: 0.05 }));
+    var ground = new C.Body({ mass: 0, shape: new C.Plane(), material: floorMat }); ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0); world.addBody(ground);
+    [-1, 1].forEach(function (k) { var b = new C.Body({ mass: 0, shape: new C.Box(new C.Vec3(0.15, 2, LEN / 2)) }); b.position.set(k * (W / 2 + 0.15), 2, LEN / 2); world.addBody(b); });
+    var bk = new C.Body({ mass: 0, shape: new C.Box(new C.Vec3(W / 2 + 0.3, 2, 0.15)) }); bk.position.set(0, 2, LEN + 0.15); world.addBody(bk);
+    var nr = new C.Body({ mass: 0, shape: new C.Box(new C.Vec3(W / 2 + 0.3, 2, 0.15)) }); nr.position.set(0, 2, -0.2); world.addBody(nr); // cubes can't slide off the near end
+    resize();
+  }
+  function resize() {
+    if (!renderer) return;
+    var r = host.getBoundingClientRect(), w = Math.max(10, r.width), h = Math.max(10, r.height);
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    // fit the tray's width at the near end; taller screens see further down the tray
+    camera.fov = w / h < 0.62 ? 62 : 54;
+    camera.position.set(0, 7.2, -3.6);
+    camera.lookAt(0, 0, 5.2);
+    camera.updateProjectionMatrix();
+    // Full screen (1.2.0): on a tall full-screen phone the fixed fov cut off the near end's side walls, so widen it
+    // until the whole tray (near corners with the walls, far end) is on screen
+    camera.updateMatrixWorld();
+    var pts = [[W / 2 + 0.35, 0.6, -0.4], [-W / 2 - 0.35, 0.6, -0.4], [W / 2 + 0.35, 0, -0.4], [W / 2 + 0.35, 0.6, LEN + 0.3], [0, 0.6, LEN + 0.3]], v = new T.Vector3();
+    for (var k = 0; k < 60; k++) {
+      var ok = pts.every(function (q) { v.set(q[0], q[1], q[2]).project(camera); return Math.abs(v.x) <= 0.985 && Math.abs(v.y) <= 0.97; });
+      if (ok) break;
+      camera.fov += 1; camera.updateProjectionMatrix();
+    }
+  }
+
+  // ---------------- cubes ----------------
+  function addCube(v, x, y, z, still) {
+    var b = new C.Body({ mass: 1, material: cubeMat, shape: new C.Box(new C.Vec3(SIZE / 2, SIZE / 2, SIZE / 2)), linearDamping: 0.05, angularDamping: 0.35, allowSleep: true, sleepSpeedLimit: 0.15, sleepTimeLimit: 0.4 });
+    b.position.set(x, y, z);
+    var m = new T.Mesh(geo, material(v));
+    scene.add(m);
+    var cube = { v: v, b: b, m: m, born: performance.now(), alive: true, shot: false };
+    b.cube = cube;
+    b.addEventListener('collide', function (e) {
+      if (e.body && e.body.mass === 0 && e.body.shapes[0] instanceof C.Plane) { /* the floor */ } else if (cube.sliding) { cube.sliding = false; b.angularFactor.set(1, 1, 1); }
+      var o = e.body && e.body.cube;
+      if (!o || !cube.alive || !o.alive || o.v !== cube.v || cube === held || o === held) return;
+      if (!cube.shot && !cube.merged) return;
+      pendingMerges.push([cube, o]);
+    });
+    if (!still) world.addBody(b);
+    cubes.push(cube);
+    return cube;
+  }
+  function removeCube(cube) {
+    cube.alive = false;
+    if (cube.b.world) world.removeBody(cube.b);
+    scene.remove(cube.m);
+    cubes.splice(cubes.indexOf(cube), 1);
+  }
+  function newHeld() {
+    held = addCube(nextVal, heldX, SIZE / 2, START_Z, true);
+    nextVal = pick();
+    held.m.scale.set(0.2, 0.2, 0.2);
+    if (state !== 'over') state = 'aim';
+    if (hooks.change) hooks.change();
+  }
+  function shoot() {
+    if (state !== 'aim' || !held) return;
+    var c = held; held = null;
+    c.shot = true;
+    c.b.position.set(heldX, SIZE / 2, START_Z);
+    world.addBody(c.b);
+    c.b.velocity.set(0, 0, SPEED);
+    c.b.angularFactor.set(0, 0, 0); c.sliding = true; // slides flat until it hits a cube or a wall
+    shotAt = performance.now();
+    state = 'fly'; checking = true;
+    if (hooks.sound) hooks.sound('shoot');
+  }
+  function doMerges() {
+    var done = [];
+    pendingMerges.forEach(function (p) {
+      var a = p[0], b = p[1];
+      if (!a.alive || !b.alive || done.indexOf(a) >= 0 || done.indexOf(b) >= 0) return;
+      done.push(a, b);
+      var v = a.v * 2, pa = a.b.position, pb = b.b.position;
+      // the new cube appears where the one further down the tray was
+      var far = pa.z > pb.z ? a : b, pos = far.b.position;
+      var x = pos.x, y = Math.max(pos.y, SIZE / 2) + 0.05, z = pos.z;
+      removeCube(a); removeCube(b);
+      var n = addCube(v, x, y, z, false);
+      n.merged = true; n.m.scale.set(0.7, 0.7, 0.7);
+      // hop up and toward the nearest cube with the same new number, so chains can happen
+      var target = null, bd = 1e9;
+      cubes.forEach(function (o) { if (o !== n && o.alive && o.v === v && o !== held) { var d = o.b.position.distanceTo(n.b.position); if (d < bd) { bd = d; target = o; } } });
+      var vx = 0, vz = 0;
+      if (target) { var dx = target.b.position.x - x, dz = target.b.position.z - z, d = Math.max(0.5, Math.hypot(dx, dz)); vx = dx / d * Math.min(8, d * 2.2); vz = dz / d * Math.min(8, d * 2.2); }
+      n.b.velocity.set(vx, 9.5, vz);
+      n.b.angularVelocity.set((rnd() - 0.5) * 6, (rnd() - 0.5) * 6, (rnd() - 0.5) * 6);
+      score += v; if (v > top) top = v;
+      if (hooks.merge) hooks.merge(v);
+    });
+    pendingMerges = [];
+  }
+  function settled() {
+    for (var i = 0; i < cubes.length; i++) {
+      var c = cubes[i]; if (c === held || !c.b.world) continue;
+      if (c.b.velocity.lengthSquared() > 0.09 || c.b.angularVelocity.lengthSquared() > 0.2) return false;
+    }
+    return true;
+  }
+  function overLine() {
+    return cubes.some(function (c) { return c !== held && c.alive && c.b.world && c.b.position.z - SIZE / 2 < LINE - 0.05; });
+  }
+
+  // ---------------- loop ----------------
+  function frame(tms) {
+    raf = requestAnimationFrame(frame);
+    if (!running || !world) return;
+    var dt = Math.min(0.05, lastT ? (tms - lastT) / 1000 : 0); lastT = tms;
+    if (!(hooks.paused && hooks.paused())) {
+      acc += dt;
+      var n = 0;
+      while (acc >= 1 / 60 && n < 4) { world.step(1 / 60); doMerges(); acc -= 1 / 60; n++; }
+      if (n === 4) acc = 0;
+      var since = performance.now() - shotAt;
+      if (state !== 'over' && !held && since > 450) newHeld();
+      // once the last shot has settled: anything left behind the red line ends the game
+      if (checking && state !== 'over' && since > 900 && settled()) {
+        checking = false;
+        if (overLine()) { state = 'over'; if (hooks.over) hooks.over(); }
+        else if (hooks.save) hooks.save();
+      }
+    }
+    // draw
+    cubes.forEach(function (c) {
+      if (c === held) { c.m.position.set(heldX, SIZE / 2, START_Z); c.m.quaternion.set(0, 0, 0, 1); }
+      else { c.m.position.copy(c.b.position); c.m.quaternion.copy(c.b.quaternion); }
+      var s = c.m.scale.x; if (s < 1) { s = Math.min(1, s + dt * 5); c.m.scale.set(s, s, s); }
+    });
+    if (guide) { guide.visible = !!held && state !== 'over'; guide.position.x = heldX; }
+    renderer.render(scene, camera);
+  }
+
+  // ---------------- input: drag to line up, let go to shoot ----------------
+  function xFromClient(cx) {
+    var r = canvas.getBoundingClientRect(), f = (cx - r.left) / r.width;
+    return Math.max(-W / 2 + SIZE / 2 + 0.05, Math.min(W / 2 - SIZE / 2 - 0.05, (0.5 - f) * (W + 0.8))); // the camera looks down the tray, so screen right is the tray's -x
+  }
+  function onDown(e) {
+    if (!held || state === 'over' || (hooks.paused && hooks.paused())) return;
+    dragging = true; heldX = xFromClient(e.clientX);
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    if (hooks.unlock) hooks.unlock();
+  }
+  function onMove(e) { if (dragging) heldX = xFromClient(e.clientX); }
+  function onUp() { if (!dragging) return; dragging = false; if (held && state !== 'over') { state = 'aim'; shoot(); } }
+
+  // ---------------- public ----------------
+  function load() {
+    if (T && C) return Promise.resolve();
+    return Promise.all([import('../../shared/three.module.min.js'), import('../../shared/cannon-es.min.js')]).then(function (m) { T = m[0]; C = m[1]; });
+  }
+  function mount(el, h) {
+    host = el; hooks = h || {};
+    if (!canvas) {
+      canvas = document.createElement('canvas'); canvas.className = 'chaincv'; host.appendChild(canvas);
+      canvas.addEventListener('pointerdown', onDown); canvas.addEventListener('pointermove', onMove);
+      canvas.addEventListener('pointerup', onUp); canvas.addEventListener('pointercancel', onUp);
+      build();
+      if (window.ResizeObserver) new ResizeObserver(resize).observe(host);
+      raf = requestAnimationFrame(frame);
+    }
+    running = true; resize();
+  }
+  function stop() { running = false; }
+  function clear() { cubes.slice().forEach(removeCube); held = null; pendingMerges = []; }
+  function newGame() { clear(); state = 'idle'; checking = false; score = 0; top = 2; heldX = 0; nextVal = pick(); newHeld(); shotAt = 0; }
+  function snapshot() {
+    return { score: score, top: top, next: nextVal, held: held ? held.v : 2, cubes: cubes.filter(function (c) { return c !== held && c.alive; }).map(function (c) {
+      var p = c.b.position, q = c.b.quaternion; return [c.v, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +q.x.toFixed(4), +q.y.toFixed(4), +q.z.toFixed(4), +q.w.toFixed(4)];
+    }) };
+  }
+  function restore(s) {
+    clear(); score = s.score || 0; top = s.top || 2; nextVal = s.next || pick();
+    (s.cubes || []).forEach(function (r) { var c = addCube(r[0], r[1], r[2], r[3], false); c.shot = true; c.b.quaternion.set(r[4], r[5], r[6], r[7]); c.b.sleep(); });
+    held = addCube(s.held || 2, 0, SIZE / 2, START_Z, true); heldX = 0; state = 'aim'; checking = false;
+  }
+  return {
+    load: load, mount: mount, stop: stop, newGame: newGame, snapshot: snapshot, restore: restore, resize: resize,
+    get score() { return score; }, get top() { return top; }, get next() { return nextVal; }, get heldValue() { return held ? held.v : 0; }, get state() { return state; },
+    label: label, colorOf: colorOf, inkOf: inkOf,
+    // for tests: shoot from a given x (-2 .. 2)
+    testShoot: function (x) { if (!held || state === 'over') return false; heldX = x; state = 'aim'; shoot(); return true; },
+    count: function () { return cubes.length; }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = NNSound, UNDOS_PER_GAME = 3, SNAP_LIMIT = 12, SLIDE_MS = 110;
+  var MODES = { classic: NN.classic, trios: NN.trios };
+
+  // ================= storage =================
+  var store = Goobs.store('merge');
+  var settings = { sound: false, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'classic', size: 4, seen: {}, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (!MODES[meta.mode] && meta.mode !== 'chain') meta.mode = 'classic';
+  if ([3, 4, 5, 6].indexOf(meta.size) < 0) meta.size = 4;
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  if (!stats.classic) stats.classic = {};
+  if (!stats.trios) stats.trios = {};
+  function blankStats(o) { var d = { best: 0, games: 0, total: 0, bestTile: 0, wins: 0 }; for (var k in d) if (typeof o[k] !== 'number') o[k] = d[k]; return o; }
+  blankStats(stats.trios);
+  if (!stats.chain) stats.chain = {};
+  blankStats(stats.chain);
+  function statsFor(mode, size) {
+    if (mode === 'trios') return stats.trios;
+    return blankStats(stats.classic[size] || (stats.classic[size] = {}));
+  }
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function locked() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || GoobsAds.isOpen(); }
+
+  // ================= game =================
+  // game: { mode, size, g (engine state), undos, snaps, moves, done, won (2048 card shown) }
+  var game = null;
+  function keyFor(mode, size) { return mode === 'trios' ? 'game.trios' : 'game.classic.' + size; }
+  function saveGame() { if (game && !game.done) store.set(keyFor(game.mode, game.size), game); }
+  function start(mode, size, fresh) {
+    if (mode === 'chain') { startChain(); return; }
+    leaveChain();
+    flush();
+    if (game && !game.done) saveGame();
+    size = mode === 'trios' ? 4 : (size || meta.size);
+    var saved = !fresh && store.get(keyFor(mode, size), null);
+    if (saved && saved.g && !saved.done && saved.g.cells && saved.g.cells.length === size * size) game = saved;
+    else game = { mode: mode, size: size, g: mode === 'trios' ? NN.trios.create() : NN.classic.create(size), undos: UNDOS_PER_GAME, snaps: [], moves: 0, done: false, won: false };
+    meta.mode = mode; if (mode === 'classic') meta.size = size;
+    saveMeta();
+    renderAll();
+    saveGame();
+    if (!meta.seen[mode]) { openHelp(); }
+    if (game.g.over) setTimeout(gameOver, 300);
+  }
+
+  // ================= board geometry and tiles =================
+  var W = 0, pad = 0, gap = 0, cell = 0, els = {}, timers = [];
+  function geom() {
+    var r = $('board').getBoundingClientRect(), n = game.size;
+    W = r.width;
+    pad = W * (game.mode === 'trios' ? 0.035 : 0.03); gap = W * (n >= 6 ? 0.018 : 0.025);
+    cell = (W - 2 * pad - (n - 1) * gap) / n;
+  }
+  function xy(i) { var n = game.size, r = Math.floor(i / n), c = i % n; return [pad + c * (cell + gap), pad + r * (cell + gap)]; }
+  function place(el, x, y) { el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; }
+  function tileClass(v) {
+    if (game.mode === 'trios') return v === 1 ? 't1' : v === 2 ? 't2' : 't3' + (v >= 48 ? ' hi' : '');
+    return v <= 2048 ? 'c' + v : 'cbig';
+  }
+  function fontFor(v) {
+    var d = String(v).length, k = game.mode === 'trios' ? [0.46, 0.46, 0.4, 0.33, 0.27, 0.23] : [0.5, 0.5, 0.44, 0.35, 0.29, 0.24];
+    return cell * k[Math.min(5, d)];
+  }
+  function makeTile(t, i, cls) {
+    var el = document.createElement('div'), p = xy(i);
+    el.className = 'tl ' + tileClass(t.v) + (cls ? ' ' + cls : '');
+    el.style.width = el.style.height = cell.toFixed(1) + 'px';
+    el.style.fontSize = fontFor(t.v).toFixed(1) + 'px';
+    el.innerHTML = '<span>' + t.v + '</span>';
+    place(el, p[0], p[1]);
+    $('layer').appendChild(el);
+    els[t.id] = el;
+    return el;
+  }
+  function renderBoard() {
+    geom();
+    $('board').classList.toggle('trios', game.mode === 'trios');
+    var h = '';
+    for (var i = 0; i < game.size * game.size; i++) {
+      var p = xy(i);
+      h += '<i style="left:' + p[0].toFixed(1) + 'px;top:' + p[1].toFixed(1) + 'px;width:' + cell.toFixed(1) + 'px;height:' + cell.toFixed(1) + 'px"></i>';
+    }
+    $('bg').innerHTML = h;
+    $('layer').innerHTML = ''; els = {};
+    game.g.cells.forEach(function (t, i) { if (t) makeTile(t, i); });
+  }
+  // finish any animation still waiting (so a fast second swipe starts from the true board)
+  function flush() { var t = timers; timers = []; t.forEach(function (x) { clearTimeout(x.id); x.fn(); }); }
+  function later(fn, ms) { var x = { fn: fn }; x.id = setTimeout(function () { timers = timers.filter(function (y) { return y !== x; }); fn(); }, ms); timers.push(x); }
+  var DIRV = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  function animate(res, dir) {
+    res.slides.forEach(function (s) { var el = els[s.id]; if (!el) return; el.classList.remove('nt'); var p = xy(s.to); place(el, p[0], p[1]); });
+    var gone = [];
+    res.merges.forEach(function (m) { m.ids.forEach(function (id) { gone.push(id); }); });
+    later(function () {
+      gone.forEach(function (id) { if (els[id]) { els[id].remove(); delete els[id]; } });
+      res.merges.forEach(function (m) { makeTile(m.t, m.to, 'pop'); });
+      if (res.spawn && game.mode === 'classic') makeTile(res.spawn.t, res.spawn.i, 'appear');
+    }, SLIDE_MS);
+    if (res.spawn && game.mode === 'trios') {
+      // the new card slides in from beyond the far edge
+      var v = DIRV[dir], el = makeTile(res.spawn.t, res.spawn.i, 'nt'), p = xy(res.spawn.i), step = cell + gap;
+      place(el, p[0] - v[0] * step, p[1] - v[1] * step);
+      void el.offsetWidth;
+      el.classList.remove('nt'); place(el, p[0], p[1]);
+    }
+  }
+
+  // ================= moving =================
+  function doMove(dir) {
+    if (chainOn || !game || game.done || locked()) return false;
+    flush();
+    var snap = JSON.stringify(game.g), res = MODES[game.mode].move(game.g, dir);
+    if (!res) { S.bump(); nudge(dir); return false; }
+    game.snaps.push(snap);
+    if (game.snaps.length > SNAP_LIMIT) game.snaps.shift();
+    game.moves++;
+    animate(res, dir);
+    S.slide();
+    if (res.merges.length) {
+      var top = 0; res.merges.forEach(function (m) { if (m.t.v > top) top = m.t.v; });
+      setTimeout(function () { S.merge(top); }, SLIDE_MS - 20);
+    } else if (game.mode === 'classic') setTimeout(S.spawn, SLIDE_MS);
+    if (game.mode === 'classic' && res.gained) floatText('+' + fmt(res.gained));
+    var st = statsFor(game.mode, game.size), topTile = NN.maxTile(game.g);
+    if (topTile > st.bestTile) { st.bestTile = topTile; saveStats(); }
+    renderInfo(); renderTools();
+    saveGame();
+    if (res.won && !game.won) { game.won = true; st.wins++; saveStats(); saveGame(); setTimeout(winCard, 380); }
+    else if (game.g.over) setTimeout(gameOver, 450);
+    return true;
+  }
+  function nudge(dir) {
+    var b = $('board'), v = DIRV[dir];
+    b.animate([{ transform: 'none' }, { transform: 'translate(' + v[0] * 5 + 'px,' + v[1] * 5 + 'px)' }, { transform: 'none' }], { duration: 160 });
+  }
+
+  // ================= touch: swipe (Classic), drag-and-peek (Trios, like the original) =================
+  var touch = null;
+  function onDown(e) {
+    if (chainOn || !game || locked()) return;
+    S.unlock();
+    touch = { x: e.clientX, y: e.clientY, t: performance.now(), dir: -1, done: false, id: e.pointerId, movers: null, frac: 0 };
+    try { $('board').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+  function dirOf(dx, dy) { return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0); }
+  function onMove(e) {
+    if (!touch || e.pointerId !== touch.id || touch.done) return;
+    var dx = e.clientX - touch.x, dy = e.clientY - touch.y, d = Math.hypot(dx, dy);
+    if (game.mode === 'classic') {
+      if (d > 26) { touch.done = true; doMove(dirOf(dx, dy)); }
+      return;
+    }
+    // Trios: the tiles that would move follow the finger, up to one step
+    if (touch.dir < 0) {
+      if (d < 10) return;
+      flush();
+      touch.dir = dirOf(dx, dy);
+      touch.movers = [];
+      NN.trios.plan(game.g, touch.dir).forEach(function (p) {
+        if (p.k < 0) return;
+        for (var k = p.k; k < 4; k++) { var t = game.g.cells[p.L[k]]; if (t && els[t.id]) touch.movers.push({ el: els[t.id], i: p.L[k] }); }
+      });
+      touch.movers.forEach(function (m) { m.el.classList.add('nt'); });
+    }
+    var v = DIRV[touch.dir], along = dx * v[0] + dy * v[1], step = cell + gap;
+    touch.frac = Math.max(0, Math.min(1, along / step));
+    var eased = touch.movers.length ? touch.frac : Math.min(0.12, touch.frac * 0.25); // nothing to move: a small give
+    touch.movers.forEach(function (m) { var p = xy(m.i); place(m.el, p[0] + v[0] * step * eased, p[1] + v[1] * step * eased); });
+  }
+  function onUp(e) {
+    if (!touch || e.pointerId !== touch.id) return;
+    var t = touch; touch = null;
+    if (game.mode !== 'trios' || t.dir < 0) return;
+    var fast = (performance.now() - t.t) < 220 && t.frac > 0.12;
+    if (t.movers.length && (t.frac > 0.33 || fast)) { if (doMove(t.dir)) return; }
+    else if (!t.movers.length && t.frac > 0.05) { S.bump(); }
+    t.movers.forEach(function (m) { m.el.classList.remove('nt'); var p = xy(m.i); place(m.el, p[0], p[1]); });
+  }
+  function onCancel() {
+    if (!touch) return;
+    var t = touch; touch = null;
+    if (t.movers) t.movers.forEach(function (m) { m.el.classList.remove('nt'); var p = xy(m.i); place(m.el, p[0], p[1]); });
+  }
+
+  // ================= info, tools, floats =================
+  function renderInfo() {
+    var st = statsFor(game.mode, game.size), h;
+    if (game.mode === 'trios') {
+      var g = game.g, cls = g.bonus ? 't3 bonus' : tileClass(g.next);
+      h = '<div class="nextbox"><div><div class="lbl">Next</div></div><div class="nextcard ' + cls + '">' + NN.trios.nextLabel(g) + '</div></div>' +
+        '<div class="right"><div class="lbl">Best</div><div class="mid">' + fmt(st.best) + '</div></div>';
+    } else {
+      h = '<div><div class="lbl">Score</div><div class="big">' + fmt(game.g.score) + '</div></div>' +
+        '<div class="right"><div class="lbl">Best ' + game.size + '&times;' + game.size + '</div><div class="mid">' + fmt(Math.max(st.best, game.g.score)) + '</div></div>';
+    }
+    $('info').innerHTML = h;
+  }
+  function renderModes() {
+    var cur = chainOn ? 'chain' : game.mode;
+    Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === cur); });
+    $('sizes').classList.toggle('hide', game.mode !== 'classic');
+    Array.prototype.forEach.call($('sizes').children, function (b) { b.classList.toggle('on', +b.dataset.size === game.size); });
+  }
+  function renderTools() {
+    var ul = $('undoLabel');
+    if (game.undos > 0) ul.innerHTML = 'Undo (' + game.undos + ')';
+    else ul.innerHTML = Goobs.adsOn() ? 'Undo<span class="ad">AD</span>' : 'Undo';
+    $('btnUndo').disabled = !game.snaps.length || game.done;
+  }
+  function renderAll() { renderModes(); renderInfo(); renderTools(); renderBoard(); }
+  function floatText(txt) {
+    var f = document.createElement('div');
+    f.className = 'float'; f.textContent = txt;
+    $('floats').appendChild(f);
+    setTimeout(function () { f.remove(); }, 850);
+  }
+
+  // ================= undo (3 free per game, then one quick ad each, like Woodpile) =================
+  function undo() {
+    if (!game || !game.snaps.length || game.done) return;
+    function go() {
+      flush();
+      game.g = JSON.parse(game.snaps.pop());
+      $('ovEnd').classList.remove('show');
+      S.slide();
+      renderAll(); saveGame();
+    }
+    if (game.undos > 0) { game.undos--; go(); return; }
+    if (Goobs.adsOn()) showAd(go); else go();
+  }
+
+  // ================= cards, records, ads =================
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#nn-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions');
+    box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function undoButton() {
+    if (!game.snaps.length) return null;
+    return { label: game.undos > 0 ? 'Undo last move (' + game.undos + ' left)' : (Goobs.adsOn() ? 'Undo last move (quick ad)' : 'Undo last move'), go: undo };
+  }
+  function record() {
+    if (!game || game.recorded || !game.moves) return;
+    var st = statsFor(game.mode, game.size), sc = game.g.score;
+    st.games++; st.total += sc;
+    if (sc > st.best) st.best = sc;
+    game.recorded = true;
+    saveStats();
+  }
+  function finish() {
+    record();
+    game.done = true;
+    store.del(keyFor(game.mode, game.size));
+    meta.finished++; saveMeta();
+  }
+  function winCard() {
+    S.win();
+    showCard('2048!', 'You made the 2048 tile in ' + fmt(game.moves) + ' moves. Keep going for a bigger one?', [
+      { label: 'Keep going', red: true, go: function () {} },
+      { label: 'New game', go: function () { finish(); between(function () { start(game.mode, game.size, true); }); } }
+    ]);
+  }
+  function gameOver() {
+    if (!game || game.done || !game.g.over || isOpen('ovEnd')) return;
+    S.over();
+    var st = statsFor(game.mode, game.size), sc = game.g.score, best = sc > st.best, b = [], u = undoButton();
+    if (u) b.push(u);
+    b.push({ label: 'New game', red: true, go: function () { finish(); between(function () { start(game.mode, game.size, true); }); } });
+    var html = 'Score: <b>' + fmt(sc) + '</b>' + (best ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(st.best));
+    if (game.mode === 'trios') {
+      var counts = {};
+      game.g.cells.forEach(function (t) { if (t && t.v >= 3) counts[t.v] = (counts[t.v] || 0) + 1; });
+      var keys = Object.keys(counts).map(Number).sort(function (a, b2) { return b2 - a; });
+      html += '<div class="tally">' + keys.map(function (v) { return '<span>' + v + ' &times;' + counts[v] + ' = ' + fmt(NN.trios.tileScore(v) * counts[v]) + '</span>'; }).join('') + '</div>';
+    } else html += '<br>Top tile: ' + fmt(NN.maxTile(game.g));
+    showCard(game.mode === 'trios' ? 'Out of moves' : 'No more moves', html, b);
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next();
+      showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= sheets =================
+  var HELP = {
+    chain: ['Chain Cube', [
+      'A numbered cube waits at the near end of the tray. <b>Drag</b> left or right to line it up, then <b>let go</b> to shoot it forward.',
+      'Two cubes with the <b>same number</b> that touch merge into one cube worth double: 2+2 = 4, 4+4 = 8, and so on.',
+      'A new cube <b>hops</b> toward the nearest cube with its new number, so merges can <b>chain</b>. Each merge scores its new number.',
+      'The cube after this one shows as <b>Next</b>.',
+      'If a cube is left <b>behind the red line</b> once everything settles, the game is over. Keep the tray from filling up.',
+      'There\u2019s no undo in Chain Cube.']],
+    classic: ['Classic 2048', [
+      '<b>Swipe</b> up, down, left or right. Every tile slides as far as it can.',
+      'Two tiles with the <b>same number</b> that bump together merge into one: 2+2 = 4, 4+4 = 8, and so on. A tile merges once per swipe.',
+      'After each swipe a new <b>2</b> (sometimes a 4) appears in an empty spot.',
+      'Your score goes up by every tile you make. Make a <b>2048</b> tile to win, then keep going if you like.',
+      'The game ends when no swipe can move anything.',
+      'Board sizes 3&times;3 to 6&times;6, each with its own game and best score.',
+      '<b>Undo:</b> 3 per game. After that, each extra undo costs one quick ad.']],
+    trios: ['Trios', [
+      '<b>Swipe</b> and every card that can moves <b>one step</b>. Drag slowly to peek at what will move, then let go.',
+      'A <b>1</b> and a <b>2</b> make a <b>3</b>. From 3 up, two equal cards make double: 3+3 = 6, 6+6 = 12, and so on.',
+      'A new card slides in at the edge of one of the rows (or columns) that moved.',
+      '<b>Next</b> shows its color: blue is 1, red is 2, white is 3 or more. A card showing numbers is a <b>bonus</b>: it will be one of them.',
+      'The game ends when no swipe moves anything. Then every card of 3 or more scores: 3 is 3 points, 6 is 9, 12 is 27; each doubling triples it.',
+      '<b>Undo:</b> 3 per game. After that, each extra undo costs one quick ad.']]
+  };
+  function openHelp() {
+    var h = HELP[chainOn ? 'chain' : game.mode];
+    $('helpTitle').textContent = 'How to play ' + h[0];
+    $('helpList').innerHTML = h[1].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+  function renderStats() {
+    var t = stats.trios, h = '<div class="themelabel">Classic 2048</div><div class="tiles">';
+    [3, 4, 5, 6].forEach(function (n) {
+      var s = stats.classic[n];
+      h += '<div class="tile"><b>' + (s ? fmt(s.best) : 0) + '</b><span>' + n + '&times;' + n + ' best</span></div>';
+    });
+    h += '</div>';
+    var c4 = statsFor('classic', 4), games = 0, wins = 0, top = 0;
+    [3, 4, 5, 6].forEach(function (n) { var s = stats.classic[n]; if (s) { games += s.games; wins += s.wins; top = Math.max(top, s.bestTile); } });
+    h += '<div class="tiles"><div class="tile"><b>' + fmt(top) + '</b><span>Top tile</span></div><div class="tile"><b>' + wins + '</b><span>2048s made</span></div>' +
+      '<div class="tile"><b>' + games + '</b><span>Games</span></div></div>';
+    h += '<div class="themelabel">Trios</div><div class="tiles"><div class="tile"><b>' + fmt(t.best) + '</b><span>Best</span></div>' +
+      '<div class="tile"><b>' + fmt(t.bestTile) + '</b><span>Top card</span></div><div class="tile"><b>' + t.games + '</b><span>Games</span></div></div>' +
+      '<div class="themelabel">Chain Cube</div><div class="tiles"><div class="tile"><b>' + fmt(stats.chain.best) + '</b><span>Best</span></div>' +
+      '<div class="tile"><b>' + NNChainLabel(stats.chain.bestTile) + '</b><span>Top cube</span></div><div class="tile"><b>' + stats.chain.games + '</b><span>Games</span></div></div>' +
+      '<p class="version">Trios average ' + fmt(t.games ? Math.round(t.total / t.games) : 0) + ' · 4&times;4 Classic average ' + fmt(c4.games ? Math.round(c4.total / c4.games) : 0) + '</p>';
+    $('statsBody').innerHTML = h;
+  }
+
+  // ================= Chain Cube (3D; three.js and cannon-es load the first time) =================
+  var chainOn = false, chainReady = false, chainRecorded = false;
+  function NNChainLabel(v) { return window.NNChain ? NNChain.label(v || 0) : String(v || 0); }
+  function saveChain() { if (chainReady && NNChain.state !== 'over' && NNChain.score > 0) store.set('game.chain', NNChain.snapshot()); }
+  function leaveChain() {
+    if (!chainOn) return;
+    saveChain(); chainOn = false;
+    if (window.NNChain) NNChain.stop();
+    $('chainwrap').classList.remove('show'); document.querySelector('.app').classList.remove('chainmode');
+  }
+  function startChain() {
+    flush();
+    if (game && !game.done) saveGame();
+    chainOn = true; meta.mode = 'chain'; saveMeta();
+    document.querySelector('.app').classList.add('chainmode'); $('chainwrap').classList.add('show');
+    renderModes(); renderChainInfo();
+    NNChain.load().then(function () {
+      $('chainMsg').classList.add('hide');
+      NNChain.mount($('chainwrap'), {
+        paused: locked, unlock: function () { S.unlock(); },
+        change: renderChainInfo,
+        sound: function () { S.slide(); },
+        merge: function (v) { S.merge(v); chainFloat('+' + NNChainLabel(v)); var st = stats.chain; if (v > st.bestTile) { st.bestTile = v; saveStats(); } renderChainInfo(); },
+        save: saveChain,
+        over: chainOver
+      });
+      if (!chainReady) {
+        chainReady = true;
+        var sv = store.get('game.chain', null);
+        if (sv && sv.cubes) NNChain.restore(sv); else NNChain.newGame();
+        chainRecorded = false;
+      }
+      renderChainInfo();
+      if (!meta.seen.chain) openHelp();
+    }).catch(function () {
+      $('chainMsg').textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.';
+    });
+  }
+  function renderChainInfo() {
+    if (!chainOn) return;
+    var st = stats.chain, sc = chainReady ? NNChain.score : 0, nx = chainReady ? NNChain.next : 2;
+    $('info').innerHTML = '<div><div class="lbl">Score</div><div class="big">' + fmt(sc) + '</div></div>' +
+      '<div class="nextbox"><div class="lbl">Next</div><div class="nextcube" style="background:' + NNChain.colorOf(nx) + ';color:' + NNChain.inkOf(nx) + '">' + NNChainLabel(nx) + '</div></div>' +
+      '<div class="right"><div class="lbl">Best</div><div class="mid">' + fmt(Math.max(st.best, sc)) + '</div></div>';
+  }
+  function chainFloat(t) {
+    var f = document.createElement('div'); f.className = 'float'; f.textContent = t;
+    $('cfloats').appendChild(f); setTimeout(function () { f.remove(); }, 850);
+  }
+  function chainRecord() {
+    if (chainRecorded || !NNChain.score) return;
+    var st = stats.chain; st.games++; st.total += NNChain.score; if (NNChain.score > st.best) st.best = NNChain.score;
+    chainRecorded = true; saveStats(); meta.finished++; saveMeta();
+    store.del('game.chain');
+  }
+  function chainOver() {
+    var best = NNChain.score > stats.chain.best, sc = NNChain.score;
+    chainRecord(); S.over();
+    showCard('Over the line', 'Score: <b>' + fmt(sc) + '</b>' + (best ? '<br><span class="newbest">New best!</span>' : '<br>Best: ' + fmt(stats.chain.best)) + '<br>Top cube: ' + NNChainLabel(NNChain.top), [
+      { label: 'New game', red: true, go: function () { between(function () { chainRecorded = false; NNChain.newGame(); renderChainInfo(); }); } }]);
+  }
+  function chainNew() {
+    if (!chainReady) return;
+    var go = function () { chainRecord(); between(function () { chainRecorded = false; NNChain.newGame(); renderChainInfo(); }); };
+    if (!NNChain.score || NNChain.state === 'over') { chainRecorded = false; NNChain.newGame(); renderChainInfo(); return; }
+    showCard('Start a new game?', 'This game ends with ' + fmt(NNChain.score) + ' points.', [
+      { label: 'New game', red: true, go: go }, { label: 'Keep playing', go: function () {} }]);
+  }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncAds() {
+    $('setAds').checked = Goobs.adsOn();
+    $('adEvery').textContent = settings.adEvery;
+    $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+    if (game) renderTools();
+  }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function menuInfo() {
+    if (chainOn) return '<b>Chain Cube</b> · ' + fmt(chainReady ? NNChain.score : 0) + ' points';
+    return '<b>' + (game.mode === 'trios' ? 'Trios' : 'Classic ' + game.size + '&times;' + game.size) + '</b> · ' + fmt(game.g.score) + ' points';
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    // Full screen (1.2.0): edge to edge; the board (or the Chain Cube tray) fills the free space; How to, New game,
+    // Stats and Settings are in the Menu (Chain Cube pauses while it's open: locked() checks ggMenu)
+    Goobs.fullscreen({ menu: ['btnHelp', 'btnNew', 'btnStats', 'btnSettings'], info: menuInfo });
+    var b = $('board');
+    b.addEventListener('pointerdown', onDown);
+    b.addEventListener('pointermove', onMove);
+    b.addEventListener('pointerup', onUp);
+    b.addEventListener('pointercancel', onCancel);
+    document.addEventListener('touchmove', function (e) { if (touch) e.preventDefault(); }, { passive: false });
+    document.addEventListener('keydown', function (e) {
+      var k = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key];
+      if (k !== undefined) { e.preventDefault(); doMove(k); }
+    });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { saveGame(); saveChain(); Goobs.home(); });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnNew').addEventListener('click', function () {
+      if (chainOn) { chainNew(); return; }
+      var started = game.moves > 0 && !game.done;
+      var go = function () { finish(); between(function () { start(game.mode, game.size, true); }); };
+      if (!started) { start(game.mode, game.size, true); return; }
+      showCard('Start a new game?', game.mode === 'trios' ? 'This game ends now and counts with ' + fmt(game.g.score) + ' points.' : 'This game ends with ' + fmt(game.g.score) + ' points.', [
+        { label: 'New game', red: true, go: go },
+        { label: 'Keep playing', go: function () {} }
+      ]);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn || (btn.dataset.mode === game.mode && !chainOn) || (btn.dataset.mode === 'chain' && chainOn)) return;
+      start(btn.dataset.mode, meta.size);
+    });
+    $('sizes').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn || +btn.dataset.size === game.size) return;
+      start('classic', +btn.dataset.size);
+    });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnCloseHelp').addEventListener('click', function () {
+      $('ovHelp').classList.remove('show');
+      var m = chainOn ? 'chain' : game.mode;
+      if (!meta.seen[m]) { meta.seen[m] = true; saveMeta(); }
+    });
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); meta.seen[chainOn ? 'chain' : game.mode] = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    // keep tiles lined up with the board's real size (the page settles after the first draw on iPhone)
+    var lastW = 0;
+    function onResize() { if (!game) return; var w = $('board').getBoundingClientRect().width; if (Math.abs(w - lastW) > 0.5) { lastW = w; flush(); renderBoard(); } }
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe($('board'));
+    window.addEventListener('resize', onResize);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { saveGame(); saveChain(); } });
+    window.addEventListener('pagehide', function () { saveGame(); saveChain(); });
+    syncSound(); syncAds();
+
+    if (meta.mode === 'chain') { start('classic', meta.size); start('chain'); } else start(meta.mode, meta.size);
+    Goobs.markPlayed('merge');
+    Goobs.initUpdates({
+      beforeReload: saveGame,
+      onVersions: function (v) { $('version').textContent = 'Number Nook ' + (v.merge || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__nn = { get chain() { return window.NNChain; }, get game() { return game; }, move: doMove, start: start, undo: undo, stats: function () { return stats; }, meta: function () { return meta; }, flush: flush };
+
+  init();
+})();
+</script>
+</body>
+</html>

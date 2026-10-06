@@ -1,0 +1,18 @@
+[
+  {
+    "key": "wood",
+    "prompt": "Use case: product-mockup. Asset: tileable photographic material texture for an offline game. Square 1:1 full bleed macro texture photograph. Fine straight walnut wood grain, subtle pores, small natural irregularities. Grain runs horizontally. No planks, borders, nails, lettering or large knots. Neutral middle gray monochrome material with low-contrast detail, even diffuse flat lighting. Straight-on orthographic macro view. No perspective, directional shadow, vignette, text or UI. Edges should tile naturally. The game supplies the material color."
+  },
+  {
+    "key": "fabric",
+    "prompt": "Use case: product-mockup. Asset: tileable photographic material texture for an offline game. Square 1:1 full bleed macro texture photograph. Fine natural woven linen cloth. Small irregular crosswoven threads, subtle realistic textile texture. No folds, seams, pattern motifs or borders. Neutral middle gray monochrome material with low-contrast detail, even diffuse flat lighting. Straight-on orthographic macro view. No perspective, directional shadow, vignette, text or UI. Edges should tile naturally. The game supplies the material color."
+  },
+  {
+    "key": "plaster",
+    "prompt": "Use case: product-mockup. Asset: tileable photographic material texture for an offline game. Square 1:1 full bleed macro texture photograph. Fine aged lime plaster wall texture. Subtle small pores, slight mottling and tiny surface imperfections. No big cracks, peeling, objects or stains. Neutral middle gray monochrome material with low-contrast detail, even diffuse flat lighting. Straight-on orthographic macro view. No perspective, directional shadow, vignette, text or UI. Edges should tile naturally. The game supplies the material color."
+  },
+  {
+    "key": "leather",
+    "prompt": "Use case: product-mockup. Asset: tileable photographic material texture for an offline game. Square 1:1 full bleed macro texture photograph. Fine pebbled leather surface, small natural grain, subtle variation. No stitching, seams, creases, logos, folds or objects. Neutral middle gray monochrome material with low-contrast detail, even diffuse flat lighting. Straight-on orthographic macro view. No perspective, directional shadow, vignette, text or UI. Edges should tile naturally. The game supplies the material color."
+  }
+]
