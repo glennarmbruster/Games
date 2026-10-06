@@ -318,6 +318,7 @@ html.go-lane .lane { display: block; }
 .arrow,.zoomout,.spaceback { box-shadow: 0 3px 10px #00000040,inset 0 0 0 1px #ffffff30; }
 .btn { font-weight: 650; }
 </style>
+<link rel="stylesheet" href="study-ui.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -10839,6 +10840,7 @@ var GOArt = (function () {
     if (ph.event === 'umbrella') { c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 2; for (var k = 0; k < 18; k++) { var rx = ix + (k * 37 % iw), ry = iy + (k * 53 % (ih * 0.6)); line(c, rx, ry, rx - 6, ry + 18, 'rgba(255,255,255,.55)', 2); } }
     if (ph.event === 'kite' || ph.event === 'rose') { c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.ellipse(ix + iw * 0.25, iy + ih * 0.18, iw * 0.12, ih * 0.05, 0, 0, TAU); c.fill(); }
     evIcon(c, ph.event, ix + iw / 2, iy + ih * 0.46, Math.min(iw, ih) * 0.62);
+    if(typeof GOStudy!=='undefined')GOStudy.eventPhoto(c,ph.event,ix,iy,iw,ih);
     // old photo: warm tone, soft corners
     c.fillStyle = 'rgba(160,110,40,.18)'; c.fillRect(ix, iy, iw, ih);
     c.fillStyle = rad(c, ix + iw / 2, iy + ih / 2, Math.min(iw, ih) * 0.3, Math.max(iw, ih) * 0.75, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(60,30,0,.35)']]); c.fillRect(ix, iy, iw, ih);
@@ -10846,7 +10848,7 @@ var GOArt = (function () {
     if (big) {
       // the caption card under the photo: the date big, the event in handwriting
       var cy = y + h + 40;
-      dropShadow(c, 18, 8); box(c, x + 30, cy, w - 60, 250, 10, '#fbf4e2'); noShadow(c);
+      dropShadow(c, 18, 8); studyPaper(c,x+30,cy,w-60,250); noShadow(c);
       c.strokeStyle = 'rgba(120,90,50,.25)'; c.lineWidth = 2; for (var q = 1; q < 5; q++) line(c, x + 50, cy + q * 48, x + w - 50, cy + q * 48, 'rgba(120,90,50,.18)', 2);
       txt(c, ph.date, x + w / 2, cy + 82, /^No/.test(ph.date) ? 96 : 76, '#3a2410', { font: SERIF, weight: 800 });
       txt(c, ph.label, x + w / 2, cy + 180, 44, '#5a3a20', { font: HAND, weight: 600, italic: true });
@@ -10857,7 +10859,7 @@ var GOArt = (function () {
   function hands(h, m) { return { m: m / 60 * TAU, h: ((h % 12) + m / 60) / 12 * TAU }; } // the checker decodes these angles
   function clockFace(c, cx, cy, r, h, m, o) {
     o = o || {};
-    if (!o.shadow) {
+    if (!o.shadow && !o.photo) {
       c.fillStyle = brass(c, cx - r, cy - r, cx + r, cy + r); c.beginPath(); c.arc(cx, cy, r + r * 0.09, 0, TAU); c.fill();
       c.fillStyle = rad(c, cx - r * 0.3, cy - r * 0.3, r * 0.1, r * 1.1, [[0, '#fffaf0'], [1, '#e6d6b4']]); c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
       c.strokeStyle = '#3a2410'; c.lineWidth = r * 0.012; c.beginPath(); c.arc(cx, cy, r * 0.97, 0, TAU); c.stroke();
@@ -10889,6 +10891,10 @@ var GOArt = (function () {
   // draw an item centered at (x, y) about s wide; back: the other side (for inspecting); X for clue data
   function item(c, id, x, y, s, back, X) {
     var ra = roomArt(X); if (ra) return ra.item(c, id, x, y, s, back, X);
+    if(!back&&typeof GOStudy!=='undefined'&&GOStudy.sprite(c,id,x,y,s))return;
+    if(back&&id==='lens'&&typeof GOStudy!=='undefined'&&GOStudy.sprite(c,id,x,y,s)){
+      if(X&&X.diff!=='e'){c.save();c.translate(x,y);c.scale(s/200,s/200);txt(c,'For secrets',0,-12,18,'#fff',{weight:800});txt(c,'in plain sight',0,14,18,'#fff',{weight:800});c.restore();}return;
+    }
     c.save(); c.translate(x, y); c.scale(s / 200, s / 200); c.lineJoin = 'round'; c.lineCap = 'round';
     var K = '#2a1a10';
     function torchBody(lensCol, glow) {
@@ -10900,7 +10906,7 @@ var GOArt = (function () {
       box(c, -10, -34, 26, 14, 4, '#7a1f1f', K, 3);
     }
     if (id === 'torch') {
-      if (back) { box(c, -70, -70, 140, 140, 70, brass(c, -70, -70, 70, 70), K, 5); circ(c, 0, 0, 44, '#2a1a10'); txt(c, 'EMPTY', 0, 0, 22, '#d9a640', { weight: 900 }); }
+      if (back) { studyDisc(c,0,0,70); circ(c, 0, 0, 44, '#2a1a10'); txt(c, 'EMPTY', 0, 0, 22, '#d9a640', { weight: 900 }); }
       else torchBody('#cfe3ea');
     } else if (id === 'torchOn') torchBody('#fff6b0', 'rgba(255,240,150,.7)');
     else if (id === 'uv') torchBody('#a05cff', 'rgba(160,90,255,.75)');
@@ -10919,6 +10925,7 @@ var GOArt = (function () {
       else if (id === 'cardB') { for (var t2 = -56; t2 < 56; t2 += 14) c.lineTo(t2 % 28 ? 6 : -6, t2 + 14); c.lineTo(right, 56); c.lineTo(right, -56); }
       else { c.lineTo(right, -56); c.lineTo(right, 56); c.lineTo(left, 56); }
       c.closePath(); c.fillStyle = id === 'cardB' ? '#d8cdb4' : '#f3e7c8'; c.fill(); c.strokeStyle = K; c.lineWidth = 4; c.stroke();
+      c.save();c.clip();studyTexture(c,'paper',-80,-56,160,112);c.restore();
       if (id === 'cardB') { c.fillStyle = 'rgba(60,40,30,.25)'; c.fill(); }
       if (!back) {
         var rnd = seeded(31);
@@ -10961,7 +10968,7 @@ var GOArt = (function () {
   // an engraving of a ring dial (which item carries it is room data)
   function ringsClue(c, syms) {
     var R = [86, 62, 38];
-    for (var i = 0; i < 3; i++) circ(c, 0, 10, R[i], i % 2 ? '#e8c26a' : '#d9a640', '#5a3a10', 3);
+    for(var i=0;i<3;i++)studyDisc(c,0,10,R[i]);
     circ(c, 0, 10, 14, '#5a3a10');
     for (i = 0; i < 3; i++) sym(c, syms[i], 0, 10 - (R[i] - 12), 22, '#3a1f05');
     c.beginPath(); c.moveTo(-10, -96); c.lineTo(10, -96); c.lineTo(0, -82); c.closePath(); c.fillStyle = '#7a1f1f'; c.fill();
@@ -11116,7 +11123,7 @@ var GOArt = (function () {
       c.globalAlpha = 1; c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 2;
       for (var k = -2; k <= 2; k++) { c.beginPath(); c.ellipse(cx, cy + oy, r * Math.abs(k) / 2.6 + 1, r, 0, 0, TAU); c.stroke(); }
       c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(cx - r * 0.4, cy - r * 0.45 + oy, r * 0.22, r * 0.12, -0.6, 0, TAU); c.fill();
-      if(typeof GOStudy!=='undefined'&&GOStudy.has('shelf')){c.save();c.beginPath();c.arc(cx,cy+oy,r,0,TAU);c.clip();GOStudy.crop(c,'shelf',[727,625,206,206],[cx-r,cy-r+oy,r*2,r*2]);c.restore();}
+      if(typeof GOStudy!=='undefined'&&GOStudy.has('globez')){c.save();c.beginPath();c.arc(cx,cy+oy,r,0,TAU);c.clip();GOStudy.crop(c,'globez',[203,263,594,594],[cx-r,cy-r+oy,r*2,r*2]);c.restore();}
       c.restore();
     }
     if (open) {
@@ -11146,6 +11153,7 @@ var GOArt = (function () {
     dropShadow(c, big ? 30 : 14, big ? 12 : 6);
     c.fillStyle = brass(c, x, y, x + w, y + h); c.fillRect(x, y, w, h); noShadow(c);
     var f = w * 0.06; c.strokeStyle = 'rgba(90,58,16,.6)'; c.lineWidth = 3; c.strokeRect(x + f * 0.4, y + f * 0.4, w - f * 0.8, h - f * 0.8);
+    if(typeof GOStudy!=='undefined')GOStudy.crop(c,'desk',[290,170,420,330],[x,y,w,h]);
     var ix = x + f, iy = y + f, iw = w - 2 * f, ih = h - 2 * f;
     c.save(); c.beginPath(); c.rect(ix, iy, iw, ih); c.clip();
     c.fillStyle = lin(c, 0, iy, 0, iy + ih, [[0, '#2f2f66'], [0.35, '#8a4a7a'], [0.6, '#f19a5a'], [0.7, '#f6c46a'], [0.71, '#5a6a3a'], [1, '#3a4a26']]); c.fillRect(ix, iy, iw, ih);
@@ -11327,44 +11335,51 @@ var GOArt = (function () {
     light(c, e, 370, 920, 620, 'rgba(255,140,50,.30)');
   };
 
+  // Photographic materials with live controls: no answers are baked into the art.
+  function studyTexture(c,k,x,y,w,h,alpha){if(typeof GOStudy==='undefined')return;c.save();if(alpha!=null){c.globalAlpha=alpha;c.globalCompositeOperation='soft-light';}GOStudy.texture(c,k,x,y,w,h);c.restore();}
+  function studyDisc(c,x,y,r){
+    circ(c,x,y,r,rad(c,x-r*.4,y-r*.5,r*.08,r*1.4,[[0,'#f4dfa4'],[.32,'#be9650'],[.7,'#89662f'],[1,'#40321c']]),'#40301c',2);
+    c.save();c.beginPath();c.arc(x,y,r-2,0,TAU);c.clip();studyTexture(c,'metal',x-r,y-r,r*2,r*2,.7);c.restore();
+    circ(c,x,y,r-3,null,'rgba(255,236,180,.6)',1.5);
+  }
+  function studyPaper(c,x,y,w,h){box(c,x,y,w,h,3,'#eee3cc');c.save();rr(c,x,y,w,h,3);c.clip();studyTexture(c,'paper',x,y,w,h);c.restore();}
+  function studyDrawerOpen(c,X,y){
+    c.save();c.beginPath();c.moveTo(80,y);c.lineTo(920,y);c.lineTo(880,1260);c.lineTo(120,1260);c.closePath();c.clip();
+    studyTexture(c,'wood',80,y,840,1260-y);c.fillStyle=lin(c,0,y,0,1260,[[0,'rgba(8,5,3,.9)'],[.3,'rgba(15,8,4,.6)'],[1,'rgba(8,5,3,.25)']]);c.fillRect(80,y,840,1260-y);c.restore();
+    line(c,80,y,120,1260,'#281b10',12);line(c,920,y,880,1260,'#281b10',12);
+    studyTexture(c,'wood',110,1236,780,48);line(c,110,1236,890,1236,'#b18a56',3);
+  }
+  function studyBook(c,x,y,w,h,index){
+    if(typeof GOStudy==='undefined'||!GOStudy.has('shelf'))return;
+    var picks=[[85,221,24,125],[115,234,27,120],[154,216,30,140],[193,231,27,119],[237,215,30,140],[278,229,23,126]];
+    c.save();rr(c,x,y,w,h,3);c.clip();GOStudy.crop(c,'shelf',picks[index%picks.length],[x,y,w,h]);c.restore();
+  }
   // ================= close-ups =================
   function closeBg(c, e, col) { c.fillStyle = col || '#20140c'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); }
-  V.coatz = function (c, X) {
-    var e = X.ext;
-    c.fillStyle = '#8f6234'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
-    c.save(); c.globalAlpha = 0.2; c.strokeStyle = '#2a1608'; c.lineWidth = 4;
-    for (var yy = Math.floor(e.y0 / 30) * 30; yy < e.y1; yy += 30) { c.beginPath(); for (var xx = Math.floor(e.x0 / 30) * 30; xx < e.x1; xx += 30) { c.moveTo(xx, yy); c.lineTo(xx + 15, yy + 15); c.lineTo(xx + 30, yy); } c.stroke(); }
-    c.restore();
-    line(c, 120, e.y0, 150, e.y1, 'rgba(40,20,5,.45)', 6); [300, 560, 820].forEach(function (b) { circ(c, 90, b, 26, '#3a2410', '#1a0e06', 3); });
-    if(typeof GOMaterial!=='undefined')GOMaterial.paint(c,'fabric',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0,false,.8);
-    // pocket: the dark inside, the flashlight poking out of it, then the pocket's front and its open flap
-    var torch = X.diff !== 'e' && !X.st.done.take_torch;
-    box(c, 250, 560, 500, 460, 60, 'rgba(0,0,0,.22)');
-    if (torch) { c.fillStyle = 'rgba(20,10,4,.55)'; c.beginPath(); c.ellipse(500, 668, 230, 30, 0, 0, Math.PI * 2); c.fill(); c.save(); c.translate(500, 560); c.rotate(-1.35); item(c, 'torch', 0, 0, 440); c.restore(); }
-    c.fillStyle = '#86592e'; rr(c, 260, 660, 480, 350, 60); c.fill();
-    c.setLineDash([14, 12]); c.strokeStyle = 'rgba(255,230,180,.45)'; c.lineWidth = 4; rr(c, 280, 680, 440, 310, 50); c.stroke(); c.setLineDash([]);
-    if (!torch) { box(c, 236, 520, 528, 130, 18, '#7a5226', '#3a2410', 4); circ(c, 500, 600, 18, '#3a2410'); }
-    else { c.save(); c.translate(500, 650); c.rotate(-0.08); box(c, -270, -30, 120, 70, 14, '#7a5226', '#3a2410', 4); c.restore(); box(c, 600, 640, 170, 44, 12, '#7a5226', '#3a2410', 4); }
-    light(c, e, 500, 300, 900, 'rgba(255,200,120,.12)', 0.45);
+  V.coatz = function(c,X){
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'coatz',X.ext)){closeBg(c,X.ext,'#57412b');studyTexture(c,'wood',X.ext.x0,X.ext.y0,X.ext.x1-X.ext.x0,X.ext.y1-X.ext.y0);}
+    if(X.diff!=='e'&&!X.st.done.take_torch){c.save();c.beginPath();c.rect(220,220,560,445);c.clip();c.translate(500,555);c.rotate(-1.35);item(c,'torch',0,0,440);c.restore();}
   };
   V.doorz = function (c, X) {
     var e = X.ext, st = X.st;
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'doorz',e)){
     wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#7b4526', true, 61);
     box(c, 60, 120, 380, 560, 10, 'rgba(0,0,0,.16)'); box(c, 560, 120, 380, 560, 10, 'rgba(0,0,0,.16)');
     // knob and the lock plate
     dropShadow(c, 20, 8); circ(c, 800, 920, 70, rad(c, 780, 900, 6, 76, [[0, '#fff1b8'], [1, '#a8741f']])); noShadow(c);
     box(c, 430, 800, 140, 230, 30, brass(c, 430, 800, 570, 1030), '#5a3a10', 4);
     c.fillStyle = '#120a04'; c.beginPath(); c.arc(500, 880, 26, 0, TAU); c.fill(); c.beginPath(); c.moveTo(486, 890); c.lineTo(476, 980); c.lineTo(524, 980); c.lineTo(514, 890); c.fill();
+    }
     if (st.f['f:keyTurned']) { c.save(); c.translate(500, 905); c.rotate(PI / 2); item(c, 'key', -60, 0, 260); c.restore(); }
     if (X.diff === 'h') {
       var pz = X.R.puzzles.rings, s = st.pz.rings, cx = L.rings[0], cy = L.rings[1], R0 = L.rings[2];
       var radii = [R0, R0 * 0.74, R0 * 0.48, R0 * 0.22];
-      if (!st.f['f:ringsOK']) { box(c, 420, 790, 160, 250, 30, brass(c, 420, 790, 580, 1040), '#5a3a10', 4); for (var g = 0; g < 5; g++) line(c, 450, 830 + g * 40, 550, 830 + g * 40, 'rgba(90,58,16,.5)', 4); }
+      if (!st.f['f:ringsOK']) { box(c,420,790,160,250,12,brass(c,420,790,580,1040),'#5a3a10',3);studyTexture(c,'metal',424,794,152,242,.6); for (var g = 0; g < 5; g++) line(c, 450, 830 + g * 40, 550, 830 + g * 40, 'rgba(90,58,16,.5)', 4); }
       else { box(c, 600, 790, 160, 250, 30, brass(c, 600, 790, 760, 1040), '#5a3a10', 4); }
       dropShadow(c, 26, 10); circ(c, cx, cy, R0 + 22, brass(c, cx - R0, cy - R0, cx + R0, cy + R0), '#5a3a10', 4); noShadow(c);
       var tones = ['#e7c46a', '#d6aa48', '#c49536'];
       for (var r = 0; r < 3; r++) {
-        circ(c, cx, cy, radii[r], tones[r], '#5a3a10', 4);
+        studyDisc(c,cx,cy,radii[r]);
         var band = radii[r] - radii[r + 1], mid = radii[r + 1] + band / 2;
         for (var j = 0; j < 6; j++) {
           var a = -PI / 2 + (j - s.o[r]) * TAU / 6;
@@ -11397,7 +11412,7 @@ var GOArt = (function () {
           c.save();
           if (out) { c.translate(bx + bw / 2, bot); c.rotate(-0.1); c.translate(-(bx + bw / 2), -bot); dropShadow(c, 22, 8); } // Medium: pulled out a little and leaning
           box(c, bx - out / 2, bot - bh - out, bw + out, bh + out, 4, lin(c, bx, 0, bx + bw, 0, [[0, shade(col2, -0.3)], [0.45, col2], [1, shade(col2, -0.4)]]));
-          noShadow(c);
+          noShadow(c);studyBook(c,bx-out/2,bot-bh-out,bw+out,bh+out,hit);
           c.fillStyle = 'rgba(232,196,110,.9)'; c.fillRect(bx + 6, bot - bh + 26 - out, bw - 12, 6); c.fillRect(bx + 6, bot - 40, bw - 12, 6);
           box(c, bx + 10, bot - bh / 2 - 34, bw - 20, 60, 4, 'rgba(250,240,210,.85)');
           c.restore();
@@ -11410,6 +11425,7 @@ var GOArt = (function () {
         if (w < 20) { x = next; continue; }
         if (x + w > 940) break;
         box(c, x, bot - h, w, h, 4, lin(c, x, 0, x + w, 0, [[0, shade(col, -0.3)], [0.45, col], [1, shade(col, -0.4)]]));
+        studyBook(c,x,bot-h,w,h,Math.floor(x/50)+row);
         c.fillStyle = 'rgba(232,196,110,.75)'; c.fillRect(x + 5, bot - h + 20, w - 10, 5); c.fillRect(x + 5, bot - 34, w - 10, 5);
         x += w + 3;
       }
@@ -11425,75 +11441,65 @@ var GOArt = (function () {
   };
   V.bookopen = function (c, X) {
     var e = X.ext;
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'bookopen',e)){
     wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#5a3418', false, 81);
     dropShadow(c, 40, 16);
     c.fillStyle = '#efe4c8'; c.beginPath(); c.moveTo(80, 330); c.quadraticCurveTo(300, 290, 500, 340); c.quadraticCurveTo(700, 290, 920, 330); c.lineTo(920, 1010); c.quadraticCurveTo(700, 970, 500, 1020); c.quadraticCurveTo(300, 970, 80, 1010); c.closePath(); c.fill(); noShadow(c);
     c.fillStyle = lin(c, 440, 0, 560, 0, [[0, 'rgba(0,0,0,0)'], [0.5, 'rgba(0,0,0,.18)'], [1, 'rgba(0,0,0,0)']]); c.fillRect(440, 300, 120, 720);
     for (var k = 0; k < 14; k++) { line(c, 120, 400 + k * 40, 450, 400 + k * 40, 'rgba(80,60,40,.25)', 5); line(c, 550, 400 + k * 40, 880, 400 + k * 40, 'rgba(80,60,40,.25)', 5); }
+    }
     var tk = X.diff === 'h' ? 'take_cardA' : 'take_card';
     if (!X.st.done[tk]) { c.save(); c.translate(500, 740); c.rotate(-0.08); item(c, X.diff === 'h' ? 'cardA' : 'card', 0, 0, 380); c.restore(); }
     light(c, e, 500, 500, 900, 'rgba(255,200,120,.12)', 0.4);
   };
-  V.globez = function (c, X) {
-    var e = X.ext;
-    wallpaper(c, e); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
-    globeArt(c, L.globeC[0], L.globeC[1], L.globeC[2] * 0.9, X, true);
-    light(c, e, 500, 300, 900, 'rgba(255,190,100,.14)', 0.45);
+  V.globez = function(c,X){
+    var e=X.ext,cx=L.globeC[0],cy=L.globeC[1],r=L.globeC[2]*.9;
+    if(typeof GOStudy!=='undefined'&&GOStudy.wall(c,'globez',e)){
+      c.save();c.beginPath();c.rect(cx-r-35,cy-r*1.65,r*2+70,r*2.65+4);c.clip();
+      if(X.st.f['f:globeOpen'])circ(c,cx,cy,r+2,'#21170c');
+      globeArt(c,cx,cy,r,X,true);c.restore();
+    }else{wallpaper(c,e);globeArt(c,cx,cy,r,X,true);}
   };
   V.painting = function (c, X) {
-    var e = X.ext; wallpaper(c, e); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
+    var e = X.ext; studyTexture(c,'wall',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
     paintingArt(c, L.paintFrame[0], L.paintFrame[1], L.paintFrame[2], L.paintFrame[3], X, true);
     box(c, 380, 870, 240, 60, 8, brass(c, 380, 870, 620, 930), '#5a3a10', 3); txt(c, 'Keyhole Lane', 500, 901, 34, '#3a2410', { font: SERIF, italic: true });
     light(c, e, 500, 400, 900, 'rgba(255,190,100,.12)', 0.45);
   };
-  V.deskz = function (c, X) {
-    var e = X.ext, st = X.st;
-    wallpaper(c, e);
-    // desk top (seen from a little above), the drawers below
-    c.fillStyle = lin(c, 0, 560, 0, 740, [[0, '#6e4122'], [1, '#9a6a3a']]); c.fillRect(e.x0, 560, e.x1 - e.x0, 180);
-    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(e.x0, 740, e.x1 - e.x0, 14);
-    wood(c, e.x0, 754, e.x1 - e.x0, Math.max(10, e.y1 - 754), '#6e4122', true, 91);
-    wood(c, 480, 754, 480, 520, '#7a4a28', true, 92);
-    box(c, 500, 760, 440, 210, 10, '#7a4a28', '#3a2010', 4); box(c, 500, 1000, 440, 230, 10, '#7a4a28', '#3a2010', 4);
-    var n = X.R.puzzles.order.answer.length;
-    box(c, 560, 790, 320, 90, 12, brass(c, 560, 790, 880, 880));
-    for (var i = 0; i < n; i++) circ(c, 600 + (240 / (n - 1)) * i, 835, 24, st.pz.order.got.length > i || st.f['f:drawer1'] ? '#8fe08a' : '#fbf3df', '#5a3a10', 3);
-    circ(c, 720, 925, 16, brass(c, 704, 909, 736, 941));
-    if (!st.f['f:drawer2']) { box(c, 680, 1030, 80, 26, 6, '#8f5f1a'); c.strokeStyle = '#b0b6c0'; c.lineWidth = 12; c.beginPath(); c.arc(720, 1090, 30, PI, 0); c.stroke(); box(c, 672, 1084, 96, 96, 18, brass(c, 672, 1084, 768, 1180), '#5a3a10', 3); }
-    else circ(c, 720, 1115, 16, brass(c, 704, 1099, 736, 1131));
-    if (X.P.photos.desk) photo(c, L.dPhoto[0], L.dPhoto[1], L.dPhoto[2], L.dPhoto[3], X.R.clues.ph_desk, false);
-    if (X.diff === 'h') { c.save(); c.translate(715, 650); c.rotate(-0.06); dropShadow(c, 10, 4); box(c, -115, -55, 230, 110, 4, '#fbf4e2'); noShadow(c); for (var q = 0; q < 4; q++) line(c, -95, -30 + q * 22, 80 - q * 20, -30 + q * 22, 'rgba(60,40,20,.5)', 5); c.restore(); }
-    box(c, 850, 600, 80, 90, 16, '#2a2a3a'); c.beginPath(); c.moveTo(880, 600); c.quadraticCurveTo(930, 470, 980, 420); c.quadraticCurveTo(950, 520, 900, 604); c.fillStyle = '#f8f2e4'; c.fill();
-    lampArt(c, 210, 715, 2.1, true);
-    light(c, e, 230, 500, 700, 'rgba(255,205,120,.36)', 0.45);
+  V.deskz = function(c,X){
+    var e=X.ext,st=X.st; if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'deskz',e)){wallpaper(c,e);deskArt(c,X);}
+    var n=X.R.puzzles.order.answer.length;
+    for(var i=0;i<n;i++){var bx=600+240/(n-1)*i;studyDisc(c,bx,835,25);circ(c,bx,835,19,st.pz.order.got.length>i||st.f['f:drawer1']?'#aabb93':'#ece3cd');}
+    if(!st.f['f:drawer2']&&typeof GOStudy!=='undefined')GOStudy.crop(c,'drawer2',[238,216,524,554],[672,1018,96,162]);
+    if(st.f['f:drawer1']){c.fillStyle='#201309';c.fillRect(504,755,432,12);}
+    if(X.P.photos.desk)photo(c,L.dPhoto[0],L.dPhoto[1],L.dPhoto[2],L.dPhoto[3],X.R.clues.ph_desk,false);
+    if(X.diff==='h'){c.save();c.translate(245,852);c.rotate(-.06);studyPaper(c,-132,-85,264,170);for(var q=0;q<4;q++)line(c,-100,-52+q*30,94-q*14,-52+q*30,'rgba(54,37,22,.5)',2);c.restore();}
   };
   V.shadow = function (c, X) {
-    var e = X.ext; wallpaper(c, e);
+    var e=X.ext;studyTexture(c,'wall',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0);
     c.fillStyle = 'rgba(0,0,0,.45)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
     var cx = L.shadowC[0], cy = L.shadowC[1], R = L.shadowC[2];
     c.fillStyle = rad(c, cx, cy, 20, R * 1.5, [[0, 'rgba(255,236,170,.95)'], [0.6, 'rgba(255,210,120,.65)'], [1, 'rgba(255,190,90,0)']]);
     c.beginPath(); c.arc(cx, cy, R * 1.5, 0, TAU); c.fill();
     var cl = X.R.clues.shadow; clockFace(c, cx, cy, R * 0.82, cl.h, cl.m, { shadow: true, noMinor: X.diff === 'e' });
     // the lamp's green shade at the bottom edge
-    c.beginPath(); c.moveTo(80, 1400); c.quadraticCurveTo(300, 1120, 620, 1400); c.closePath(); c.fillStyle = lin(c, 0, 1150, 0, 1400, [[0, '#2fa46a'], [1, '#0d4a2a']]); c.fill();
+    c.beginPath(); c.moveTo(80, 1400); c.quadraticCurveTo(300, 1120, 620, 1400); c.closePath(); c.fillStyle='#164630';c.fill();c.save();c.clip();if(typeof GOStudy!=='undefined')GOStudy.crop(c,'deskz',[35,280,380,170],[80,1170,540,240]);c.restore();
   };
   V.drawer1 = function (c, X) {
     var e = X.ext, st = X.st, pz = X.R.puzzles.order, open = st.f['f:drawer1'];
-    wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#6e4122', true, 101);
-    box(c, 60, 260, 880, 500, 14, '#7a4a28', '#3a2010', 5);
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'drawer1',e))wood(c,e.x0,e.y0,e.x1-e.x0,e.y1-e.y0,'#6e4122',true,101);
     var n = pz.buttons.length, sp = 760 / n, rad0 = Math.min(66, sp * 0.42);
-    box(c, 100, 330, 800, 290, 24, brass(c, 100, 330, 900, 620), '#5a3a10', 4);
+
     for (var i = 0; i < n; i++) {
       var b = pz.buttons[i], cx = 120 + sp * (i + 0.5), cy = 475, on = open || st.pz.order.got.indexOf(b) >= 0;
       dropShadow(c, on ? 4 : 12, on ? 2 : 6); circ(c, cx, cy, rad0 + 10, '#5a3a10'); noShadow(c);
       circ(c, cx, cy + (on ? 3 : 0), rad0, on ? '#d8f5c8' : '#fbf3df', on ? '#3a9a3a' : '#8f5f1a', on ? 8 : 4);
-      evIcon(c, b, cx, cy + (on ? 3 : 0), rad0 * 1.3);
+      c.save();c.beginPath();c.arc(cx,cy+(on?3:0),rad0-7,0,TAU);c.clip();if(typeof GOStudy==='undefined'||!GOStudy.eventPhoto(c,b,cx-rad0,cy-rad0+(on?3:0),rad0*2,rad0*2))evIcon(c,b,cx,cy,rad0*1.3);c.fillStyle=lin(c,0,cy-rad0,0,cy+rad0,[[0,'rgba(255,255,255,.25)'],[.5,'rgba(255,255,255,0)'],[1,'rgba(20,15,8,.2)']]);c.fillRect(cx-rad0,cy-rad0,rad0*2,rad0*2);c.restore();
       if (X.hit && !open) X.hit({ pz: 'order', b: b }, [cx - rad0 - 10, cy - rad0 - 10, rad0 * 2 + 20, rad0 * 2 + 20]);
     }
     circ(c, 500, 690, 26, brass(c, 474, 664, 526, 716), '#5a3a10', 3);
     if (open) {
-      c.fillStyle = '#2a170b'; c.beginPath(); c.moveTo(80, 800); c.lineTo(920, 800); c.lineTo(880, 1260); c.lineTo(120, 1260); c.closePath(); c.fill();
-      c.fillStyle = '#4a2a14'; c.fillRect(120, 1180, 760, 80);
+      studyDrawerOpen(c,X,800);
       var tk = X.diff === 'e' ? 'take_card' : 'take_batt';
       if (!st.done[tk]) item(c, X.diff === 'e' ? 'card' : 'batteries', 500, 1035, X.diff === 'e' ? 320 : 230);
     }
@@ -11501,17 +11507,14 @@ var GOArt = (function () {
   };
   V.drawer2 = function (c, X) {
     var e = X.ext, st = X.st, pz = X.R.puzzles.lock, open = st.f['f:drawer2'];
-    wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#6e4122', true, 111);
-    box(c, 60, 230, 880, 560, 14, '#7a4a28', '#3a2010', 5);
-    box(c, 430, 250, 140, 50, 10, '#8f5f1a', '#3a2010', 3);
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,open?'drawer1':'drawer2',e))wood(c,e.x0,e.y0,e.x1-e.x0,e.y1-e.y0,'#6e4122',true,111);
     var n = pz.answer.length, bw = Math.min(110, 460 / n), x0 = 500 - bw * n / 2 - 30;
     if (!open) {
-      c.strokeStyle = lin(c, 0, 220, 0, 420, [[0, '#e6eaf0'], [1, '#8a919c']]); c.lineWidth = 34; c.beginPath(); c.moveTo(380, 430); c.lineTo(380, 360); c.arc(500, 360, 120, PI, 0); c.lineTo(620, 430); c.stroke();
-      dropShadow(c, 24, 10); box(c, x0, 410, bw * n + 60, 360, 40, brass(c, x0, 410, x0 + bw * n + 60, 770), '#5a3a10', 5); noShadow(c);
-      box(c, x0 + 22, 520, bw * n + 16, 150, 14, '#2a1a0c');
+      box(c,x0+22,520,bw*n+16,150,12,'#21180f');
       for (var i = 0; i < n; i++) {
         var wx = x0 + 30 + bw * i, d = st.pz.lock.d[i];
         box(c, wx + 4, 528, bw - 8, 134, 10, lin(c, 0, 528, 0, 662, [[0, '#8a8f99'], [0.5, '#f4f6fa'], [1, '#8a8f99']]));
+        studyTexture(c,'metal',wx+4,528,bw-8,134,.2);
         txt(c, String(d), wx + bw / 2, 597, 84, '#1b1f2a', { weight: 800 });
         txt(c, String((d + 9) % 10), wx + bw / 2, 540, 30, 'rgba(27,31,42,.35)', { weight: 800 }); txt(c, String((d + 1) % 10), wx + bw / 2, 652, 30, 'rgba(27,31,42,.35)', { weight: 800 });
         c.fillStyle = '#3a2410'; c.beginPath(); c.moveTo(wx + bw / 2, 446); c.lineTo(wx + bw / 2 + 26, 492); c.lineTo(wx + bw / 2 - 26, 492); c.fill();
@@ -11522,38 +11525,18 @@ var GOArt = (function () {
       c.save(); c.translate(760, 560); c.rotate(0.5);
       c.strokeStyle = '#b0b6c0'; c.lineWidth = 26; c.beginPath(); c.moveTo(-90, -40); c.lineTo(-90, -130); c.arc(0, -130, 90, PI, 0); c.stroke();
       box(c, -130, -60, 260, 220, 30, brass(c, -130, -60, 130, 160), '#5a3a10', 4); c.restore();
-      c.fillStyle = '#2a170b'; c.beginPath(); c.moveTo(80, 820); c.lineTo(920, 820); c.lineTo(880, 1260); c.lineTo(120, 1260); c.closePath(); c.fill();
+      studyDrawerOpen(c,X,820);
       if (!st.done.take_bow) item(c, 'bow', 520, 1060, 300);
     }
     light(c, e, 500, 400, 900, 'rgba(255,200,120,.12)', 0.45);
   };
-  V.hearth = function (c, X) {
-    var e = X.ext, st = X.st;
-    c.fillStyle = '#d9cba8'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
-    c.save(); c.beginPath(); c.moveTo(90, 1300); c.lineTo(90, 420); c.quadraticCurveTo(500, 160, 910, 420); c.lineTo(910, 1300); c.closePath(); c.fillStyle = '#1a0d06'; c.fill(); c.clip();
-    c.strokeStyle = 'rgba(140,60,35,.55)'; c.lineWidth = 3;
-    for (var by = 250; by < 1300; by += 50) for (var bx = 60 + ((by / 50) % 2) * 50; bx < 960; bx += 100) c.strokeRect(bx, by, 100, 50);
-    c.fillStyle = rad(c, 500, 900, 20, 600, [[0, 'rgba(255,130,40,.55)'], [1, 'rgba(255,80,20,0)']]); c.fillRect(60, 250, 900, 1100);
-    c.fillStyle = lin(c, 0, 250, 0, 700, [[0, 'rgba(0,0,0,.7)'], [1, 'rgba(0,0,0,0)']]); c.fillRect(60, 250, 900, 450);
-    c.restore();
-    line(c, 260, 900, 740, 900, '#2a2a2a', 18); [300, 400, 500, 600, 700].forEach(function (gx) { line(c, gx, 830, gx, 960, '#2a2a2a', 12); });
-    c.save(); c.translate(500, 860); c.rotate(-0.1); box(c, -220, -36, 440, 72, 34, '#6a3a1a', '#3a1a08', 5); c.restore();
-    c.save(); c.translate(510, 820); c.rotate(0.16); box(c, -190, -30, 380, 60, 28, '#7a4422', '#3a1a08', 5); c.restore();
-    // ash
-    c.fillStyle = '#8a8a86'; c.beginPath();
-    if (st.f['f:ashStirred']) { c.ellipse(380, 1080, 150, 50, 0, 0, TAU); c.ellipse(660, 1090, 130, 44, 0, 0, TAU); }
-    else c.ellipse(500, 1060, 250, 90, 0, 0, TAU);
-    c.fill(); c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.ellipse(470, 1030, 120, 30, 0, 0, TAU); c.fill();
-    if (st.f['f:ashStirred'] && !st.done.take_cardB) { c.save(); c.translate(515, 1045); c.rotate(0.15); item(c, 'cardB', 0, 0, 260); c.restore(); }
-    c.fillStyle = '#5a4a3a'; c.fillRect(e.x0, 1150, e.x1 - e.x0, Math.max(10, e.y1 - 1150));
-    light(c, e, 500, 900, 700, 'rgba(255,140,50,.25)', 0.4);
+  V.hearth = function(c,X){
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'hearth',X.ext))closeBg(c,X.ext,'#38261c');
+    if(X.st.f['f:ashStirred']){c.save();c.globalAlpha=.35;var g=rad(c,515,1050,12,145,[[0,'#251b14'],[1,'rgba(25,18,12,0)']]);c.fillStyle=g;c.fillRect(360,970,310,180);c.restore();if(!X.st.done.take_cardB){c.save();c.translate(515,1045);c.rotate(.15);item(c,'cardB',0,0,260);c.restore();}}
   };
   V.mantelz = function (c, X) {
     var e = X.ext;
-    wallpaper(c, e);
-    c.fillStyle = lin(c, 0, 760, 0, 1400, [[0, '#e8dcc0'], [1, '#bfae8c']]); c.fillRect(e.x0, 760, e.x1 - e.x0, Math.max(10, e.y1 - 760));
-    c.fillStyle = '#b8a47e'; c.fillRect(e.x0, 800, e.x1 - e.x0, 110); for (var i = -1; i < 9; i++) circ(c, 60 + i * 130, 855, 26, '#d9cba8', '#a08a62', 3);
-    wood(c, e.x0, 720, e.x1 - e.x0, 50, '#8a5530', false, 121); c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(e.x0, 770, e.x1 - e.x0, 14);
+    if(typeof GOStudy==='undefined'||!GOStudy.wall(c,'mantelz',e))wallpaper(c,e);
     if (X.P.photos.mantel) photo(c, L.mPhoto[0], L.mPhoto[1], L.mPhoto[2], L.mPhoto[3], X.R.clues.ph_mantel, false);
     else { box(c, 170, 560, 26, 160, 4, brass(c, 170, 0, 196, 0)); box(c, 172, 450, 22, 110, 4, '#f6efe0'); }
     if (X.diff === 'h') {
@@ -11562,33 +11545,22 @@ var GOArt = (function () {
       txt(c, '14', L.mTea[0] + 100, L.mTea[1] + 130, 90, '#3a2410', { font: SERIF, weight: 800 });
       for (var q = 0; q < 2; q++) line(c, L.mTea[0] + 30, L.mTea[1] + 200 + q * 26, L.mTea[0] + 170, L.mTea[1] + 200 + q * 26, 'rgba(60,40,20,.4)', 5);
     } else { box(c, 820, 560, 26, 160, 4, brass(c, 820, 0, 846, 0)); box(c, 822, 450, 22, 110, 4, '#f6efe0'); }
-    // the puzzle box: a lid of little picture tiles
-    var b = L.box; dropShadow(c, 18, 8);
-    box(c, b[0], b[1], b[2], b[3], 16, lin(c, 0, b[1], 0, b[1] + b[3], [[0, '#a0683a'], [1, '#5a3418']]), '#3a2010', 4); noShadow(c);
-    box(c, b[0] + 30, b[1] + 22, b[2] - 60, 110, 8, '#3a2010');
-    var n = X.R.puzzles.slider ? X.R.puzzles.slider.n : 3;
-    for (var t = 0; t < n; t++) box(c, b[0] + 36 + t * ((b[2] - 72) / n), b[1] + 28, (b[2] - 72) / n - 6, 98, 4, ['#e8b04a', '#5a8ad8', '#e8453c', '#7cc35a'][t % 4]);
-    circ(c, b[0] + b[2] / 2, b[1] + 172, 16, brass(c, 0, 0, 30, 30));
+    if(typeof GOStudy!=='undefined'){
+      var preview=slidePic(X.R.clues.slider?X.R.clues.slider.digits:[],420);c.drawImage(preview,0,0,preview.width,preview.height,398,550,224,98);
+      c.strokeStyle='rgba(40,25,12,.75)';c.lineWidth=2;for(var k=1;k<3;k++)line(c,398+224*k/3,550,398+224*k/3,648,'#3b2715',2);
+    }
     light(c, e, 500, 500, 800, 'rgba(255,170,80,.18)', 0.45);
   };
   // the sliding picture: drawn once into its own canvas, then cut into tiles
   var picCache = { key: '', cv: null };
   function slidePic(digits, px) {
-    var key = digits.join('') + '@' + px;
+    var key=digits.join('')+'@'+px+'@'+(typeof GOStudy!=='undefined'&&GOStudy.has('desk'));
     if (picCache.key === key) return picCache.cv;
     var cv = document.createElement('canvas'); cv.width = cv.height = px;
     var c = cv.getContext('2d'), s = px / 700; c.scale(s, s);
-    c.fillStyle = lin(c, 0, 0, 0, 700, [[0, '#ffb36b'], [0.45, '#ffe3a0'], [0.46, '#8ccf6a'], [1, '#4f9a3a']]); c.fillRect(0, 0, 700, 700);
-    sym(c, 'sun', 110, 110, 150, '#ff8a2a');
-    c.fillStyle = '#6fbf4a'; c.beginPath(); c.moveTo(0, 360); c.quadraticCurveTo(200, 250, 420, 340); c.quadraticCurveTo(560, 290, 700, 330); c.lineTo(700, 700); c.lineTo(0, 700); c.fill();
-    // cottage on the right, a tree on the left, a winding path
-    box(c, 470, 470, 170, 130, 4, '#e8d8b0', '#5a3a10', 4); c.fillStyle = '#b8323a'; c.beginPath(); c.moveTo(450, 476); c.lineTo(555, 390); c.lineTo(660, 476); c.fill();
-    box(c, 530, 530, 46, 70, 4, '#6a3a1a'); box(c, 486, 500, 34, 30, 2, '#ffe08a'); box(c, 596, 500, 34, 30, 2, '#ffe08a');
-    box(c, 92, 470, 26, 140, 4, '#7a4a26'); circ(c, 105, 440, 70, '#3f8a3a'); circ(c, 70, 470, 40, '#4f9a44'); circ(c, 140, 470, 44, '#4f9a44');
-    c.fillStyle = '#e8cfa0'; c.beginPath(); c.moveTo(540, 600); c.quadraticCurveTo(380, 640, 330, 700); c.lineTo(420, 700); c.quadraticCurveTo(460, 650, 575, 600); c.fill();
-    [[600, 140], [470, 90], [300, 160]].forEach(function (b) { c.strokeStyle = '#3a2410'; c.lineWidth = 6; c.beginPath(); c.moveTo(b[0] - 16, b[1]); c.quadraticCurveTo(b[0] - 8, b[1] - 10, b[0], b[1]); c.quadraticCurveTo(b[0] + 8, b[1] - 10, b[0] + 16, b[1]); c.stroke(); });
+    c.fillStyle='#5a4936';c.fillRect(0,0,700,700);if(typeof GOStudy!=='undefined')GOStudy.crop(c,'desk',[305,189,378,269],[0,0,700,700]);
     // the banner
-    c.fillStyle = '#b8323a'; c.beginPath(); c.moveTo(20, 250); c.lineTo(680, 250); c.lineTo(650, 300); c.lineTo(680, 350); c.lineTo(20, 350); c.lineTo(50, 300); c.closePath(); c.fill();
+    c.fillStyle=lin(c,0,250,0,350,[[0,'#783d33'],[.5,'#a15d48'],[1,'#54281f']]); c.beginPath(); c.moveTo(20, 250); c.lineTo(680, 250); c.lineTo(650, 300); c.lineTo(680, 350); c.lineTo(20, 350); c.lineTo(50, 300); c.closePath(); c.fill();
     c.strokeStyle = '#7a1a20'; c.lineWidth = 5; c.stroke();
     var n = digits.length, sp = 560 / n;
     for (var i = 0; i < n; i++) txt(c, String(digits[i]), 70 + sp * (i + 0.5), 302, 92, '#fff8e0', { font: SERIF, weight: 900, stroke: ['#5a0a10', 8] });
@@ -11599,7 +11571,7 @@ var GOArt = (function () {
     var e = X.ext, st = X.st, pz = X.R.puzzles.slider, s = st.pz.slider, n = pz.n, solved = !!st.done.solve_slider;
     wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#5a3418', false, 131);
     dropShadow(c, 30, 12); box(c, 110, 260, 780, 780, 26, lin(c, 0, 260, 0, 1040, [[0, '#a0683a'], [1, '#6a3e1e']]), '#3a2010', 5); noShadow(c);
-    box(c, 146, 296, 708, 708, 8, '#2a170b');
+    studyTexture(c,'wood',110,260,780,780);box(c,146,296,708,708,8,'#2a170b');
     var size = 700, ts = size / n, ox = 150, oy = 300, px = Math.round(size * (X.scale || 1));
     var pic = slidePic(X.R.clues.slider.digits, Math.max(200, Math.min(2100, px)));
     var k = pic.width / size;
@@ -11621,11 +11593,10 @@ var GOArt = (function () {
   };
   V.clockz = function (c, X) {
     var e = X.ext, st = X.st, pz = X.R.puzzles.clock, s = st.pz.clock, open = st.f['f:clockOpen'];
-    wallpaper(c, e);
-    var C = L.clockC, cx = C[0], cy = C[1], R = C[2];
-    dropShadow(c, 30, 12); wood(c, cx - R - 70, cy - R - 120, 2 * R + 140, 2 * R + 180, '#6e3e1c', true, 141); noShadow(c);
-    c.fillStyle = '#5a3216'; c.beginPath(); c.moveTo(cx - R - 90, cy - R - 110); c.quadraticCurveTo(cx - R, cy - R - 230, cx, cy - R - 180); c.quadraticCurveTo(cx + R, cy - R - 230, cx + R + 90, cy - R - 110); c.closePath(); c.fill();
-    clockFace(c, cx, cy, R, s.h, s.m);
+    var C=L.clockC,cx=C[0],cy=C[1],R=C[2];
+    var real=typeof GOStudy!=='undefined'&&GOStudy.wall(c,'clockz',e);
+    if(!real)wallpaper(c,e);
+    clockFace(c,cx,cy,R,s.h,s.m,{photo:real});
     // the two winding holes: left turns the hour hand, right the minute hand
     if (X.hit) X.hit({ pz: 'clock', drag: true }, { c: [cx, cy, 0, R] }); // registered first: the winding holes on top win
     [['h', cx - 84], ['m', cx + 84]].forEach(function (a) {
@@ -11634,15 +11605,11 @@ var GOArt = (function () {
       box(c, a[1] - 4, ay - 13, 8, 26, 2, '#1a0e06');
       if (X.hit) X.hit({ pz: 'clock', hand: a[0], dir: 1 }, { c: [a[1], ay, 0, 46] });
     });
-    // the trunk with its case door
-    wood(c, 290, cy + R + 60, 420, Math.max(10, e.y1 - (cy + R + 60)), '#6e3e1c', true, 142);
-    var d = L.caseDoor;
-    c.fillStyle = '#20120a'; c.fillRect(d[0], d[1], d[2], d[3]);
-    if (!open) {
-      line(c, 500, d[1], 500, d[1] + 330, '#b8862e', 8); circ(c, 500, d[1] + 370, 52, brass(c, 448, d[1] + 318, 552, d[1] + 422), '#5a3a10', 3);
-      c.fillStyle = 'rgba(200,220,255,.10)'; c.fillRect(d[0], d[1], d[2], d[3]); c.strokeStyle = '#8a5a32'; c.lineWidth = 16; c.strokeRect(d[0], d[1], d[2], d[3]);
-      box(c, d[0] + d[2] - 40, d[1] + 210, 26, 60, 6, brass(c, 0, 0, 30, 60));
+    var d=L.caseDoor;
+    if(!open){
+      // Photographed pendulum and glazed door stay visible.
     } else {
+      studyTexture(c,'wood',d[0],d[1],d[2],d[3]);c.fillStyle='rgba(10,7,4,.8)';c.fillRect(d[0],d[1],d[2],d[3]);
       c.fillStyle = '#7a4a26'; c.beginPath(); c.moveTo(d[0], d[1]); c.lineTo(d[0] - 80, d[1] - 30); c.lineTo(d[0] - 80, d[1] + d[3] + 30); c.lineTo(d[0], d[1] + d[3]); c.fill();
       c.fillStyle = '#3a2412'; c.fillRect(d[0] + 10, d[1] + d[3] - 40, d[2] - 20, 40);
       if (X.diff === 'e') {
@@ -11655,7 +11622,7 @@ var GOArt = (function () {
   function noteView(c, X, lines, big) {
     var e = X.ext; wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#5a3418', false, 151);
     c.save(); c.translate(500, 680); c.rotate(-0.03);
-    dropShadow(c, 30, 12); box(c, -360, -400, 720, 800, 6, '#fbf4e2'); noShadow(c);
+    dropShadow(c,30,12);studyPaper(c,-360,-400,720,800);noShadow(c);
     for (var q = 0; q < 12; q++) line(c, -320, -300 + q * 60, 320, -300 + q * 60, 'rgba(90,120,170,.25)', 2);
     line(c, -260, -400, -260, 400, 'rgba(200,60,60,.35)', 3);
     lines.forEach(function (l) { txt(c, l[0], l[1] || 0, l[2], l[3], l[4] || '#2a2a5a', { font: l[5] || HAND, italic: !l[5], weight: 700 }); });
@@ -11671,15 +11638,15 @@ var GOArt = (function () {
       ['Grocer: call', 0, 30, 58], [cl.digits.slice(0, 2).join('') + '-' + cl.digits.slice(2).join(''), 0, 160, 120, '#2a2a5a', SERIF]]);
   };
   V.tea = function (c, X) {
-    var e = X.ext, cl = X.R.clues.tea; wallpaper(c, e); c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
-    dropShadow(c, 30, 12); box(c, 200, 220, 600, 860, 10, '#fbf4e2'); noShadow(c);
+    var e = X.ext, cl = X.R.clues.tea; studyTexture(c,'wall',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0); c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
+    dropShadow(c,30,12);studyPaper(c,200,220,600,860);noShadow(c);
     box(c, 200, 220, 600, 120, 10, '#c0392b'); txt(c, 'THURSDAY', 500, 282, 60, '#fff', { weight: 900 });
     txt(c, '14', 500, 470, 200, '#3a2410', { font: SERIF, weight: 800 });
     txt(c, cl.text, 500, 660, 64, '#2a2a5a', { font: HAND, italic: true });
     clockFace(c, 500, 870, 130, cl.h, cl.m);
   };
   V.ph = function (c, X, sp) {
-    var e = X.ext; wallpaper(c, e); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
+    var e = X.ext; studyTexture(c,'wall',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
     photo(c, 160, 170, 680, 620, X.R.clues['ph_' + sp], true);
     light(c, e, 500, 400, 900, 'rgba(255,200,120,.12)', 0.4);
   };
@@ -11730,6 +11697,7 @@ var GOArt = (function () {
     if (ra) ra.draw(c, view, X);
     else if (/^ph_/.test(view)) V.ph(c, X, view.slice(3));
     else if (V[view]) V[view](c, X);
+    if(!ra&&X.R&&X.R.id===1&&typeof GOStudy!=='undefined'&&GOStudy.has('drawer1'))return;
     // 0.4.0: the room's light, shadows, vignette and grain over every view (cached with the view's picture)
     if (typeof GOAtmos !== 'undefined') GOAtmos.grade(c, view, X);
   }
@@ -11745,6 +11713,7 @@ var GOArt = (function () {
   }
   function dyn0(c, view, X, t) {
     var ra = roomArt(X); if (ra) return ra.dyn(c, view, X, t);
+    if(X.R&&X.R.id===1&&typeof GOStudy!=='undefined'&&GOStudy.has('hearth')&&/^(hearth|mantelz)$/.test(view)){if(view==='hearth'){c.save();c.globalAlpha=.045+.015*Math.sin(t/180);c.fillStyle=rad(c,500,860,20,440,[[0,'#ffc274'],[1,'rgba(255,125,30,0)']]);c.fillRect(90,400,820,800);c.restore();}return true;}
     if (view === 'fire') {
       flames(c, 370, 1030, 0.9, t);
       [[600, 370], [128, 370]].forEach(function (p, k) { if (k === 1 && X.P.photos.mantel) return; candle(c, p[0], p[1], t + k); });
@@ -32264,7 +32233,7 @@ var GOSound = (function () {
 (function () {
   'use strict';
   var E = GOEngine, A = GOArt, S = GOSound;
-  var VERSION = '0.17.0';
+  var VERSION = '0.18.0';
   // rooms 1-5: Keyhole Lane (the brass pieces and the finale); rooms 6+: Beyond the Lane (0.5.0), each a separate file that
   // defines GORoom<n> with its own STORY (name, desc, stamp, notes). Rooms 10 and 11 are the two parts of one place.
   var ROOMS = {};
@@ -32979,7 +32948,7 @@ var GOSound = (function () {
         (tourCount() === 10 ? '<button class="tool tourletter tourlast" data-tourdone="1"><svg viewBox="0 0 24 24"><use href="#i-letter"/></svg><span>Her last letter: the tour complete</span></button>' : '') + '</div>';
       if (r.tour && r.soon) { html += '<div class="room soon tsoon"><div class="rh"><div class="rn">' + (r.n - 11) + '</div><div><h3>' + esc(r.name) + '</h3></div><span class="soonpill">Coming soon</span></div></div>'; return; }
       var parts = LANE.filter(function (q) { return q.group === r.n; });
-      html += '<div class="room' + (r.soon ? ' soon' : '') + (r.extra ? ' extra' : '') + (r.tour ? ' tourroom' : '') + '"><div class="rh"><div class="rn">' + (r.extra ? '<span class="rstamp">' + pieceSvg(parts.length ? parts[parts.length - 1].n : r.n) + '</span>' : r.n) + '</div><div><h3>' + (r.tour ? '<small class="tourno">Stop ' + (r.n - 11) + '</small>' : '') + esc(r.name) + '</h3><p class="rd">' + esc(r.desc) + '</p></div></div>';
+      html += '<div data-study-room="' + r.n + '" class="room' + (r.soon ? ' soon' : '') + (r.extra ? ' extra' : '') + (r.tour ? ' tourroom' : '') + '"><div class="rh"><div class="rn">' + (r.extra ? '<span class="rstamp">' + pieceSvg(parts.length ? parts[parts.length - 1].n : r.n) + '</span>' : r.n) + '</div><div><h3>' + (r.tour ? '<small class="tourno">Stop ' + (r.n - 11) + '</small>' : '') + esc(r.name) + '</h3><p class="rd">' + esc(r.desc) + '</p></div></div>';
       if (r.soon) html += '<span class="soonpill">Coming soon</span>';
       else if (parts.length) {
         html += '<div class="part"><b>' + esc(r.part) + '</b></div>' + diffRow(r);
@@ -32998,37 +32967,9 @@ var GOSound = (function () {
   }
   // ---- Keyhole Lane at dusk: the five places in a row (lit windows once a room is escaped on any difficulty) ----
   function cleared(n) { return ['e', 'm', 'h'].some(function (d) { return meta.best[n + d]; }); }
-  function laneScene() {
-    var lit = function (n) { return cleared(n) ? '#ffd76a' : '#33415f'; }, glow = function (n) { return cleared(n) ? ' filter="url(#lsGlow)"' : ''; };
-    var st = '', r = 7;
-    for (var i = 0; i < 26; i++) { r = (r * 16807) % 2147483647; var x = r % 360; r = (r * 16807) % 2147483647; var y = r % 58; st += '<circle class="tw" style="animation-delay:' + (i % 7) * 0.4 + 's" cx="' + x + '" cy="' + (4 + y) + '" r="' + (i % 3 ? 0.9 : 1.4) + '" fill="#fff6d8"/>'; }
-    return '<svg viewBox="0 0 360 132" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs>' +
-      '<linearGradient id="lsSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2550"/><stop offset=".65" stop-color="#4a3f78"/><stop offset="1" stop-color="#c8786a"/></linearGradient>' +
-      '<radialGradient id="lsBeam" cx="0" cy=".5" r="1"><stop offset="0" stop-color="#fff3c0" stop-opacity=".75"/><stop offset="1" stop-color="#fff3c0" stop-opacity="0"/></radialGradient>' +
-      '<filter id="lsGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
-      '<rect width="360" height="132" fill="url(#lsSky)"/>' + st +
-      '<circle cx="318" cy="22" r="11" fill="#fff4cf"/><circle cx="313" cy="19" r="11" fill="#2a2f5e" opacity=".35"/>' +
-      '<path d="M0 104 Q90 92 180 100 T360 98 V132 H0z" fill="#22284a"/>' +
-      // 1 the study: a brick townhouse with a chimney
-      '<g><rect x="10" y="52" width="58" height="56" fill="#7a3b2e"/><path d="M6 54 L39 32 L72 54z" fill="#4a2a24"/><rect x="54" y="34" width="8" height="14" fill="#5a2f26"/>' +
-      '<circle class="smoke" cx="58" cy="28" r="4" fill="#c9c3d8" opacity=".5"/><rect x="18" y="62" width="12" height="14" rx="2" fill="' + lit(1) + '"' + glow(1) + '/><rect x="48" y="62" width="12" height="14" rx="2" fill="' + lit(1) + '"' + glow(1) + '/><rect x="32" y="84" width="14" height="24" rx="6" fill="#3b2216"/></g>' +
-      // 2 the diner: low and chrome with a neon sign
-      '<g><rect x="76" y="76" width="70" height="32" rx="6" fill="#9fd8c8"/><rect x="76" y="70" width="70" height="8" rx="3" fill="#d8333f"/><rect x="88" y="58" width="46" height="12" rx="3" fill="#2a2030"/>' +
-      '<text x="111" y="67.5" text-anchor="middle" font-size="8" font-weight="900" font-family="Arial" fill="' + (cleared(2) ? '#ff5aa8' : '#6a4a6a') + '"' + glow(2) + '>DINER</text>' +
-      '<rect x="82" y="82" width="26" height="14" rx="2" fill="' + lit(2) + '"' + glow(2) + '/><rect x="114" y="82" width="26" height="14" rx="2" fill="' + lit(2) + '"' + glow(2) + '/></g>' +
-      // 3 the lighthouse: a striped tower; its lamp sweeps once escaped
-      '<g><path d="M162 108 L168 34 L184 34 L190 108z" fill="#f2efe6"/><path d="M164 90 L188 90 L189 100 L163 100z M166 62 L186 62 L187 72 L165 72z" fill="#c8453a"/><rect x="164" y="22" width="24" height="13" rx="2" fill="' + lit(3) + '"' + glow(3) + '/><path d="M162 22 L176 12 L190 22z" fill="#2c3a2c"/>' +
-      (cleared(3) ? '<path class="beam" d="M176 28 L250 14 L250 42z" fill="url(#lsBeam)"/>' : '') + '</g>' +
-      // 4 the workshop: a gabled shop with a gear sign
-      '<g><rect x="200" y="58" width="62" height="50" fill="#4a5a7a"/><path d="M196 60 L231 36 L266 60z" fill="#6a4a2a"/><rect x="214" y="42" width="34" height="6" fill="#a8d0ff" opacity=".7"/>' +
-      '<circle class="cog" cx="231" cy="72" r="8" fill="none" stroke="#e8c26a" stroke-width="3" stroke-dasharray="3 2"/><rect x="208" y="86" width="14" height="14" rx="2" fill="' + lit(4) + '"' + glow(4) + '/><rect x="240" y="86" width="14" height="14" rx="2" fill="' + lit(4) + '"' + glow(4) + '/></g>' +
-      // 5 the greenhouse: a glass arch full of leaves
-      '<g><path d="M272 108 V74 Q306 40 340 74 V108z" fill="' + (cleared(5) ? '#bfe8d2' : '#5a7a8a') + '" opacity=".85"' + glow(5) + '/><path d="M272 74 Q306 40 340 74 M289 108 V60 M306 108 V50 M323 108 V60 M272 90 H340" fill="none" stroke="#f6f2e8" stroke-width="1.6"/>' +
-      '<circle cx="284" cy="100" r="7" fill="#3f8a4a"/><circle cx="300" cy="96" r="9" fill="#2f7a42"/><circle cx="326" cy="99" r="8" fill="#3f8a4a"/></g>' +
-      // the lane: cobbles and two street lamps
-      '<path d="M0 112 H360" stroke="#55507a" stroke-width="3" stroke-dasharray="6 4"/>' +
-      '<g fill="#1a1a2a"><rect x="72" y="80" width="2.5" height="30"/><rect x="194" y="80" width="2.5" height="30"/><rect x="266" y="80" width="2.5" height="30"/></g>' +
-      '<g fill="#ffd76a" filter="url(#lsGlow)"><circle cx="73.2" cy="79" r="3"/><circle cx="195.2" cy="79" r="3"/><circle cx="267.2" cy="79" r="3"/></g></svg>';
+  function laneScene(){
+    var count=[1,2,3,4,5].filter(cleared).length;
+    return '<img src="assets/study-lane-v2.webp" alt="Lamplit Keyhole Lane, with a townhouse, diner, lighthouse, workshop and greenhouse"><div class="lane-photo-caption"><span>KEYHOLE LANE</span><b>'+count+' of 5 places escaped</b></div>';
   }
 
   // ================= the Stars screen (Keyhole Lane > Stars): every room x difficulty =================

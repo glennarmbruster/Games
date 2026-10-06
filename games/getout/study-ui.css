@@ -1,0 +1,44 @@
+/* Get Out's entrance and kit: photographic scenery, paper, walnut and quiet brass. */
+.lane {background:#152320;color:#eee8dc;background-image:linear-gradient(180deg,rgba(19,31,28,.96),rgba(14,23,21,.99)),url('assets/wood-v1.webp');}
+.lanein{max-width:760px;padding-top:calc(env(safe-area-inset-top,0px) + 62px);}
+.lanehead{gap:14px;margin:0 2px 19px;}
+.lanehead>svg{display:none;}
+.lanehead::before{content:'';width:54px;height:68px;flex:none;border:1px solid #9a8050;border-radius:5px;background: url('assets/study-door-v1.webp') center 47% / 180% auto;box-shadow:0 4px 12px #0005;}
+.lanehead h1{font:500 39px/1.05 Georgia,serif;color:#f1e6cc;text-shadow:none;letter-spacing:-1.1px;}
+.lanehead p{color:#b7c4bc;font-weight:400;font-size:13px;line-height:1.45;max-width:400px;}
+.lanescene{position:relative;margin:0 0 17px;height:auto;aspect-ratio:2/1;border:1px solid #ad91634d;border-radius:9px;box-shadow:0 10px 28px #0004;background:#111c1b;}
+.lanescene img{width:100%;height:100%;object-fit:cover;display:block;}
+.lane-photo-caption{position:absolute;inset:auto 0 0;padding:26px 14px 12px;background:linear-gradient(transparent,#07120ddd);display:flex;align-items:end;justify-content:space-between;gap:10px;}
+.lane-photo-caption span{font:600 10px/1.2 system-ui;letter-spacing:.17em;color:#e8d4a9;}
+.lane-photo-caption b{font:400 11px/1.2 system-ui;color:#ecebdc;}
+.pieces{gap:7px;font-size:12px;font-weight:500;color:#c1c9c1;margin:0 2px 13px;}
+.pieces i{width:24px;height:24px;border-radius:6px;border:1px solid #bca47766;background:#ffffff05;}
+.pieces i.got{background:linear-gradient(135deg,#d1b270,#9a793e);box-shadow:0 2px 5px #0004;}
+.trbtn{border:1px solid #b9a07240!important;background:#ffffff06!important;border-radius:8px!important;box-shadow:none!important;color:#e8e2d5!important;min-height:48px;}
+.rooms{gap:12px;}
+.room{border-radius:9px;background:linear-gradient(#f2ecdf,#e9e0d0);border:1px solid #d5c8af;box-shadow:0 5px 16px #0003;padding:15px;}
+.room .rh{align-items:flex-start;gap:11px;}
+.room .rn{width:35px;height:38px;border-radius:5px;font:500 21px Georgia,serif;background:#ddd0b7;color:#5c482a;box-shadow:inset 0 0 0 1px #a3885540;}
+.room h3{font:600 19px/1.2 Georgia,serif;color:#24352f;}
+.room .rd{color:#6c695e;font-size:12px;line-height:1.45;font-weight:400;margin-top:4px;}
+.room .diffs{gap:7px;margin-top:13px;}
+.room .diffs button{background:#fcf9f1;border:1px solid #b9ac92;border-radius:6px;color:#394538;font-size:14px;font-weight:600;min-height:54px;box-shadow:0 2px 3px #43321b0a;}
+.room .diffs button small{font-size:11px;font-weight:400;color:#7e7461;}
+.room .diffs button.cont{background:#2a493f;color:#fff6df;border-color:#2a493f;}
+.room .diffs button.cont small{color:#e4dcc6;}
+.room .diffs button.done::after{background:#3e6857;width:18px;height:18px;line-height:18px;font-size:12px;top:-5px;right:-3px;box-shadow:none;}
+.room .diffs button .st{color:#8a6830;font-size:11px;}
+.room .part{color:#534c3d;border-color:#8d7a4c30;}
+.room[data-study-room="1"]{border-top:3px solid #b39458;}
+.room .rstamp svg{width:30px;height:30px;}
+.beyond h2{font:500 25px Georgia,serif;color:#ecdfc5;}
+.beyond p{color:#b9c5bc;font-weight:400;line-height:1.5;}
+.lanebtns .tool{border-radius:7px;font-weight:500;font-size:13px;background:#ffffff06;border-color:#b9a07240;}
+.invbar{background:linear-gradient(#322b21ed,#211c17f5),url('assets/leather-v1.webp');border-radius:13px;box-shadow:0 5px 20px #0006,inset 0 0 0 1px #b297648c;}
+.slot{border-radius:8px;background:#d8ccb813;border:1px solid #c6b38f33;}
+.slot.sel{background:#b7984938;border-color:#dbc590;box-shadow:inset 0 0 0 1px #b49a67,0 0 8px #bda57533;}
+.inspect canvas{background:radial-gradient(ellipse,#3e3930,#1d1b16);border-radius:9px;border:1px solid #b7a17b55;}
+.letter{background-color:#eee4cf;background-image:url('assets/study-bookopen-v2.webp');background-size:260% 220%;background-position:20% 50%;box-shadow:0 20px 50px #0007;}
+.letterbody{color:#322a1b;font-weight:500;}
+@media(min-width:700px){.rooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}.rooms>.beyond{grid-column:1/-1;}.lanescene{aspect-ratio:2.7/1;}.lanehead h1{font-size:44px;}}
+@media(max-width:360px){.room{padding:12px;}.lanehead h1{font-size:35px;}.pieces{font-size:11px;gap:5px;}}
