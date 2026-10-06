@@ -1,0 +1,602 @@
+[
+  {
+    "id": "zoodoku",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 410
+    }
+  },
+  {
+    "id": "woodpile",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 410
+    }
+  },
+  {
+    "id": "patchwork",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 410
+    }
+  },
+  {
+    "id": "cubecorral",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 3,
+      "top": 419,
+      "width": 412,
+      "height": 384
+    }
+  },
+  {
+    "id": "screwball",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 421,
+      "top": 419,
+      "width": 412,
+      "height": 384
+    }
+  },
+  {
+    "id": "skeehop",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 839,
+      "top": 419,
+      "width": 412,
+      "height": 384
+    }
+  },
+  {
+    "id": "merge",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 3,
+      "top": 809,
+      "width": 412,
+      "height": 442
+    }
+  },
+  {
+    "id": "tapaway",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 421,
+      "top": 809,
+      "width": 412,
+      "height": 442
+    }
+  },
+  {
+    "id": "homerun",
+    "sourceSheet": 0,
+    "crop": {
+      "left": 839,
+      "top": 809,
+      "width": 412,
+      "height": 442
+    }
+  },
+  {
+    "id": "match3",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 397
+    }
+  },
+  {
+    "id": "snake",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 397
+    }
+  },
+  {
+    "id": "solitaire",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 397
+    }
+  },
+  {
+    "id": "meanbirds",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 3,
+      "top": 406,
+      "width": 412,
+      "height": 372
+    }
+  },
+  {
+    "id": "aliens",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 421,
+      "top": 406,
+      "width": 412,
+      "height": 372
+    }
+  },
+  {
+    "id": "worddice",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 839,
+      "top": 406,
+      "width": 412,
+      "height": 372
+    }
+  },
+  {
+    "id": "digger",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 3,
+      "top": 784,
+      "width": 412,
+      "height": 467
+    }
+  },
+  {
+    "id": "blocks",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 421,
+      "top": 784,
+      "width": 412,
+      "height": 467
+    }
+  },
+  {
+    "id": "maze",
+    "sourceSheet": 1,
+    "crop": {
+      "left": 839,
+      "top": 784,
+      "width": 412,
+      "height": 467
+    }
+  },
+  {
+    "id": "mahjong",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 398
+    }
+  },
+  {
+    "id": "dice",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 398
+    }
+  },
+  {
+    "id": "daily",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 398
+    }
+  },
+  {
+    "id": "mines",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 3,
+      "top": 407,
+      "width": 412,
+      "height": 393
+    }
+  },
+  {
+    "id": "bubbles",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 421,
+      "top": 407,
+      "width": 412,
+      "height": 393
+    }
+  },
+  {
+    "id": "bricks",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 839,
+      "top": 407,
+      "width": 412,
+      "height": 393
+    }
+  },
+  {
+    "id": "topple",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 3,
+      "top": 806,
+      "width": 412,
+      "height": 445
+    }
+  },
+  {
+    "id": "barrage",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 421,
+      "top": 806,
+      "width": 412,
+      "height": 445
+    }
+  },
+  {
+    "id": "siege",
+    "sourceSheet": 2,
+    "crop": {
+      "left": 839,
+      "top": 806,
+      "width": 412,
+      "height": 445
+    }
+  },
+  {
+    "id": "hoops",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "sort",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "triple",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "pinball",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 3,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "parking",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 421,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "minigolf",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 839,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "board",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 3,
+      "top": 839,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "buzz",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 421,
+      "top": 839,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "golf",
+    "sourceSheet": 3,
+    "crop": {
+      "left": 839,
+      "top": 839,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "shelf",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "castle",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "outpost",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "getout2",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 3,
+      "top": 421,
+      "width": 412,
+      "height": 396
+    }
+  },
+  {
+    "id": "getout",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 421,
+      "top": 421,
+      "width": 412,
+      "height": 396
+    }
+  },
+  {
+    "id": "sudoku",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 839,
+      "top": 421,
+      "width": 412,
+      "height": 396
+    }
+  },
+  {
+    "id": "wordwheel",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 3,
+      "top": 823,
+      "width": 412,
+      "height": 428
+    }
+  },
+  {
+    "id": "trivia",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 421,
+      "top": 823,
+      "width": 412,
+      "height": 428
+    }
+  },
+  {
+    "id": "huddle",
+    "sourceSheet": 4,
+    "crop": {
+      "left": 839,
+      "top": 823,
+      "width": 412,
+      "height": 428
+    }
+  },
+  {
+    "id": "wickway",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 395
+    }
+  },
+  {
+    "id": "pegs",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 395
+    }
+  },
+  {
+    "id": "perch",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 395
+    }
+  },
+  {
+    "id": "knotty",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 3,
+      "top": 404,
+      "width": 412,
+      "height": 382
+    }
+  },
+  {
+    "id": "casino",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 421,
+      "top": 404,
+      "width": 412,
+      "height": 382
+    }
+  },
+  {
+    "id": "spotdiff",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 839,
+      "top": 404,
+      "width": 412,
+      "height": 382
+    }
+  },
+  {
+    "id": "hidden",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 3,
+      "top": 792,
+      "width": 412,
+      "height": 459
+    }
+  },
+  {
+    "id": "cases",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 421,
+      "top": 792,
+      "width": 412,
+      "height": 459
+    }
+  },
+  {
+    "id": "spin",
+    "sourceSheet": 5,
+    "crop": {
+      "left": 839,
+      "top": 792,
+      "width": 412,
+      "height": 459
+    }
+  },
+  {
+    "id": "nonogram",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 3,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "deck",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 421,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "wordboard",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 839,
+      "top": 3,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "bowling",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 3,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "links",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 421,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  },
+  {
+    "id": "beacon",
+    "sourceSheet": 6,
+    "crop": {
+      "left": 839,
+      "top": 421,
+      "width": 412,
+      "height": 412
+    }
+  }
+]

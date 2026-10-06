@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<meta name="description" content="An animal logic puzzle.">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Zoodoku</title>
+<style>
+/* Zoodoku-only styles (themes and the shared UI kit come from /shared/goobs.css) */
+/* ---------- size picker ---------- */
+.sizes { display: flex; width: 100%; gap: 6px; }
+.sizes button {
+  flex: 1; height: 50px; border-radius: 13px; border: 0; padding: 0;
+  background: var(--surface-2); color: var(--ink); line-height: 1.05;
+}
+.sizes button b { display: block; font-size: 17px; }
+.sizes button small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); }
+.sizes button.on { background: var(--accent); color: #fff; }
+.sizes button.on small { color: rgba(255,255,255,.8); }
+.sizes button:active { transform: scale(.97); }
+
+/* ---------- status ---------- */
+.status { width: 100%; min-height: 30px; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.hearts { display: flex; gap: 3px; align-items: center; }
+.hearts svg { width: 26px; height: 26px; }
+.hearts svg.full { fill: #ff4d5e; }
+.hearts svg.empty { fill: var(--heart-empty); }
+.hearts svg.pop { animation: pop .5s; }
+@keyframes pop { 30% { transform: scale(1.5) rotate(-12deg); } 100% { transform: scale(1); } }
+.relaxed { font-size: 14px; color: var(--muted); font-weight: 600; }
+.timer { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 3px 10px; }
+.timer svg { width: 18px; height: 18px; }
+.timer.hide { display: none; }
+
+/* ---------- board ---------- */
+.boardwrap { position: relative; width: min(calc(100vw - 28px), calc(100vh - 336px), 600px); aspect-ratio: 1 / 1; flex: none; }
+@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100dvh - 336px), 600px); } }
+.board {
+  position: absolute; inset: 0; display: grid; border-radius: 16px; overflow: hidden; gap: 2.5px; padding: 2.5px;
+  background: var(--grid); touch-action: none; box-shadow: var(--shadow);
+}
+:root[data-theme="dark"] .board, :root[data-theme="blue"] .board { box-shadow: 0 0 0 1px rgba(255,255,255,.06), var(--shadow); }
+.cell { position: relative; display: grid; place-items: center; border-radius: 13%; }
+.cell svg { position: relative; z-index: 2; }
+.cell svg.an { width: 88%; height: 88%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.12)); }
+.cell svg.xm { width: 84%; height: 84%; color: var(--x); }
+.cell.wx svg.xm { color: var(--x-wrong); width: 88%; height: 88%; }
+.cell.auto svg.xm { color: var(--x-auto); width: 66%; height: 66%; }
+.cell.conflict::after {
+  content: ""; position: absolute; inset: 2px; border-radius: 6px; z-index: 1;
+  background: rgba(229,72,77,.22); border: 3px solid var(--bad);
+}
+.cell.wrong { animation: shake .45s; }
+.cell.wrong::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: rgba(229,72,77,.55); animation: fadeout .7s forwards; }
+.cell.wrong svg.an { animation: fadeout .7s forwards; }
+@keyframes shake { 20%,60% { transform: translateX(-4px); } 40%,80% { transform: translateX(4px); } }
+@keyframes fadeout { 0%,55% { opacity: 1; } 100% { opacity: 0; } }
+.cell.placed svg.an { animation: plop .28s ease-out; }
+@keyframes plop { 0% { transform: scale(.3); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.board.won .cell svg.an { animation: hop .6s ease-in-out infinite alternate; }
+/* hint highlights */
+.cell.hl-area::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; background: rgba(255,255,255,.55); }
+:root[data-theme="dark"] .cell.hl-area::before, :root[data-theme="blue"] .cell.hl-area::before { background: rgba(255,255,255,.28); }
+.cell.hl-target::before {
+  content: ""; position: absolute; inset: 3px; z-index: 1; border-radius: 50%;
+  border: 3px solid var(--hint); background: rgba(47,127,245,.18); animation: pulse 1s ease-in-out infinite alternate;
+}
+@keyframes pulse { 0% { transform: scale(.88); } 100% { transform: scale(1); } }
+.board.hinting .cell:not(.hl-area):not(.hl-target) { filter: saturate(.55) brightness(.93); }
+.lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.loading {
+  position: absolute; inset: 0; display: none; place-items: center; text-align: center;
+  background: var(--surface); opacity: .94; border-radius: 16px; font-weight: 600; color: var(--muted);
+}
+.loading.show { display: grid; }
+.loading svg { width: 64px; height: 64px; animation: hop .5s ease-in-out infinite alternate; }
+
+/* ---------- message line / hint ---------- */
+.msg { width: 100%; min-height: 50px; font-size: 15px; line-height: 1.4; text-align: center; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.msg b { color: var(--ink); }
+.msg .how { font-size: 14px; opacity: .9; }
+.msg.hint {
+  text-align: left; justify-content: space-between; gap: 10px; background: var(--surface); box-shadow: var(--shadow);
+  border-left: 4px solid var(--hint); border-radius: 14px; padding: 8px 8px 8px 12px; color: var(--ink); font-size: 15px; line-height: 1.35;
+}
+.msg.hint button {
+  flex: none; min-height: 42px; padding: 0 14px; border-radius: 12px; border: 0;
+  background: var(--hint); color: #fff; font-weight: 700; font-size: 15px;
+}
+
+/* ---------- toolbar: a little taller here ---------- */
+.tool { height: 60px; }
+.tool svg { width: 24px; height: 24px; }
+
+/* ---------- stats ---------- */
+.stable { width: 100%; border-collapse: collapse; font-size: 16px; }
+.stable th { font-size: 12px; color: var(--muted); text-align: center; padding: 4px; font-weight: 600; }
+.stable td { text-align: center; padding: 10px 4px; border-top: 1px solid var(--line); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stable td:first-child { text-align: left; }
+.stable td small { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* ---------- how to play ---------- */
+.example { width: 200px; height: 200px; margin: 0 auto 10px; display: grid; grid-template-columns: repeat(5, 1fr); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); gap: 2px; padding: 2px; background: #fff; }
+.example div { display: grid; place-items: center; border-radius: 13%; }
+.example svg { width: 88%; height: 88%; }
+
+/* ---------- level bar ---------- */
+.levelbar { width: 100%; display: flex; align-items: stretch; gap: 8px; min-height: 56px; }
+.levelbar .lvinfo {
+  flex: 1; min-width: 0; text-align: left; padding: 7px 32px 7px 14px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); position: relative;
+}
+.levelbar .lvinfo::after { content: "\203A"; position: absolute; right: 14px; top: 50%; transform: translateY(-54%); font-size: 28px; color: var(--muted); }
+.levelbar button:active { transform: scale(.98); }
+.levelbar .lvl { font-size: 20px; font-weight: 800; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.levelbar .lvan { width: 24px; height: 24px; vertical-align: -4px; margin-right: 6px; }
+.levelbar .sub { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.levelbar .daily {
+  flex: none; position: relative; width: 80px; border-radius: 16px; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  box-shadow: 0 6px 16px -8px var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-weight: 700; font-size: 13px; padding: 0;
+}
+.levelbar .daily svg { width: 22px; height: 22px; }
+.levelbar .daily .dot { position: absolute; top: 7px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+.levelbar .daily.done { background: var(--ok); box-shadow: 0 6px 16px -8px var(--ok); }
+.levelbar .daily.done .dot { display: none; }
+
+/* ---------- levels sheet extras ---------- */
+.lv.cur { animation: pulse 1s ease-in-out infinite alternate; }
+.lvsection { margin: 18px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.practice { display: flex; gap: 6px; }
+.practice button { flex: 1; min-height: 52px; border-radius: 13px; border: 0; background: var(--surface-2); color: var(--ink); font-weight: 700; font-size: 16px; line-height: 1.1; }
+.practice button small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+.practice button:active { transform: scale(.97); }
+
+/* ---------- X color picker ---------- */
+.swatchbtn { flex: none; width: 60px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 5px; }
+.swatchbtn i { display: block; width: 100%; height: 100%; border-radius: 7px; border: 1px solid rgba(0,0,0,.15); }
+.wheelwrap { position: relative; width: min(72vw, 260px); aspect-ratio: 1 / 1; margin: 6px auto 12px; touch-action: none; }
+.wheelwrap canvas { width: 100%; height: 100%; border-radius: 50%; display: block; box-shadow: var(--shadow); }
+.wheelmark {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; pointer-events: none;
+  border: 4px solid #fff; box-shadow: 0 0 0 2px #111, 0 2px 6px rgba(0,0,0,.5);
+}
+.bright { display: flex; align-items: center; gap: 12px; font-weight: 600; margin: 4px 2px 12px; }
+.bright input { flex: 1; height: 36px; accent-color: var(--accent); }
+.presets { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-bottom: 12px; }
+.presets button { aspect-ratio: 1 / 1; border-radius: 10px; border: 1px solid rgba(0,0,0,.12); padding: 0; }
+.presets button.on { box-shadow: 0 0 0 3px var(--accent); }
+.xpreview { display: grid; grid-template-columns: repeat(6, 1fr); border-radius: 12px; overflow: hidden; gap: 2px; padding: 2px; background: #fff; }
+.xpreview div { aspect-ratio: 1 / 1; display: grid; place-items: center; border-radius: 13%; }
+.xpreview svg { width: 84%; height: 84%; }
+.xpreview svg.a { width: 66%; height: 66%; }
+/* a free animal that starts in place: a gold ring, can't be moved */
+.cell.given::after { content: ""; position: absolute; inset: 7%; border-radius: 22%; box-shadow: 0 0 0 2.5px #ffc53d, 0 0 10px rgba(255,197,61,.7); pointer-events: none; }
+.msg.gift { color: var(--ink); background: color-mix(in srgb, #ffc53d 22%, var(--surface)); border-radius: 14px; padding: 8px 12px; box-sizing: border-box; }
+.lv.skip { background: var(--surface-2); color: var(--muted); }
+.startinput { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 12px; font-size: 30px; font-weight: 800; text-align: center; padding: 10px;
+  border-radius: 14px; border: 2px solid var(--line-strong); background: var(--surface-2); color: var(--ink); font-variant-numeric: tabular-nums; }
+.startinput:focus { outline: none; border-color: var(--accent); }
+.btn.small { width: auto; min-height: 38px; padding: 0 16px; font-size: 15px; flex: none; }
+.lvtag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: .3px; vertical-align: 3px;
+  background: color-mix(in srgb, var(--bad) 16%, var(--surface)); color: var(--bad); }
+.lvtag.gift { background: color-mix(in srgb, #ffc53d 30%, var(--surface)); color: #8a5a00; }
+
+/* ---------- full screen (1.9.0; Glenn: "I would like all the games full screen") ----------
+   Goobs.fullscreen() puts the page edge to edge; the board sits in a .ggfit box (the space left between the level bar and
+   the toolbar) and grows to the biggest square that fits it, so it's never cropped. Levels, How to play, Stats and
+   Settings live in the Menu sheet now. */
+html.gg-fs .boardwrap { width: min(100cqw, 100cqh, 720px); }
+html.gg-fs .levelbar .daily { width: 76px; }
+/* the hint text can run to three lines; a steady height keeps the board from jumping when a hint opens */
+html.gg-fs .msg { min-height: 58px; flex: none; }
+/* a tall phone has height left over once the board is as wide as the screen: spend some of it on bigger buttons and hearts */
+@media (min-height: 760px) {
+  html.gg-fs .levelbar { min-height: 62px; }
+  html.gg-fs .levelbar .lvl { font-size: 22px; }
+  html.gg-fs .hearts svg { width: 30px; height: 30px; }
+  html.gg-fs .status { min-height: 36px; }
+  html.gg-fs .tool { height: 66px; font-size: 15px; }
+  html.gg-fs .tool svg { width: 27px; height: 27px; }
+}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<!-- Zoodoku animals (original art): squirrel, dog, cat, penguin -->
+<symbol id="a-squirrel" viewBox="0 0 100 100"><g stroke="#2b2330" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M64 88 Q97 84 95 52 Q93 20 70 12 Q86 34 78 52 Q72 66 58 74Z" fill="#c9773a"/>
+<path d="M70 80 Q88 74 88 54 Q87 36 78 26 Q84 44 76 58 Q70 68 62 74Z" fill="#e7a468" stroke="none"/>
+<path d="M22 38 L18 10 Q30 12 38 28Z" fill="#b8652b"/>
+<path d="M58 28 Q64 12 76 10 L72 38Z" fill="#b8652b"/>
+<path d="M22 32 L20 16 M72 32 L74 16" stroke="#e7a468" stroke-width="3"/>
+<ellipse cx="46" cy="57" rx="32" ry="29" fill="#d98a48"/>
+<ellipse cx="46" cy="69" rx="21" ry="14" fill="#f7dcc0" stroke="none"/>
+<ellipse cx="27" cy="64" rx="9" ry="7" fill="#f7dcc0" stroke="none"/>
+<ellipse cx="65" cy="64" rx="9" ry="7" fill="#f7dcc0" stroke="none"/>
+<ellipse cx="34" cy="52" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<ellipse cx="58" cy="52" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<circle cx="36" cy="49.5" r="2" fill="#fff" stroke="none"/><circle cx="60" cy="49.5" r="2" fill="#fff" stroke="none"/>
+<ellipse cx="46" cy="62" rx="4.5" ry="3.2" fill="#2b2330" stroke="none"/>
+<path d="M46 65 V68 M46 68 Q42 71 38 69 M46 68 Q50 71 54 69" fill="none" stroke-width="2.4"/>
+<path d="M42.5 70.5 H49.5 V76 Q46 78 42.5 76Z" fill="#fff" stroke-width="2"/><path d="M46 70.5 V76.5" stroke-width="1.6"/>
+<ellipse cx="24" cy="70" rx="4.5" ry="3" fill="#f28fa6" stroke="none" opacity=".6"/><ellipse cx="68" cy="70" rx="4.5" ry="3" fill="#f28fa6" stroke="none" opacity=".6"/>
+</g></symbol>
+<symbol id="a-dog" viewBox="0 0 100 100"><g stroke="#2b2330" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M26 22 Q6 26 7 56 Q8 74 22 68 Q26 44 32 30Z" fill="#7a4a2a"/>
+<path d="M74 22 Q94 26 93 56 Q92 74 78 68 Q74 44 68 30Z" fill="#7a4a2a"/>
+<path d="M24 40 Q24 16 50 16 Q76 16 76 40 L75 64 Q73 88 50 88 Q27 88 25 64Z" fill="#e7b073"/>
+<path d="M44 17 Q50 15 56 17 L58 52 Q50 57 42 52Z" fill="#fff" stroke="none"/>
+<ellipse cx="50" cy="71" rx="19" ry="15" fill="#fff"/>
+<ellipse cx="37" cy="47" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<ellipse cx="63" cy="47" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<circle cx="39" cy="44.5" r="2" fill="#fff" stroke="none"/><circle cx="65" cy="44.5" r="2" fill="#fff" stroke="none"/>
+<path d="M31 37 Q36 34 41 37 M59 37 Q64 34 69 37" fill="none" stroke-width="2.4"/>
+<ellipse cx="50" cy="63" rx="8" ry="5.5" fill="#2b2330"/>
+<ellipse cx="48" cy="61.5" rx="2.4" ry="1.4" fill="#fff" stroke="none" opacity=".7"/>
+<path d="M50 69 V73 M50 73 Q44 78 39 74 M50 73 Q56 78 61 74" fill="none" stroke-width="2.4"/>
+<path d="M45.5 76 Q46 86 50 86 Q54 86 54.5 76 Q50 78 45.5 76Z" fill="#f28fa6" stroke-width="2.2"/>
+</g></symbol>
+<symbol id="a-cat" viewBox="0 0 100 100"><g stroke="#2b2330" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M18 46 L20 9 L46 26Z" fill="#f2a65a"/>
+<path d="M82 46 L80 9 L54 26Z" fill="#f2a65a"/>
+<path d="M25 35 L26 19 L38 27Z" fill="#f7c6c9" stroke="none"/>
+<path d="M75 35 L74 19 L62 27Z" fill="#f7c6c9" stroke="none"/>
+<ellipse cx="50" cy="57" rx="38" ry="32" fill="#f2a65a"/>
+<path d="M44 27 L46 37 M50 25 V38 M56 27 L54 37" stroke="#c9782f" stroke-width="3.2"/>
+<path d="M13 52 L21 54 M14 60 L21 60" stroke="#c9782f" stroke-width="3"/><path d="M87 52 L79 54 M86 60 L79 60" stroke="#c9782f" stroke-width="3"/>
+<ellipse cx="50" cy="70" rx="16" ry="11" fill="#fff4e6" stroke="none"/>
+<ellipse cx="35" cy="54" rx="6" ry="7.5" fill="#2b2330" stroke="none"/>
+<ellipse cx="65" cy="54" rx="6" ry="7.5" fill="#2b2330" stroke="none"/>
+<circle cx="37.5" cy="51" r="2.3" fill="#fff" stroke="none"/><circle cx="67.5" cy="51" r="2.3" fill="#fff" stroke="none"/>
+<path d="M45.5 63.5 H54.5 L50 68.5Z" fill="#f28fa6" stroke-width="2.2"/>
+<path d="M50 68.5 Q46 74 41 71.5 M50 68.5 Q54 74 59 71.5" fill="none" stroke-width="2.4"/>
+<path d="M30 66 L10 63 M30 71 L11 74 M70 66 L90 63 M70 71 L89 74" stroke-width="1.8"/>
+<ellipse cx="25" cy="65" rx="4.5" ry="3" fill="#f28fa6" stroke="none" opacity=".55"/><ellipse cx="75" cy="65" rx="4.5" ry="3" fill="#f28fa6" stroke="none" opacity=".55"/>
+</g></symbol>
+<symbol id="a-penguin" viewBox="0 0 100 100"><g stroke="#2b2330" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M46 16 Q50 6 58 10 Q52 12 52 18Z" fill="#2f3547"/>
+<ellipse cx="50" cy="54" rx="37" ry="35" fill="#2f3547"/>
+<path d="M50 36 Q60 22 72 31 Q83 43 75 62 Q65 82 50 84 Q35 82 25 62 Q17 43 28 31 Q40 22 50 36Z" fill="#fff" stroke="none"/>
+<ellipse cx="38" cy="51" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<ellipse cx="62" cy="51" rx="5.5" ry="6.5" fill="#2b2330" stroke="none"/>
+<circle cx="40" cy="48.5" r="2" fill="#fff" stroke="none"/><circle cx="64" cy="48.5" r="2" fill="#fff" stroke="none"/>
+<path d="M40 61 Q50 55 60 61 Q55 70 50 72 Q45 70 40 61Z" fill="#ffa726"/>
+<path d="M41 61.5 Q50 64 59 61.5" fill="none" stroke-width="2"/>
+<ellipse cx="29" cy="64" rx="5" ry="3.2" fill="#f28fa6" stroke="none" opacity=".6"/><ellipse cx="71" cy="64" rx="5" ry="3.2" fill="#f28fa6" stroke="none" opacity=".6"/>
+</g></symbol>
+
+<symbol id="zoo-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#fbe7c8"/>
+<rect x="12" y="12" width="36" height="36" rx="8" fill="#e4adaa"/><rect x="52" y="12" width="36" height="36" rx="8" fill="#a5c3de"/>
+<rect x="12" y="52" width="36" height="36" rx="8" fill="#b1cb98"/><rect x="52" y="52" width="36" height="36" rx="8" fill="#dfd293"/>
+<use href="#a-cat" x="53" y="53" width="34" height="34"/><use href="#a-dog" x="13" y="13" width="34" height="34"/></symbol>
+
+<!-- X mark -->
+<symbol id="xmark" viewBox="0 0 100 100"><path d="M24 24 L76 76 M76 24 L24 76" stroke="currentColor" stroke-width="17" stroke-linecap="round" fill="none"/></symbol>
+<!-- Heart -->
+<symbol id="heart" viewBox="0 0 100 100"><path d="M50 88 L14 52 Q2 38 12 24 Q24 10 40 18 Q46 22 50 30 Q54 22 60 18 Q76 10 88 24 Q98 38 86 52Z" stroke="#7a1f19" stroke-width="5" stroke-linejoin="round"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2.5h5"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.3 1 2.1V16h6v-.2c0-.8.4-1.5 1-2.1A6.5 6.5 0 0 0 12 2.5z" fill="#f7d44c" fill-opacity=".6"/></g></symbol>
+<symbol id="i-clear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l5 5-10.5 10.5H5.5L3 16z" fill="#f5b3c0" fill-opacity=".7"/><path d="M9 10l5 5M11 21h10"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.2 2.2 4.8-4.8"/></g></symbol>
+</defs>
+</svg>
+
+<div class="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#zoo-logo"/></svg>
+      <h1>Zoodoku</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="levelbar" id="levelBar">
+    <button class="lvinfo" id="levelInfo"><div class="lvl" id="lvlTitle">Level 1</div><div class="sub" id="lvlSub">7&times;7 &middot; Easy</div></button>
+    <button class="daily" id="dailyBtn" aria-label="Daily puzzle"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg><span>Daily</span><i class="dot"></i></button>
+  </div>
+
+  <div class="status">
+    <div class="hearts" id="hearts"></div>
+    <div class="timer" id="timer"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg><span id="timerText">0:00</span></div>
+  </div>
+
+  <div class="ggfit">
+    <div class="boardwrap" id="boardwrap">
+      <div class="board" id="board"></div>
+      <svg class="lines" id="lines" preserveAspectRatio="none"></svg>
+      <div class="loading" id="loading"><div><svg viewBox="0 0 100 100"><use href="#a-cat"/></svg><div>Setting up&hellip;</div></div></div>
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button class="tool" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-hint"/></svg><span>Hint</span></button>
+    <button class="tool" id="btnClear"><svg viewBox="0 0 24 24"><use href="#i-clear"/></svg><span>Clear</span></button>
+    <button class="tool red" id="btnLevels"><svg viewBox="0 0 24 24"><use href="#i-levels"/></svg><span>Levels</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Hearts<small>3 hearts per puzzle. A wrong animal costs one. Starts with the next puzzle.</small></div>
+        <span class="switch"><input type="checkbox" id="setHearts"><span></span></span></label>
+      <label class="row"><div>Auto-&times;<small>Placing an animal crosses out its row, column, color and neighbors.</small></div>
+        <span class="switch"><input type="checkbox" id="setAutoX"><span></span></span></label>
+      <div class="row"><div>&times; color<small>Pick any color for your &times; marks.</small></div>
+        <button class="swatchbtn" id="btnXColor" aria-label="Choose X color"><i id="xSwatch"></i></button></div>
+      <label class="row"><div>Show mistakes<small>Red outline on animals that break a rule.</small></div>
+        <span class="switch"><input type="checkbox" id="setHighlight"><span></span></span></label>
+      <label class="row"><div>Timer<small>Show the clock while you play.</small></div>
+        <span class="switch"><input type="checkbox" id="setTimer"><span></span></span></label>
+      <label class="row"><div>Sound<small>Animal sounds and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Old-time ads between puzzles, just for fun. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished puzzles.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="row" id="rowStart"><div>Starting level<small>Jump to any level, once on this phone (for example, where you are in another app).</small></div>
+        <button class="btn small" id="btnPickStart">Pick&hellip;</button></div>
+      <div class="linkrow">
+        <button class="btn" id="btnHelp"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></svg><span>How to play</span></button>
+        <button class="btn" id="btnResetStats">Reset stats</button>
+      </div>
+      <div class="version" id="version">Zoodoku</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- X color picker -->
+<div class="overlay" id="ovColor">
+  <div class="sheet" role="dialog" aria-label="X color">
+    <h2>&times; color</h2>
+    <div class="sheetbody">
+      <div class="wheelwrap"><canvas id="wheel" width="480" height="480"></canvas><div class="wheelmark" id="wheelMark"></div></div>
+      <label class="bright"><span>Brightness</span><input type="range" id="xBright" min="0" max="100" value="100"></label>
+      <div class="presets" id="xPresets"></div>
+      <div class="xpreview" id="xPreview"></div>
+    </div>
+    <div class="actions"><button class="btn" id="btnXDefault">Default</button><button class="btn red" id="btnXDone">Done</button></div>
+  </div>
+</div>
+
+<!-- Levels -->
+<div class="overlay" id="ovLevels">
+  <div class="sheet" role="dialog" aria-label="Levels">
+    <h2>Levels</h2>
+    <div class="sheetbody" id="levelsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseLevels">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Zoodoku record</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody">
+      <div class="example" id="example"></div>
+      <ol class="helplist">
+        <li>Put <b>one animal</b> in every <b>row</b>, every <b>column</b> and every <b>color</b>.</li>
+        <li>Animals need elbow room: <b>no two can touch</b>, not even corner to corner.</li>
+        <li><b>Tap</b> a square to mark it &times; (no animal here). Tap again to clear it.</li>
+        <li><b>Double-tap</b> to put an animal there. Double-tap it again to take it away.</li>
+        <li><b>Drag</b> your finger across squares to mark lots of &times; at once.</li>
+        <li>With hearts on (3 per puzzle), a wrong animal costs a heart and leaves a red &times; so you remember. Out of hearts? Watch a quick ad to keep going.</li>
+        <li>Some levels are <b>Tricky</b>, and some <b>Very tricky</b>: they need a &ldquo;try it and see&rdquo; step (suppose an animal on a square and follow the rules until something runs out of room). Some have a color that's just one square &mdash; that animal is easy to spot. Every 20&ndash;30 levels you get a <b>free animal</b> already in place.</li>
+        <li>Finish a level and the next one is waiting. Each level has its own animal: squirrels, dogs, cats and penguins take turns. Level numbers are the same puzzle on every phone.</li>
+        <li><b>Daily</b> (top right) is a new 11&times;11 every day with a surprise animal, the same for everyone.</li>
+        <li>Stuck? <b>Hint</b> explains the next step and can do it for you.</li>
+      </ol>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Win / lose / confirm card -->
+<!-- One-time starting level -->
+<div class="overlay center" id="ovStart">
+  <div class="card" role="dialog" aria-label="Starting level">
+    <h2>Pick your starting level</h2>
+    <p>Already far along in Zoodoku somewhere else? Start from any level. You can do this <b>once</b> on this phone.</p>
+    <input class="startinput" id="startLevel" type="number" inputmode="numeric" pattern="[0-9]*" min="1" max="99999" aria-label="Starting level">
+    <div class="actions"><button class="btn red" id="btnStartGo">Start at level 1</button><button class="btn" id="btnStartKeep">Keep level 1</button></div>
+  </div>
+</div>
+
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="parade" id="parade"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script id="engine-src">
+/* Zoodoku puzzle engine: generator, human-style logic solver, brute-force solution counter.
+   Rules: N x N grid, N pens (regions). One animal per row, column and pen.
+   Animals may not touch, not even diagonally. */
+var ZooEngine = (function () {
+  'use strict';
+
+  // ---------- seeded RNG ----------
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(arr, rand) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+  function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+  var POP = new Uint8Array(1 << 12);
+  for (var p = 1; p < POP.length; p++) POP[p] = POP[p >> 1] + (p & 1);
+
+  // ---------- geometry context ----------
+  var ctxCache = {};
+  function geom(n) {
+    if (ctxCache[n]) return ctxCache[n];
+    var nb = [], blockRC = [];
+    for (var c = 0; c < n * n; c++) {
+      var r = (c / n) | 0, q = c % n, list = [], rc = [];
+      for (var dr = -1; dr <= 1; dr++) for (var dq = -1; dq <= 1; dq++) {
+        if (!dr && !dq) continue;
+        var rr = r + dr, qq = q + dq;
+        if (rr >= 0 && rr < n && qq >= 0 && qq < n) list.push(rr * n + qq);
+      }
+      nb.push(list);
+      // cells blocked by an animal at c: same row, same column, touching
+      var set = {};
+      for (var i = 0; i < n; i++) { set[r * n + i] = 1; set[i * n + q] = 1; }
+      list.forEach(function (x) { set[x] = 1; });
+      delete set[c];
+      for (var k in set) rc.push(+k);
+      blockRC.push(rc);
+    }
+    return (ctxCache[n] = { n: n, nb: nb, blockRC: blockRC });
+  }
+
+  // ---------- puzzle context (units) ----------
+  // families: 0 = rows, 1 = columns, 2 = pens
+  function makeCtx(n, regions) {
+    var g = geom(n);
+    var fam = [[], [], []];
+    for (var i = 0; i < n; i++) { fam[0].push([]); fam[1].push([]); fam[2].push([]); }
+    for (var c = 0; c < n * n; c++) {
+      fam[0][(c / n) | 0].push(c);
+      fam[1][c % n].push(c);
+      fam[2][regions[c]].push(c);
+    }
+    var block = [];
+    for (c = 0; c < n * n; c++) {
+      var set = {};
+      g.blockRC[c].forEach(function (x) { set[x] = 1; });
+      fam[2][regions[c]].forEach(function (x) { set[x] = 1; });
+      delete set[c];
+      block.push(Object.keys(set).map(Number));
+    }
+    var ucell = [[], [], []];
+    for (c = 0; c < n * n; c++) { ucell[0].push((c / n) | 0); ucell[1].push(c % n); ucell[2].push(regions[c]); }
+    return { n: n, regions: regions, fam: fam, block: block, g: g, ucell: ucell };
+  }
+  function unitOf(ctx, f, c) {
+    return f === 0 ? (c / ctx.n) | 0 : f === 1 ? c % ctx.n : ctx.regions[c];
+  }
+
+  // state: cand (1 = could still hold an animal), animal (1 = placed)
+  function newState(ctx) {
+    var N = ctx.n * ctx.n;
+    return { cand: new Uint8Array(N).fill(1), animal: new Uint8Array(N) };
+  }
+  function cloneState(s) { return { cand: s.cand.slice(), animal: s.animal.slice() }; }
+  function place(ctx, s, c) {
+    s.animal[c] = 1; s.cand[c] = 1;
+    var b = ctx.block[c];
+    for (var i = 0; i < b.length; i++) s.cand[b[i]] = 0;
+  }
+  function unitHasAnimal(ctx, s, f, u) {
+    var cells = ctx.fam[f][u];
+    for (var i = 0; i < cells.length; i++) if (s.animal[cells[i]]) return true;
+    return false;
+  }
+
+  var FAMNAME = ['row', 'column', 'pen'];
+  var MAXK = 3; // largest group size used by the logic solver (keeps puzzles human-solvable)
+
+  /* Find the next logical deduction.
+     Returns {level, kind, place:[cells], elim:[cells], why:{...}} or {contradiction:true} or null.
+     Levels: 1 single, 2 confinement (k=1), 3 "would wipe out", 4 group confinement (k>=2). */
+  function nextDeduction(ctx, s, basicOnly) {
+    var n = ctx.n, NN = n * n, f, u, i, c, cells;
+    var has = [new Uint8Array(n), new Uint8Array(n), new Uint8Array(n)];
+    var ucell = ctx.ucell;
+    for (c = 0; c < NN; c++) if (s.animal[c]) { has[0][ucell[0][c]] = 1; has[1][ucell[1][c]] = 1; has[2][ucell[2][c]] = 1; }
+    // Level 1: a row/column/pen with exactly one open cell
+    for (f = 0; f < 3; f++) for (u = 0; u < n; u++) {
+      if (has[f][u]) continue;
+      cells = ctx.fam[f][u];
+      var cnt = 0, last = -1;
+      for (i = 0; i < cells.length; i++) if (s.cand[cells[i]]) { cnt++; last = cells[i]; }
+      if (cnt === 0) return { contradiction: true, why: { fam: f, unit: u } };
+      if (cnt === 1) return { level: 1, kind: 'single', place: [last], elim: [], why: { fam: f, unit: u } };
+    }
+    var free = [[], [], []];
+    for (f = 0; f < 3; f++) for (u = 0; u < n; u++) if (!has[f][u]) free[f].push(u);
+    // masks[A][B][j]: bitmask of B-units touched by open cells of free[A][j]
+    var masks = [[], [], []];
+    for (var A = 0; A < 3; A++) for (var B = 0; B < 3; B++) {
+      if (A === B) continue;
+      masks[A][B] = free[A].map(function (ua) {
+        var mk = 0, cs = ctx.fam[A][ua];
+        for (var j = 0; j < cs.length; j++) if (s.cand[cs[j]]) mk |= 1 << ucell[B][cs[j]];
+        return mk;
+      });
+    }
+    function groupScan(kMin, kMax) {
+      for (var k = kMin; k <= kMax; k++) {
+        for (var A = 0; A < 3; A++) for (var B = 0; B < 3; B++) {
+          if (A === B) continue;
+          var fa = free[A], m = fa.length, mm = masks[A][B];
+          if (k >= m) continue;
+          var idx = range(k);
+          while (true) {
+            var sub = 0, uni = 0;
+            for (var t = 0; t < k; t++) { sub |= 1 << fa[idx[t]]; uni |= mm[idx[t]]; }
+            if (POP[uni] === k) {
+              var el = [];
+              for (var ub = 0; ub < n; ub++) {
+                if (!(uni & (1 << ub))) continue;
+                var bc = ctx.fam[B][ub];
+                for (var j2 = 0; j2 < bc.length; j2++) {
+                  var cc = bc[j2];
+                  if (s.cand[cc] && !s.animal[cc] && !(sub & (1 << ucell[A][cc]))) el.push(cc);
+                }
+              }
+              if (el.length) {
+                var bUnits = [], aUnits = [];
+                for (ub = 0; ub < n; ub++) if (uni & (1 << ub)) bUnits.push(ub);
+                for (t = 0; t < k; t++) aUnits.push(fa[idx[t]]);
+                return { level: k === 1 ? 2 : 4, kind: k === 1 ? 'confined' : 'group', place: [], elim: el,
+                  why: { famA: A, unitsA: aUnits, famB: B, unitsB: bUnits } };
+              }
+            }
+            var t2 = k - 1;
+            while (t2 >= 0 && idx[t2] === m - k + t2) t2--;
+            if (t2 < 0) break;
+            idx[t2]++;
+            for (var t3 = t2 + 1; t3 < k; t3++) idx[t3] = idx[t3 - 1] + 1;
+          }
+        }
+      }
+      return null;
+    }
+    var d = groupScan(1, 1);
+    if (d) return d;
+    // Level 3: an animal here would leave some row/column/pen with no open cell
+    var openCnt = [new Int16Array(n), new Int16Array(n), new Int16Array(n)];
+    for (c = 0; c < NN; c++) if (s.cand[c] && !s.animal[c]) { openCnt[0][ucell[0][c]]++; openCnt[1][ucell[1][c]]++; openCnt[2][ucell[2][c]]++; }
+    var lost = [new Int16Array(n), new Int16Array(n), new Int16Array(n)];
+    for (c = 0; c < NN; c++) {
+      if (!s.cand[c] || s.animal[c]) continue;
+      lost[0].fill(0); lost[1].fill(0); lost[2].fill(0);
+      var b = ctx.block[c];
+      for (i = -1; i < b.length; i++) {
+        var x = i < 0 ? c : b[i];
+        if (!s.cand[x] || s.animal[x]) continue;
+        lost[0][ucell[0][x]]++; lost[1][ucell[1][x]]++; lost[2][ucell[2][x]]++;
+      }
+      for (f = 0; f < 3; f++) {
+        var own = ucell[f][c];
+        for (u = 0; u < n; u++) {
+          if (u === own || has[f][u]) continue;
+          if (lost[f][u] >= openCnt[f][u]) return { level: 3, kind: 'wipeout', place: [], elim: [c], why: { fam: f, unit: u } };
+        }
+      }
+    }
+    // Level 4: k rows/columns/pens squeezed into k others
+    if (basicOnly) return null;
+    return groupScan(2, Math.min(MAXK, n - 2));
+  }
+
+  /* Level 5 ("try it and see", Glenn 2026-09-28: some levels should need a guess): suppose an animal on one
+     open square, follow the ordinary steps (levels 1-4) from there; if some row, column or area runs out of room,
+     that square is an x. Returns the first such square, or null. */
+  function trialDeduction(ctx, s) {
+    var n = ctx.n, NN = n * n, has = [new Uint8Array(n), new Uint8Array(n), new Uint8Array(n)], c;
+    for (c = 0; c < NN; c++) if (s.animal[c]) { has[0][ctx.ucell[0][c]] = 1; has[1][ctx.ucell[1][c]] = 1; has[2][ctx.ucell[2][c]] = 1; }
+    for (c = 0; c < NN; c++) {
+      if (!s.cand[c] || s.animal[c] || has[0][ctx.ucell[0][c]] || has[2][ctx.ucell[2][c]]) continue;
+      var t = cloneState(s);
+      place(ctx, t, c);
+      for (var g = 0; g < 4 * n; g++) {
+        var d = nextDeduction(ctx, t, true);
+        if (!d) break;
+        if (d.contradiction) return { level: 5, kind: 'trial', place: [], elim: [c], why: { cell: c, fam: d.why.fam, unit: d.why.unit } };
+        applyDeduction(ctx, t, d);
+        if (isSolved(ctx, t)) break;
+      }
+    }
+    return null;
+  }
+  // the next step a person could take, including "try it and see"
+  function nextDeductionFull(ctx, s) {
+    var d = nextDeduction(ctx, s);
+    if (d) return d;
+    return trialDeduction(ctx, s);
+  }
+
+  function applyDeduction(ctx, s, d) {
+    for (var i = 0; i < d.elim.length; i++) s.cand[d.elim[i]] = 0;
+    for (i = 0; i < d.place.length; i++) place(ctx, s, d.place[i]);
+  }
+
+  function isSolved(ctx, s) {
+    var cnt = 0;
+    for (var i = 0; i < s.animal.length; i++) cnt += s.animal[i];
+    return cnt === ctx.n;
+  }
+
+  // Solve with logic only. Returns {solved, maxLevel, counts[1..5], steps}. trial: also use level 5.
+  function solveLogic(n, regions, startState, trial) {
+    var ctx = makeCtx(n, regions);
+    var s = startState ? cloneState(startState) : newState(ctx);
+    var counts = [0, 0, 0, 0, 0, 0], maxLevel = 0, steps = 0;
+    while (!isSolved(ctx, s)) {
+      var d = trial ? nextDeductionFull(ctx, s) : nextDeduction(ctx, s);
+      if (!d || d.contradiction) return { solved: false, contradiction: !!(d && d.contradiction), state: s, counts: counts, maxLevel: maxLevel, steps: steps };
+      counts[d.level]++; steps++;
+      if (d.level > maxLevel) maxLevel = d.level;
+      applyDeduction(ctx, s, d);
+    }
+    var sol = [];
+    for (var c = 0; c < n * n; c++) if (s.animal[c]) sol[(c / n) | 0] = c % n;
+    return { solved: true, solution: sol, counts: counts, maxLevel: maxLevel, steps: steps, state: s };
+  }
+
+  // Brute force: count solutions up to limit (row by row)
+  function countSolutions(n, regions, limit) {
+    limit = limit || 2;
+    var colUsed = new Uint8Array(n), regUsed = new Uint8Array(n), cols = [], count = 0, first = null;
+    function bt(r) {
+      if (r === n) { count++; if (!first) first = cols.slice(); return count >= limit; }
+      for (var c = 0; c < n; c++) {
+        if (colUsed[c]) continue;
+        if (r > 0 && Math.abs(cols[r - 1] - c) <= 1) continue;
+        var g = regions[r * n + c];
+        if (regUsed[g]) continue;
+        colUsed[c] = 1; regUsed[g] = 1; cols[r] = c;
+        if (bt(r + 1)) return true;
+        colUsed[c] = 0; regUsed[g] = 0;
+      }
+      return false;
+    }
+    bt(0);
+    return { count: count, first: first };
+  }
+
+  // ---------- generator ----------
+  function randomSolution(n, rand) {
+    var cols = [], used = new Uint8Array(n);
+    function bt(r) {
+      if (r === n) return true;
+      var order = shuffle(range(n), rand);
+      for (var i = 0; i < n; i++) {
+        var c = order[i];
+        if (used[c] || (r > 0 && Math.abs(cols[r - 1] - c) <= 1)) continue;
+        used[c] = 1; cols[r] = c;
+        if (bt(r + 1)) return true;
+        used[c] = 0;
+      }
+      return false;
+    }
+    bt(0);
+    return cols;
+  }
+
+  // Grow pens outward from each animal's cell with uneven speeds for varied sizes
+  function growRegions(n, sol, rand, frozen) {
+    var g = geom(n), N = n * n, reg = new Int8Array(N).fill(-1), left = N - n;
+    var w = [];
+    for (var r = 0; r < n; r++) {
+      reg[r * n + sol[r]] = r;
+      var x = rand();
+      w.push(r === frozen ? 0 : 0.5 + x * 1.5); // a frozen area never grows: it stays one square
+    }
+    var orth = function (c) {
+      var r0 = (c / n) | 0, q = c % n, o = [];
+      if (r0 > 0) o.push(c - n); if (r0 < n - 1) o.push(c + n);
+      if (q > 0) o.push(c - 1); if (q < n - 1) o.push(c + 1);
+      return o;
+    };
+    while (left > 0) {
+      // collect frontier per region
+      var front = [], tot = 0;
+      for (r = 0; r < n; r++) front.push([]);
+      for (var c = 0; c < N; c++) {
+        if (reg[c] !== -1) continue;
+        var o = orth(c), seen = {};
+        for (var i = 0; i < o.length; i++) {
+          var rg = reg[o[i]];
+          if (rg >= 0 && !seen[rg]) { seen[rg] = 1; front[rg].push(c); }
+        }
+      }
+      var ws = [];
+      for (r = 0; r < n; r++) { var v = front[r].length ? w[r] : 0; ws.push(v); tot += v; }
+      var pick = rand() * tot, rr = 0;
+      while (rr < n - 1 && (pick -= ws[rr]) > 0) rr++;
+      while (!front[rr].length || rr === frozen) rr = (rr + 1) % n;
+      var cell = front[rr][Math.floor(rand() * front[rr].length)];
+      reg[cell] = rr; left--;
+    }
+    return Array.from(reg);
+  }
+
+  function regionConnected(n, reg, id, skip) {
+    var cells = [];
+    for (var c = 0; c < n * n; c++) if (reg[c] === id && c !== skip) cells.push(c);
+    if (!cells.length) return false;
+    var seen = {}, stack = [cells[0]], cnt = 0;
+    seen[cells[0]] = 1;
+    while (stack.length) {
+      var x = stack.pop(); cnt++;
+      var r = (x / n) | 0, q = x % n, o = [];
+      if (r > 0) o.push(x - n); if (r < n - 1) o.push(x + n);
+      if (q > 0) o.push(x - 1); if (q < n - 1) o.push(x + 1);
+      for (var i = 0; i < o.length; i++) {
+        var y = o[i];
+        if (!seen[y] && y !== skip && reg[y] === id) { seen[y] = 1; stack.push(y); }
+      }
+    }
+    return cnt === cells.length;
+  }
+
+  // score = how far pure logic gets (open cells remaining is bad)
+  function progressScore(n, regions, trial) {
+    var res = solveLogic(n, regions, null, trial);
+    if (res.solved) return { solved: true, res: res, score: 1e9 };
+    var s = res.state, sc = 0;
+    for (var i = 0; i < s.cand.length; i++) if (!s.cand[i]) sc++;
+    for (i = 0; i < s.animal.length; i++) if (s.animal[i]) sc += n;
+    return { solved: false, res: res, score: sc };
+  }
+
+  /* generate(n, seed) -> {n, seed, regions[], solution[], maxLevel, counts, steps}
+     Every puzzle has exactly one solution and is solvable by logic alone. */
+  function generate(n, seed, opts) {
+    opts = opts || {};
+    var rand = rng(seed);
+    var maxAttempts = opts.maxAttempts || 400;
+    var minSize = opts.minSize || 2, maxSize = opts.maxSize || Math.round(n * 2.2), allowTiny = opts.allowTiny == null ? 1 : opts.allowTiny;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      var sol = randomSolution(n, rand);
+      var frozen = opts.single ? Math.floor(rand() * n) : -1;
+      var regions = growRegions(n, sol, rand, frozen);
+      var sizes = new Array(n).fill(0);
+      regions.forEach(function (g) { sizes[g]++; });
+      var tiny = sizes.filter(function (z) { return z < minSize; }).length;
+      if (tiny > allowTiny + (frozen >= 0 ? 1 : 0) || Math.max.apply(null, sizes) > maxSize) continue;
+      var best = progressScore(n, regions, opts.trial);
+      // hill-climb: move border cells between pens (never an animal's own cell)
+      var iters = 0, maxIters = opts.climb || n * n * 12;
+      while (!best.solved && iters++ < maxIters) {
+        var c = Math.floor(rand() * n * n);
+        if (sol[(c / n) | 0] === c % n) continue;
+        var r = (c / n) | 0, q = c % n, o = [];
+        if (r > 0) o.push(c - n); if (r < n - 1) o.push(c + n);
+        if (q > 0) o.push(c - 1); if (q < n - 1) o.push(c + 1);
+        var others = o.map(function (x) { return regions[x]; }).filter(function (g) { return g !== regions[c]; });
+        if (!others.length) continue;
+        var to = others[Math.floor(rand() * others.length)], from = regions[c];
+        if (sizes[from] <= minSize || sizes[to] >= maxSize || to === frozen) continue;
+        if (!regionConnected(n, regions, from, c)) continue;
+        regions[c] = to;
+        var sc = progressScore(n, regions, opts.trial);
+        if (sc.score >= best.score) { best = sc; sizes[from]--; sizes[to]++; } else regions[c] = from;
+      }
+      if (best.solved) {
+        var res = best.res;
+        // sanity: logic solution must equal planted solution
+        for (var i = 0; i < n; i++) if (res.solution[i] !== sol[i]) { res = null; break; }
+        if (!res) continue;
+        if (opts.minLevel && res.maxLevel < opts.minLevel) continue;
+        if (opts.minHard && (res.counts[3] + res.counts[4] + res.counts[5]) < opts.minHard) continue;
+        if (opts.trial && opts.needTrial && res.counts[5] < opts.needTrial) continue;
+        return { n: n, seed: seed, regions: regions, solution: sol, maxLevel: res.maxLevel,
+          counts: res.counts, steps: res.steps, attempts: attempt + 1 };
+      }
+    }
+    return null;
+  }
+
+  // Nudge a finished puzzle's borders until the ordinary steps (1-4) get stuck but "try it and see" (5) still
+  // finishes it, keeping exactly one solution. Returns the new puzzle or null.
+  function makeExpert(p, rand, tries) {
+    var n = p.n, regions = p.regions.slice(), sol = p.solution, sizes = new Array(n).fill(0);
+    regions.forEach(function (g) { sizes[g]++; });
+    for (var t = 0; t < (tries || 80); t++) {
+      var c = Math.floor(rand() * n * n);
+      if (sol[(c / n) | 0] === c % n) continue;
+      var r = (c / n) | 0, q = c % n, o = [];
+      if (r > 0) o.push(c - n); if (r < n - 1) o.push(c + n);
+      if (q > 0) o.push(c - 1); if (q < n - 1) o.push(c + 1);
+      var others = o.map(function (x) { return regions[x]; }).filter(function (g) { return g !== regions[c]; });
+      if (!others.length) continue;
+      var to = others[Math.floor(rand() * others.length)], from = regions[c];
+      if (sizes[from] <= 3 || sizes[to] >= Math.round(n * 2.2)) continue;
+      if (!regionConnected(n, regions, from, c)) continue;
+      regions[c] = to;
+      var keep = false;
+      if (countSolutions(n, regions, 2).count === 1) {
+        var plain = solveLogic(n, regions);
+        if (!plain.solved) {
+          var tr = solveLogic(n, regions, null, true);
+          if (tr.solved) return { n: n, seed: p.seed, regions: regions, solution: sol, maxLevel: tr.maxLevel, counts: tr.counts, steps: tr.steps };
+        } else keep = rand() < 0.35; // sometimes wander on from a still-solvable version
+      }
+      if (keep) { sizes[from]--; sizes[to]++; } else regions[c] = from;
+    }
+    return null;
+  }
+
+  // ---------- levels ----------
+  /* Level N is the same puzzle on every device.
+     Do not change levelSize, levelSeed, levelKind, giftLevel or the generator without bumping LEVEL_SCHEME:
+     doing so changes which puzzle each level number produces.
+     LEVEL_SCHEME 3 (2026-09-28): some levels are harder, some have a one-square color, and every 20-30 levels
+     one animal starts in place. */
+  var LEVEL_SCHEME = 4; // 4 (2026-09-28): harder; no two-square colors except on easy levels; "very tricky" levels need a try-it-and-see step
+  // Sizes repeat every 5 levels: 7, 8, 9, 8, 10 (a 10x10 every 5th level)
+  var LEVEL_CYCLE = [7, 8, 9, 8, 10];
+  function levelSize(L) { return LEVEL_CYCLE[(L - 1) % LEVEL_CYCLE.length]; }
+  function mix32(x) {
+    x = x >>> 0;
+    x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+  function levelSeed(L, attempt) {
+    return mix32(mix32(L * 0x9E3779B1 + LEVEL_SCHEME * 0x85EBCA77) + (attempt || 0) * 0xC2B2AE3D);
+  }
+  // Level kinds (LEVEL_SCHEME 4, Glenn 2026-09-28: "most levels should be at least a bit harder", fewer two-square
+  // colors, and some levels that need a guess):
+  //   'easy'    (~12%): the old normal (two-square colors allowed)
+  //   'normal'  (~40%): every color at least 3 squares; needs at least one "would wipe out" step
+  //   'hard'    (~22%, "Tricky"): also needs group squeezes and several hard steps
+  //   'expert'  (~13%, "Very tricky"): needs a try-it-and-see step (suppose an animal here... it can't be)
+  //   'single'  (~13%): one color is a single square; the rest as 'normal'
+  function levelKind(L) {
+    if (L <= 3) return 'easy';
+    if (L <= 5) return 'normal';
+    var h = mix32((L * 0x2C1B3C6D) ^ 0xF1A5C0DE) % 100;
+    var k = h < 12 ? 'easy' : h < 52 ? 'normal' : h < 74 ? 'hard' : h < 87 ? 'expert' : 'single';
+    if (k === 'expert' && levelSize(L) > 9) k = 'hard'; // 10x10 try-it puzzles take too long to make on a phone
+    return k;
+  }
+  // Levels that start with one animal already placed: roughly every 20-30 levels
+  function giftLevel(L) {
+    var g = 20 + mix32(0x61F7) % 11;
+    while (g < L) g += 20 + mix32((g * 0x9E3779B1) ^ 0x61F7) % 11;
+    return g === L;
+  }
+  function generateLevel(L) {
+    var n = levelSize(L), kind = levelKind(L), opts = {};
+    for (var k = 0; k < 50; k++) {
+      var fb = k >= 30; // after many tries, relax (never back to two-square colors)
+      if (kind === 'easy') opts = {};
+      else if (kind === 'normal') opts = { minSize: 3, allowTiny: 0, minLevel: fb ? 2 : 3, maxAttempts: 150 };
+      else if (kind === 'single') opts = { single: true, minSize: 3, allowTiny: 0, minLevel: fb ? 2 : 3, maxAttempts: 150 };
+      else if (kind === 'hard') opts = { minSize: 3, allowTiny: 0, minLevel: fb ? 3 : n >= 8 ? 4 : 3, minHard: fb ? 1 : n >= 9 ? 3 : 2, maxAttempts: 120 };
+      else opts = { minSize: 3, allowTiny: 0, minLevel: fb ? 3 : 4, maxAttempts: 150 };
+      var p = generate(n, levelSeed(L, k), opts);
+      if (p && kind === 'expert' && !fb) { p = makeExpert(p, rng(levelSeed(L, k) ^ 0xE4E), 120); if (!p) continue; }
+      if (p) {
+        p.level = L; p.scheme = LEVEL_SCHEME; p.kind = kind;
+        if (giftLevel(L)) { var r = mix32(L ^ 0x5EED61F7) % n; p.given = r * n + p.solution[r]; }
+        return p;
+      }
+    }
+    return null;
+  }
+
+  // ---------- daily puzzle ----------
+  /* DAILY SCHEME 1: one 11x11 puzzle per calendar day, the same on every device.
+     day = YYYYMMDD as a number (the phone's local date). */
+  var DAILY_SCHEME = 1, DAILY_SIZE = 11;
+  function dailySeed(day, attempt) {
+    return mix32(mix32(Math.imul(day, 0x27D4EB2F) + DAILY_SCHEME * 0x165667B1) + (attempt || 0) * 0x9E3779B1);
+  }
+  function generateDaily(day) {
+    for (var k = 0; k < 50; k++) {
+      var p = generate(DAILY_SIZE, dailySeed(day, k));
+      if (p) { p.day = day; p.dscheme = DAILY_SCHEME; return p; }
+    }
+    return null;
+  }
+
+  return {
+    generateDaily: generateDaily, DAILY_SCHEME: DAILY_SCHEME, DAILY_SIZE: DAILY_SIZE,
+    levelSize: levelSize, levelSeed: levelSeed, generateLevel: generateLevel, levelKind: levelKind, giftLevel: giftLevel, mix32: mix32, LEVEL_SCHEME: LEVEL_SCHEME,
+    rng: rng, generate: generate, solveLogic: solveLogic, countSolutions: countSolutions, nextDeductionFull: nextDeductionFull, trialDeduction: trialDeduction,
+    makeCtx: makeCtx, newState: newState, cloneState: cloneState, place: place,
+    nextDeduction: nextDeduction, applyDeduction: applyDeduction, geom: geom, FAMNAME: FAMNAME
+  };
+})();
+if (typeof module !== 'undefined') module.exports = ZooEngine;
+</script>
+<script>
+/* Zoodoku sounds: everything synthesized with Web Audio. No audio files. */
+var ZooSound = (function () {
+  'use strict';
+  var ac = null, master = null, enabled = false;
+
+  function ctx() {
+    if (!enabled) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain();
+      master.gain.value = 0.55;
+      master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+
+  // One synthesized voice: oscillator -> formant filters -> envelope
+  function voice(o) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (o.delay || 0), dur = o.dur;
+    var osc = a.createOscillator();
+    osc.type = o.type || 'sawtooth';
+    osc.frequency.setValueAtTime(o.f0, t);
+    if (o.f1) osc.frequency.exponentialRampToValueAtTime(o.f1, t + dur * (o.glide || 1));
+    if (o.vib) {
+      var lfo = a.createOscillator(), lg = a.createGain();
+      lfo.frequency.value = o.vibRate || 6; lg.gain.value = o.vib;
+      lfo.connect(lg); lg.connect(osc.frequency);
+      lfo.start(t); lfo.stop(t + dur + 0.05);
+    }
+    // chain: osc -> [tremolo] -> [formant filters] -> envelope -> [lowpass] -> master
+    var pre = osc;
+    if (o.trem) {
+      var tw = a.createGain(), tl = a.createOscillator(), tg = a.createGain();
+      tw.gain.value = 0.5; tl.frequency.value = o.trem; tg.gain.value = 0.5;
+      tl.connect(tg); tg.connect(tw.gain);
+      tl.start(t); tl.stop(t + dur + 0.05);
+      osc.connect(tw); pre = tw;
+    }
+    var env = a.createGain();
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(o.gain || 0.5, t + (o.attack || 0.02));
+    env.gain.setValueAtTime(o.gain || 0.5, t + dur * 0.7);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    if (o.formants) {
+      o.formants.forEach(function (f) {
+        var bp = a.createBiquadFilter(), g = a.createGain();
+        bp.type = 'bandpass'; bp.frequency.value = f[0]; bp.Q.value = f[1]; g.gain.value = f[2] * 2.2;
+        pre.connect(bp); bp.connect(g); g.connect(env);
+      });
+    } else pre.connect(env);
+    if (o.lowpass) {
+      var lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = o.lowpass;
+      env.connect(lp); lp.connect(master);
+    } else env.connect(master);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  }
+
+  function noise(o) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (o.delay || 0), len = Math.floor(a.sampleRate * o.dur);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = o.freq || 1800; bp.Q.value = o.q || 1.5;
+    var g = a.createGain();
+    g.gain.setValueAtTime(o.gain || 0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    s.connect(bp); bp.connect(g); g.connect(master);
+    s.start(t); s.stop(t + o.dur + 0.02);
+  }
+
+  function pluck(freq, delay, len) {
+    voice({ type: 'triangle', f0: freq, dur: len || 0.35, attack: 0.005, gain: 0.35, delay: delay });
+    voice({ type: 'sine', f0: freq * 2, dur: (len || 0.35) * 0.6, attack: 0.005, gain: 0.12, delay: delay });
+  }
+
+  var animals = {
+    cow: function () { voice({ type: 'sawtooth', f0: 150, f1: 112, dur: 0.95, attack: 0.12, gain: 0.7, vib: 3, vibRate: 5, formants: [[380, 3, 1], [720, 4, 0.5]], lowpass: 900 }); },
+    pig: function () {
+      [0, 0.2].forEach(function (d) { voice({ type: 'square', f0: 330, f1: 170, dur: 0.16, attack: 0.01, gain: 0.35, delay: d, formants: [[900, 5, 1], [1500, 6, 0.6]] }); });
+    },
+    sheep: function () { voice({ type: 'sawtooth', f0: 430, f1: 380, dur: 0.65, attack: 0.04, gain: 0.45, vib: 28, vibRate: 9, formants: [[750, 5, 1], [1250, 6, 0.6], [2500, 8, 0.25]] }); },
+    goat: function () { voice({ type: 'sawtooth', f0: 330, f1: 300, dur: 0.5, attack: 0.03, gain: 0.45, vib: 30, vibRate: 13, formants: [[650, 5, 1], [1100, 6, 0.6]] }); },
+    horse: function () { voice({ type: 'sawtooth', f0: 1000, f1: 420, dur: 0.85, attack: 0.03, gain: 0.35, vib: 70, vibRate: 15, formants: [[900, 4, 1], [1900, 6, 0.5]] }); },
+    hen: function () {
+      voice({ type: 'square', f0: 700, f1: 760, dur: 0.07, gain: 0.25, formants: [[1200, 4, 1]] });
+      voice({ type: 'square', f0: 720, f1: 780, dur: 0.07, gain: 0.25, delay: 0.12, formants: [[1200, 4, 1]] });
+      voice({ type: 'square', f0: 760, f1: 1050, dur: 0.22, gain: 0.3, delay: 0.26, formants: [[1300, 4, 1], [2400, 6, 0.4]] });
+    },
+    rooster: function () {
+      [[620, 700, 0, 0.12], [820, 900, 0.14, 0.14], [780, 820, 0.3, 0.14], [1000, 640, 0.46, 0.5]].forEach(function (n) {
+        voice({ type: 'sawtooth', f0: n[0], f1: n[1], dur: n[3], delay: n[2], attack: 0.02, gain: 0.3, formants: [[1100, 4, 1], [2300, 6, 0.4]] });
+      });
+    },
+    duck: function () {
+      [0, 0.18].forEach(function (d) { voice({ type: 'sawtooth', f0: 420, f1: 360, dur: 0.14, delay: d, attack: 0.01, gain: 0.4, formants: [[1100, 9, 1], [2500, 10, 0.5]] }); });
+    },
+    squirrel: function () {
+      [0, 0.07, 0.14, 0.21, 0.28].forEach(function (d, i) { voice({ type: 'square', f0: 2100 + (i % 2) * 300, f1: 1500, dur: 0.05, delay: d, attack: 0.004, gain: 0.18, formants: [[2400, 5, 1]] }); });
+    },
+    cat: function () { voice({ type: 'sawtooth', f0: 480, f1: 380, glide: 1, dur: 0.6, attack: 0.05, gain: 0.4, vib: 12, vibRate: 5, formants: [[900, 5, 1], [1700, 6, 0.7], [2800, 8, 0.3]] }); voice({ type: 'sawtooth', f0: 560, f1: 700, dur: 0.22, attack: 0.03, gain: 0.25, formants: [[1100, 5, 1]] }); },
+    penguin: function () {
+      [0, 0.22].forEach(function (d, i) { voice({ type: 'sawtooth', f0: 300 + i * 40, f1: 240, dur: 0.18, delay: d, attack: 0.01, gain: 0.4, trem: 30, formants: [[700, 4, 1], [1300, 5, 0.6]] }); });
+    },
+    dog: function () {
+      [0, 0.2].forEach(function (d) { voice({ type: 'sawtooth', f0: 520, f1: 240, dur: 0.13, delay: d, attack: 0.005, gain: 0.5, formants: [[600, 3, 1], [1150, 4, 0.5]] }); });
+    },
+    turkey: function () { voice({ type: 'square', f0: 620, f1: 520, dur: 0.5, attack: 0.01, gain: 0.3, trem: 24, formants: [[1000, 4, 1], [2000, 6, 0.4]] }); },
+    rabbit: function () {
+      voice({ type: 'sine', f0: 1700, f1: 2300, dur: 0.08, gain: 0.25 });
+      voice({ type: 'sine', f0: 110, f1: 60, dur: 0.12, gain: 0.6, delay: 0.1 });
+    }
+  };
+
+  return {
+    setEnabled: function (on) { enabled = !!on; if (on) ctx(); },
+    unlock: function () { if (enabled) ctx(); },
+    animal: function (name) { if (enabled && animals[name]) animals[name](); },
+    x: function () { if (enabled) noise({ dur: 0.035, freq: 2400, q: 2, gain: 0.25 }); },
+    place: function () { if (enabled) voice({ type: 'sine', f0: 520, f1: 780, dur: 0.12, gain: 0.3, attack: 0.005 }); },
+    wrong: function () {
+      if (!enabled) return;
+      voice({ type: 'sawtooth', f0: 180, f1: 95, dur: 0.35, gain: 0.35, lowpass: 700 });
+    },
+    undo: function () { if (enabled) voice({ type: 'sine', f0: 700, f1: 450, dur: 0.1, gain: 0.2 }); },
+    hint: function () { if (enabled) { pluck(880, 0, 0.3); pluck(1175, 0.1, 0.4); } },
+    win: function () {
+      if (!enabled) return;
+      [392, 523, 659, 784, 659, 784, 1047].forEach(function (f, i) { pluck(f, i * 0.11, i === 6 ? 0.8 : 0.3); });
+    },
+    lose: function () {
+      if (!enabled) return;
+      [392, 370, 349, 262].forEach(function (f, i) { voice({ type: 'triangle', f0: f, f1: i === 3 ? 200 : f, dur: i === 3 ? 0.7 : 0.25, delay: i * 0.25, gain: 0.35 }); });
+    },
+    ding: function () { if (enabled) { pluck(1319, 0, 0.5); pluck(1568, 0.12, 0.6); } },
+    sign: function () { if (enabled) noise({ dur: 0.06, freq: 900, q: 1, gain: 0.3 }); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = ZooEngine, S = ZooSound;
+
+  // ================= constants =================
+  var LEVEL_NAMES = { 7: 'Easy', 8: 'Medium', 9: 'Hard', 10: 'Expert', 11: 'Daily' };
+  var PRACTICE_SIZES = [7, 8, 9, 10];
+  var STAT_SIZES = [7, 8, 9, 10, 11];
+  var MAX_HEARTS = 3;
+  var DOUBLE_TAP_MS = 350;
+  var UNDO_LIMIT = 300;
+  var ANIMALS = ['cow', 'pig', 'sheep', 'horse', 'hen', 'rooster', 'duck', 'goat', 'dog', 'turkey', 'rabbit']; // old set: only shuffled so colors stay stable
+  // One animal per puzzle. Levels take turns in this order; the daily and practice pick one by seed.
+  var ZOO = ['squirrel', 'dog', 'cat', 'penguin'];
+  // Color names for hints, by palette index (same hue family in every theme)
+  var COLOR_NAMES = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'brown', 'gray', 'white'];
+  // Pen colors per theme. Same index = same hue family in every theme.
+  var PALETTES = {
+    light: ['#e4adaa', '#e0bf90', '#dfd293', '#b1cb98', '#8fbfb6', '#a5c3de', '#c4b5e1', '#e6bbd5', '#c9b79b', '#c7cacd', '#ebe7e0'],
+    dark:  ['#c9716b', '#c99550', '#bfae55', '#7fa85c', '#4f9e90', '#5a8fc2', '#8d78c2', '#c07aa6', '#a88c62', '#8b9099', '#d9d0c0'],
+    blue:  ['#c77a86', '#c99a5e', '#c4b660', '#74ab7a', '#4aa3a3', '#5b92d6', '#9480d6', '#c47fb4', '#a3906b', '#8995a8', '#d3dae6']
+  };
+  // Perceptual (Lab) distance between palette colors, precomputed so color choice is identical on every device
+  var DIST = [[0,36,53,62,60,56,48,27,29,37,38],[36,0,19,38,58,72,76,58,20,49,42],[53,19,0,27,56,77,87,72,29,55,46],
+    [62,38,27,0,36,65,83,74,33,47,42],[60,58,56,36,0,34,58,59,41,27,32],[56,72,77,65,34,0,28,39,53,23,35],
+    [48,76,87,83,58,28,0,23,60,36,47],[27,58,72,74,59,39,23,0,45,31,37],[29,20,29,33,41,53,60,45,0,30,27],
+    [37,49,55,47,27,23,36,31,30,0,15],[38,42,46,42,32,35,47,37,27,15,0]];
+  var EMPTY = 0, XMARK = 1, ANIMAL = 2, XWRONG = 3;   // XWRONG = red X left by a wrong guess
+  function isX(v) { return v === XMARK || v === XWRONG; }
+
+  // ================= storage (never throws) =================
+  var store = {
+    get: function (k, d) {
+      try { var v = localStorage.getItem('zoodoku.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+    },
+    set: function (k, v) { try { localStorage.setItem('zoodoku.' + k, JSON.stringify(v)); } catch (e) { /* full or blocked */ } },
+    del: function (k) { try { localStorage.removeItem('zoodoku.' + k); } catch (e) { /* ignore */ } }
+  };
+
+  var settings = { v: 2, hearts: true, autoX: true, highlight: true, timer: true, sound: false, ads: true, adEvery: 3, theme: 'light', xColor: '' };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.v = 2;
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+    store.set('settings', settings);
+  })();
+  function saveSettings() { store.set('settings', settings); }
+
+  function blankStats() {
+    var by = {};
+    STAT_SIZES.forEach(function (n) { by[n] = { solved: 0, failed: 0, best: 0, total: 0, perfect: 0 }; });
+    return { by: by, day: '', streak: 0, bestStreak: 0, dLast: 0, dStreak: 0, dBest: 0 };
+  }
+  var stats = store.get('stats', null) || blankStats();
+  STAT_SIZES.forEach(function (n) { if (!stats.by[n]) stats.by[n] = blankStats().by[n]; });
+  ['dLast', 'dStreak', 'dBest'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
+  var meta = store.get('meta', null) || {};
+  var metaDefaults = { startPicked: false, startAsked: false, startFrom: 0, finished: 0, lastAdAt: 0, deck: [], lastCard: -1, seenHelp: false, level: 1, mode: 'level', practiceSize: 7, replay: 0, levelBest: {}, plays: {}, daily: {} };
+  for (var mk in metaDefaults) if (meta[mk] === undefined) meta[mk] = metaDefaults[mk];
+  function saveMeta() { store.set('meta', meta); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function newSeed() {
+    try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); }
+  }
+  function svgUse(cls, id) { return '<svg class="' + cls + '" viewBox="0 0 100 100"><use href="#' + id + '"/></svg>'; }
+  function fmtTime(ms) {
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+    s %= 60;
+    if (h) return h + ':' + ('0' + (m % 60)).slice(-2) + ':' + ('0' + s).slice(-2);
+    return m + ':' + ('0' + s).slice(-2);
+  }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function yesterday() { var d = new Date(Date.now() - 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function joinAnd(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sizeLabel(n) { return n + '\u00d7' + n + ' \u00b7 ' + LEVEL_NAMES[n]; }
+  function dayNum(d) { d = d || new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function prevDayNum(day) {
+    var d = new Date(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100 - 1);
+    return dayNum(d);
+  }
+  function dayLabel(day) {
+    var d = new Date(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100);
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  // ================= themes (one setting for all of Goobs-Games) =================
+  var themeNow = Goobs.theme();
+  function applyTheme() {
+    themeNow = Goobs.theme();
+    if (game) paintBoard();
+    applyXColor();
+    renderExample();
+  }
+  // ---- X color (settings.xColor '' = theme default) ----
+  function hexToRgb(h) { return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
+  function applyXColor() {
+    var st = document.documentElement.style;
+    if (settings.xColor) {
+      var c = hexToRgb(settings.xColor);
+      st.setProperty('--x', settings.xColor);
+      st.setProperty('--x-auto', 'rgba(' + c.join(',') + ',.38)');
+    } else { st.removeProperty('--x'); st.removeProperty('--x-auto'); }
+    var sw = $('xSwatch');
+    if (sw) sw.style.background = settings.xColor || getComputedStyle(document.documentElement).getPropertyValue('--x').trim();
+  }
+  function penColor(g) { return PALETTES[themeNow][game.penIdx[g]]; }
+  // ================= cosmetics: which animal and color each pen gets =================
+  // Colors and animals come from the level number (and how many times it was played),
+  // so two levels with look-alike layouts still look different.
+  function cosmetics(n, regions, cseed, animal) {
+    var rand = E.rng(cseed);
+    var pool = ANIMALS.slice();
+    for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(rand() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    var adj = [];
+    for (i = 0; i < n; i++) adj.push({});
+    for (var c = 0; c < n * n; c++) {
+      var r = (c / n) | 0, q = c % n;
+      for (var dr = -1; dr <= 1; dr++) for (var dq = -1; dq <= 1; dq++) {
+        var rr = r + dr, qq = q + dq;
+        if ((dr || dq) && rr >= 0 && rr < n && qq >= 0 && qq < n && regions[rr * n + qq] !== regions[c]) adj[regions[c]][regions[rr * n + qq]] = 1;
+      }
+    }
+    var best = null, bestScore = -1;
+    for (var tr = 0; tr < 400; tr++) {
+      var perm = [];
+      for (i = 0; i < (n > 10 ? 11 : 10); i++) perm.push(i);
+      for (i = perm.length - 1; i > 0; i--) { j = Math.floor(rand() * (i + 1)); t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+      var worst = 1e9, sum = 0;
+      for (i = 0; i < n; i++) for (var k in adj[i]) { var d = DIST[perm[i]][perm[+k]]; if (d < worst) worst = d; sum += d; }
+      var score = worst * 10000 + sum;
+      if (score > bestScore) { bestScore = score; best = perm; }
+    }
+    var same = [];
+    for (i = 0; i < n; i++) same.push(animal);
+    return { penAnimal: same, penIdx: best.slice(0, n) };
+  }
+  function levelCseed(L, plays) { return E.mix32((L * 2654435761 + plays * 40503 + 12345) >>> 0); }
+
+  // ================= puzzle generation (background worker, main-thread fallback) =================
+  var gen = (function () {
+    var worker = null, pending = {}, nextId = 1;
+    function run(job) { return job.daily ? E.generateDaily(job.daily) : job.level ? E.generateLevel(job.level) : E.generate(job.n, job.seed); }
+    function mainThread(job) { setTimeout(function () { job.cb(run(job)); }, 20); }
+    try {
+      var src = $('engine-src').textContent +
+        '\nself.onmessage=function(e){var d=e.data,p=null;try{p=d.daily?ZooEngine.generateDaily(d.daily):d.level?ZooEngine.generateLevel(d.level):ZooEngine.generate(d.n,d.seed);}catch(err){}self.postMessage({id:d.id,p:p});};';
+      worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      worker.onmessage = function (e) {
+        var job = pending[e.data.id];
+        delete pending[e.data.id];
+        if (job) job.cb(e.data.p);
+      };
+      worker.onerror = function () {
+        worker = null;
+        var jobs = pending; pending = {};
+        for (var id in jobs) mainThread(jobs[id]);
+      };
+    } catch (e) { worker = null; }
+
+    // key: 'L57' = level 57, 'D20260926' = that day's daily (both the same everywhere), 'P8' = random 8x8 practice
+    function make(key, cb) {
+      var t = key.charAt(0), v = +key.slice(1);
+      var job = t === 'L' ? { level: v } : t === 'D' ? { daily: v } : { n: v, seed: newSeed() };
+      job.cb = function (p) { if (p) cb(p); else make(key, cb); };
+      if (worker) { var id = nextId++; pending[id] = job; worker.postMessage({ id: id, level: job.level, daily: job.daily, n: job.n, seed: job.seed }); }
+      else mainThread(job);
+    }
+    var ready = store.get('ready', {}) || {}, waiting = {};
+    function valid(key, p) {
+      if (!p) return false;
+      if (key.charAt(0) === 'L') return p.level === +key.slice(1) && p.scheme === E.LEVEL_SCHEME;
+      if (key.charAt(0) === 'D') return p.day === +key.slice(1) && p.dscheme === E.DAILY_SCHEME;
+      return true;
+    }
+    function saveReady() {
+      for (var k in ready) {
+        if (k.charAt(0) === 'L' && +k.slice(1) < meta.level) delete ready[k];
+        if (k.charAt(0) === 'D' && +k.slice(1) < dayNum()) delete ready[k];
+      }
+      store.set('ready', ready);
+    }
+    function prefetch(key) {
+      if (ready[key] || waiting[key]) return;
+      waiting[key] = [];
+      make(key, function (p) {
+        var w = waiting[key]; delete waiting[key];
+        if (w.length) { w.shift()(p); w.forEach(function (cb) { get(key, cb); }); }
+        else { ready[key] = p; saveReady(); }
+      });
+    }
+    function get(key, cb) {
+      if (ready[key] && valid(key, ready[key])) { var p = ready[key]; delete ready[key]; saveReady(); cb(p); return; }
+      delete ready[key];
+      prefetch(key);
+      waiting[key].push(cb);
+    }
+    return { get: get, prefetch: prefetch };
+  })();
+
+  // ================= game state =================
+  var game = null;
+  var cellEls = [], cellKeys = [];
+  var loadingToken = 0;
+
+  function gameKey(mode, n) { return mode === 'practice' ? 'game.p' + n : 'game.' + mode; }
+
+  function makeGame(p, mode, saved) {
+    var n = p.n, cseed;
+    if (saved && saved.cseed != null) cseed = saved.cseed;
+    else if (mode === 'practice') cseed = (p.seed ^ 0x5bd1e995) >>> 0;
+    else if (mode === 'daily') cseed = E.mix32((Math.imul(p.day, 0x9E3779B1) ^ 0x2545F491) >>> 0);
+    else cseed = levelCseed(p.level, meta.plays[p.level] || 0);
+    var animal = mode === 'daily' ? ZOO[E.mix32((p.day ^ 0x00A11A15) >>> 0) % 4] : mode === 'practice' ? ZOO[(p.seed >>> 7) % 4] : ZOO[((p.level || 1) - 1) % 4];
+    var look = cosmetics(n, p.regions, cseed, animal);
+    var g = {
+      p: p, n: n, mode: mode, level: p.level || 0, day: p.day || 0, key: gameKey(mode, n), cseed: cseed,
+      ctx: E.makeCtx(n, p.regions), marks: new Uint8Array(n * n),
+      heartsOn: settings.hearts, hearts: MAX_HEARTS,
+      penAnimal: look.penAnimal, penIdx: look.penIdx,
+      elapsed: 0, hints: 0, mistakes: 0, refills: 0, undo: [],
+      over: false, won: false, hint: null
+    };
+    if (saved) {
+      for (var i = 0; i < n * n; i++) g.marks[i] = +saved.marks.charAt(i) || 0;
+      g.heartsOn = !!saved.heartsOn; g.hearts = Math.min(MAX_HEARTS, saved.hearts); g.elapsed = saved.elapsed || 0;
+      g.hints = saved.hints || 0; g.mistakes = saved.mistakes || 0; g.refills = saved.refills || 0; g.undo = saved.undo || [];
+      if (g.heartsOn && g.hearts <= 0) g.over = true;
+    }
+    if (p.given != null) g.marks[p.given] = ANIMAL; // a free animal, already in the right spot, that can't be moved
+    return g;
+  }
+
+  function saveGame() {
+    if (!game) return;
+    if (game.won) { store.del(game.key); return; }
+    store.set(game.key, {
+      p: game.p, mode: game.mode, cseed: game.cseed, marks: Array.prototype.join.call(game.marks, ''),
+      heartsOn: game.heartsOn, hearts: game.hearts, elapsed: Math.round(game.elapsed), hints: game.hints,
+      mistakes: game.mistakes, refills: game.refills, undo: game.undo.slice(-UNDO_LIMIT)
+    });
+  }
+
+  function startGame(g) {
+    game = g;
+    meta.mode = g.mode;
+    if (g.mode === 'practice') meta.practiceSize = g.n;
+    if (g.mode === 'replay') meta.replay = g.level;
+    saveMeta();
+    buildBoard();
+    clearHint();
+    render();
+    renderStatus();
+    renderLevelBar();
+    saveGame();
+    tickReset();
+    if (g.over) setTimeout(function () { if (game === g && g.over) lose(); }, 300);
+    if (g.p.given != null && !g.won) setMessage('<div>A <b>free animal</b> to get you going! It\u2019s already in the right spot.</div>', 'gift');
+    else defaultMessage();
+    if (g.mode === 'level') gen.prefetch('L' + (g.level + 1));
+    renderDailyChip();
+  }
+
+  function load(key, mode, afterLoad) {
+    if (game && !game.won) saveGame();
+    var token = ++loadingToken;
+    $('loading').classList.add('show');
+    gen.get(key, function (p) {
+      if (token !== loadingToken) return;
+      $('loading').classList.remove('show');
+      startGame(makeGame(p, mode));
+      if (afterLoad) afterLoad();
+    });
+  }
+  function resume(mode, n, check) {
+    var saved = store.get(gameKey(mode, n), null);
+    if (saved && saved.p && check(saved.p)) {
+      if (game && !game.won) saveGame();
+      loadingToken++;
+      $('loading').classList.remove('show');
+      startGame(makeGame(saved.p, mode, saved));
+      return true;
+    }
+    return false;
+  }
+
+  function openLevel() {
+    var L = meta.level;
+    if (resume('level', 0, function (p) { return p.level === L && p.scheme === E.LEVEL_SCHEME; })) return;
+    load('L' + L, 'level');
+  }
+  function openReplay(L) {
+    if (L >= meta.level) { openLevel(); return; }
+    if (resume('replay', 0, function (p) { return p.level === L; })) return;
+    load('L' + L, 'replay');
+  }
+  function openDaily(again) {
+    var day = dayNum();
+    if (!again && resume('daily', 0, function (p) { return p.day === day && p.dscheme === E.DAILY_SCHEME; })) return;
+    store.del(gameKey('daily', 0));
+    load('D' + day, 'daily');
+  }
+  function onDailyChip() {
+    var day = dayNum();
+    if (game && game.mode === 'daily' && game.day === day && !game.won) return;
+    if (meta.daily[day]) {
+      if (game) parade();
+      showCard('Today\u2019s puzzle is done', 'You solved it in ' + fmtTime(meta.daily[day]) + '. A new 11\u00d711 arrives at midnight.', [
+        { label: 'Play it again', red: true, go: function () { openDaily(true); } },
+        { label: 'OK', go: function () {} }
+      ]);
+      return;
+    }
+    openDaily();
+  }
+  function renderDailyChip() {
+    $('dailyBtn').classList.toggle('done', !!meta.daily[dayNum()]);
+  }
+  function openPractice(n, fresh) {
+    if (!fresh && resume('practice', n, function (p) { return p.n === n; })) return;
+    store.del(gameKey('practice', n));
+    load('P' + n, 'practice', function () { gen.prefetch('P' + n); });
+  }
+
+  // ================= board DOM =================
+  function buildBoard() {
+    var n = game.n, board = $('board');
+    board.classList.remove('won', 'hinting');
+    board.style.gridTemplateColumns = 'repeat(' + n + ', 1fr)';
+    board.style.gridTemplateRows = 'repeat(' + n + ', 1fr)';
+    board.innerHTML = '';
+    cellEls = []; cellKeys = [];
+    for (var c = 0; c < n * n; c++) {
+      var d = document.createElement('div');
+      d.className = 'cell';
+      board.appendChild(d);
+      cellEls.push(d); cellKeys.push('');
+    }
+    paintBoard();
+    // thin, even grid lines only; pens are told apart by color
+    var path = '';
+    for (var i = 1; i < n; i++) path += 'M' + i + ' 0V' + n + 'M0 ' + i + 'H' + n;
+    var lines = $('lines');
+    lines.setAttribute('viewBox', '0 0 ' + n + ' ' + n);
+    lines.innerHTML = '';   // white gaps between rounded squares come from the board's CSS grid gap
+  }
+  function paintBoard() {
+    for (var c = 0; c < cellEls.length; c++) cellEls[c].style.background = penColor(game.p.regions[c]);
+  }
+
+  // cells blocked by placed animals (auto-X) and animals that break a rule
+  function analyze() {
+    var n = game.n, N = n * n, blocked = new Uint8Array(N), conflict = new Uint8Array(N), count = 0, bad = false;
+    for (var a = 0; a < N; a++) {
+      if (game.marks[a] !== ANIMAL) continue;
+      count++;
+      var b = game.ctx.block[a];
+      for (var i = 0; i < b.length; i++) {
+        blocked[b[i]] = 1;
+        if (game.marks[b[i]] === ANIMAL) { conflict[a] = 1; conflict[b[i]] = 1; bad = true; }
+      }
+    }
+    return { blocked: blocked, conflict: conflict, count: count, bad: bad };
+  }
+
+  function render(justPlaced) {
+    var n = game.n, a = analyze(), h = game.hint;
+    var area = {}, target = {};
+    if (h) { h.area.forEach(function (c) { area[c] = 1; }); h.target.forEach(function (c) { target[c] = 1; }); }
+    $('board').classList.toggle('hinting', !!h);
+    for (var c = 0; c < n * n; c++) {
+      var m = game.marks[c], key, html = '', cls = 'cell';
+      if (m === ANIMAL) {
+        var an = game.penAnimal[game.p.regions[c]];
+        key = 'A' + an; html = svgUse('an', 'a-' + an);
+        if (settings.highlight && a.conflict[c]) { cls += ' conflict'; key += 'c'; }
+        if (c === game.p.given) { cls += ' given'; key += 'g'; }
+        if (c === justPlaced) cls += ' placed';
+      } else if (m === XWRONG) {
+        key = 'W'; html = svgUse('xm', 'xmark'); cls += ' wx';
+      } else if (m === XMARK) {
+        key = 'X'; html = svgUse('xm', 'xmark');
+      } else if (settings.autoX && a.blocked[c]) {
+        key = 'x'; html = svgUse('xm', 'xmark'); cls += ' auto';
+      } else key = '';
+      if (target[c]) { cls += ' hl-target'; key += 'T'; } else if (area[c]) { cls += ' hl-area'; key += 'H'; }
+      if (key !== cellKeys[c] || c === justPlaced) {
+        cellKeys[c] = key;
+        cellEls[c].className = cls;
+        cellEls[c].innerHTML = html;
+      }
+    }
+    $('btnUndo').disabled = !game.undo.length || game.won || game.over;
+    if (!game.won && !game.over && a.count === n && !a.bad) win();
+  }
+  function forceRender() { cellKeys = cellKeys.map(function () { return '?'; }); render(); }
+
+  function renderStatus() {
+    var st = $('hearts');
+    if (!game || !game.heartsOn) st.innerHTML = '<span class="relaxed">Relaxed &middot; no hearts</span>';
+    else {
+      var h = '';
+      for (var i = 0; i < MAX_HEARTS; i++) h += '<svg viewBox="0 0 100 100" class="' + (i < game.hearts ? 'full' : 'empty') + '"><use href="#heart"/></svg>';
+      st.innerHTML = h;
+      st.setAttribute('aria-label', game.hearts + ' hearts left');
+    }
+    $('timer').classList.toggle('hide', !settings.timer);
+    $('timerText').textContent = fmtTime(game ? game.elapsed : 0);
+  }
+
+  function renderLevelBar() {
+    if (!game) return;
+    var t, sub;
+    if (game.mode === 'level') { t = 'Level ' + game.level; sub = sizeLabel(game.n); }
+    else if (game.mode === 'replay') { t = 'Replay: Level ' + game.level; sub = sizeLabel(game.n) + ' \u00b7 you\u2019re on ' + meta.level; }
+    else if (game.mode === 'daily') { t = 'Daily puzzle'; sub = '11\u00d711 \u00b7 ' + dayLabel(game.day); }
+    else { t = 'Practice ' + game.n + '\u00d7' + game.n; sub = LEVEL_NAMES[game.n] + ' \u00b7 random puzzle'; }
+    var an = game.penAnimal[0], names = { squirrel: 'Squirrels', dog: 'Dogs', cat: 'Cats', penguin: 'Penguins' };
+    $('lvlTitle').innerHTML = '<svg class="lvan" viewBox="0 0 100 100"><use href="#a-' + an + '"/></svg>' + t;
+    var tag = (game.mode === 'level' || game.mode === 'replay') ? (game.p.given != null ? 'Free animal' : game.p.kind === 'hard' ? 'Tricky' : game.p.kind === 'expert' ? 'Very tricky' : '') : '';
+    if (tag) $('lvlTitle').innerHTML += '<span class="lvtag' + (game.p.given != null ? ' gift' : '') + '">' + tag + '</span>';
+    $('lvlSub').textContent = sub + ' \u00b7 ' + (names[an] || '');
+  }
+
+  // the Menu sheet's info line: what you're playing and where you are
+  function menuInfo() {
+    if (!game) return '';
+    var t = $('lvlTitle').textContent.replace(/(Free animal|Very tricky|Tricky)$/, '');
+    return '<b>' + t + '</b> \u00b7 ' + $('lvlSub').textContent + (game.mode !== 'level' ? ' \u00b7 level ' + meta.level + ' waiting' : '');
+  }
+
+  function setMessage(html, cls) { var m = $('msg'); m.className = 'msg' + (cls ? ' ' + cls : ''); m.innerHTML = html; }
+  function defaultMessage() {
+    setMessage('<div>One animal per <b>row</b>, <b>column</b> &amp; <b>color</b>. No touching, not even corners.<br>' +
+      '<span class="how">Tap <b>&times;</b> &nbsp;&middot;&nbsp; Double-tap <b>animal</b> &nbsp;&middot;&nbsp; Drag <b>&times;&times;&times;</b></span></div>');
+  }
+
+  // ================= moves & undo =================
+  function isGiven(c) { return game.p.given === c; }
+  function setMark(c, v, act) {
+    if (game.marks[c] === v || isGiven(c)) return false;
+    act.push(c, game.marks[c]);
+    game.marks[c] = v;
+    return true;
+  }
+  function pushUndo(act) {
+    if (!act.length) return;
+    game.undo.push(act);
+    if (game.undo.length > UNDO_LIMIT) game.undo.shift();
+  }
+  function afterMove(justPlaced) { clearHint(); render(justPlaced); saveGame(); }
+
+  function undo() {
+    if (!game || game.won || game.over || !game.undo.length) return;
+    var act = game.undo.pop();
+    for (var i = act.length - 2; i >= 0; i -= 2) game.marks[act[i]] = act[i + 1];
+    lastTap = null;
+    S.undo();
+    afterMove();
+  }
+
+  function isCorrect(c) { var n = game.n; return game.p.solution[(c / n) | 0] === c % n; }
+
+  // place or remove the pen's animal. prev = what the cell held before the first tap of the double-tap
+  function toggleAnimal(c, prev) {
+    var act;
+    if (isGiven(c)) { game.marks[c] = ANIMAL; render(); return; }
+    if (prev === ANIMAL) { act = [c, ANIMAL]; game.marks[c] = EMPTY; pushUndo(act); S.undo(); afterMove(); return; }
+    if (game.heartsOn && !isCorrect(c)) { wrongPlacement(c); return; }
+    if (!isCorrect(c)) game.mistakes++;
+    act = [c, prev];
+    game.marks[c] = ANIMAL;
+    pushUndo(act);
+    S.animal(game.penAnimal[game.p.regions[c]]);
+    afterMove(c);
+  }
+
+  // Wrong guess with hearts on: lose a heart and leave a red X there as a reminder
+  function wrongPlacement(c) {
+    game.hearts--; game.mistakes++;
+    game.marks[c] = XWRONG;
+    clearHint();
+    var el = cellEls[c], an = game.penAnimal[game.p.regions[c]];
+    cellKeys[c] = 'wrong';
+    el.className = 'cell wrong';
+    el.innerHTML = svgUse('an', 'a-' + an);
+    S.wrong();
+    renderStatus();
+    var hs = document.querySelectorAll('#hearts svg');
+    if (hs[game.hearts]) hs[game.hearts].classList.add('pop');
+    if (game.hearts <= 0) game.over = true;
+    saveGame();
+    var g = game;
+    setTimeout(function () {
+      if (g !== game) return;
+      cellKeys[c] = '?';
+      render();
+      if (game.over) lose();
+    }, 750);
+  }
+
+  function clearBoard() {
+    if (!game || game.won || game.over) return;
+    var act = [];
+    for (var c = 0; c < game.marks.length; c++) setMark(c, EMPTY, act);
+    pushUndo(act);
+    afterMove();
+  }
+
+  // ================= touch / mouse input =================
+  var ptr = null, lastTap = null;
+  function cellAt(x, y) {
+    var rect = $('board').getBoundingClientRect(), n = game.n;
+    var q = Math.floor((x - rect.left) / rect.width * n), r = Math.floor((y - rect.top) / rect.height * n);
+    if (q < 0 || r < 0 || q >= n || r >= n) return -1;
+    return r * n + q;
+  }
+  function locked() { return !game || game.over || game.won || $('loading').classList.contains('show'); }
+
+  function onDown(e) {
+    S.unlock();
+    if (locked() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    var c = cellAt(e.clientX, e.clientY);
+    if (c < 0) return;
+    e.preventDefault();
+    try { $('board').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    ptr = { id: e.pointerId, start: c, last: c, drag: false, mode: null, act: null };
+  }
+  function onMove(e) {
+    if (!ptr || e.pointerId !== ptr.id || locked()) return;
+    var c = cellAt(e.clientX, e.clientY);
+    if (c < 0 || c === ptr.last) return;
+    if (!ptr.drag) {
+      ptr.drag = true;
+      lastTap = null;
+      ptr.act = [];
+      game.undo.push(ptr.act);      // same array keeps growing as the finger moves
+      ptr.mode = isX(game.marks[ptr.start]) ? EMPTY : XMARK;
+      if (game.marks[ptr.start] !== ANIMAL) setMark(ptr.start, ptr.mode, ptr.act);
+    }
+    ptr.last = c;
+    if (game.marks[c] !== ANIMAL && !(ptr.mode === XMARK && isX(game.marks[c])) && setMark(c, ptr.mode, ptr.act)) S.x();
+    clearHint();
+    render();
+  }
+  function onUp(e) {
+    if (!ptr || e.pointerId !== ptr.id) return;
+    var p = ptr; ptr = null;
+    if (p.drag) { if (!p.act.length) game.undo.pop(); saveGame(); render(); return; }
+    if (locked()) return;
+    tap(p.start);
+  }
+  function tap(c) {
+    var now = Date.now();
+    if (lastTap && lastTap.cell === c && now - lastTap.t < DOUBLE_TAP_MS) {
+      // second tap: take back the first tap's X, then place/remove the animal
+      if (lastTap.act && game.undo[game.undo.length - 1] === lastTap.act) game.undo.pop();
+      game.marks[c] = lastTap.prev;
+      var prev = lastTap.prev;
+      lastTap = null;
+      toggleAnimal(c, prev);
+      return;
+    }
+    var before = game.marks[c], act = null;
+    if (before !== ANIMAL) {
+      act = [];
+      setMark(c, isX(before) ? EMPTY : XMARK, act);
+      pushUndo(act);
+      S.x();
+      afterMove();
+    }
+    lastTap = { cell: c, t: now, prev: before, act: act };
+  }
+
+  // ================= hints =================
+  function clearHint() {
+    if (game) game.hint = null;
+    if ($('msg').classList.contains('hint')) defaultMessage();
+  }
+  function unitCells(f, u) { return game.ctx.fam[f][u].slice(); }
+  function areaName(u) { return 'the ' + COLOR_NAMES[game.penIdx[u]] + ' area'; }
+  function unitName(f, u) { return f === 0 ? 'row ' + (u + 1) : f === 1 ? 'column ' + (u + 1) : areaName(u); }
+  function unitsName(f, us) {
+    if (f === 2) return 'the ' + joinAnd(us.map(function (u) { return COLOR_NAMES[game.penIdx[u]]; })) + ' areas';
+    return (f === 0 ? 'rows ' : 'columns ') + joinAnd(us.map(function (u) { return u + 1; }));
+  }
+  function kindWord(f, plural) { return (f === 0 ? 'row' : f === 1 ? 'column' : 'area') + (plural ? 's' : ''); }
+
+  function findHint() {
+    var n = game.n, N = n * n, c;
+    // 1. fix mistakes first
+    for (c = 0; c < N; c++) if (game.marks[c] === ANIMAL && !isCorrect(c)) {
+      return { text: 'This ' + game.penAnimal[game.p.regions[c]] + ' is in the wrong spot.', area: [], target: [c], apply: [[c, EMPTY]] };
+    }
+    for (c = 0; c < N; c++) if (isX(game.marks[c]) && isCorrect(c)) {
+      return { text: 'This \u00d7 is covering the square where the ' + game.penAnimal[game.p.regions[c]] + ' belongs.', area: [], target: [c], apply: [[c, EMPTY]] };
+    }
+    // 2. next logical step from the current board
+    var s = E.newState(game.ctx);
+    for (c = 0; c < N; c++) if (isX(game.marks[c])) s.cand[c] = 0;
+    for (c = 0; c < N; c++) if (game.marks[c] === ANIMAL) E.place(game.ctx, s, c);
+    var d = E.nextDeductionFull(game.ctx, s);
+    if (!d || d.contradiction) {
+      for (var r = 0; r < n; r++) {
+        c = r * n + game.p.solution[r];
+        if (game.marks[c] !== ANIMAL) return { text: 'Try the ' + game.penAnimal[game.p.regions[c]] + ' here.', area: [], target: [c], apply: [[c, ANIMAL]] };
+      }
+      return null;
+    }
+    var w = d.why, text, area = [];
+    if (d.kind === 'single') {
+      var pc = d.place[0];
+      area = unitCells(w.fam, w.unit);
+      text = cap(unitName(w.fam, w.unit)) + ' has only one open square left, so the ' + game.penAnimal[game.p.regions[pc]] + ' goes there.';
+      return { text: text, area: area, target: [pc], apply: [[pc, ANIMAL]] };
+    }
+    var apply = d.elim.map(function (x) { return [x, XMARK]; });
+    if (d.kind === 'trial') {
+      area = unitCells(w.fam, w.unit);
+      text = 'Try it and see: if an animal went on the circled square, then following the rules from there, ' + unitName(w.fam, w.unit) +
+        ' would end up with no open square. So it can\u2019t go there. Cross it out.';
+    } else if (d.kind === 'wipeout') {
+      area = unitCells(w.fam, w.unit);
+      text = 'An animal on the circled square would block every open square in ' + unitName(w.fam, w.unit) + '. Cross it out.';
+    } else if (d.kind === 'confined') {
+      var ua = w.unitsA[0], ub = w.unitsB[0];
+      area = unitCells(w.famB, ub);
+      text = 'Every open square in ' + unitName(w.famA, ua) + ' is inside ' + unitName(w.famB, ub) +
+        ', so ' + unitName(w.famA, ua) + '\u2019s animal will be there. Cross out the rest of ' + unitName(w.famB, ub) + '.';
+    } else {
+      w.unitsB.forEach(function (u) { area = area.concat(unitCells(w.famB, u)); });
+      var k = w.unitsA.length;
+      text = cap(unitsName(w.famA, w.unitsA)) + ' only have room in ' + unitsName(w.famB, w.unitsB) +
+        '. Those ' + k + ' ' + kindWord(w.famB, true) + ' are used up by them, so cross out the circled squares.';
+    }
+    return { text: text, area: area, target: d.elim.slice(), apply: apply };
+  }
+
+  function showHint() {
+    if (locked()) return;
+    var h = findHint();
+    if (!h) return;
+    game.hints++;
+    game.hint = h;
+    S.hint();
+    setMessage('<span>' + h.text + '</span><button id="btnShowMe">Show me</button>', 'hint');
+    $('btnShowMe').addEventListener('click', applyHint);
+    render();
+    saveGame();
+  }
+  function applyHint() {
+    var h = game && game.hint;
+    if (!h || locked()) return;
+    var act = [], placed;
+    h.apply.forEach(function (a) { if (setMark(a[0], a[1], act) && a[1] === ANIMAL) placed = a[0]; });
+    pushUndo(act);
+    if (placed != null) S.animal(game.penAnimal[game.p.regions[placed]]); else S.x();
+    afterMove(placed);
+  }
+
+  // ================= timer =================
+  var lastTick = Date.now(), saveCounter = 0;
+  function timerActive() {
+    return game && !game.won && !game.over && !document.hidden && !$('loading').classList.contains('show') &&
+      !isOpen('ovSettings') && !isOpen('ovStats') && !isOpen('ovHelp') && !isOpen('ovEnd') && !GoobsAds.isOpen() && !isOpen('ovLevels') && !isOpen('ovColor') && !isOpen('ggMenu');
+  }
+  function tickReset() { lastTick = Date.now(); }
+  function tick() {
+    var now = Date.now(), dt = Math.min(now - lastTick, 5000);
+    lastTick = now;
+    if (!timerActive()) return;
+    game.elapsed += dt;
+    $('timerText').textContent = fmtTime(game.elapsed);
+    if (++saveCounter % 10 === 0) saveGame();
+  }
+
+  // ================= end of puzzle =================
+  function parade() {
+    var first = ZOO.indexOf(game.penAnimal[0]);
+    $('parade').innerHTML = [0, 1, 2, 3].map(function (k) { return svgUse('', 'a-' + ZOO[(first + k + 4) % 4]); }).join('');
+  }
+  function showCard(title, html, buttons) {
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions');
+    box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); tickReset(); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+
+  function recordWin() {
+    var s = stats.by[game.n], newBest = false;
+    s.solved++; s.total += game.elapsed;
+    if (!s.best || game.elapsed < s.best) { newBest = !!s.best; s.best = game.elapsed; }
+    var perfect = game.mistakes === 0 && game.hints === 0 && game.refills === 0;
+    if (perfect) s.perfect++;
+    var t = today();
+    if (stats.day !== t) {
+      stats.streak = stats.day === yesterday() ? stats.streak + 1 : 1;
+      stats.day = t;
+      if (stats.streak > stats.bestStreak) stats.bestStreak = stats.streak;
+    }
+    store.set('stats', stats);
+    var levelBest = false;
+    var dailyFirst = false;
+    if (game.mode === 'daily') {
+      if (!meta.daily[game.day]) {
+        dailyFirst = true;
+        meta.daily[game.day] = Math.round(game.elapsed);
+        if (game.day === dayNum()) {
+          stats.dStreak = stats.dLast === prevDayNum(game.day) ? stats.dStreak + 1 : 1;
+          stats.dLast = game.day;
+          if (stats.dStreak > stats.dBest) stats.dBest = stats.dStreak;
+          store.set('stats', stats);
+        }
+      }
+    } else if (game.mode !== 'practice') {
+      var L = game.level, prev = meta.levelBest[L];
+      if (!prev || game.elapsed < prev) { meta.levelBest[L] = Math.round(game.elapsed); levelBest = !!prev; }
+      meta.plays[L] = (meta.plays[L] || 0) + 1;
+      if (game.mode === 'level' && meta.level === L) meta.level = L + 1;
+    }
+    meta.finished++;
+    saveMeta();
+    return { newBest: game.mode === 'practice' ? newBest : levelBest, perfect: perfect, dailyFirst: dailyFirst };
+  }
+
+  function win() {
+    game.won = true;
+    var r = recordWin();
+    store.del(game.key);
+    $('board').classList.add('won');
+    $('btnUndo').disabled = true;
+    S.win();
+    var g = game;
+    setTimeout(function () {
+      if (g !== game) return;
+      parade();
+      var bits = [];
+      if (settings.timer) bits.push('Time ' + fmtTime(game.elapsed));
+      if (game.heartsOn) bits.push(game.hearts + (game.hearts === 1 ? ' heart' : ' hearts') + ' left');
+      bits.push(game.hints ? game.hints + (game.hints === 1 ? ' hint' : ' hints') : 'no hints');
+      var html = 'Every animal found its spot.<br><b>' + bits.join(' &middot; ') + '</b>';
+      if (r.newBest && settings.timer) html += '<br><span class="newbest">New best time!</span>';
+      else if (r.perfect) html += '<br><span class="newbest">Perfect!</span>';
+      if (r.dailyFirst) html += '<br><span class="newbest">Daily streak: ' + stats.dStreak + (stats.dStreak === 1 ? ' day' : ' days') + '</span>';
+      var title = game.mode === 'practice' ? 'Puzzle solved!' : game.mode === 'daily' ? 'Daily puzzle done!' : 'Level ' + game.level + ' done!';
+      var buttons;
+      renderDailyChip();
+      if (game.mode === 'daily') buttons = [{ label: 'Back to level ' + meta.level, red: true, go: function () { between(openLevel); } }];
+      else if (game.mode === 'level') buttons = [{ label: 'Next level: ' + meta.level, red: true, go: function () { between(openLevel); } }];
+      else if (game.mode === 'replay') buttons = [{ label: 'Back to level ' + meta.level, red: true, go: function () { between(openLevel); } }];
+      else buttons = [
+        { label: 'Another ' + game.n + '\u00d7' + game.n, red: true, go: function () { var n = game.n; between(function () { openPractice(n, true); }); } },
+        { label: 'Back to level ' + meta.level, go: function () { between(openLevel); } }];
+      buttons.push({ label: 'Look at the board', go: function () {} });
+      showCard(title, html, buttons);
+    }, 1100);
+  }
+
+  function lose() {
+    S.lose();
+    parade();
+    showCard('Out of hearts', Goobs.adsOn()
+      ? 'The animals got loose! Watch a quick ad to get ' + MAX_HEARTS + ' more hearts and keep your board.'
+      : 'The animals got loose! Keep going with ' + MAX_HEARTS + ' more hearts, or start over.', [
+      { label: Goobs.adsOn() ? 'Continue (quick ad)' : 'Continue', red: true, go: continueGame },
+      { label: 'Start this puzzle over', go: restartSame }
+    ]);
+  }
+  function continueGame() {
+    var g = game;
+    function refill() {
+      if (g !== game) return;
+      game.hearts = MAX_HEARTS; game.over = false; game.refills++;
+      renderStatus(); render(); saveGame(); tickReset();
+      S.ding();
+    }
+    if (Goobs.adsOn()) showAd(refill); else refill();
+  }
+  function restartSame() {
+    var g = makeGame(game.p, game.mode);
+    g.cseed = game.cseed; g.penAnimal = game.penAnimal; g.penIdx = game.penIdx;
+    startGame(g);
+  }
+
+  // between puzzles: maybe show an ad card, then continue
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished;
+      saveMeta();
+      next();                    // builds behind the ad
+      showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= ad cards (shared Goobs-Games pool; close only with the X) =================
+  function showAd(done) {
+    GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, function () { tickReset(); if (done) done(); });
+  }
+
+  // ================= one-time starting level (per phone) =================
+  function openStartPicker() {
+    var inp = $('startLevel');
+    inp.value = meta.level;
+    syncStartButton();
+    $('ovStart').classList.add('show');
+  }
+  function startValue() { var v = parseInt($('startLevel').value, 10); return isNaN(v) ? 0 : Math.max(1, Math.min(99999, v)); }
+  function syncStartButton() {
+    var v = startValue();
+    $('btnStartGo').textContent = v ? 'Start at level ' + v : 'Type a level';
+    $('btnStartGo').disabled = !v;
+    $('btnStartKeep').textContent = 'Keep level ' + meta.level;
+  }
+  function pickStart() {
+    var v = startValue();
+    if (!v) return;
+    $('startLevel').blur(); // close the keyboard first, so the page snaps back into place
+    $('ovStart').classList.remove('show');
+    if (Goobs.snap) Goobs.snap();
+    meta.startPicked = true; meta.startAsked = true; meta.startFrom = v; meta.level = v;
+    if (meta.mode === 'replay') meta.mode = 'level';
+    saveMeta();
+    store.del('game.level');
+    syncStartRow();
+    openLevel();
+  }
+  function syncStartRow() {
+    var row = $('rowStart');
+    if (!row) return;
+    if (meta.startPicked) row.innerHTML = '<div>Starting level<small>You started this phone at level ' + meta.startFrom + '.</small></div>';
+  }
+
+  // ================= levels sheet =================
+  var levelsPage = 0;
+  function renderLevels() {
+    var cur = meta.level, maxShown = cur + 4, pages = Math.ceil(maxShown / 100);
+    if (!levelsPage || levelsPage > pages) levelsPage = Math.ceil(cur / 100);
+    var h = '<p class="lvnext">Next up: <b>Level ' + cur + '</b> &middot; ' + sizeLabel(E.levelSize(cur)) + '</p>';
+    if (pages > 1) {
+      h += '<div class="pages">';
+      for (var pg = 1; pg <= pages; pg++) h += '<button data-page="' + pg + '" class="' + (pg === levelsPage ? 'on' : '') + '">' + ((pg - 1) * 100 + 1) + '\u2013' + pg * 100 + '</button>';
+      h += '</div>';
+    }
+    h += '<div class="lvgrid">';
+    var from = (levelsPage - 1) * 100 + 1, to = Math.min(levelsPage * 100, maxShown);
+    for (var L = from; L <= to; L++) {
+      var n = E.levelSize(L), cls = L < cur ? (L < meta.startFrom && !meta.levelBest[L] ? 'skip' : 'done') : L === cur ? 'cur' : 'lock';
+      var small = L < cur && meta.levelBest[L] ? fmtTime(meta.levelBest[L]) : n + '\u00d7' + n;
+      h += '<button class="lv ' + cls + '" data-level="' + L + '"' + (L > cur ? ' disabled' : '') + '>' + L + '<small>' + small + '</small></button>';
+    }
+    h += '</div><div class="lvsection">Practice (random puzzles, doesn\u2019t change your level)</div><div class="practice">';
+    PRACTICE_SIZES.forEach(function (n) { h += '<button data-practice="' + n + '">' + n + '\u00d7' + n + '<small>' + LEVEL_NAMES[n] + '</small></button>'; });
+    h += '</div>';
+    $('levelsBody').innerHTML = h;
+    var curEl = $('levelsBody').querySelector('.lv.cur');
+    if (curEl) setTimeout(function () { try { curEl.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ } }, 30);
+  }
+  function openLevelsSheet() { levelsPage = 0; renderLevels(); $('ovLevels').classList.add('show'); }
+  function onLevelsClick(e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.page) { levelsPage = +b.dataset.page; renderLevels(); return; }
+    if (b.dataset.level) {
+      var L = +b.dataset.level;
+      $('ovLevels').classList.remove('show'); tickReset();
+      if (L >= meta.level) { if (!(game && game.mode === 'level' && !game.won)) openLevel(); }
+      else if (!(game && game.mode === 'replay' && game.level === L && !game.won)) openReplay(L);
+      return;
+    }
+    if (b.dataset.practice) {
+      var n = +b.dataset.practice;
+      $('ovLevels').classList.remove('show'); tickReset();
+      if (!(game && game.mode === 'practice' && game.n === n && !game.won)) openPractice(n);
+    }
+  }
+
+  // ================= stats sheet =================
+  function renderStats() {
+    var perfect = 0;
+    STAT_SIZES.forEach(function (n) { perfect += stats.by[n].perfect; });
+    var h = '<div class="tiles">' +
+      '<div class="tile"><b>' + (meta.level - 1) + '</b><span>' + (meta.startFrom > 1 ? 'Level reached' : 'Levels done') + '</span></div>' +
+      '<div class="tile"><b>' + Object.keys(meta.daily).length + '</b><span>Dailies done</span></div>' +
+      '<div class="tile"><b>' + (stats.dLast === dayNum() || stats.dLast === prevDayNum(dayNum()) ? stats.dStreak : 0) + '</b><span>Daily streak</span></div>' +
+      '<div class="tile"><b>' + perfect + '</b><span>Perfect</span></div></div>' +
+      '<p class="version" style="margin-top:0">Days in a row with any puzzle solved: ' + (stats.day === today() || stats.day === yesterday() ? stats.streak : 0) +
+      ' (best ' + stats.bestStreak + '). Best daily streak: ' + stats.dBest + '.</p>';
+    h += '<table class="stable"><tr><th></th><th>Solved</th><th>Best</th><th>Average</th><th>Perfect</th></tr>';
+    STAT_SIZES.forEach(function (n) {
+      var s = stats.by[n];
+      h += '<tr><td>' + n + '\u00d7' + n + '<small>' + LEVEL_NAMES[n] + '</small></td><td>' + s.solved +
+        '</td><td>' + (s.best ? fmtTime(s.best) : '&ndash;') +
+        '</td><td>' + (s.solved ? fmtTime(s.total / s.solved) : '&ndash;') + '</td><td>' + s.perfect + '</td></tr>';
+    });
+    h += '</table><p class="version">Levels, replays and practice all count. Perfect = no mistakes, no hints, no extra hearts.</p>';
+    $('statsBody').innerHTML = h;
+  }
+
+  // ================= how-to-play example =================
+  function renderExample() {
+    var pens = ['AACCC', 'AACCE', 'ADDEE', 'DDBBE', 'DBBBE'];
+    var col = { A: 5, B: 2, C: 3, D: 7, E: 1 };
+    var an = { A: 'cat', B: 'cat', C: 'cat', D: 'cat', E: 'cat' };
+    var sol = [0, 2, 4, 1, 3], h = '';
+    for (var r = 0; r < 5; r++) for (var c = 0; c < 5; c++) {
+      var p = pens[r].charAt(c);
+      h += '<div style="background:' + PALETTES[themeNow][col[p]] + '">' + (sol[r] === c ? svgUse('', 'a-' + an[p]) : '') + '</div>';
+    }
+    $('example').innerHTML = h;
+  }
+
+  // ================= settings wiring =================
+  function syncSoundButton() {
+    var b = $('btnSound');
+    b.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    b.classList.toggle('on', settings.sound);
+    b.setAttribute('aria-label', settings.sound ? 'Sound on' : 'Sound off');
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncAdRow() {
+    $('adEvery').textContent = settings.adEvery;
+    $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+  }
+  // ================= X color wheel =================
+  var XPRESETS = ['#3a2616', '#000000', '#c62d22', '#1d5fb8', '#2e7d32', '#6a3fb5', '#e07b00', '#ffffff'];
+  var hsv = { h: 0, s: 0, v: 0.25 }, wheelV = -1;
+  function hsvToHex(h, s, v) {
+    var f = function (n) { var k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+    return '#' + [f(5), f(3), f(1)].map(function (x) { return ('0' + Math.round(x * 255).toString(16)).slice(-2); }).join('');
+  }
+  function hexToHsv(hex) {
+    var c = hexToRgb(hex).map(function (x) { return x / 255; }), mx = Math.max.apply(null, c), mn = Math.min.apply(null, c), d = mx - mn, h = 0;
+    if (d) {
+      if (mx === c[0]) h = ((c[1] - c[2]) / d) % 6; else if (mx === c[1]) h = (c[2] - c[0]) / d + 2; else h = (c[0] - c[1]) / d + 4;
+      h *= 60; if (h < 0) h += 360;
+    }
+    return { h: h, s: mx ? d / mx : 0, v: mx };
+  }
+  function drawWheel() {
+    var cv = $('wheel'), W = cv.width, R = W / 2, ctx = cv.getContext('2d'), img = ctx.createImageData(W, W), d = img.data;
+    for (var y = 0; y < W; y++) for (var x = 0; x < W; x++) {
+      var dx = x - R + 0.5, dy = y - R + 0.5, rr = Math.sqrt(dx * dx + dy * dy), i = (y * W + x) * 4;
+      if (rr > R) { d[i + 3] = 0; continue; }
+      var hh = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, ss = rr / R;
+      var col = hexToRgb(hsvToHex(hh, ss, 1));   // wheel always shown at full brightness
+      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = rr > R - 1 ? Math.round(255 * (R - rr)) : 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    wheelV = 1;
+  }
+  function placeMark() {
+    var ang = hsv.h * Math.PI / 180, m = $('wheelMark');
+    m.style.left = (50 + Math.cos(ang) * hsv.s * 50) + '%';
+    m.style.top = (50 + Math.sin(ang) * hsv.s * 50) + '%';
+    m.style.background = hsvToHex(hsv.h, hsv.s, hsv.v);
+  }
+  function renderXPreview() {
+    var pal = PALETTES[themeNow], h = '';
+    [0, 3, 5, 7, 1, 10].forEach(function (i, k) {
+      h += '<div style="background:' + pal[i] + '"><svg class="' + (k === 5 ? 'a' : '') + '" viewBox="0 0 100 100" style="color:' + (k === 5 ? 'var(--x-auto)' : 'var(--x)') + '"><use href="#xmark"/></svg></div>';
+    });
+    $('xPreview').innerHTML = h;
+    $('xPresets').innerHTML = XPRESETS.map(function (c) {
+      return '<button data-c="' + c + '" style="background:' + c + '" class="' + (settings.xColor === c ? 'on' : '') + '" aria-label="' + c + '"></button>';
+    }).join('');
+  }
+  function setXColor(hex) {
+    settings.xColor = hex; saveSettings(); applyXColor(); renderXPreview();
+  }
+  function openXPicker() {
+    var cur = settings.xColor || getComputedStyle(document.documentElement).getPropertyValue('--x').trim() || '#3a2616';
+    hsv = hexToHsv(cur);
+    $('xBright').value = Math.round(hsv.v * 100);
+    $('ovColor').classList.add('show');
+    if (wheelV !== 1) drawWheel();
+    placeMark(); renderXPreview();
+  }
+  function bindXPicker() {
+    var wrap = document.querySelector('.wheelwrap'), dragging = false;
+    function pick(e) {
+      var r = $('wheel').getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      var rr = Math.min(1, Math.sqrt(dx * dx + dy * dy) / (r.width / 2));
+      hsv.h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; hsv.s = rr;
+      if (hsv.v < 0.5) { hsv.v = 0.85; $('xBright').value = 85; }  // a picked hue should be visible
+      placeMark(); setXColor(hsvToHex(hsv.h, hsv.s, hsv.v));
+    }
+    wrap.addEventListener('pointerdown', function (e) { dragging = true; try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } pick(e); e.preventDefault(); });
+    wrap.addEventListener('pointermove', function (e) { if (dragging) pick(e); });
+    wrap.addEventListener('pointerup', function () { dragging = false; });
+    wrap.addEventListener('pointercancel', function () { dragging = false; });
+    $('xBright').addEventListener('input', function () {
+      hsv.v = +this.value / 100; placeMark(); setXColor(hsvToHex(hsv.h, hsv.s, hsv.v));
+    });
+    $('xPresets').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      hsv = hexToHsv(b.dataset.c); $('xBright').value = Math.round(hsv.v * 100); placeMark(); setXColor(b.dataset.c);
+    });
+    $('btnXColor').addEventListener('click', openXPicker);
+    $('btnXDefault').addEventListener('click', function () { setXColor(''); openXPicker(); });
+    $('btnXDone').addEventListener('click', function () { $('ovColor').classList.remove('show'); });
+    $('ovColor').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+
+  function bindSettings() {
+    bindXPicker();
+    var map = { setHearts: 'hearts', setAutoX: 'autoX', setHighlight: 'highlight', setTimer: 'timer', setSound: 'sound' };
+    $('setAds').checked = Goobs.adsOn();
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAdRow(); });
+    Object.keys(map).forEach(function (id) {
+      var el = $(id);
+      el.checked = settings[map[id]];
+      el.addEventListener('change', function () {
+        settings[map[id]] = el.checked; saveSettings();
+        if (id === 'setSound') { syncSoundButton(); if (settings.sound) S.ding(); }
+        if (id === 'setAds') syncAdRow();
+        if (game) { forceRender(); renderStatus(); }
+      });
+    });
+    Goobs.themePicker($('themes'));
+    Goobs.onTheme(applyTheme);
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAdRow(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAdRow(); });
+    syncAdRow();
+    $('btnSound').addEventListener('click', function () {
+      settings.sound = !settings.sound; saveSettings(); syncSoundButton();
+      if (settings.sound) S.ding();
+    });
+    function sheet(btn, ov, close, onOpen) {
+      $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+      $(close).addEventListener('click', function () { $(ov).classList.remove('show'); tickReset(); });
+      $(ov).addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); tickReset(); } });
+    }
+    // full screen: the rarely used buttons move into the Menu sheet (How to play comes out of Settings);
+    // the level bar still opens Levels, and Undo / Hint / Clear stay on screen
+    Goobs.fullscreen({ menu: ['btnLevels', 'btnHelp', 'btnStats', 'btnSettings'], info: menuInfo, onClose: tickReset });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    $('btnLevels').addEventListener('click', openLevelsSheet);
+    $('levelInfo').addEventListener('click', openLevelsSheet);
+    $('dailyBtn').addEventListener('click', onDailyChip);
+    $('btnCloseLevels').addEventListener('click', function () { $('ovLevels').classList.remove('show'); tickReset(); });
+    $('ovLevels').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); tickReset(); } });
+    $('levelsBody').addEventListener('click', onLevelsClick);
+    $('btnHelp').addEventListener('click', function () { $('ovSettings').classList.remove('show'); $('ovHelp').classList.add('show'); });
+    $('btnCloseHelp').addEventListener('click', function () {
+      $('ovHelp').classList.remove('show'); tickReset();
+      if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); if (!meta.startPicked && !meta.startAsked) openStartPicker(); }
+    });
+    $('btnResetStats').addEventListener('click', function () {
+      $('ovSettings').classList.remove('show');
+      showCard('Reset all stats?', 'Solved counts, best times and streaks go back to zero. Your level stays where it is. This can\u2019t be undone.', [
+        { label: 'Reset stats', red: true, go: function () { stats = blankStats(); store.set('stats', stats); meta.levelBest = {}; saveMeta(); } },
+        { label: 'Cancel', go: function () {} }
+      ]);
+    });
+  }
+
+  // ================= init =================
+  function init() {
+    var board = $('board');
+    board.addEventListener('pointerdown', onDown);
+    board.addEventListener('pointermove', onMove);
+    board.addEventListener('pointerup', onUp);
+    board.addEventListener('pointercancel', function () { if (ptr && ptr.drag) saveGame(); ptr = null; });
+    board.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnClear').addEventListener('click', clearBoard);
+    $('btnUndo').addEventListener('click', undo);
+    $('btnHint').addEventListener('click', showHint);
+    $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
+    document.addEventListener('visibilitychange', function () { tick(); if (document.hidden) saveGame(); else renderDailyChip(); tickReset(); });
+    window.addEventListener('pagehide', saveGame);
+    setInterval(tick, 500);
+
+    bindSettings();
+    applyTheme();
+    syncSoundButton();
+    defaultMessage();
+    if (meta.mode === 'practice') openPractice(meta.practiceSize);
+    else if (meta.mode === 'replay' && meta.replay && meta.replay < meta.level) openReplay(meta.replay);
+    else if (meta.mode === 'daily' && (store.get('game.daily', null) || {}).p && store.get('game.daily', null).p.day === dayNum()) openDaily();
+    else openLevel();
+    $('startLevel').addEventListener('input', syncStartButton);
+    $('startLevel').addEventListener('focus', function () { var el = this; setTimeout(function () { try { el.select(); } catch (e) { /* ignore */ } }, 0); });
+    $('startLevel').addEventListener('keydown', function (e) { if (e.key === 'Enter') pickStart(); });
+    $('btnStartGo').addEventListener('click', pickStart);
+    $('btnStartKeep').addEventListener('click', function () { $('startLevel').blur(); if (Goobs.snap) Goobs.snap(); $('ovStart').classList.remove('show'); meta.startAsked = true; saveMeta(); tickReset(); });
+    if ($('btnPickStart')) $('btnPickStart').addEventListener('click', function () { $('ovSettings').classList.remove('show'); openStartPicker(); });
+    syncStartRow();
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    else if (!meta.startPicked && !meta.startAsked) openStartPicker();
+    renderDailyChip();
+    setTimeout(function () { gen.prefetch('D' + dayNum()); }, 4000);   // today's daily, built in the background
+    Goobs.markPlayed('zoodoku');
+    Goobs.initUpdates({
+      beforeReload: saveGame,
+      onVersions: function (v) { $('version').textContent = 'Zoodoku ' + (v.zoodoku || '?') + ' \u00b7 Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__zoo = {
+    get game() { return game; }, tap: tap, E: E, showAd: showAd, meta: function () { return meta; }, stats: function () { return stats; },
+    openReplay: openReplay, openLevel: openLevel, openStartPicker: openStartPicker, openPractice: openPractice, openDaily: openDaily, dayNum: dayNum, settings: settings
+  };
+
+  init();
+})();
+</script>
+</body>
+</html>

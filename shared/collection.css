@@ -1,0 +1,35 @@
+/* Collection-only presentation. Gameplay and shared theme tokens are unchanged. */
+body.collection { background: var(--bg); }
+.collection .menu { max-width: 1040px; padding: calc(env(safe-area-inset-top,0px) + 20px) 20px calc(env(safe-area-inset-bottom,0px) + 24px); gap: 22px; }
+.collection .top { min-height: 52px; }
+.collection .logo { gap: 12px; }
+.collection .logo h1 { font-size: 27px; font-weight: 750; letter-spacing: -1px; }
+.collection .logo svg { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 3px 8px #00000012; }
+.collection .hello { font-size: 14px; margin: -16px 0 0 54px; }
+.collection .iconbtn { width: 44px; height: 44px; border-radius: 50%; }
+.collection .section:empty { display: none; }
+.collection .section h2 { font-size: 12px; letter-spacing: 1.4px; margin: 0 0 12px 2px; }
+.collection .grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
+.collection .gtile { display: block; min-height: 0; border: 1px solid var(--line); border-radius: 18px; padding: 0; background: var(--surface); box-shadow: 0 2px 3px #00000003; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.collection .gtile:active { transform: none; }
+.collection .game-open { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 168px; padding: 15px 14px 13px; border: 0; background: none; text-align: left; color: var(--ink); }
+.collection .gtile .art { width: 76px; height: 76px; border-radius: 17px; margin-bottom: 12px; box-shadow: 0 3px 6px #00000016,0 12px 20px -12px #00000060; background: var(--surface-2); }
+.collection .art svg, .collection .art img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.collection .gtile .tinfo { width: 100%; }
+.collection .gtile b { font-size: 15px; font-weight: 700; line-height: 1.25; letter-spacing: -.25px; padding-right: 0; }
+.collection .gtile small { margin-top: 4px; font-size: 12px; line-height: 1.35; }
+.collection .gtile .star { top: 4px; right: 4px; width: 44px; height: 44px; border-radius: 50%; font-size: 23px; color: var(--muted); }
+.collection .gtile .star.on { color: var(--gold); background: var(--surface-2); }
+.collection .continue { background: var(--surface); color: var(--ink); padding: 12px 14px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: 18px; gap: 14px; }
+.collection .continue .art { width: 54px; height: 54px; border-radius: 13px; }
+.collection .continue em { color: var(--muted); opacity: 1; font-size: 10px; letter-spacing: 1px; margin-bottom: 2px; }
+.collection .continue small { color: var(--muted); opacity: 1; margin-top: 2px; }
+.collection .continue .play { background: var(--accent); color: var(--accent-ink); min-height: 44px; display: grid; place-items: center; padding: 8px 17px; }
+.collection .foot { padding-top: 14px; border-top: 1px solid var(--line); }
+.collection button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.collection .sheet { border: 1px solid var(--line); }
+.collection .sheet h2 { letter-spacing: -.5px; }
+@media(hover:hover){.collection .gtile:hover { border-color: var(--line-strong); box-shadow: var(--shadow); }.collection .game-open:hover .art { filter: brightness(1.04); }}
+@media(max-width:760px){.collection .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }}
+@media(max-width:540px){.collection .menu { padding-left: 14px; padding-right: 14px; gap: 20px; }.collection .grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }.collection .logo h1 { font-size: 25px; }.collection .game-open { padding: 13px 12px 12px; min-height: 166px; }.collection .hello { font-size: 12px; }.collection .gtile .art { width: 70px; height: 70px; }}
+@media(prefers-reduced-motion:reduce){.collection .gtile,.collection .continue { transition: none; }}

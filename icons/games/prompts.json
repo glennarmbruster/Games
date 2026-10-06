@@ -1,0 +1,284 @@
+[
+  {
+    "sheet": 0,
+    "items": [
+      [
+        "zoodoku",
+        "animal logic puzzle: a small ivory Sudoku grid with a fox and owl carved wooden tokens"
+      ],
+      [
+        "woodpile",
+        "wooden block puzzle: three neatly interlocking warm walnut and maple blocks"
+      ],
+      [
+        "patchwork",
+        "picture jigsaw: four substantial interlocking puzzle pieces showing a peaceful coastal photograph"
+      ],
+      [
+        "cubecorral",
+        "colored cube puzzle: a compact cluster of polished red blue and amber cubes"
+      ],
+      [
+        "screwball",
+        "screw sorting puzzle: three colored metal screws fixed to layered small wood plates"
+      ],
+      [
+        "skeehop",
+        "skee ball: a realistic wooden arcade skee ball ramp and cream score rings with a wooden ball"
+      ],
+      [
+        "merge",
+        "number merge puzzle: two ivory numbered square tiles with bold simple numerals 2 and 4"
+      ],
+      [
+        "tapaway",
+        "tap-away puzzle: a cluster of small blue white and amber directional arrow blocks"
+      ],
+      [
+        "homerun",
+        "baseball: a realistic white stitched baseball and a wooden bat over green ballpark turf"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. animal logic puzzle: a small ivory Sudoku grid with a fox and owl carved wooden tokens\n2. wooden block puzzle: three neatly interlocking warm walnut and maple blocks\n3. picture jigsaw: four substantial interlocking puzzle pieces showing a peaceful coastal photograph\n4. colored cube puzzle: a compact cluster of polished red blue and amber cubes\n5. screw sorting puzzle: three colored metal screws fixed to layered small wood plates\n6. skee ball: a realistic wooden arcade skee ball ramp and cream score rings with a wooden ball\n7. number merge puzzle: two ivory numbered square tiles with bold simple numerals 2 and 4\n8. tap-away puzzle: a cluster of small blue white and amber directional arrow blocks\n9. baseball: a realistic white stitched baseball and a wooden bat over green ballpark turf\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 1,
+    "items": [
+      [
+        "match3",
+        "garden match puzzle: a strawberry, pear and purple flower arranged in three glossy square tiles"
+      ],
+      [
+        "snake",
+        "snake arcade: a sleek green curving snake shaped game piece beside one red apple"
+      ],
+      [
+        "solitaire",
+        "solitaire: three crisp ivory playing cards with heart spade and diamond symbols on deep green felt"
+      ],
+      [
+        "meanbirds",
+        "bird slingshot: a realistic wooden Y-shaped slingshot and a small expressive red bird, refined miniature sculpture"
+      ],
+      [
+        "aliens",
+        "space shooter: a silver angular spaceship with a tiny alien spacecraft above, deep space blue"
+      ],
+      [
+        "worddice",
+        "word dice: three ivory letter dice showing A R T with engraved dark lettering"
+      ],
+      [
+        "digger",
+        "digging arcade: a brass miner helmet with a glowing lamp and a little earth tunnel"
+      ],
+      [
+        "blocks",
+        "falling block puzzle: a staggered arrangement of four vivid solid tetromino pieces"
+      ],
+      [
+        "maze",
+        "maze arcade: a tiny ivory maze with a golden cheese wedge and a small mouse token"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. garden match puzzle: a strawberry, pear and purple flower arranged in three glossy square tiles\n2. snake arcade: a sleek green curving snake shaped game piece beside one red apple\n3. solitaire: three crisp ivory playing cards with heart spade and diamond symbols on deep green felt\n4. bird slingshot: a realistic wooden Y-shaped slingshot and a small expressive red bird, refined miniature sculpture\n5. space shooter: a silver angular spaceship with a tiny alien spacecraft above, deep space blue\n6. word dice: three ivory letter dice showing A R T with engraved dark lettering\n7. digging arcade: a brass miner helmet with a glowing lamp and a little earth tunnel\n8. falling block puzzle: a staggered arrangement of four vivid solid tetromino pieces\n9. maze arcade: a tiny ivory maze with a golden cheese wedge and a small mouse token\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 2,
+    "items": [
+      [
+        "mahjong",
+        "mahjong: three chunky ivory mahjong tiles with bamboo and red green circle motifs"
+      ],
+      [
+        "dice",
+        "five dice score game: three realistic ivory dice tumbling on dark teal felt, accurate pips"
+      ],
+      [
+        "daily",
+        "word guessing puzzle: five letter tiles in a single row with A B C D E, green gold and charcoal tiles"
+      ],
+      [
+        "mines",
+        "minesweeper: small red triangular flag on a tidy square of mossy lawn with one numbered revealed tile"
+      ],
+      [
+        "bubbles",
+        "bubble shooter: a cluster of translucent jewel red blue green spheres and one smaller pearl below"
+      ],
+      [
+        "bricks",
+        "brick breaker: a steel ball above a simple silver paddle with a wall of five colored bricks"
+      ],
+      [
+        "topple",
+        "carnival knockdown: a small pyramid of realistic red blue yellow tin cans with a cream ball in foreground"
+      ],
+      [
+        "barrage",
+        "ball barrage: a polished white ball and a descending stack of glowing numbered blocks"
+      ],
+      [
+        "siege",
+        "tower defense: three elegant miniature defensive towers with blue illuminated cores"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. mahjong: three chunky ivory mahjong tiles with bamboo and red green circle motifs\n2. five dice score game: three realistic ivory dice tumbling on dark teal felt, accurate pips\n3. word guessing puzzle: five letter tiles in a single row with A B C D E, green gold and charcoal tiles\n4. minesweeper: small red triangular flag on a tidy square of mossy lawn with one numbered revealed tile\n5. bubble shooter: a cluster of translucent jewel red blue green spheres and one smaller pearl below\n6. brick breaker: a steel ball above a simple silver paddle with a wall of five colored bricks\n7. carnival knockdown: a small pyramid of realistic red blue yellow tin cans with a cream ball in foreground\n8. ball barrage: a polished white ball and a descending stack of glowing numbered blocks\n9. tower defense: three elegant miniature defensive towers with blue illuminated cores\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 3,
+    "items": [
+      [
+        "hoops",
+        "pool basketball: a small orange basketball and white-net hoop beside turquoise swimming pool water"
+      ],
+      [
+        "sort",
+        "water color sorting: three clear laboratory glass tubes holding separated blue amber and red liquid layers"
+      ],
+      [
+        "triple",
+        "treat matching: three exquisite little macarons, pink lemon and mint, arranged neatly"
+      ],
+      [
+        "pinball",
+        "pinball: a chrome pinball, two red flippers and one illuminated blue bumper on a dark wooden playfield"
+      ],
+      [
+        "parking",
+        "parking puzzle: three small realistic model cars, red blue cream, tightly arranged on grey parking lines"
+      ],
+      [
+        "minigolf",
+        "mini golf: a realistic white golf ball next to a putting cup with a little red flag, turquoise sea behind"
+      ],
+      [
+        "board",
+        "board games: a carved walnut chess knight with ivory checker and a simple checkerboard corner"
+      ],
+      [
+        "buzz",
+        "save the puppy puzzle: a little realistic golden puppy miniature protected by a curved blue line with a small bee outside"
+      ],
+      [
+        "golf",
+        "golf: a realistic silver iron club head and dimpled white golf ball on lush fairway grass"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. pool basketball: a small orange basketball and white-net hoop beside turquoise swimming pool water\n2. water color sorting: three clear laboratory glass tubes holding separated blue amber and red liquid layers\n3. treat matching: three exquisite little macarons, pink lemon and mint, arranged neatly\n4. pinball: a chrome pinball, two red flippers and one illuminated blue bumper on a dark wooden playfield\n5. parking puzzle: three small realistic model cars, red blue cream, tightly arranged on grey parking lines\n6. mini golf: a realistic white golf ball next to a putting cup with a little red flag, turquoise sea behind\n7. board games: a carved walnut chess knight with ivory checker and a simple checkerboard corner\n8. save the puppy puzzle: a little realistic golden puppy miniature protected by a curved blue line with a small bee outside\n9. golf: a realistic silver iron club head and dimpled white golf ball on lush fairway grass\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 4,
+    "items": [
+      [
+        "shelf",
+        "shelf matching: three neatly arranged glass jars and miniature boxes on a warm wooden shop shelf"
+      ],
+      [
+        "castle",
+        "castle demolition: a small realistic stone tower breaking into a few substantial blocks, cannonball nearby"
+      ],
+      [
+        "outpost",
+        "territory strategy: three miniature blue and red outpost towers connected by a clean winding path on terrain"
+      ],
+      [
+        "getout2",
+        "cinematic escape: a brass key beside a dark steel control switch and glowing amber warning lamp"
+      ],
+      [
+        "getout",
+        "escape room: a warm brass key in front of an elegant locked walnut door with a round brass lock"
+      ],
+      [
+        "sudoku",
+        "Sudoku: a pristine ivory 9 by 9 puzzle grid with a wooden pencil, sparse simple black numbers"
+      ],
+      [
+        "wordwheel",
+        "word wheel: five ivory letter tiles in a circular ring, showing A E L R T"
+      ],
+      [
+        "trivia",
+        "trivia quiz: a polished brass question-mark sculpture standing on a navy book"
+      ],
+      [
+        "huddle",
+        "word grouping: four compact groups of small colored square tiles, yellow sage blue violet, no text"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. shelf matching: three neatly arranged glass jars and miniature boxes on a warm wooden shop shelf\n2. castle demolition: a small realistic stone tower breaking into a few substantial blocks, cannonball nearby\n3. territory strategy: three miniature blue and red outpost towers connected by a clean winding path on terrain\n4. cinematic escape: a brass key beside a dark steel control switch and glowing amber warning lamp\n5. escape room: a warm brass key in front of an elegant locked walnut door with a round brass lock\n6. Sudoku: a pristine ivory 9 by 9 puzzle grid with a wooden pencil, sparse simple black numbers\n7. word wheel: five ivory letter tiles in a circular ring, showing A E L R T\n8. trivia quiz: a polished brass question-mark sculpture standing on a navy book\n9. word grouping: four compact groups of small colored square tiles, yellow sage blue violet, no text\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 5,
+    "items": [
+      [
+        "wickway",
+        "perspective path puzzle: an elegant impossible white stairway miniature with one warm glowing candle"
+      ],
+      [
+        "pegs",
+        "peg bounce game: five luminous orange and blue glass pegs with a pearl ball suspended in clear tropical lagoon water"
+      ],
+      [
+        "perch",
+        "bird sorting: three lifelike small colorful songbirds sitting neatly on two wooden branches"
+      ],
+      [
+        "knotty",
+        "rope untangling: three beautifully textured red blue gold ropes loosely intertwined"
+      ],
+      [
+        "casino",
+        "casino collection: two ivory playing cards and a few refined red black poker chips on dark green felt"
+      ],
+      [
+        "spotdiff",
+        "spot the difference: two adjacent matching realistic cruise pool-deck picture panels and one small magnifying lens"
+      ],
+      [
+        "hidden",
+        "hidden object search: a realistic brass magnifying glass resting beside a vintage brown suitcase and small key"
+      ],
+      [
+        "cases",
+        "briefcase choice: a sleek closed silver aluminum briefcase with simple blue clasps"
+      ],
+      [
+        "spin",
+        "word wheel show: a beautiful red blue gold segmented prize wheel and three ivory letter tiles"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. perspective path puzzle: an elegant impossible white stairway miniature with one warm glowing candle\n2. peg bounce game: five luminous orange and blue glass pegs with a pearl ball suspended in clear tropical lagoon water\n3. bird sorting: three lifelike small colorful songbirds sitting neatly on two wooden branches\n4. rope untangling: three beautifully textured red blue gold ropes loosely intertwined\n5. casino collection: two ivory playing cards and a few refined red black poker chips on dark green felt\n6. spot the difference: two adjacent matching realistic cruise pool-deck picture panels and one small magnifying lens\n7. hidden object search: a realistic brass magnifying glass resting beside a vintage brown suitcase and small key\n8. briefcase choice: a sleek closed silver aluminum briefcase with simple blue clasps\n9. word wheel show: a beautiful red blue gold segmented prize wheel and three ivory letter tiles\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  },
+  {
+    "sheet": 6,
+    "items": [
+      [
+        "nonogram",
+        "picture logic: a clean ivory square grid with a small blue pixel sailboat pattern filled into its cells"
+      ],
+      [
+        "deck",
+        "deck games: a realistic shuffleboard disc and cue on a teak ship deck with a small cornhole beanbag"
+      ],
+      [
+        "wordboard",
+        "crossword tiles: warm wooden letter tiles spelling PLAY on a dark teal board, engraved black letters"
+      ],
+      [
+        "bowling",
+        "bowling: three glossy ivory pins with red neck stripes and a rich blue bowling ball on polished maple"
+      ],
+      [
+        "links",
+        "connect dots puzzle: four colored glass dots joined by clean red and blue curved paths on charcoal board"
+      ],
+      [
+        "beacon",
+        "platform adventure: a small realistic stone lighthouse with a warm beam on a rocky coastal ledge"
+      ]
+    ],
+    "prompt": "Create a production asset sheet of NINE polished mobile game icons in a STRICT 3 by 3 grid, square image, equal square cells. Straight grid boundaries at exactly one-third and two-thirds of the full width and height. Each cell contains ONE standalone square icon. NO gutters, NO rounded outer frames, NO labels, NO titles, NO UI, NO numbers except explicitly requested within an object. Objects entirely within central 75% of each cell; nothing crosses a cell boundary. Consistent sophisticated premium product-photography / realistic miniature diorama style, tangible wood, ivory, glass and brushed metal, soft studio daylight, natural dimensional shadows, restrained rich colors, uncluttered composition. Full-bleed subtle navy, teal, warm cream or sage background in each cell. No thick cartoon outlines, no plastic toy sheen, no sparkles. Objects must read at 70 pixels. Exact row-major cell order:\n1. picture logic: a clean ivory square grid with a small blue pixel sailboat pattern filled into its cells\n2. deck games: a realistic shuffleboard disc and cue on a teak ship deck with a small cornhole beanbag\n3. crossword tiles: warm wooden letter tiles spelling PLAY on a dark teal board, engraved black letters\n4. bowling: three glossy ivory pins with red neck stripes and a rich blue bowling ball on polished maple\n5. connect dots puzzle: four colored glass dots joined by clean red and blue curved paths on charcoal board\n6. platform adventure: a small realistic stone lighthouse with a warm beam on a rocky coastal ledge\n7. Blank solid warm gray square, nothing in it\n8. Blank solid warm gray square, nothing in it\n9. Blank solid warm gray square, nothing in it\nKeep all nine cells equally sized and strictly aligned. Each icon must be visually isolated from neighboring cells. Square overall image."
+  }
+]

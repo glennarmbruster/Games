@@ -1,0 +1,367 @@
+/* Goobs-Games shared styles: modern "clean & bright" themes, base, UI kit shared by every game, update bar, ad cards.
+   New names: --accent, --bg, --surface, --surface-2, --line, --ink, --muted, --shadow*.
+   The old names (--barn, --hay, --wood, ...) are kept as aliases so older rules still work. */
+:root {
+  --accent: #5a54f0; --accent-2: #7a5cff; --accent-ink: #ffffff; --accent-soft: #ecebff;
+  --bg: #f4f5f9; --bg-top: #eceefb; --surface: #ffffff; --surface-2: #eef0f5; --line: #e3e6ee; --line-strong: #d3d7e2;
+  --ink: #1b2130; --muted: #6b7385; --ok: #22a06b; --bad: #e5484d; --gold: #ffb224; --hint: #2f7ff5;
+  --shadow-sm: 0 1px 2px rgba(20,24,40,.06), 0 1px 1px rgba(20,24,40,.04);
+  --shadow: 0 2px 4px rgba(20,24,40,.05), 0 8px 20px rgba(20,24,40,.08);
+  --shadow-lg: 0 10px 40px rgba(20,24,40,.18);
+  --radius: 16px;
+  --x: #1b2130; --x-auto: rgba(27,33,48,.28); --x-wrong: #e5484d; --grid: #ffffff; --heart-empty: #e3e6ee; --switch-off: #dfe2ea;
+  --statusbar: #5a54f0;
+  /* aliases for older rules */
+  --barn: var(--accent); --barn-dark: #3f39c9; --hay: var(--surface-2); --hay-light: var(--surface-2); --sky: #9fd3f0; --cream: var(--bg);
+  --wood: var(--line); --title: var(--ink); --title-shadow: transparent; --btn-ink: var(--ink); --shade: rgba(20,24,40,.12);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+  --round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --serif: Georgia, "Times New Roman", serif;
+  color-scheme: light;
+}
+/* Dark: charcoal */
+:root[data-theme="dark"] {
+  --accent: #7c77ff; --accent-2: #9a7bff; --accent-soft: #2a2950;
+  --bg: #0f1116; --bg-top: #151826; --surface: #1a1d25; --surface-2: #252a35; --line: #2a2f3b; --line-strong: #3a4050;
+  --ink: #eef1f7; --muted: #99a2b3; --ok: #3ccf8e; --bad: #ff6369; --gold: #ffc53d; --hint: #5aa2ff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4); --shadow: 0 2px 4px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); --shadow-lg: 0 12px 44px rgba(0,0,0,.6);
+  --x: #0f1116; --x-auto: rgba(10,12,18,.45); --x-wrong: #ff6369; --heart-empty: #2f3542; --switch-off: #3a4050;
+  --statusbar: #0f1116; --barn-dark: #5b56e0;
+  color-scheme: dark;
+}
+/* Blue: deep navy */
+:root[data-theme="blue"] {
+  --accent: #4f9dff; --accent-2: #6fb2ff; --accent-soft: #16345e;
+  --bg: #0b1628; --bg-top: #0f1f38; --surface: #13233b; --surface-2: #1b3050; --line: #213a5e; --line-strong: #2d4b76;
+  --ink: #e8f0fc; --muted: #9fb3d1; --ok: #3ccf8e; --bad: #ff7a70; --gold: #ffc53d; --hint: #7cc0ff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4); --shadow: 0 2px 4px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); --shadow-lg: 0 12px 44px rgba(0,0,0,.6);
+  --x: #0a1424; --x-auto: rgba(6,14,28,.45); --x-wrong: #ff7a70; --heart-empty: #2a4166; --switch-off: #2d4b76;
+  --statusbar: #0b1628; --barn-dark: #2f7ae0;
+  color-scheme: dark;
+}
+/* Halloween (a seasonal skin on top of dark: data-theme="dark" data-skin="halloween"): midnight purple, pumpkin orange,
+   slime green. Same variable names as above, so every shared control picks it up; games keep their dark-mode art. */
+:root[data-skin="halloween"] {
+  --accent: #ff7a1a; --accent-2: #ffa43b; --accent-ink: #1c1026; --accent-soft: #3d2236;
+  --bg: #140b1c; --bg-top: #2a1538; --surface: #22142e; --surface-2: #2f1d3d; --line: #3a2549; --line-strong: #4d3260;
+  --ink: #f6ecff; --muted: #b9a3c9; --ok: #7ee35a; --bad: #ff5a5f; --gold: #ffb02e; --hint: #b98cff;
+  --x: #140b1c; --x-auto: rgba(14,6,22,.5); --x-wrong: #ff5a5f; --heart-empty: #3a2549; --switch-off: #4d3260;
+  --statusbar: #1c1026; --barn-dark: #d85f0a;
+}
+:root[data-skin="halloween"] body { background: radial-gradient(120% 60% at 50% -10%, #3d1f52 0, transparent 60%) no-repeat, linear-gradient(var(--bg-top) 0, var(--bg) 320px) no-repeat, var(--bg); }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font); color: var(--ink); font-size: 17px;
+  background: linear-gradient(var(--bg-top) 0, var(--bg) 260px) no-repeat, var(--bg);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+}
+/* game pages never scroll as a whole (their panels scroll inside), so taps can't drift from what you see */
+html.gg-game, html.gg-game body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html.gg-game .app { height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+button { font-family: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.app {
+  max-width: 640px; margin: 0 auto; min-height: 100%;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+
+/* ---------- header ---------- */
+.top { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; }
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brand svg { width: 34px; height: 34px; flex: none; border-radius: 10px; }
+.brand h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -.4px; color: var(--ink); white-space: nowrap; }
+.homebtn { background: none; border: 0; padding: 4px 4px 4px 0; display: flex; align-items: center; gap: 6px; color: inherit; min-width: 0; }
+.homebtn .chev { font-size: 34px; line-height: 1; font-weight: 600; color: var(--accent); margin: -5px 0 0 -2px; }
+.homebtn:active { opacity: .55; }
+.topbtns { display: flex; gap: 8px; flex: none; }
+.iconbtn {
+  width: 42px; height: 42px; border-radius: 13px; border: 1px solid var(--line); color: var(--ink);
+  background: var(--surface); display: grid; place-items: center; box-shadow: var(--shadow-sm); padding: 0;
+  transition: transform .1s;
+}
+.iconbtn:active { transform: scale(.94); }
+.iconbtn svg { width: 22px; height: 22px; }
+.iconbtn.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+/* ---------- buttons ---------- */
+.btn {
+  flex: 1; min-height: 52px; border-radius: 15px; border: 0; font-size: 17px; font-weight: 700;
+  background: var(--surface-2); color: var(--ink); padding: 0 14px; transition: transform .1s, filter .1s;
+}
+.btn.red { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); box-shadow: 0 6px 16px -6px var(--accent); }
+.btn:active { transform: scale(.97); filter: brightness(.96); }
+.actions { display: flex; gap: 10px; width: 100%; }
+
+/* ---------- mode tabs (segmented control) ---------- */
+.modes { width: 100%; display: flex; gap: 3px; flex: none; background: var(--surface-2); border-radius: 14px; padding: 3px; }
+.modes button {
+  position: relative; flex: 1; height: 40px; border-radius: 11px; border: 0; background: none;
+  color: var(--muted); font-weight: 700; font-size: 15px; padding: 0; transition: background .15s, color .15s;
+}
+.modes button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.modes button:active { transform: scale(.97); }
+.modes .dot { position: absolute; top: 7px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); display: none; }
+.modes .dot.show { display: block; }
+
+/* ---------- info row ---------- */
+.info { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px; flex: none; }
+.info .lbl { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .6px; text-transform: uppercase; }
+.info .ttl { font-size: 19px; font-weight: 800; line-height: 1.15; white-space: nowrap; letter-spacing: -.2px; }
+.info .big { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.5px; }
+.info .right { text-align: right; }
+.info .mid { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.info .bar { width: 110px; height: 8px; border-radius: 4px; background: var(--surface-2); margin-top: 6px; overflow: hidden; margin-left: auto; }
+.info .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; transition: width .3s; }
+
+/* ---------- bottom toolbar ---------- */
+.toolbar { display: flex; gap: 8px; width: 100%; flex: none; }
+.tool {
+  flex: 1; height: 56px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 0; font-weight: 650; font-size: 13px; transition: transform .1s; -webkit-touch-callout: none;
+}
+.tool svg { width: 22px; height: 22px; }
+.tool.red { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 16px -8px var(--accent); }
+.tool:active, .tool.held { transform: scale(.95); }
+.tool:disabled { opacity: .4; }
+.tool .ad { font-size: 10px; font-weight: 800; background: var(--gold); color: #3a2a00; border-radius: 5px; padding: 0 4px; margin-left: 3px; }
+
+/* ---------- overlays ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(10,12,22,.42); display: none; align-items: flex-end; justify-content: center; z-index: 10; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.overlay.show { display: flex; animation: ovin .18s ease-out; }
+@keyframes ovin { from { opacity: 0; } to { opacity: 1; } }
+.overlay.center { align-items: center; }
+.sheet {
+  position: relative; width: 100%; max-width: 560px; max-height: 92vh; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 26px 26px 0 0; padding: 22px 18px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  box-shadow: var(--shadow-lg); animation: sheetin .24s cubic-bezier(.2,.8,.3,1);
+}
+.sheet::before { content: ""; position: absolute; top: 8px; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: 3px; background: var(--line-strong); }
+@keyframes sheetin { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+.sheetbody { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; min-height: 0; }
+.card {
+  width: min(92vw, 400px); background: var(--surface); border-radius: 26px;
+  padding: 24px 20px 20px; text-align: center; box-shadow: var(--shadow-lg); animation: cardin .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes cardin { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+.card h2, .sheet h2 { margin: 0 0 8px; font-size: 24px; font-weight: 800; letter-spacing: -.3px; color: var(--ink); }
+.card p { margin: 6px 0 18px; font-size: 17px; line-height: 1.45; color: var(--muted); }
+.card p b { color: var(--ink); }
+.card .actions { flex-direction: column; }
+.cardicon { display: flex; justify-content: center; margin-bottom: 8px; }
+.cardicon svg { width: 64px; height: 64px; }
+.cardicon img { width: 150px; border-radius: 14px; box-shadow: var(--shadow); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--line); font-size: 17px; font-weight: 600; }
+.row small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); margin-top: 2px; }
+.row.off { opacity: .45; pointer-events: none; }
+.switch { position: relative; width: 52px; height: 32px; flex: none; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 16px; background: var(--switch-off); transition: background .2s; }
+.switch span::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.25); transition: transform .2s;
+}
+.switch input:checked + span { background: var(--ok); }
+.switch input:checked + span::after { transform: translateX(20px); }
+.stepper { display: flex; align-items: center; gap: 8px; flex: none; }
+.stepper button { width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--surface-2); font-size: 22px; font-weight: 700; padding: 0; }
+.stepper b { min-width: 26px; text-align: center; font-size: 20px; }
+.linkrow { display: flex; gap: 10px; margin-top: 14px; }
+.linkrow .btn { font-size: 16px; min-height: 48px; }
+.version { text-align: center; color: var(--muted); font-size: 13px; margin: 12px 0 2px; }
+.sheet .actions { margin-top: 14px; }
+.newbest { display: inline-block; background: var(--gold); color: #3a2a00; border-radius: 10px; padding: 3px 12px; font-weight: 800; margin-top: 6px; }
+.parade { display: flex; justify-content: center; gap: 4px; margin: 4px 0 8px; }
+.parade svg { width: 44px; height: 44px; animation: hop .5s ease-in-out infinite alternate; }
+.parade svg:nth-child(2n) { animation-delay: .25s; }
+@keyframes hop { 0% { transform: translateY(0); } 100% { transform: translateY(-6px); } }
+
+/* ---------- sheets: help, stats tiles, levels grid ---------- */
+.helplist { margin: 6px 0 0; padding-left: 22px; font-size: 16px; line-height: 1.5; color: var(--ink); }
+.helplist li { margin-bottom: 7px; }
+.helplist li::marker { color: var(--accent); font-weight: 800; }
+.tiles, .tiles2 { display: flex; gap: 8px; margin: 4px 0 10px; }
+.tile, .tile2 { flex: 1; background: var(--surface-2); border-radius: 16px; text-align: center; padding: 12px 4px 10px; }
+.tile b, .tile2 b { display: block; font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -.5px; }
+.tile span, .tile2 span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.lvgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.lv {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 14px; border: 0; background: var(--surface-2); color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font-weight: 800; font-size: 19px; line-height: 1.1;
+}
+.lv small { font-size: 10px; font-weight: 600; color: var(--muted); text-align: center; padding: 0 2px; }
+.lv.done { background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--ink); }
+.lv.done::after { content: "\2713"; position: absolute; top: 3px; right: 7px; font-size: 12px; color: var(--ok); font-weight: 900; }
+.lv.cur { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 6px 14px -6px var(--accent); }
+.lv.cur small { color: rgba(255,255,255,.8); }
+.lv.lock { opacity: .35; }
+.lvnext { font-size: 16px; margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+.lvnext b { color: var(--ink); }
+.pages { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pages button { min-height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--ink); font-weight: 700; font-size: 14px; }
+.pages button.on { background: var(--accent); color: #fff; }
+
+/* ---------- update bar ---------- */
+.updatebar {
+  display: none; position: fixed; left: 0; right: 0; top: 0; z-index: 30; text-align: center; cursor: pointer;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 12px; background: var(--hint); color: #fff; font-weight: 700; font-size: 16px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.2);
+}
+.updatebar.show { display: block; }
+
+/* status-bar strip (shows only when the app draws under the iPhone status bar) */
+body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); background: var(--statusbar); z-index: 25; }
+
+/* ---------- theme picker ---------- */
+.themes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px 0 14px; border-bottom: 1px solid var(--line); }
+.themes button {
+  border-radius: 14px; border: 2px solid transparent; background: var(--surface-2); color: var(--ink); padding: 8px 0 8px;
+  font-weight: 700; font-size: 11px; letter-spacing: -.5px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0;
+}
+.themes button.on { border-color: var(--accent); }
+.themes .sw { width: 40px; height: 26px; border-radius: 8px; border: 1px solid rgba(0,0,0,.15); display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+.themes .sw i { display: block; }
+.themelabel { font-size: 17px; font-weight: 600; padding-top: 12px; }
+
+/* ---------- ad cards (vintage on purpose) ---------- */
+.adov { background: rgba(8,10,18,.6); }
+.adframe { position: relative; width: min(92vw, 400px); }
+.adclose {
+  position: absolute; top: -18px; right: -12px; z-index: 5; width: 56px; height: 56px; border-radius: 8px;
+  border: 4px solid #111; background: #fff; color: #111; padding: 0; display: grid; place-items: center;
+  box-shadow: 0 0 0 3px #fff, 0 4px 12px rgba(0,0,0,.55); cursor: pointer;
+}
+.adclose svg { width: 30px; height: 30px; }
+.adclose:active { transform: scale(.94); }
+.ad { border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.45); animation: adin .35s ease-out; }
+@keyframes adin { 0% { transform: scale(.85) rotate(-2deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.ad .adv { position: absolute; font: 700 10px/1 var(--font); letter-spacing: 1.5px; opacity: .55; }
+
+/* Burma-Shave style roadside signs, on a highway */
+.burma { position: relative; background: linear-gradient(#f6c68f 0%, #fde6c4 34%, #c9b48c 34.5%, #b39d74 100%); padding: 28px 14px 22px; }
+.burma .road { position: absolute; left: 50%; bottom: 0; width: 70%; height: 66%; transform: translateX(-50%); background: linear-gradient(#6f6a66, #3f3b38); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: .85; }
+.burma .road::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: repeating-linear-gradient(#f2d27a 0 14px, transparent 14px 26px); }
+.burma .signs { position: relative; display: flex; flex-direction: column; gap: 9px; }
+.burma .sign {
+  position: relative; width: 80%; background: #c8231c; color: #fff; border: 2px solid #7e140f; border-radius: 3px;
+  font: 800 18px/1.15 var(--serif); letter-spacing: .8px; text-align: center; padding: 9px 6px;
+  display: flex; justify-content: center; align-items: center;
+  box-shadow: 0 3px 0 #5e0f0b; opacity: 0; transform: translateY(12px) scale(.9); transition: all .35s ease-out;
+}
+.burma .sign::after { content: ""; position: absolute; left: 50%; top: 100%; width: 7px; height: 10px; margin-left: -3px; background: #5a4a3a; }
+.burma .sign:nth-child(odd) { align-self: flex-start; }
+.burma .sign:nth-child(even) { align-self: flex-end; }
+.burma .sign.up { opacity: 1; transform: none; }
+.burma .sign.brand { font-size: 22px; letter-spacing: 2px; background: #fff; color: #c8231c; border-color: #c8231c; align-self: center; }
+.burma .adv { left: 12px; top: 8px; color: #7a4a1a; }
+
+/* 1950s magazine */
+.mag {
+  position: relative; background: #f4e8c8; color: #2a1a10; padding: 16px 16px 14px; text-align: center; font-family: var(--serif);
+  background-image: radial-gradient(rgba(120,80,30,.13) 1px, transparent 1.3px); background-size: 6px 6px;
+  border: 6px double var(--accent2, #c0392b);
+}
+.mag .mhead { font: italic 900 27px/1.08 var(--serif); color: var(--accent2, #c0392b); margin: 4px 0 8px; }
+.mag .mart { width: 132px; height: 132px; margin: 0 auto 6px; border-radius: 50%; background: #fffaf0; border: 4px solid var(--accent2, #c0392b); display: grid; place-items: center; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+.mag .mart svg { width: 84%; height: 84%; }
+.mag .mbody { font: 16px/1.35 var(--serif); margin: 6px 4px 10px; }
+.mag .mbrand {
+  display: inline-block; background: var(--accent2, #c0392b); color: #fff8e6; font: 900 25px/1 var(--serif); letter-spacing: 1px;
+  padding: 9px 26px; clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%);
+}
+.mag .mtag { font: italic 700 15px/1.2 var(--serif); margin-top: 8px; }
+.mag .adv { left: 10px; top: 8px; }
+
+/* neon roadside sign at dusk */
+.neon { position: relative; background: linear-gradient(#1b1440 0%, #3b2361 55%, #6d3a5e 100%); padding: 12px 8px 10px; }
+.neon svg { width: 100%; height: auto; display: block; }
+.neon .adv { right: 10px; bottom: 8px; color: #ffd6f0; }
+.neon .blink { animation: nblink 1.4s steps(2, jump-none) infinite; }
+@keyframes nblink { 0%, 60% { opacity: 1; } 61%, 100% { opacity: .25; } }
+
+/* ---------- phones on their side: every game but the landscape ones asks to be turned back ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  html.gg-game:not(.gg-landscape) body::after {
+    content: "Turn your phone upright to play"; position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); color: var(--ink); font: 700 20px var(--font); text-align: center; padding: 20px;
+  }
+}
+
+/* ---------- full screen (shell 2.44.0; Glenn: "I would like all the games full screen in their proper mode") ----------
+   A game opts in with Goobs.fullscreen({...}) (goobs.js). html.gg-fs: the page uses the whole screen, edge to edge (no
+   640px column, small gutters clear of the notch and home bar), one compact top row (back, the game's name or its own
+   counters, round buttons, the Menu button); the rarely used buttons live in the Menu sheet, so the play area gets the rest.
+   html.gg-fs-over (3D and full-scene games): the scene fills the screen behind everything and the top row floats on it. */
+html.gg-fs .app { max-width: none; width: 100%; height: 100%; min-height: 0; overflow: hidden; gap: 6px;
+  padding: calc(env(safe-area-inset-top, 0px) + 4px) calc(env(safe-area-inset-right, 0px) + 8px) calc(env(safe-area-inset-bottom, 0px) + 6px) calc(env(safe-area-inset-left, 0px) + 8px); }
+html.gg-fs .top { min-height: 44px; flex: none; gap: 6px; }
+html.gg-fs .top .brand svg { display: none; }
+html.gg-fs .top .brand h1 { font-size: 20px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+html.gg-fs .topbtns { gap: 6px; }
+html.gg-fs .iconbtn { width: 40px; height: 40px; border-radius: 20px; }
+html.gg-fs .iconbtn svg { width: 21px; height: 21px; }
+html.gg-fs .info { min-height: 36px; }
+html.gg-fs .toolbar { gap: 6px; }
+html.gg-fs .tool { height: 50px; border-radius: 14px; }
+/* a pill for counters in the top row or floating on a scene */
+.ggpill { background: var(--surface); color: var(--ink); font-weight: 800; font-size: 16px; padding: 7px 12px; border-radius: 18px; border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* scene games: everything floats over a scene that fills the screen */
+html.gg-fs-over body::before { display: none; }
+html.gg-fs-over .app { padding: 0; }
+html.gg-fs-over .top { position: fixed; left: 0; right: 0; top: 0; z-index: 6; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 6px) calc(env(safe-area-inset-right, 0px) + 10px) 0 calc(env(safe-area-inset-left, 0px) + 10px); }
+html.gg-fs-over .top > * { pointer-events: auto; }
+html.gg-fs-over .top .brand h1 { display: none; }
+html.gg-fs-over .homebtn { width: 44px; height: 44px; border-radius: 22px; justify-content: center; padding: 0; background: rgba(255,255,255,.9); box-shadow: 0 3px 10px rgba(0,0,0,.2); flex: none; }
+html.gg-fs-over .homebtn .chev { margin: -4px 0 0 -2px; color: #1b2130; }
+html.gg-fs-over .iconbtn { width: 44px; height: 44px; border-radius: 22px; border: 0; background: rgba(255,255,255,.9); color: #1b2130; box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+html.gg-fs-over .iconbtn.on { color: #5a54f0; }
+html.gg-fs-over .ggpill { background: rgba(255,255,255,.9); color: #1b1f33; border: 0; box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+
+/* the Menu sheet */
+.ggmenu .ggmenu-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.ggmenu .ggmenu-top svg { width: 36px; height: 36px; border-radius: 10px; flex: none; }
+.ggmenu .ggmenu-top h2 { margin: 0; }
+.ggmenu .ggmenu-info { color: var(--muted); font-weight: 700; font-size: 15px; margin: 2px 2px 8px; }
+.ggmenu .ggmenu-info:empty { display: none; }
+.ggmenu .ggmenu-info b { color: var(--ink); }
+.ggmenu .ggmenu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 12px; overflow-y: auto; }
+html .ggmenu .ggmenu-list > button { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; height: 54px; flex: none;
+  border-radius: 15px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 16px; font-weight: 700; padding: 0 14px;
+  box-shadow: none; text-align: left; transform: none; }
+html .ggmenu .ggmenu-list > button svg { width: 22px; height: 22px; flex: none; }
+html .ggmenu .ggmenu-list > button:active { transform: scale(.97); }
+html .ggmenu .ggmenu-list > button:disabled { opacity: .4; }
+html .ggmenu .ggmenu-list > button.red { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--accent-ink); border-color: transparent; }
+html .ggmenu .ggmenu-list > button .ad { margin-left: auto; }
+.ggmenu .ggmenu-play { width: 100%; flex: none; }
+/* .ggfit: the free space between the top row and the bottom controls; a board inside sizes itself with cqw/cqh,
+   e.g. .boardwrap { width: min(100cqw, 100cqh) } for a square board as big as the space allows */
+.ggfit { flex: 1 1 0; min-height: 0; width: 100%; container-type: size; display: flex; align-items: center; justify-content: center; position: relative; }
+
+/* "Exit to main menu" under the buttons of end / results / start / pause cards (shell 2.54.0). Quieter than the
+   card's own buttons so "Play again" stays the obvious choice; inherits the card's text colour so it also reads on
+   the dark cards of the landscape games. */
+.ggexit { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 46px; margin-top: 10px; flex: none;
+  padding: 0 14px; border: 2px solid rgba(128,132,150,.38); border-radius: 14px; background: transparent; color: inherit;
+  font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; -webkit-tap-highlight-color: transparent; opacity: .86; }
+.ggexit svg { width: 20px; height: 20px; flex: none; }
+.ggexit:active { transform: scale(.97); }
+
+/* Collection refresh: shared game menu, retaining the existing controls and themes. */
+.ggmenu .sheet { border: 1px solid var(--line); border-radius: 24px 24px 0 0; }
+.ggmenu .ggmenu-top { gap: 12px; padding: 3px 2px 8px; }
+.ggmenu .ggmenu-top svg { width: 42px; height: 42px; border-radius: 12px; box-shadow: var(--shadow-sm); }
+.ggmenu .ggmenu-top h2 { font-weight: 700; letter-spacing: -.6px; }
+.ggmenu .ggmenu-info { font-size: 14px; font-weight: 500; line-height: 1.4; margin-bottom: 12px; }
+html .ggmenu .ggmenu-list > button { min-height: 54px; height: auto; padding: 12px; font-weight: 600; border: 1px solid var(--line); border-radius: 13px; box-shadow: none; }
+html .ggmenu .ggmenu-list > button svg { color: var(--accent); }
+html .ggmenu .ggmenu-list > button.red { background: var(--accent); }
+html .ggmenu .ggmenu-list > button.red svg { color: var(--accent-ink); }
+.ggmenu .ggmenu-play { min-height: 48px; font-weight: 700; background: var(--accent); }
+.ggmenu button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media(min-width:700px){.ggmenu .sheet{border-radius:24px;}}

@@ -1,0 +1,10 @@
+{
+  "grass": {
+    "path": "/workspace/scratch/10b923715aac/generated_images/exec-2c12f23a-644d-4d0f-bb81-ad91f60c0f9d.png",
+    "prompt": "Seamlessly tileable photorealistic short lawn grass albedo texture, overhead orthographic macro photograph, fine mixed natural blades, restrained olive and moss greens, subtle dry straw specks, perfectly even diffuse lighting, no shadows, no objects, no perspective, no broad color patches, no text. Square texture, all edges tile naturally."
+  },
+  "metal": {
+    "path": "/workspace/scratch/10b923715aac/generated_images/exec-649921a2-a675-4a68-bfb3-1f0ab81577a7.png",
+    "prompt": "Seamlessly tileable photorealistic brushed tin metal neutral gray albedo microtexture, fine horizontal brushed grain and tiny natural surface variation, perfectly even diffuse lighting, no objects, no specular hotspots, no scratches larger than hairline, no edges, no perspective, no text. Square texture, mid-gray 50 percent overall brightness, suitable for subtle roughness detail."
+  }
+}

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Word Rattle</title>
+<style>
+/* Word Rattle styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+:root { --wr-die: #fffaf0; --wr-die-2: #f2e6c8; --wr-edge: #d9b36a; --wr-ink: #2b2f45; --wr-tray: #e8d9b5; --wr-sel: #ffd166; --wr-ok: #22a06b; --wr-dup: #e0a100; --wr-bad: #e5484d; }
+:root[data-theme="dark"] { --wr-tray: #3a3322; }
+:root[data-theme="blue"] { --wr-tray: #34405a; }
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100%; min-height: 0; gap: 8px; }
+.brand svg { border-radius: 10px; }
+.brand h1 { font-size: 23px; }
+@media (max-width: 385px) { .brand h1 { font-size: 21px; } }
+
+.info .word { flex: 1; text-align: center; font-weight: 900; font-size: 22px; letter-spacing: 1.5px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.info .word.ok { color: var(--wr-ok); }
+.info .word.dup { color: var(--wr-dup); }
+.info .word.bad { color: var(--wr-bad); }
+.info .word small { display: block; font-size: 12px; letter-spacing: .3px; font-weight: 800; }
+.info .big.low { color: var(--bad); }
+
+/* the tray and the dice */
+.boardwrap { position: relative; flex: none; width: min(100%, calc(100dvh - 360px), 520px); aspect-ratio: 1; border-radius: 22px; background: var(--wr-tray); padding: 10px; box-shadow: inset 0 2px 8px rgba(0,0,0,.18), var(--shadow-sm); touch-action: none; }
+.board { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 8px; width: 100%; height: 100%; }
+.die { position: relative; border-radius: 16%; background: linear-gradient(160deg, var(--wr-die), var(--wr-die-2)); box-shadow: 0 3px 0 var(--wr-edge), 0 5px 8px rgba(0,0,0,.18);
+  display: grid; place-items: center; font-weight: 900; color: var(--wr-ink); font-size: calc(var(--cell, 70px) * .5); line-height: 1; user-select: none; -webkit-user-select: none; transition: background .08s, transform .08s; }
+.die.qu { font-size: calc(var(--cell, 70px) * .4); }
+.die.sel { background: linear-gradient(160deg, #fff3c9, var(--wr-sel)); transform: translateY(1px); box-shadow: 0 2px 0 #c99a2e, 0 3px 6px rgba(0,0,0,.18); }
+.die.ok { background: #c8f2dc; } .die.dup { background: #ffe9a8; } .die.bad { background: #ffd0d3; }
+.die.u::after { content: ""; position: absolute; left: 34%; right: 34%; bottom: 14%; height: 3px; border-radius: 2px; background: var(--wr-ink); }
+.board.shaking .die { animation: rattle .09s linear infinite alternate; }
+@keyframes rattle { from { transform: translate(-2px, 1px) rotate(-6deg); } to { transform: translate(2px, -1px) rotate(6deg); } }
+.trail { position: absolute; inset: 10px; width: calc(100% - 20px); height: calc(100% - 20px); pointer-events: none; overflow: visible; }
+.trail path { fill: none; stroke: rgba(226, 86, 43, .55); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.cover { position: absolute; inset: 0; border-radius: 22px; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 18px;
+  background: color-mix(in srgb, var(--wr-tray) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.cover.show { display: flex; }
+.cover h2 { margin: 0; font-size: 24px; font-weight: 900; color: var(--wr-ink); }
+.cover p { margin: 0; color: #5a5040; font-weight: 600; font-size: 15px; max-width: 260px; }
+:root[data-theme="dark"] .cover h2, :root[data-theme="blue"] .cover h2 { color: var(--ink); }
+:root[data-theme="dark"] .cover p, :root[data-theme="blue"] .cover p { color: var(--muted); }
+.cover .btn { flex: none; width: 210px; }
+
+/* full screen (Goobs.fullscreen): the tray is as wide as the screen; the fit box starts square (its basis is the screen
+   width) and only shrinks when the phone is short, so the found-words list keeps at least ~2 rows and gets the rest */
+html:not(.gg-fs) .ggfit { display: contents; }
+html.gg-fs .ggfit { flex: 0 1 calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
+html.gg-fs .boardwrap { width: min(100cqw, 100cqh, 720px); }
+html.gg-fs .found { flex: 1 1 0; min-height: 66px; }
+html.gg-fs .found .fw { font-size: 15px; padding: 4px 9px; }
+
+/* found words */
+.found { width: 100%; flex: 1 1 auto; min-height: 56px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; padding: 2px; }
+.found .fw { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px 8px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .5px; }
+.found .fw b { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.found .fw.new { animation: pop .35s ease-out; background: #c8f2dc; }
+@keyframes pop { 0% { transform: scale(.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.found .none { color: var(--muted); font-size: 14px; padding: 4px; }
+
+/* results */
+.scores { display: flex; gap: 8px; margin: 4px 0 10px; }
+.scores .tile { flex: 1; }
+.scores .tile.win { box-shadow: 0 0 0 2px var(--accent) inset; }
+.wlist { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 12px; }
+.wlist span { border-radius: 8px; padding: 2px 7px; font-size: 13px; font-weight: 700; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }
+.wlist span.me { background: #c8f2dc; color: #0f5f3a; }
+.wlist span.p2 { background: #dbe6ff; color: #243f8f; }
+.wlist span.x { text-decoration: line-through; background: #f1e3e3; color: #9a5a5a; }
+.reslbl { font-weight: 800; font-size: 13px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-top: 6px; }
+.cardicon svg { border-radius: 16px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="wr-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#ffe7a8"/>
+<g transform="rotate(-8 34 36)"><rect x="14" y="16" width="40" height="40" rx="9" fill="#fffaf0" stroke="#d9b36a" stroke-width="3"/><text x="34" y="46" font-size="30" font-weight="900" text-anchor="middle" fill="#2b2f45" font-family="system-ui, sans-serif">W</text></g>
+<g transform="rotate(10 66 66)"><rect x="46" y="46" width="40" height="40" rx="9" fill="#fffaf0" stroke="#d9b36a" stroke-width="3"/><text x="66" y="76" font-size="30" font-weight="900" text-anchor="middle" fill="#e2562b" font-family="system-ui, sans-serif">R</text></g></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.3"/><rect x="14" y="5" width="4" height="14" rx="1.3"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.2v13.6a1 1 0 0 0 1.5.9l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 7 5.2z" fill="currentColor"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/></symbol>
+<symbol id="i-shake" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="7" width="10" height="10" rx="2.5" transform="rotate(-12 10 12)"/><rect x="11" y="4" width="9" height="9" rx="2.2" transform="rotate(14 15.5 8.5)" fill="currentColor" fill-opacity=".2"/><path d="M3 5l2 1M2 10h2M20 17l2 1M19 21l1-2"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#wr-logo"/></svg>
+      <h1>Word Rattle</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-mode="classic">Classic</button>
+    <button data-mode="duo">2 players</button>
+  </div>
+
+  <div class="info" id="info">
+    <div><div class="lbl" id="timeLbl">Time</div><div class="big" id="time">3:00</div></div>
+    <div class="word" id="word"></div>
+    <div class="right"><div class="lbl">Score</div><div class="big" id="score">0</div></div>
+  </div>
+
+  <div class="ggfit" id="fit">
+    <div class="boardwrap" id="boardwrap">
+      <div class="board" id="board"></div>
+      <svg class="trail" id="trail"></svg>
+      <div class="cover" id="cover"></div>
+    </div>
+  </div>
+
+  <div class="found" id="found"></div>
+
+  <div class="toolbar">
+    <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool" id="btnPause"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg><span>Pause</span></button>
+    <button class="tool red" id="btnEnd"><svg viewBox="0 0 24 24"><use href="#i-stop"/></svg><span id="endLbl">End round</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Clicks, chimes and the rattle.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between games. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished games.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Word Rattle</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your Word Rattle records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody"><ol class="helplist">
+      <li>Shake the 16 letter dice, then find as many words as you can in <b>3 minutes</b>.</li>
+      <li><b>Drag</b> your finger from letter to letter. Each letter must touch the one before it (sideways, up, down or corner to corner), and you can't use the same die twice in a word. Lift your finger to try the word.</li>
+      <li>Words need <b>3 or more letters</b>. <b>Qu</b> is one die and counts as two letters.</li>
+      <li>Points: 3 or 4 letters = 1, 5 = 2, 6 = 3, 7 = 5, 8 or more = 11.</li>
+      <li><b>2 players:</b> take turns on the same board, 3 minutes each. When both of you find a word, it's crossed out and scores nothing.</li>
+      <li>When time's up you'll see every word that was on the board.</li>
+    </ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="overlay" id="ovResults">
+  <div class="sheet" role="dialog" aria-label="Results">
+    <h2 id="resTitle">Time's up!</h2>
+    <div class="sheetbody" id="resBody"></div>
+    <div class="actions"><button class="btn" id="btnResClose">See the board</button><button class="btn red" id="btnResAgain">Shake again</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Word Rattle game logic (no DOM). Modeled on the classic letter-dice word game.
+   16 letter dice (the modern set) are shaken into a 4 x 4 grid; one face is "Qu" (a single tile, two letters).
+   Words: 3+ letters, each die next to the last (diagonals count), no die used twice in a word.
+   Score by letters: 3-4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11. With two players, words both found score nothing.
+   The word list is ENABLE (public domain) with vulgar and offensive words taken out (tools/filter.js). */
+var WD = (function () {
+  'use strict';
+  // modern 4x4 dice
+  var DICE4 = ['AAEEGN', 'ABBJOO', 'ACHOPS', 'AFFKPS', 'AOOTTW', 'CIMOTU', 'DEILRX', 'DELRVY', 'DISTTY', 'EEGHNW', 'EEINSU', 'EHRTVW', 'EIOSST', 'ELRTTY', 'HIMNQU', 'HLNNRZ'];
+  var MODES = {
+    classic: { size: 4, dice: DICE4, min: 3, secs: 180, name: 'Classic' },
+    duo: { size: 4, dice: DICE4, min: 3, secs: 180, name: '2 players' }
+  };
+
+  // ---------- word list ----------
+  var WORDS = [];
+  function load(text) {
+    var out = [], prev = '', lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i]; if (!l) continue;
+      var c = l.charCodeAt(0), p = c <= 57 ? c - 48 : c - 55;
+      prev = prev.slice(0, p) + l.slice(1);
+      out.push(prev);
+    }
+    WORDS = out;
+    return out.length;
+  }
+  function lower(s) { var lo = 0, hi = WORDS.length; while (lo < hi) { var m = (lo + hi) >> 1; if (WORDS[m] < s) lo = m + 1; else hi = m; } return lo; }
+  function has(w) { var i = lower(w); return i < WORDS.length && WORDS[i] === w; }
+  function hasPrefix(p) { var i = lower(p); return i < WORDS.length && WORDS[i].lastIndexOf(p, 0) === 0; }
+
+  // ---------- board ----------
+  function shake(mode, rnd) {
+    var M = MODES[mode], R = rnd || Math.random, dice = M.dice.slice();
+    for (var i = dice.length - 1; i > 0; i--) { var j = Math.floor(R() * (i + 1)), t = dice[i]; dice[i] = dice[j]; dice[j] = t; }
+    return dice.map(function (d) { var f = d[Math.floor(R() * d.length)]; return f === 'Q' ? 'Qu' : f; });
+  }
+  function adjacent(n, a, b) { var ax = a % n, ay = (a / n) | 0, bx = b % n, by = (b / n) | 0; return a !== b && Math.abs(ax - bx) <= 1 && Math.abs(ay - by) <= 1; }
+  function wordOf(grid, path) { return path.map(function (i) { return grid[i]; }).join('').toLowerCase(); }
+  // every word on the board, longest first
+  function solve(grid, min) {
+    var n = Math.round(Math.sqrt(grid.length)), found = {}, used = new Array(grid.length);
+    var faces = grid.map(function (f) { return f.toLowerCase(); });
+    function go(i, w) {
+      if (w.length >= min && has(w)) found[w] = 1;
+      used[i] = true;
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        var x = i % n + dx, y = ((i / n) | 0) + dy;
+        if (x < 0 || y < 0 || x >= n || y >= n) continue;
+        var j = y * n + x;
+        if (used[j]) continue;
+        var nw = w + faces[j];
+        if (hasPrefix(nw)) go(j, nw);
+      }
+      used[i] = false;
+    }
+    for (var i = 0; i < grid.length; i++) if (hasPrefix(faces[i])) go(i, faces[i]);
+    return Object.keys(found).sort(function (a, b) { return b.length - a.length || (a < b ? -1 : 1); });
+  }
+  // a path on the board for a word (for checking typed/dragged words), or null
+  function pathFor(grid, w) {
+    var n = Math.round(Math.sqrt(grid.length)), faces = grid.map(function (f) { return f.toLowerCase(); }), used = [];
+    function go(i, k, path) {
+      if (w.lastIndexOf(faces[i], k) !== k) return null;
+      k += faces[i].length; path.push(i); used[i] = true;
+      if (k === w.length) return path.slice();
+      for (var j = 0; j < grid.length; j++) if (!used[j] && adjacent(n, i, j)) { var r = go(j, k, path); if (r) return r; }
+      path.pop(); used[i] = false; return null;
+    }
+    for (var i = 0; i < grid.length; i++) { var r = go(i, 0, []); if (r) return r; }
+    return null;
+  }
+  function points(w) { var L = w.length; return L <= 4 ? 1 : L === 5 ? 2 : L === 6 ? 3 : L === 7 ? 5 : 11; }
+  // check a dragged word: 'ok' | 'short' | 'dup' | 'bad'
+  function check(w, found, min) {
+    if (w.length < min) return 'short';
+    if (found.indexOf(w) >= 0) return 'dup';
+    return has(w) ? 'ok' : 'bad';
+  }
+  function total(list) { return list.reduce(function (a, w) { return a + points(w); }, 0); }
+  // two players: words both found are crossed out
+  function duel(a, b) {
+    var sa = {}, sb = {}; a.forEach(function (w) { sa[w] = 1; }); b.forEach(function (w) { sb[w] = 1; });
+    var shared = a.filter(function (w) { return sb[w]; });
+    return {
+      shared: shared,
+      a: total(a.filter(function (w) { return !sb[w]; })),
+      b: total(b.filter(function (w) { return !sa[w]; }))
+    };
+  }
+  return { MODES: MODES, DICE4: DICE4, load: load, has: has, hasPrefix: hasPrefix, shake: shake, adjacent: adjacent, wordOf: wordOf, solve: solve, pathFor: pathFor, points: points, check: check, total: total, duel: duel, words: function () { return WORDS; } };
+})();
+if (typeof module !== 'undefined') module.exports = WD;
+</script>
+<script>
+/* Word Rattle sounds: synthesized with Web Audio (no audio files). */
+var WRSound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function clack(delay, f) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + delay, len = Math.floor(a.sampleRate * 0.03), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 4;
+    var g = a.createGain(); g.gain.value = 0.9;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    rattle: function () { if (!on) return; for (var i = 0; i < 22; i++) clack(i * 0.035 + Math.random() * 0.02, 1400 + Math.random() * 1800); },
+    letter: function (k) { if (on) tone('sine', 440 * Math.pow(2, Math.min(k, 12) / 12), 0, 0.07, 0.12); },
+    ok: function (pts) { if (!on) return; tone('triangle', 784, 0, 0.12, 0.25); tone('triangle', 1175, 0, 0.2, 0.22, 0.08); if (pts >= 3) tone('triangle', 1568, 0, 0.3, 0.2, 0.16); },
+    dup: function () { if (on) tone('triangle', 520, 0, 0.16, 0.2); },
+    bad: function () { if (on) tone('square', 160, 120, 0.18, 0.1); },
+    tick: function () { if (on) clack(0, 3000); },
+    over: function () { if (!on) return; [880, 660, 880, 660].forEach(function (f, i) { tone('sine', f, 0, 0.3, 0.25, i * 0.18); }); },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = WRSound;
+
+  // ================= storage =================
+  var store = Goobs.store('worddice');
+  var settings = { sound: false, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { mode: 'classic', best: {}, seenHelp: false, finished: 0, lastAdAt: 0 };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if (!WD.MODES[meta.mode]) meta.mode = 'classic';
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { games: 0, duos: 0, words: 0, points: 0, longest: '' };
+  for (var sk in SD) if (typeof stats[sk] !== typeof SD[sk]) stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovResults') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function clock(ms) { var s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function upper(w) { return w.toUpperCase(); }
+
+  // ================= game =================
+  // run: { mode, grid, turn (0 or 1), found: [[], []], left (ms), phase: 'ready' | 'play' | 'pass' | 'over', all }
+  var run = null, words = false, paused = false, lastT = 0, lastTick = -1;
+  function M() { return WD.MODES[run.mode]; }
+  function fresh(mode) {
+    run = { mode: mode, grid: null, turn: 0, found: [[], []], left: WD.MODES[mode].secs * 1000, phase: 'ready', all: null };
+    paused = false; store.del('run'); renderAll();
+  }
+  function save() { if (run && run.phase !== 'over' && run.grid) store.set('run', run); else store.del('run'); }
+  function shakeAndGo() {
+    if (!words) return;
+    if (!run.grid) { run.grid = WD.shake(run.mode); run.all = null; }
+    renderBoard();
+    $('cover').classList.remove('show');
+    var b = $('board'); b.classList.add('shaking'); S.rattle();
+    var faces = b.children, spin = setInterval(function () {
+      for (var i = 0; i < faces.length; i++) { var d = WD.DICE4[i % 16], f = d[Math.floor(Math.random() * 6)]; setFace(faces[i], f === 'Q' ? 'Qu' : f); }
+    }, 70);
+    setTimeout(function () {
+      clearInterval(spin); b.classList.remove('shaking'); renderBoard();
+      run.phase = 'play'; run.left = M().secs * 1000; paused = false; lastT = performance.now();
+      save(); renderAll();
+    }, 850);
+  }
+  function startTurn2() { run.turn = 1; run.left = M().secs * 1000; run.phase = 'play'; paused = false; lastT = performance.now(); save(); renderAll(); }
+  function endTurn() {
+    clearPath();
+    S.over();
+    if (run.mode === 'duo' && run.turn === 0) { run.phase = 'pass'; save(); renderAll(); return; }
+    finishGame();
+  }
+  function finishGame() {
+    run.phase = 'over';
+    if (!run.all) run.all = WD.solve(run.grid, M().min);
+    var mine = run.found[0], sc = WD.total(mine);
+    meta.finished++;
+    if (run.mode === 'duo') {
+      var d = WD.duel(run.found[0], run.found[1]);
+      meta.best.duo = Math.max(meta.best.duo || 0, d.a, d.b); stats.duos++;
+    } else { meta.best.classic = Math.max(meta.best.classic || 0, sc); stats.games++; }
+    run.found.forEach(function (list) { list.forEach(function (w) { stats.words++; stats.points += WD.points(w); if (w.length > stats.longest.length) stats.longest = w; }); });
+    saveMeta(); saveStats(); store.del('run');
+    renderAll(); showResults();
+  }
+
+  // ================= dragging across the dice =================
+  var path = [], centers = [], cell = 0, dragging = false, flashT = 0;
+  function measure() {
+    var br = $('board').getBoundingClientRect(), kids = $('board').children;
+    centers = [];
+    for (var i = 0; i < kids.length; i++) { var r = kids[i].getBoundingClientRect(); centers.push([r.left + r.width / 2 - br.left, r.top + r.height / 2 - br.top]); cell = r.width; }
+    return br;
+  }
+  function dieAt(x, y, loose) {
+    var best = -1, bd = 1e9;
+    for (var i = 0; i < centers.length; i++) { var d = Math.hypot(centers[i][0] - x, centers[i][1] - y); if (d < bd) { bd = d; best = i; } }
+    return bd <= cell * (loose ? 0.72 : 0.44) ? best : -1;
+  }
+  function canPlay() { return run && run.phase === 'play' && !paused && !sheetOpen() && words; }
+  function onDown(e) {
+    if (!canPlay()) return;
+    var br = measure(), i = dieAt(e.clientX - br.left, e.clientY - br.top, true);
+    if (i < 0) return;
+    e.preventDefault();
+    try { $('boardwrap').setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    dragging = true; path = [i]; S.letter(0); drawPath();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    var br = $('board').getBoundingClientRect(), i = dieAt(e.clientX - br.left, e.clientY - br.top, false);
+    if (i < 0) return;
+    var last = path[path.length - 1];
+    if (i === last) return;
+    if (path.length > 1 && i === path[path.length - 2]) { path.pop(); drawPath(); return; }
+    if (path.indexOf(i) >= 0 || !WD.adjacent(M().size, last, i)) return;
+    path.push(i); S.letter(path.length - 1); drawPath();
+  }
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    var p = path.slice();
+    if (p.length < 2 || !canPlay()) { clearPath(); return; }
+    submit(p);
+  }
+  function submit(p) {
+    var w = WD.wordOf(run.grid, p), list = run.found[run.turn], r = WD.check(w, list, M().min);
+    if (r === 'ok') { list.push(w); S.ok(WD.points(w)); save(); renderFound(w); renderScore(); }
+    else if (r === 'dup') S.dup(); else S.bad();
+    flash(p, r, w);
+  }
+  function flash(p, r, w) {
+    var kids = $('board').children, cls = r === 'ok' ? 'ok' : r === 'dup' ? 'dup' : 'bad';
+    p.forEach(function (i) { kids[i].classList.remove('sel'); kids[i].classList.add(cls); });
+    var el = $('word');
+    el.className = 'word ' + cls;
+    el.innerHTML = upper(w) + '<small>' + (r === 'ok' ? '+' + WD.points(w) + (WD.points(w) === 1 ? ' point' : ' points') : r === 'dup' ? 'Already found' : r === 'short' ? 'Too short' : 'Not a word') + '</small>';
+    clearTimeout(flashT);
+    flashT = setTimeout(function () {
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('ok', 'dup', 'bad');
+      if (!dragging) { el.className = 'word'; el.textContent = ''; }
+    }, 750);
+    path = []; $('trail').innerHTML = '';
+  }
+  function clearPath() {
+    path = []; dragging = false;
+    var kids = $('board').children;
+    for (var i = 0; i < kids.length; i++) kids[i].classList.remove('sel');
+    $('trail').innerHTML = ''; $('word').className = 'word'; $('word').textContent = '';
+  }
+  function drawPath() {
+    var kids = $('board').children;
+    for (var i = 0; i < kids.length; i++) { kids[i].classList.remove('ok', 'dup', 'bad'); kids[i].classList.toggle('sel', path.indexOf(i) >= 0); }
+    var d = path.map(function (k, n) { return (n ? 'L' : 'M') + centers[k][0].toFixed(1) + ' ' + centers[k][1].toFixed(1); }).join(' ');
+    $('trail').innerHTML = path.length > 1 ? '<path d="' + d + '"/>' : '';
+    clearTimeout(flashT);
+    var el = $('word'); el.className = 'word'; el.textContent = upper(WD.wordOf(run.grid, path));
+  }
+
+  // ================= timer loop =================
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(250, t - lastT); lastT = t;
+    if (!run || run.phase !== 'play' || paused || sheetOpen() || document.hidden) return;
+    run.left -= dt;
+    var s = Math.ceil(run.left / 1000);
+    if (s !== lastTick) { lastTick = s; renderTime(); if (s <= 10 && s > 0) S.tick(); }
+    if (run.left <= 0) { run.left = 0; renderTime(); endTurn(); }
+  }
+
+  // ================= rendering =================
+  function setFace(el, f) { el.textContent = f; el.classList.toggle('qu', f === 'Qu'); }
+  function renderBoard() {
+    var n = run ? M().size : 4, b = $('board'), g = run && run.grid;
+    b.style.setProperty('--n', n);
+    if (b.children.length !== n * n) { b.innerHTML = ''; for (var i = 0; i < n * n; i++) { var d = document.createElement('div'); d.className = 'die'; b.appendChild(d); } }
+    for (var k = 0; k < n * n; k++) setFace(b.children[k], g ? g[k] : '');
+    var w = b.getBoundingClientRect().width; if (w) b.style.setProperty('--cell', ((w - (n - 1) * 8) / n) + 'px');
+  }
+  function renderTime() {
+    var el = $('time');
+    el.textContent = clock(run ? run.left : 180000);
+    el.classList.toggle('low', !!run && run.phase === 'play' && run.left <= 10000);
+  }
+  function renderScore() { $('score').textContent = run && run.phase !== 'pass' ? WD.total(run.found[run.turn]) : 0; }
+  function renderFound(fresh) {
+    var list = run && run.phase !== 'pass' ? run.found[run.turn] : [], box = $('found');
+    if (!list.length) { box.innerHTML = '<div class="none">' + (run && run.phase === 'play' ? 'Words you find show up here.' : '') + '</div>'; return; }
+    box.innerHTML = list.slice().reverse().map(function (w) { return '<span class="fw' + (w === fresh ? ' new' : '') + '">' + w + '<b>' + WD.points(w) + '</b></span>'; }).join('');
+  }
+  function renderCover() {
+    var c = $('cover'), h = '';
+    if (!words) h = '<h2>Loading words…</h2><p>' + (words === null ? 'Couldn’t load the word list. Connect to the internet once and reopen.' : '') + '</p>';
+    else if (run.phase === 'ready') h = '<h2>' + (run.mode === 'duo' ? 'Player 1, ready?' : 'Ready?') + '</h2><p>' + (run.mode === 'duo' ? 'You play first. Player 2 plays the same board after you, without seeing your words.' : 'You have 3 minutes to find as many words as you can.') + '</p><button class="btn red" id="goShake">Shake the dice</button>';
+    else if (run.phase === 'pass') h = '<h2>Pass to Player 2</h2><p>Player 1 found ' + run.found[0].length + ' word' + (run.found[0].length === 1 ? '' : 's') + '. Player 2: same board, 3 minutes.</p><button class="btn red" id="goP2">I’m Player 2, start</button>';
+    else if (paused && run.phase === 'play') h = '<h2>Paused</h2><p>The board is hidden while you’re paused.</p><button class="btn red" id="goResume">Carry on</button>';
+    c.innerHTML = h;
+    c.classList.toggle('show', !!h);
+    var s = $('goShake'), p2 = $('goP2'), gr = $('goResume');
+    if (s) s.addEventListener('click', shakeAndGo);
+    if (p2) p2.addEventListener('click', startTurn2);
+    if (gr) gr.addEventListener('click', resume);
+  }
+  function renderAll() {
+    var ms = $('modes').children;
+    for (var i = 0; i < ms.length; i++) ms[i].classList.toggle('on', ms[i].dataset.mode === (run ? run.mode : meta.mode));
+    $('timeLbl').textContent = run && run.mode === 'duo' ? 'Player ' + (run.phase === 'pass' ? 2 : run.turn + 1) : 'Time';
+    if (run && run.phase === 'pass') run.left = M().secs * 1000;
+    renderBoard(); renderTime(); renderScore(); renderFound(); renderCover();
+    var over = !run || run.phase === 'over';
+    $('endLbl').textContent = over ? 'Shake again' : 'End round';
+    $('btnEnd').querySelector('use').setAttribute('href', over ? '#i-new' : '#i-stop');
+    $('btnPause').disabled = !run || run.phase !== 'play';
+    $('btnEnd').disabled = !!run && (run.phase === 'pass' || run.phase === 'ready');
+  }
+  function pause() { if (!run || run.phase !== 'play' || paused) return; paused = true; clearPath(); save(); renderCover(); }
+  function resume() { paused = false; lastT = performance.now(); renderCover(); }
+
+  // ================= results =================
+  function chips(list, cls) { return '<div class="wlist">' + (list.length ? list.map(function (w) { var c = typeof cls === 'function' ? cls(w) : cls; return '<span class="' + c + '">' + w + '</span>'; }).join('') : '<span>none</span>') + '</div>'; }
+  function byLen(list) { return list.slice().sort(function (a, b) { return b.length - a.length || (a < b ? -1 : 1); }); }
+  function showResults() {
+    var all = run.all || [], h = '', a = run.found[0], b = run.found[1];
+    if (run.mode === 'duo') {
+      var d = WD.duel(a, b), sb = {}, sa = {};
+      b.forEach(function (w) { sb[w] = 1; }); a.forEach(function (w) { sa[w] = 1; });
+      $('resTitle').textContent = d.a === d.b ? 'It’s a tie!' : 'Player ' + (d.a > d.b ? 1 : 2) + ' wins!';
+      h += '<div class="scores"><div class="tile' + (d.a > d.b ? ' win' : '') + '"><b>' + d.a + '</b><span>Player 1</span></div><div class="tile' + (d.b > d.a ? ' win' : '') + '"><b>' + d.b + '</b><span>Player 2</span></div><div class="tile"><b>' + d.shared.length + '</b><span>Crossed out</span></div></div>';
+      h += '<div class="reslbl">Player 1 · ' + a.length + ' words</div>' + chips(byLen(a), function (w) { return sb[w] ? 'x' : 'me'; });
+      h += '<div class="reslbl">Player 2 · ' + b.length + ' words</div>' + chips(byLen(b), function (w) { return sa[w] ? 'x' : 'p2'; });
+      h += '<div class="reslbl">Every word on the board · ' + all.length + '</div>' + chips(all, function (w) { return sa[w] && sb[w] ? 'x' : sa[w] ? 'me' : sb[w] ? 'p2' : ''; });
+    } else {
+      var sc = WD.total(a), mine = {}; a.forEach(function (w) { mine[w] = 1; });
+      $('resTitle').textContent = sc >= (meta.best.classic || 0) && sc > 0 ? 'Time’s up! New best!' : 'Time’s up!';
+      h += '<div class="scores"><div class="tile"><b>' + sc + '</b><span>Score</span></div><div class="tile"><b>' + a.length + ' of ' + all.length + '</b><span>Words</span></div><div class="tile"><b>' + (meta.best.classic || 0) + '</b><span>Best</span></div></div>';
+      h += '<div class="reslbl">Every word on the board · ' + all.length + ' (' + WD.total(all) + ' points)</div>' + chips(all, function (w) { return mine[w] ? 'me' : ''; });
+    }
+    $('resBody').innerHTML = h;
+    $('ovResults').classList.add('show');
+  }
+
+  // ================= cards, ads =================
+  function showCard(title, html, buttons) {
+    $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#wr-logo"/></svg>';
+    $('endTitle').textContent = title; $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button'); el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () {} }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); showAd(next); return;
+    }
+    next();
+  }
+  function again() { between(function () { fresh(meta.mode); }); }
+
+  // ================= sheets and settings =================
+  function renderStats() {
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + (meta.best.classic || 0) + '</b><span>Best classic</span></div><div class="tile"><b>' + (meta.best.duo || 0) + '</b><span>Best 2-player</span></div>' +
+      '<div class="tile"><b>' + (stats.games + stats.duos) + '</b><span>Games</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.words) + '</b><span>Words found</span></div><div class="tile"><b>' + fmt(stats.points) + '</b><span>Points</span></div>' +
+      '<div class="tile"><b style="font-size:17px;text-transform:uppercase">' + (stats.longest || '–') + '</b><span>Longest word</span></div></div>';
+  }
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); clearPath(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  function midGame() { return run && (run.phase === 'play' || run.phase === 'pass') && run.found[0].length + run.found[1].length > 0; }
+
+  function init() {
+    // full screen: the rarely used buttons go into the Menu sheet; Pause and End round stay on screen for play.
+    // The clock stops while the Menu is open (sheetOpen() includes it), like it does for Stats.
+    Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'], onOpen: clearPath,
+      info: function () { return run && run.phase === 'play' ? '<b>' + clock(run.left) + '</b> left · <b>' + WD.total(run.found[run.turn]) + '</b> points' : 'Best classic: <b>' + (meta.best.classic || 0) + '</b>'; } });
+    Goobs.themePicker($('themes'));
+    var bw = $('boardwrap');
+    bw.addEventListener('pointerdown', onDown);
+    bw.addEventListener('pointermove', onMove);
+    bw.addEventListener('pointerup', onUp);
+    bw.addEventListener('pointercancel', function () { clearPath(); });
+    $('btnHome').addEventListener('click', function () { pause(); save(); Goobs.home(); });
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-mode]'); if (!b || !words) return;
+      var m = b.dataset.mode; if (run && m === run.mode) return;
+      var go = function () { meta.mode = m; saveMeta(); fresh(m); };
+      if (midGame()) showCard('Leave this game?', 'Your words so far won’t count.', [{ label: 'Leave it', red: true, go: go }, { label: 'Keep playing', go: function () {} }]);
+      else go();
+    });
+    $('btnPause').addEventListener('click', function () { if (paused) resume(); else pause(); });
+    $('btnEnd').addEventListener('click', function () {
+      if (!run || run.phase === 'over') { again(); return; }
+      if (run.phase !== 'play') return;
+      showCard('End this round?', run.mode === 'duo' && run.turn === 0 ? 'Player 2 plays next.' : 'You’ll see every word on the board.', [
+        { label: 'End round', red: true, go: endTurn }, { label: 'Keep playing', go: function () {} }]);
+    });
+    $('btnResAgain').addEventListener('click', function () { $('ovResults').classList.remove('show'); again(); });
+    $('btnResClose').addEventListener('click', function () { $('ovResults').classList.remove('show'); });
+    $('ovResults').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings', pause);
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('btnHelp', 'ovHelp', 'btnCloseHelp');
+    $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { pause(); save(); } });
+    window.addEventListener('pagehide', function () { pause(); save(); });
+    window.addEventListener('resize', renderBoard);
+    if (window.ResizeObserver) new ResizeObserver(renderBoard).observe($('board'));
+    syncSound(); syncAds();
+    // a game in progress comes back paused
+    var r = store.get('run', null);
+    if (r && r.grid && WD.MODES[r.mode] && r.phase !== 'over') { run = r; paused = r.phase === 'play'; } else fresh(meta.mode);
+    renderAll();
+    fetch('words.txt').then(function (res) { if (!res.ok) throw new Error(res.status); return res.text(); }).then(function (t) {
+      WD.load(t); words = true; renderAll();
+    }).catch(function () { words = null; renderCover(); });
+    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    Goobs.markPlayed('worddice');
+    Goobs.initUpdates({
+      beforeReload: function () { pause(); save(); },
+      onVersions: function (v) { $('version').textContent = 'Word Rattle ' + (v.worddice || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+    lastT = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  // hook for automated tests
+  window.__wr = { get run() { return run; }, get words() { return words; }, submit: function (p) { submit(p); }, end: endTurn, meta: meta, fresh: fresh, shake: shakeAndGo, startTurn2: startTurn2 };
+  init();
+})();
+</script>
+</body>
+</html>
