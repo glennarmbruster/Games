@@ -33,3 +33,12 @@ body.collection { background: var(--bg); }
 @media(max-width:760px){.collection .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }}
 @media(max-width:540px){.collection .menu { padding-left: 14px; padding-right: 14px; gap: 20px; }.collection .grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }.collection .logo h1 { font-size: 25px; }.collection .game-open { padding: 13px 12px 12px; min-height: 166px; }.collection .hello { font-size: 12px; }.collection .gtile .art { width: 70px; height: 70px; }}
 @media(prefers-reduced-motion:reduce){.collection .gtile,.collection .continue { transition: none; }}
+
+/* Five tabs fit on a phone without a horizontally scrolling strip. */
+.collection-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; padding:5px; border:1px solid var(--line); border-radius:16px; background:var(--bg); position:sticky; top:calc(env(safe-area-inset-top,0px) + 6px); z-index:5; box-shadow:0 3px 10px #00000009; }
+.collection-tabs button { min-width:0; min-height:46px; padding:8px 2px; border:0; border-radius:11px; background:transparent; color:var(--muted); font:700 14px/1.2 -apple-system,system-ui,sans-serif; cursor:pointer; }
+.collection-tabs button[aria-selected="true"] { background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm); }
+.collection .favorites-empty { margin:0; padding:26px 18px; border:1px dashed var(--line); border-radius:16px; color:var(--muted); text-align:center; font-size:15px; line-height:1.5; }
+.collection #gamePanel:focus-visible { outline:2px solid var(--accent); outline-offset:5px; border-radius:8px; }
+@media(max-width:540px) { .collection-tabs { gap:1px; padding:4px; } .collection-tabs button { font-size:12px; } }
+@media(max-width:350px) { .collection-tabs button { font-size:11px; } }

@@ -137,8 +137,8 @@
 
   <p class="hello" id="hello">A little game for every mood.</p>
   <div class="section" id="secContinue"></div>
-  <div class="section" id="secFavs"></div>
-  <div class="section"><h2 id="allTitle">All games</h2><div class="grid" id="gridAll"></div></div>
+  <div class="collection-tabs" id="gameTabs" role="tablist" aria-label="Game categories"></div>
+  <div class="section" id="gamePanel" role="tabpanel" tabindex="0"><h2 id="allTitle">Games</h2><div class="grid" id="gridAll"></div><p class="favorites-empty" id="favoritesEmpty" hidden>Tap the star on any game to keep it here.</p></div>
   <div class="foot" id="foot">Goobs-Games</div>
 </div>
 
@@ -1087,6 +1087,37 @@
   var byId = {};
   GAMES.forEach(function (g) { byId[g.id] = g; });
 
+  // One category per game. Favorites remain in their category as well.
+  var GAME_TABS = [
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 sudoku huddle wickway perch knotty spotdiff hidden cases nonogram links' },
+    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
+    { id: 'words', label: 'Words', title: 'Words & trivia', games: 'worddice daily wordwheel trivia spin wordboard' },
+    { id: 'tabletop', label: 'Tabletop', title: 'Cards, dice & boards', games: 'solitaire mahjong dice board casino' },
+    { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
+  ];
+  var TAB_KEY = 'goobs.menuTab';
+  var activeTab = readLS(TAB_KEY) || 'puzzles';
+  function validTab(id) { return GAME_TABS.some(function (t) { return t.id === id; }); }
+  if (!validTab(activeTab)) activeTab = 'puzzles';
+  function selectTab(id, focus) {
+    if (!validTab(id)) return;
+    activeTab = id;
+    try { localStorage.setItem(TAB_KEY, JSON.stringify(id)); } catch (e) { /* private/full storage */ }
+    render();
+    window.scrollTo(0, 0);
+    if (focus) $('tab-' + id).focus({ preventScroll: true });
+  }
+  GAME_TABS.forEach(function (t, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.id = 'tab-' + t.id;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'gamePanel'); b.textContent = t.label;
+    b.addEventListener('click', function () { selectTab(t.id, false); });
+    b.addEventListener('keydown', function (e) {
+      var n = e.key === 'ArrowRight' ? (i + 1) % GAME_TABS.length : e.key === 'ArrowLeft' ? (i + GAME_TABS.length - 1) % GAME_TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? GAME_TABS.length - 1 : -1;
+      if (n >= 0) { e.preventDefault(); selectTab(GAME_TABS[n].id, true); }
+    });
+    $('gameTabs').appendChild(b);
+  });
+
   function open(g) { location.href = g.path; }
 
   // Local 224px artwork for all 60 games. Original vector definitions remain
@@ -1108,14 +1139,14 @@
     var star = document.createElement('button'); star.className = 'star' + (fav ? ' on' : '');
     star.setAttribute('aria-label', (fav ? 'Remove ' : 'Add ') + g.name + (fav ? ' from' : ' to') + ' favorites');
     star.setAttribute('aria-pressed', String(fav)); star.textContent = fav ? '★' : '☆';
-    star.addEventListener('click', function () { Goobs.toggleFav(g.id); render(); var next = document.querySelector('[data-game="' + g.id + '"] .star'); if (next) next.focus({preventScroll:true}); });
+    star.addEventListener('click', function () { Goobs.toggleFav(g.id); render(); var next = document.querySelector('[data-game="' + g.id + '"] .star'); if (next) next.focus({preventScroll:true}); else $('tab-' + activeTab).focus({preventScroll:true}); });
     card.setAttribute('data-game', g.id); card.appendChild(b); card.appendChild(star); return card;
   }
 
   // alphabetical, ignoring punctuation, so a series sorts in order: "Get Out!" before "Get Out 2!" (Glenn, 2026-10-03)
   function sortKey(g) { return g.name.replace(/[^A-Za-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function byName(a, b) { var x = sortKey(a), y = sortKey(b); return x < y ? -1 : x > y ? 1 : 0; }
-  function render() {
+  function render(event) {
     // pick up where you left off (one slim bar)
     var recent = Goobs.recent().filter(function (id) { return byId[id]; });
     var sc = $('secContinue');
@@ -1128,22 +1159,21 @@
       b.addEventListener('click', function () { open(g); });
       sc.appendChild(b);
     }
-    // favorites first, then everything else, each A to Z
-    var favIds = Goobs.favs().filter(function (id) { return byId[id]; });
-    var favs = favIds.map(function (id) { return byId[id]; }).sort(byName);
-    var rest = GAMES.filter(function (g) { return favIds.indexOf(g.id) < 0; }).sort(byName);
-    var sf = $('secFavs');
-    sf.innerHTML = '';
-    if (favs.length) {
-      sf.innerHTML = '<h2>Favorites</h2>';
-      var fg = document.createElement('div'); fg.className = 'grid';
-      favs.forEach(function (gg) { fg.appendChild(tile(gg)); });
-      sf.appendChild(fg);
-    }
-    $('allTitle').textContent = favs.length ? 'More games' : 'All games';
-    var all = $('gridAll');
-    all.innerHTML = '';
-    rest.forEach(function (gg) { all.appendChild(tile(gg)); });
+    // Restore the last category across page reloads and game-to-menu returns.
+    var stored = event ? readLS(TAB_KEY) : null;
+    if (validTab(stored)) activeTab = stored;
+    var category = GAME_TABS.filter(function (t) { return t.id === activeTab; })[0];
+    var ids = activeTab === 'favorites' ? Goobs.favs() : category.games.split(' ');
+    var visible = GAMES.filter(function (g) { return ids.indexOf(g.id) >= 0; }).sort(byName);
+    GAME_TABS.forEach(function (t) {
+      var b = $('tab-' + t.id), selected = t.id === activeTab;
+      b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1;
+    });
+    $('gamePanel').setAttribute('aria-labelledby', 'tab-' + activeTab);
+    $('allTitle').textContent = category.title + ' · ' + visible.length;
+    $('favoritesEmpty').hidden = activeTab !== 'favorites' || visible.length > 0;
+    var all = $('gridAll'); all.innerHTML = '';
+    visible.forEach(function (g) { all.appendChild(tile(g)); });
 
   }
 
