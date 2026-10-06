@@ -28,7 +28,7 @@ const VERSIONS = {
   bubbles: '1.3.0',
   bricks: '1.3.2',
   topple: '1.9.0',
-  barrage: '1.5.2',
+  barrage: '1.6.0',
   siege: '1.2.0',
   hoops: '1.2.0',
   beacon: '0.4.0',

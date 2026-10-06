@@ -124,6 +124,17 @@ html.gg-fs-over, html.gg-fs-over body { background: #151b3d; }
 .boost.on,.boost.tgt { background:#f0d496; color:#1b1f33; }
 .stage { box-shadow:0 0 0 1px #697a9a,0 3px 10px #0002; }
 
+/* Recessed arcade cabinet; shared theme colors remain in menus/settings. */
+html.gg-fs-over,html.gg-fs-over body {background:#060e17;}
+.stagewrap {background:radial-gradient(ellipse at 50% 25%,#1a3545 0,#0b1926 46%,#040b12 100%);}
+.stage {background:#08151f;border-radius:5px;box-shadow:0 0 0 1px #94bdcc66,0 0 0 4px #12232c,0 0 0 5px #455861,0 14px 38px #000b;}
+html.gg-fs-over .top .hud .ggpill {background:linear-gradient(#263b4a,#132632);color:#effbff;border:1px solid #759baa55;border-radius:10px;box-shadow:inset 0 1px #ffffff11,0 4px 10px #0004;}
+html.gg-fs-over .top .hud .ggpill small {color:#a6c2cf;}
+html.gg-fs-over .top .brand .chev {color:#e1f6ff;}
+html.gg-fs-over .top .iconbtn,html.gg-fs-over .top .brand {background:#172c39;color:#e1f6ff;border-color:#658a9e66;}
+.boost {border-radius:10px;background:linear-gradient(#293e4e,#142432);border:1px solid #62879855;box-shadow:inset 0 1px #ffffff11,0 3px 8px #0005;}
+.boost.on,.boost.tgt {background:#ffd166;color:#142432;}
+.boost b {background:#e9bc65;color:#16262c;}
 </style>
 </head>
 <body>
@@ -1151,7 +1162,7 @@ var BBSound = (function () {
     // bar; the field is as big as it fits there (half-pixel steps; the cap keeps it sane on an iPad), centred in it
     var wrap = $('stagewrap').getBoundingClientRect(), topB = document.querySelector('.top').getBoundingClientRect().bottom;
     var y0 = topB + 8, fh = $('bar').getBoundingClientRect().top - 8 - y0;
-    k = Math.max(16, Math.floor(2 * Math.min((wrap.width - 2) / COLS, fh / FIELD_H, 56)) / 2);
+    k = Math.max(8, Math.floor(2 * Math.min((wrap.width - 2) / COLS, fh / FIELD_H, 56)) / 2);
     var st = $('stage'), w = COLS * k, h = FIELD_H * k;
     st.style.width = w + 'px'; st.style.height = h + 'px';
     st.style.left = Math.round((wrap.width - w) / 2) + 'px'; st.style.top = Math.round(y0 + Math.max(0, (fh - h) / 2)) + 'px';
@@ -1160,50 +1171,46 @@ var BBSound = (function () {
     cv.width = Math.round(COLS * k * dpr); cv.height = Math.round(FIELD_H * k * dpr);
   }
   function rr(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
-  // Cached enamel surfaces: rendering only; no game state or random-number use.
-  var enamelCache = new Map();
-  function enamel(x, y, w, h, radius, color) {
-    var key = [w, h, radius, color, dpr].join(':');
-    var tile = enamelCache.get(key);
-    if (!tile) {
-      if (enamelCache.size >= 128) enamelCache.clear();
-      tile = document.createElement('canvas');
-      tile.width = Math.ceil(w * dpr); tile.height = Math.ceil(h * dpr);
-      var q = tile.getContext('2d'); q.scale(dpr, dpr);
-      q.beginPath(); q.roundRect(0, 0, w, h, radius); q.clip();
-      q.fillStyle = color; q.fillRect(0, 0, w, h);
-      var face = q.createLinearGradient(0, 0, w * 0.18, h);
-      face.addColorStop(0, 'rgba(255,255,255,.48)');
-      face.addColorStop(.16, 'rgba(255,255,255,.15)');
-      face.addColorStop(.48, 'rgba(255,255,255,0)');
-      face.addColorStop(1, 'rgba(0,0,0,.38)');
-      q.fillStyle = face; q.fillRect(0, 0, w, h);
-      var shine = q.createLinearGradient(0, 0, w, h * .65);
-      shine.addColorStop(0, 'rgba(255,255,255,.27)');
-      shine.addColorStop(.45, 'rgba(255,255,255,.05)');
-      shine.addColorStop(1, 'rgba(255,255,255,0)');
-      q.fillStyle = shine; q.beginPath(); q.moveTo(0, 0); q.lineTo(w, 0);
-      q.lineTo(w, h * .18); q.quadraticCurveTo(w * .45, h * .3, 0, h * .64); q.fill();
-      q.lineWidth = Math.max(.7, Math.min(w, h) * .045);
-      q.strokeStyle = 'rgba(0,0,0,.35)'; q.beginPath(); q.roundRect(.5, .5, w - 1, h - 1, radius); q.stroke();
-      q.strokeStyle = 'rgba(255,255,255,.48)'; q.beginPath();
-      q.moveTo(radius, 1.2); q.lineTo(w - radius, 1.2); q.stroke();
-      q.strokeStyle = 'rgba(255,255,255,.16)'; q.beginPath();
-      q.roundRect(2, 2, Math.max(1, w - 4), Math.max(1, h - 4), Math.max(1, radius - 1)); q.stroke();
-      enamelCache.set(key, tile);
+  // Cached bevelled glass blocks and recessed cabinet. Visuals never consume the game's seeded RNG.
+  var enamelCache=new Map(), fieldCache=null, fieldKey='';
+  function enamel(x,y,w,h,radius,color){
+    var key=[w,h,color,dpr].join(':'),tile=enamelCache.get(key);
+    if(!tile){
+      if(enamelCache.size>=128)enamelCache.clear();tile=document.createElement('canvas');tile.width=Math.ceil(w*dpr);tile.height=Math.ceil(h*dpr);
+      var q=tile.getContext('2d');q.scale(dpr,dpr);var d=Math.max(2,Math.min(w,h)*.14),b=Math.max(2,Math.min(w,h)*.14),fh=h-d;
+      function cut(X,Y,W,H,B){q.beginPath();q.moveTo(X+B,Y);q.lineTo(X+W-B,Y);q.lineTo(X+W,Y+B);q.lineTo(X+W,Y+H-B);q.lineTo(X+W-B,Y+H);q.lineTo(X+B,Y+H);q.lineTo(X,Y+H-B);q.lineTo(X,Y+B);q.closePath();}
+      cut(0,d,w,fh,b);q.fillStyle='#02080d';q.fill();
+      cut(.5,d*.7,w-1,fh,b);q.fillStyle=color;q.fill();q.fillStyle='#0009';q.fill();
+      cut(0,0,w,fh,b);q.fillStyle=color;q.fill();
+      var g=q.createLinearGradient(0,0,w*.6,fh);g.addColorStop(0,'#ffffff77');g.addColorStop(.18,'#ffffff11');g.addColorStop(.52,'#ffffff00');g.addColorStop(1,'#00132599');q.fillStyle=g;q.fill();
+      // Distinct bevel planes, not a milky white overlay over the entire face.
+      q.beginPath();q.moveTo(b,0);q.lineTo(w-b,0);q.lineTo(w-b*1.4,b);q.lineTo(b*1.4,b);q.closePath();q.fillStyle='#ffffffbb';q.fill();
+      q.beginPath();q.moveTo(0,b);q.lineTo(b,b*1.5);q.lineTo(b,fh-b*1.5);q.lineTo(0,fh-b);q.closePath();q.fillStyle='#ffffff44';q.fill();
+      q.beginPath();q.moveTo(w,b);q.lineTo(w-b,b*1.5);q.lineTo(w-b,fh-b*1.5);q.lineTo(w,fh-b);q.closePath();q.fillStyle='#00122688';q.fill();
+      q.beginPath();q.moveTo(b,fh);q.lineTo(w-b,fh);q.lineTo(w-b*1.4,fh-b);q.lineTo(b*1.4,fh-b);q.closePath();q.fillStyle='#00132688';q.fill();
+      cut(b*.9,b*.9,w-b*1.8,fh-b*1.8,b*.5);q.lineWidth=.65;q.strokeStyle='#ffffff55';q.stroke();
+      // Narrow diagonal studio reflection plus small, fixed corner glint.
+      q.save();cut(b,b,w-b*2,fh-b*2,b*.5);q.clip();var shine=q.createLinearGradient(0,0,w,fh);shine.addColorStop(0,'#ffffff00');shine.addColorStop(.23,'#ffffff00');shine.addColorStop(.27,'#ffffff22');shine.addColorStop(.33,'#ffffff00');shine.addColorStop(1,'#ffffff00');q.fillStyle=shine;q.fillRect(0,0,w,fh);q.restore();
+      q.fillStyle='#ffffffcc';q.fillRect(b,1,Math.max(3,w*.18),.65);enamelCache.set(key,tile);
     }
-    cx.drawImage(tile, x, y, w, h);
+    cx.drawImage(tile,x,y,w,h);
+  }
+  function drawField(W,H){
+    var key=[W,H,dpr].join(':');if(!fieldCache||fieldKey!==key){fieldKey=key;fieldCache=document.createElement('canvas');fieldCache.width=cv.width;fieldCache.height=cv.height;var q=fieldCache.getContext('2d');q.scale(dpr,dpr);
+      var g=q.createLinearGradient(0,0,W,H);g.addColorStop(0,'#142b39');g.addColorStop(.35,'#091820');g.addColorStop(1,'#040b13');q.fillStyle=g;q.fillRect(0,0,W,H);
+      // Quiet graphite surface and a recessed frame; no scenery competing with trajectories.
+      q.strokeStyle='#8dbed409';q.lineWidth=.5;for(var yy=0;yy<H;yy+=4){q.beginPath();q.moveTo(0,yy);q.lineTo(W,yy);q.stroke();}
+      q.fillStyle='#a4d9ed18';for(var xx=k;xx<W;xx+=k)for(var yy=k;yy<ROWS*k;yy+=k)q.fillRect(xx-.6,yy-.6,1.2,1.2);
+      var v=q.createRadialGradient(W*.5,H*.3,0,W*.5,H*.4,H*.75);v.addColorStop(0,'#159fc90c');v.addColorStop(1,'#00000088');q.fillStyle=v;q.fillRect(0,0,W,H);
+      q.fillStyle='#9fd8ed55';q.fillRect(0,0,W,1);q.fillRect(0,0,1,ROWS*k);q.fillRect(W-1,0,1,ROWS*k);
+      for(var y=k*.4;y<ROWS*k;y+=k*2){q.fillStyle='#152e3a';q.fillRect(0,y,3,k*.5);q.fillRect(W-3,y,3,k*.5);q.fillStyle='#6fe5f3';q.fillRect(0,y+2,1,k*.35);q.fillRect(W-1,y+2,1,k*.35);}
+    }cx.drawImage(fieldCache,0,0,W,H);
   }
   function draw() {
     if (!cx || !g) return;
     var W = COLS * k, now = performance.now();
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cx.fillStyle = '#151b3d'; cx.fillRect(0, 0, W, FIELD_H * k);
-    // faint grid
-    cx.strokeStyle = 'rgba(164,183,212,.055)'; cx.lineWidth = 1;
-    for (var gx = 1; gx < COLS; gx++) { cx.beginPath(); cx.moveTo(gx * k, 0); cx.lineTo(gx * k, ROWS * k); cx.stroke(); }
-    for (var gy = 1; gy < ROWS; gy++) { cx.beginPath(); cx.moveTo(0, gy * k); cx.lineTo(W, gy * k); cx.stroke(); }
-    cx.fillStyle = 'rgba(0,0,0,.16)'; cx.fillRect(0, 0, W, 2); cx.fillRect(0, 0, 2, ROWS * k); cx.fillRect(W - 2, 0, 2, ROWS * k);
+    drawField(W,FIELD_H*k);
     var jx = shake ? (Math.random() - 0.5) * shake * 0.6 : 0, jy = shake ? (Math.random() - 0.5) * shake * 0.6 : 0;
     cx.save(); cx.translate(jx, jy);
     var off = dropT > 0 ? -dropT * dropT : 0; // rows slide down one row after a turn
@@ -1230,8 +1237,10 @@ var BBSound = (function () {
     cx.restore();
     // the floor and the launch strip
     var danger = BB.lowestBrickRow(g) >= ROWS - 3;
-    cx.fillStyle = '#0f1430'; cx.fillRect(0, ROWS * k, W, (FIELD_H - ROWS) * k);
+    var floor=cx.createLinearGradient(0,ROWS*k,0,FIELD_H*k);floor.addColorStop(0,'#203843');floor.addColorStop(.15,'#102530');floor.addColorStop(1,'#07111b');cx.fillStyle=floor; cx.fillRect(0, ROWS * k, W, (FIELD_H - ROWS) * k);
     cx.fillStyle = danger ? 'rgba(255,70,90,' + (0.55 + 0.45 * Math.sin(now / 150)).toFixed(2) + ')' : 'rgba(255,255,255,.25)'; cx.fillRect(0, ROWS * k - 1, W, 2);
+    // Inset launch position: remains centered on the actual physics origin.
+    cx.strokeStyle='#76deec44';cx.lineWidth=1;cx.beginPath();cx.ellipse(g.x*k,(ROWS-.05)*k,k*.31,k*.1,0,0,Math.PI*2);cx.stroke();
     // guide
     if (phase === 'aim' && aim && aim.ok && settings.guide) {
       var pts = BB.guide(g, aim.a, 40), dist = 0, gap = 0.36;
@@ -1247,7 +1256,7 @@ var BBSound = (function () {
     var skin = settings.ball, pw = !!g.power;
     if (shot) {
       shot.balls.forEach(function (b, i) {
-        if (b.live) putBall(skin, pw, b.x, b.y, b.vx, b.vy);
+        if(b.live){if(i<16){cx.beginPath();cx.moveTo((b.x-b.vx*.75)*k,(b.y-b.vy*.75)*k);cx.lineTo(b.x*k,b.y*k);cx.strokeStyle=pw?'#ffd47355':'#b9eeff44';cx.lineWidth=BR*k*.9;cx.lineCap='round';cx.stroke();cx.lineCap='butt';}putBall(skin,pw,b.x,b.y,b.vx,b.vy);}
         else putBall(skin, pw, landVis[i] !== undefined ? landVis[i] : b.landX, ROWS - BR, 1, 0);
       });
       var left = shot.total - shot.fired;
@@ -1259,7 +1268,7 @@ var BBSound = (function () {
     // floating text and bits
     fx.forEach(function (p) {
       if (p.text) { cx.globalAlpha = 1 - p.t / 50; cx.fillStyle = '#9dffb0'; cx.font = '900 ' + Math.round(k * 0.5) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.fillText(p.text, p.x * k, (p.y - p.t * 0.02) * k); cx.globalAlpha = 1; return; }
-      cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.col; cx.fillRect((p.x - p.s / 2) * k, (p.y - p.s / 2) * k, p.s * k, p.s * k); cx.globalAlpha = 1;
+      cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.col; cx.save();cx.translate(p.x*k,p.y*k);cx.rotate(p.t*.08+p.x);cx.beginPath();cx.moveTo(-p.s*k*.65,-p.s*k*.45);cx.lineTo(p.s*k*.7,0);cx.lineTo(-p.s*k*.3,p.s*k*.6);cx.closePath();cx.fill();cx.strokeStyle='#ffffff88';cx.lineWidth=.55;cx.stroke();cx.restore(); cx.globalAlpha = 1;
     });
   }
   function label(t, x) {
@@ -1274,19 +1283,21 @@ var BBSound = (function () {
       var bw = cell.w || 1, bh = cell.h || 1, sw = bw * k - p * 2, sh = bh * k - p * 2, rad = k * (bw * bh > 1 ? 0.2 : 0.14);
       y = (r - bh + 1) * k;
       var col = hue(cell.hp);
+      cx.save();cx.shadowColor='#000b';cx.shadowBlur=k*.12;cx.shadowOffsetY=k*.09;cx.fillStyle='#03080e';rr(x+p,y+p,sw,sh,rad);cx.fill();cx.restore();
       enamel(x + p, y + p, sw, sh, rad, col);
       if (bw * bh > 1) { cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = Math.max(1, k * 0.045); rr(x + p * 2.2, y + p * 2.2, sw - p * 2.4, sh - p * 2.4, rad * 0.8); cx.stroke(); }
       if (cell.flash) { cx.fillStyle = 'rgba(255,255,255,' + (cell.flash / 10).toFixed(2) + ')'; rr(x + p, y + p, sw, sh, rad); cx.fill(); }
-      num(cell.hp, x + bw * k / 2, y + bh * k / 2, '#ffffff', bw, bh);
+      num(cell.hp, x + bw * k / 2, y + bh * k / 2-k*.055, '#ffffff', bw, bh);
     } else if (cell.t === 'x') {
-      cx.fillStyle = '#1b1f33'; cx.beginPath(); cx.arc(x + k / 2, y + k * 0.55, k * 0.4, 0, Math.PI * 2); cx.fill();
+      var shell=cx.createRadialGradient(x+k*.38,y+k*.4,k*.03,x+k*.5,y+k*.55,k*.4);shell.addColorStop(0,'#7793a1');shell.addColorStop(.3,'#354b5d');shell.addColorStop(.7,'#152735');shell.addColorStop(1,'#030b12');cx.fillStyle=shell; cx.beginPath(); cx.arc(x + k / 2, y + k * 0.55, k * 0.4, 0, Math.PI * 2); cx.fill();
       cx.strokeStyle = '#ffc53d'; cx.lineWidth = k * 0.06; cx.stroke();
       cx.strokeStyle = '#c9a36b'; cx.lineWidth = k * 0.07; cx.beginPath(); cx.moveTo(x + k * 0.62, y + k * 0.2); cx.quadraticCurveTo(x + k * 0.72, y + k * 0.05, x + k * 0.85, y + k * 0.1); cx.stroke();
       cx.fillStyle = Math.floor(now / 200) % 2 ? '#ffe066' : '#ff7a3d'; cx.beginPath(); cx.arc(x + k * 0.86, y + k * 0.1, k * 0.07, 0, Math.PI * 2); cx.fill();
       if (cell.flash) { cx.fillStyle = 'rgba(255,255,255,' + (cell.flash / 10).toFixed(2) + ')'; cx.beginPath(); cx.arc(x + k / 2, y + k * 0.55, k * 0.4, 0, Math.PI * 2); cx.fill(); }
       num(cell.hp, x + k / 2, y + k * 0.57, '#ffffff');
     } else if (cell.t === '+') {
-      var pulse = 1 + 0.08 * Math.sin(now / 180 + c);
+      var pulse = 1 + 0.04 * Math.sin(now / 250 + c);
+      var pg=cx.createRadialGradient(x+k*.42,y+k*.4,0,x+k*.5,y+k*.5,k*.28);pg.addColorStop(0,'#329978');pg.addColorStop(1,'#082c27');cx.fillStyle=pg;cx.beginPath();cx.arc(x+k/2,y+k/2,k*.28,0,Math.PI*2);cx.fill();
       cx.strokeStyle = '#9dffb0'; cx.lineWidth = k * 0.07; cx.beginPath(); cx.arc(x + k / 2, y + k / 2, k * 0.26 * pulse, 0, Math.PI * 2); cx.stroke();
       cx.fillStyle = '#9dffb0'; cx.fillRect(x + k * 0.43, y + k * 0.36, k * 0.14, k * 0.28); cx.fillRect(x + k * 0.36, y + k * 0.43, k * 0.28, k * 0.14);
     } else if (cell.t === 'h' || cell.t === 'v') {
@@ -1301,7 +1312,7 @@ var BBSound = (function () {
     var t = String(v), fs = t.length <= 2 ? 0.44 : t.length === 3 ? 0.36 : 0.29;
     if (bw && bw * bh > 1) fs = Math.min(0.46 * bh, 1.25 * bw / Math.max(2, t.length)); // a big block's number fills it
     cx.font = '900 ' + Math.round(k * fs) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-    cx.fillStyle = 'rgba(0,0,0,.3)'; cx.fillText(t, x + 1, y + 1.5); cx.fillStyle = col; cx.fillText(t, x, y);
+    cx.lineWidth=Math.max(1,k*.055);cx.strokeStyle='rgba(0,15,27,.58)';cx.strokeText(t,x,y);cx.fillStyle='rgba(0,0,0,.4)';cx.fillText(t,x+1,y+1); cx.fillStyle = col; cx.fillText(t, x, y);
     cx.textBaseline = 'alphabetic';
   }
 
