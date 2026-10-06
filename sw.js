@@ -30,7 +30,7 @@ const VERSIONS = {
   topple: '1.9.0',
   barrage: '1.6.0',
   siege: '1.3.0',
-  hoops: '1.3.0',
+  hoops: '1.3.1',
   beacon: '0.4.0',
   sort: '1.2.0',
   triple: '1.1.0',

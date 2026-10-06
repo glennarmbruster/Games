@@ -126,7 +126,7 @@ html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 24p
 
   <div class="modes" id="modes">
     <button data-mode="free">Free Shoot</button>
-    <button data-mode="around">Around the Pool</button>
+    <button data-mode="around">Around the World</button>
   </div>
 
   <div id="ballPicker" class="ballpicker" role="group" aria-label="Ball choice">
@@ -230,7 +230,7 @@ var PH = (function () {
   var ANCHOR = [0, -1.2];                // where the hoop floats (x, z)
   var RELEASE_H = 1.15, RELEASE_BACK = 0.1; // the ball leaves the hands 1.15 m above the deck
 
-  // ---------------- the spots around the deck (in Around the Pool order) ----------------
+  // ---------------- the spots around the deck (in Around the World order) ----------------
   var SPOTS = [
     { name: 'Shallow end', x: 0, z: -5.0 },
     { name: 'Right corner', x: 2.9, z: -4.1 },
@@ -389,13 +389,12 @@ var PH = (function () {
     return b;
   }
 
-  // ---------------- Around the Pool ----------------
+  // ---------------- Around the World ----------------
   function newAround() { return { spot: 0, misses: 0, shots: 0, makes: 0, t: 0, started: false, done: false }; }
   function aroundShot(a, made) {
     a.shots++; a.started = true;
     if (made) { a.makes++; a.misses = 0; a.spot++; if (a.spot >= SPOTS.length) { a.done = true; return 'done'; } return 'next'; }
     a.misses++;
-    if (a.misses >= 2) { a.misses = 0; if (a.spot > 0) { a.spot--; return 'back'; } return 'stay'; }
     return 'again';
   }
 
@@ -579,12 +578,22 @@ var HPScene = (function () {
 
     // Clear water and uncluttered deck; decorative objects stay outside the playable pool.
     function updateFloaties() {}
-    // The round raised spa and pale stone coping echo the reference pool.
+    // Attached raised spa: the open notch feeds a tiled spillway into the pool.
     var spa = new T.Group(), stoneM = new T.MeshStandardMaterial({color:0xded4bb,roughness:.85,map:deckTex});
-    var spaWall = new T.Mesh(new T.CylinderGeometry(1.05,1.07,.5,64,1,true),stoneM); spaWall.position.y=.25;spa.add(spaWall);
-    var spaRim = new T.Mesh(new T.TorusGeometry(.97,.11,12,64),copM);spaRim.rotation.x=Math.PI/2;spaRim.position.y=.51;spa.add(spaRim);
+    var spaWall = new T.Mesh(new T.CylinderGeometry(1.05,1.07,.5,64,1,true,Math.PI+.32,Math.PI*2-.64),stoneM); spaWall.position.y=.25;spa.add(spaWall);
+    var spaRimG=new T.TorusGeometry(.97,.11,12,64,Math.PI*2-.64);spaRimG.rotateZ(Math.PI*1.5+.32);var spaRim=new T.Mesh(spaRimG,copM);spaRim.rotation.x=Math.PI/2;spaRim.position.y=.51;spa.add(spaRim);
     var spaWater = new T.Mesh(new T.CircleGeometry(.91,48),waterM);spaWater.rotation.x=-Math.PI/2;spaWater.position.y=.43;spa.add(spaWater);
-    add(spa,4.6,0,6.4);
+    add(spa,1.35,0,5.55);spa.name='attached-spa';
+    var spillTileM=new T.MeshStandardMaterial({map:tileTex,color:0x377fbd,roughness:.4});
+    add(new T.Mesh(new T.BoxGeometry(.67,.38,.34),spillTileM),0,.19,-1.03,spa);
+    [-.38,.38].forEach(function(x){add(new T.Mesh(new T.BoxGeometry(.12,.47,.47),stoneM),x,.235,-1.08,spa);add(new T.Mesh(new T.BoxGeometry(.15,.055,.48),copM),x,.49,-1.08,spa);});
+    var spillTop=new T.Mesh(new T.PlaneGeometry(.62,.4),waterM);spillTop.rotation.x=-Math.PI/2;add(spillTop,0,.435,-1.04,spa);
+    var spillTex=tex(128,256,function(x,w,h){x.fillStyle='rgba(72,177,219,.58)';x.fillRect(0,0,w,h);for(var i=0;i<40;i++){x.fillStyle=i%3?'rgba(224,252,255,.48)':'rgba(255,255,255,.78)';x.fillRect(rnd(0,w),rnd(0,h),rnd(1,3),rnd(20,90));}});spillTex.wrapS=spillTex.wrapT=T.RepeatWrapping;
+    var spillG=new T.PlaneGeometry(.62,.75,12,12),spillM=new T.MeshBasicMaterial({map:spillTex,transparent:true,opacity:.8,side:T.DoubleSide,depthWrite:false});
+    var spill=new T.Mesh(spillG,spillM);add(spill,0,.06,-1.25,spa);spill.name='spa-spillway';
+    var foam=new T.Mesh(new T.RingGeometry(.14,.30,40),new T.MeshBasicMaterial({color:0xe9ffff,transparent:true,opacity:.5,side:T.DoubleSide,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.scale.set(1,.5,1);add(foam,1.35,PH.WATER+.018,4.28);
+    function updateSpill(t){spillTex.offset.y=t*.75;var p=spillG.attributes.position;for(var i=0;i<p.count;i++){var y=p.getY(i);p.setZ(i,-.065*(.435-y)+Math.sin(p.getX(i)*35+t*8)*.008);}p.needsUpdate=true;foam.position.y=PH.waterY(1.35,4.28,t)+.018;foam.material.opacity=.35+.12*Math.sin(t*4);}
+
     // Low stone beds and a few stepping stones: no floating toys or cleaning equipment.
     var pebbleM = new T.MeshStandardMaterial({color:0xe2ded2,roughness:1});
     var pebbleGeo = new T.SphereGeometry(.055,6,4), pebbles=new T.InstancedMesh(pebbleGeo,pebbleM,650), pm=new T.Matrix4();
@@ -658,7 +667,7 @@ var HPScene = (function () {
 
     function update(dt, W, b, spot, heldPos, hotLevel) {
       var t = W.t, hp = PH.hoopPose(W);
-      updateWater(t); updateFloaties(t);
+      updateWater(t); updateFloaties(t); updateSpill(t);
       hoop.position.set(hp.x, hp.y, hp.z); hoop.rotation.set(0.03 * Math.sin(1.7 * t), Math.PI - W.yaw, 0.03 * Math.cos(1.3 * t));
       // the group's +z must point at the shooter: rotation.y = PI - yaw turns local +z toward (sin yaw, -cos yaw)
       updateNet(t); stepFx(dt, t);
@@ -779,8 +788,7 @@ var HPScene = (function () {
     if (meta.mode === 'around' && around) {
       var what = PH.aroundShot(around, r.made);
       if (what === 'next') { goSpot(around.spot); toast('Spot ' + (around.spot + 1) + ': ' + SPOTS[around.spot].name); }
-      else if (what === 'back') { goSpot(around.spot); toast('Two misses: back to spot ' + (around.spot + 1)); }
-      else if (what === 'again') toast('One more try here');
+      else if (what === 'again') toast('Same spot — make it to move on');
       else if (what === 'done') { finishAround(); return; }
     }
     renderAll();
@@ -875,7 +883,7 @@ var HPScene = (function () {
     var chip = '<button class="chip" id="shooter">' + meta.players[meta.player] + '</button>', h;
     if (meta.mode === 'around' && around) {
       h = '<div><div class="lbl">Shooter</div><div class="mid">' + chip + '</div></div>' +
-        '<div style="text-align:center"><div class="lbl">Spot</div><div class="mid">' + (around.spot + 1) + '/' + SPOTS.length + ' <span class="dots">' + (around.misses ? '●' : '') + '</span></div></div>' +
+        '<div style="text-align:center"><div class="lbl">Spot</div><div class="mid">' + (around.spot + 1) + '/' + SPOTS.length + '</div></div>' +
         '<div class="right"><div class="lbl">Time</div><div class="mid" id="atpClock">' + (around.started ? clock(performance.now() - around.t0) : '0:00.0') + '</div></div>';
     } else {
       var m = PH.hot(streak);
@@ -940,7 +948,7 @@ var HPScene = (function () {
       'It\'s a beach ball: light and floaty, soft off the rim, and the wind pushes it around. The hoop floats and bobs, and splashes nudge it.',
       '<b>Scoring</b>: a make is 2, a <b>swish</b> (no rim, no board) is 3, a long shot from the deep end +1. Make 3 in a row and the ball heats up: points ×2 (×3 from 6 in a row). A miss cools it off.',
       '<b>Free Shoot</b>: any spot (Spot button), wind on or off (Wind button). Just practice.',
-      '<b>Around the Pool</b>: 7 spots in order. Make it to move on; miss twice at a spot and you go back one. The clock starts with your first shot. Fastest time wins.',
+      '<b>Around the World</b>: 7 spots in order. Stay at each spot until you make a basket, then move on. There is no miss limit or backward move. The clock starts with your first shot. Fastest time wins.',
       '<b>Tap the screen</b> while the ball is flying to skip to the result, and again to get the next ball.',
       'Tap the <b>shooter</b> name to switch between Glenn, Cindy and Guest. Each has their own stats (trophy button).'
     ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
@@ -948,7 +956,7 @@ var HPScene = (function () {
   }
   function renderStats() {
     var rows = Object.keys(meta.players).map(function (id) { var s = stats[id]; return '<tr><td>' + meta.players[id] + '</td><td>' + s.makes + '/' + s.att + '</td><td>' + (s.makes ? Math.round(s.swish / s.makes * 100) : 0) + '%</td><td>' + (s.longest ? ft(s.longest) + ' ft' : '–') + '</td><td>' + s.bestStreak + '</td><td>' + (s.atpBest ? clock(s.atpBest) : '–') + '</td></tr>'; }).join('');
-    $('statsBody').innerHTML = '<table class="ptable"><tr><th>Shooter</th><th>Makes</th><th>Swish</th><th>Longest</th><th>Streak</th><th>Around</th></tr>' + rows + '</table><p class="version">Swish % is swishes out of makes. Around = best Around the Pool time.</p>';
+    $('statsBody').innerHTML = '<table class="ptable"><tr><th>Shooter</th><th>Makes</th><th>Swish</th><th>Longest</th><th>Streak</th><th>Around</th></tr>' + rows + '</table><p class="version">Swish % is swishes out of makes. Around = best Around the World time.</p>';
   }
 
   // ================= wiring =================
@@ -961,7 +969,7 @@ var HPScene = (function () {
   }
   function resize() { if (!SC) return; var r = host.getBoundingClientRect(); SC.resize(Math.max(10, r.width), Math.max(10, r.height)); }
   function menuInfo() {
-    if (meta.mode === 'around' && around) return '<b>Around the Pool</b> · ' + meta.players[meta.player] + ' · spot <b>' + (around.spot + 1) + '</b> of ' + SPOTS.length;
+    if (meta.mode === 'around' && around) return '<b>Around the World</b> · ' + meta.players[meta.player] + ' · spot <b>' + (around.spot + 1) + '</b> of ' + SPOTS.length;
     return '<b>Free Shoot</b> · ' + meta.players[meta.player] + ' · ' + session.makes + '/' + session.att + ' makes';
   }
   function init() {
