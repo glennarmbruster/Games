@@ -222,7 +222,7 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
       <div class="themes" id="themes"></div>
       <label class="row"><div>Sound<small>Cracks of the bat, the crowd, the machine.</small></div>
         <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
-      <label class="row"><div>Side view<small>Watch the pitch from the side, like the original. Off: from behind the plate, in 3D. The camera button switches too.</small></div>
+      <label class="row"><div>Side view<small>Close ground-level view, like the original. Off: from behind the plate, in 3D. The camera button switches too.</small></div>
         <span class="switch"><input type="checkbox" id="setSide"><span></span></span></label>
       <label class="row"><div>Old-time ads<small>Joke ads between steps and games. This switch is shared by all Goobs-Games.</small></div>
         <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
@@ -817,10 +817,10 @@ var MSRender = (function () {
     }
     var sideCamera=new THREE.OrthographicCamera();
     function sideBackdrop(out,L,width,height){
-      var scale=L.sx,tilt=.12,norm=Math.sqrt(1+tilt*tilt),cz=(width/2-L.plateX)/scale;
-      var offset=(L.groundY-height/2)/scale;
+      var scale=L.sx,vertical=L.sy,tilt=.12,norm=Math.sqrt(1+tilt*tilt),cz=(width/2-L.plateX)/scale;
+      var offset=(L.groundY-height/2)/vertical;
       sideCamera.left=-width/(2*scale);sideCamera.right=width/(2*scale);
-      sideCamera.top=height/(2*scale);sideCamera.bottom=-height/(2*scale);
+      sideCamera.top=height/(2*vertical);sideCamera.bottom=-height/(2*vertical);
       sideCamera.near=.1;sideCamera.far=1100;
       // Just inside the third-base seats, facing across the diamond toward first base.
       sideCamera.position.set(-160+offset*tilt/norm,19.2+offset/norm,cz);
@@ -839,25 +839,26 @@ var MSRender = (function () {
 })();
 </script>
 <script>
-/* Moonshot batting overlay. Its backdrop is an orthographic side view of the shared
-   3D stadium; the enlarged ball and contact guide remain easy to use on phones. */
+/* Close ground-level batting camera, matching the original arcade perspective.
+   Artwork and live pitch share normalized muzzle/contact coordinates. */
 var MSSide = (function () {
   'use strict';
   var LINE_Z = 0.15; // the dotted line: a ball met here goes straight out to centre field
   function create(canvas,park) {
     var ctx = canvas.getContext('2d'), W = 1, H = 1, dpr = 1, sky = 'day', bgCache = null;
     var lastRevision=-1,sidePhotos={};
-    ['day','dusk','night'].forEach(function(k){var im=new Image();im.onload=function(){sidePhotos[k]=im;bgCache=null;window.dispatchEvent(new Event('moonartready'));};im.src='assets/side-'+k+'-v2.webp';});
+    ['day','night'].forEach(function(k){var im=new Image();im.onload=function(){sidePhotos[k]=im;bgCache=null;window.dispatchEvent(new Event('moonartready'));};im.src='assets/batting-close-'+k+'-v3.webp';});
     var L = {}; // layout: plateX, mouthX, groundY, sx (px per metre along the pitch), sy (px per metre up), r (ball radius)
     function resize() {
       var r = canvas.getBoundingClientRect();
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = Math.max(1, r.width); H = Math.max(1, r.height);
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-      L.scale=Math.max(W/750,H/375);L.dx=(W-750*L.scale)/2;L.dy=(H-375*L.scale)/2;
-      L.plateX=L.dx+750*.205*L.scale;L.mouthX=L.dx+750*.525*L.scale;L.groundY=L.dy+375*.79*L.scale;
+      // Stretch the 2:1 composition to landscape bounds: the muzzle stays on screen
+      // on wide phones and short tablets, as in the original arcade camera.
+      L.plateX=W*.41;L.mouthX=W*.757;L.groundY=H*.84;
       L.sx = (L.mouthX - L.plateX) / MS.RELEASE[2];
-      L.sy = L.sx / Math.sqrt(1.0144);
+      L.sy = H * (.84 - .445) / MS.RELEASE[1];
       L.r = Math.max(12, H * 0.038);
       L.lineX = L.plateX + LINE_Z * L.sx;
       bgCache = null;
@@ -865,11 +866,12 @@ var MSSide = (function () {
     // world (metres) -> screen (px). Sideways movement (curves, wobbles, the Triplet's two fakes) shows as up/down, as if seen from a little above.
     function project(p) { return [L.plateX + p[2] * L.sx, L.groundY - (p[1] + 0.12 * p[0]) * L.sy]; } // a little of the sideways movement shows as height (1.4.0: less, so curves don't look like dips)
 
-    // Photographic finish registered to the shared park's side-camera reference.
+    // The close camera uses one composition for all lighting variants.
     // The live 3D park remains the load-failure fallback.
     function drawBackdrop(){
       var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
-      var x=c.getContext('2d');if(sidePhotos[sky]){x.setTransform(dpr,0,0,dpr,0,0);x.drawImage(sidePhotos[sky],L.dx,L.dy,750*L.scale,375*L.scale);}else park.sideBackdrop(x,L,W,H);lastRevision=park.sceneryRevision();return c;
+      var x=c.getContext('2d'),photo=sidePhotos[sky==='night'?'night':'day']||sidePhotos.day;
+      if(photo){x.setTransform(dpr,0,0,dpr,0,0);if(sky==='dusk')x.filter='sepia(0.28) saturate(0.92) brightness(0.86)';x.drawImage(photo,0,0,W,H);x.filter='none';if(sky==='dusk'){x.fillStyle='rgba(180,83,28,.13)';x.fillRect(0,0,W,H);}}else park.sideBackdrop(x,L,W,H);lastRevision=park.sceneryRevision();return c;
     }
     function face(x,kind,r){
       x.save();x.beginPath();x.arc(0,0,r*.98,0,Math.PI*2);x.clip();
@@ -900,7 +902,7 @@ var MSSide = (function () {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       // the dotted hitting line
       ctx.fillStyle = 'rgba(255,255,255,.8)';
-      for (var y = H * 0.2; y < L.groundY - 4; y += H * 0.055) { ctx.beginPath(); ctx.arc(L.lineX, y, Math.max(2.5, H * 0.009), 0, Math.PI * 2); ctx.fill(); }
+      for (var y = H * 0.06; y < L.groundY - 4; y += H * 0.055) { ctx.beginPath(); ctx.arc(L.lineX, y, Math.max(2.5, H * 0.009), 0, Math.PI * 2); ctx.fill(); }
       if (!state || !state.pitch) return;
       var p = state.pitch, pos = MS.pitchPos(p, Math.max(0, state.t));
       if (p.fakes && MS.progress(p, state.t) < 0.82) p.fakes.forEach(function (tg) { ball(ctx, MS.pitchPos(p, Math.max(0, state.t), tg), p.kind, 0, true); });
