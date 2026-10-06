@@ -183,6 +183,14 @@ html.gg-fs-over .stagewrap { position: fixed; inset: 0; }
 .lvpager span { flex: 1; text-align: center; font-weight: 800; font-size: 15px; color: var(--ink); }
 .lvpager span small { font-size: 12px; color: var(--muted); font-weight: 700; }
 .lv.big { font-size: 13px; letter-spacing: -0.3px; }
+.commandbar{position:absolute;z-index:3;left:calc(env(safe-area-inset-left,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);display:flex;align-items:center;gap:10px;padding:5px 8px 5px 5px;border:1px solid #c8d9e239;background:#142936ed;color:#e8f2f8;border-radius:15px;box-shadow:0 5px 18px #07131d40;}
+.commandbar button{flex:0 0 auto;min-width:68px;min-height:44px;border:1px solid #b9dce34d;border-radius:10px;color:#fff;background:#284a60;font:700 14px system-ui;touch-action:manipulation;}
+.commandbar button[aria-pressed="true"]{background:#ceeafb;color:#102b3a;}
+.commandbar span{flex:1;font:600 12px/1.3 system-ui;}
+.commandbar #btnCancelOrder{min-width:44px;}.commandbar [hidden]{display:none;}
+.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 76px);border-radius:12px;font-size:14px;}
+.sbar{height:12px;border-radius:6px;box-shadow:0 0 0 2px #142936c9,0 3px 10px #0003;}
+@media(max-height:450px){.commandbar{left:calc(env(safe-area-inset-left,0px) + 8px);right:auto;max-width:270px}.commandbar span{font-size:11px}.hint{font-size:12px;max-width:230px;left:auto;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);padding:8px}}
 </style>
 </head>
 <body>
@@ -237,6 +245,7 @@ html.gg-fs-over .stagewrap { position: fixed; inset: 0; }
       <div class="loading" id="loading">Marching in&hellip;</div>
       <div class="making" id="making"></div>
       <div class="toast" id="toast"></div>
+      <div class="commandbar"><button id="btnPlan" aria-pressed="false" aria-label="Pause battle to plan commands">Ⅱ Plan</button><span id="commandText" aria-live="polite">Drag a route · or tap two outposts</span><button id="btnCancelOrder" aria-label="Cancel selected outpost" hidden>✕</button></div>
     </div>
   </div>
 
@@ -1642,13 +1651,16 @@ var OPScene = (function () {
 
     // ---------------- renderer, camera, light ----------------
     var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-    var DPR = Math.min(3, window.devicePixelRatio || 1);
+    var DPR = Math.min(2, window.devicePixelRatio || 1);
     renderer.setPixelRatio(DPR);
+    renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
     var scene = new T.Scene(); scene.background = new T.Color(REG[0].bg);
     var camera = new T.OrthographicCamera(-5, 5, 5, -5, 0.1, 200);
     var CD = 60; camera.position.set(0, Math.sin(PITCH) * CD, Math.cos(PITCH) * CD); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
     var hemi = new T.HemisphereLight(0xf4fbff, 0x5d8f45, 1.55); scene.add(hemi);
-    var sun = new T.DirectionalLight(0xfff4e0, 1.9); sun.position.set(-6, 14, 8); scene.add(sun);
+    var sun = new T.DirectionalLight(0xfff4e0, 1.9); sun.position.set(-6,14,8);scene.add(sun);
+    sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-15,right:15,top:18,bottom:-18,near:.5,far:55});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;sun.shadow.camera.updateProjectionMatrix();
 
     // ---------------- ground per region ----------------
     var groundTex = REG.map(function (g, ri) {
@@ -1667,10 +1679,19 @@ var OPScene = (function () {
       t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(20, 20); return t;
     });
     var groundM = new T.MeshLambertMaterial({ map: groundTex[0] });
-    var ground = new T.Mesh(new T.PlaneGeometry(120, 120), groundM); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground);
+    var terrainTone={value:new T.Color('#6f8058')}, terrainBlend={value:.48};
+    groundM.onBeforeCompile=function(shader){shader.uniforms.terrainTone=terrainTone;shader.uniforms.terrainBlend=terrainBlend;shader.fragmentShader='uniform vec3 terrainTone;uniform float terrainBlend;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n diffuseColor.rgb=mix(diffuseColor.rgb,terrainTone,terrainBlend);');};
+    var ground = new T.Mesh(new T.PlaneGeometry(120, 120), groundM); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground);ground.receiveShadow=true;
     var fieldTex = REG.map(function (g) { return ctex(64, 512, function (x, w, h) { for (var i = 0; i < 12; i++) { x.fillStyle = i % 2 ? g.stripe[0] : g.stripe[1]; x.fillRect(0, i * h / 12, w, h / 12); } }); });
     var fieldM = new T.MeshBasicMaterial({ map: fieldTex[0], transparent: true, depthWrite: false });
-    var field = new T.Mesh(new T.PlaneGeometry(W + 0.4, H + 0.4), fieldM); field.rotation.x = -Math.PI / 2; field.position.y = -0.01; scene.add(field);
+    var field = new T.Mesh(new T.PlaneGeometry(W + 0.4, H + 0.4), fieldM); field.rotation.x = -Math.PI / 2; field.position.y = -0.01; scene.add(field);field.visible=false;
+
+    var terrainReady=0, terrainActive=0;
+    [['meadow',[0,4,5]],['sand',[1,6]],['snow',[2]],['basalt',[3]]].forEach(function(entry){
+      new T.TextureLoader().load('assets/'+entry[0]+'-v1.webp',function(map){map.colorSpace=T.SRGBColorSpace;map.anisotropy=4;map.wrapS=map.wrapT=T.RepeatWrapping;map.repeat.set(24,24);
+        entry[1].forEach(function(ri){groundTex[ri].dispose();groundTex[ri]=map;});terrainReady++;groundM.map=groundTex[terrainActive];groundM.needsUpdate=true;
+      },undefined,function(){/* Procedural terrain remains available. */});
+    });
 
     // blob shadow texture (under buildings and props)
     var blobTex = REG.map(function (g) { return ctex(64, 64, function (x) { var gr = x.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, 'rgba(' + g.blob + ',.42)'); gr.addColorStop(1, 'rgba(' + g.blob + ',0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); }); });
@@ -1679,14 +1700,14 @@ var OPScene = (function () {
     function blob(x, y, r, parent) { var m = new T.Mesh(blobG, blobM); m.scale.set(r * 2, 1, r * 2 * 0.9); m.position.set(parent ? 0.12 : X(x) + 0.12, 0.004, parent ? 0.1 : Z(y) + 0.1); (parent || scene).add(m); return m; }
 
     // shared materials
-    var woodM = lam('#b07a45'), woodDark = lam('#8a5a30'), metalM = lam('#6f6a64'), bushM = lam('#4fb246'), bushM2 = lam('#63c257'), stoneM = lam('#d9d2c3'), rockM = lam('#9aa0a8'), rockM2 = lam('#b5bac1');
+    var woodM = lam('#b07a45'), woodDark = lam('#8a5a30'), metalM = lam('#6f6a64'), bushM = lam('#568146'), bushM2 = lam('#789657'), stoneM = lam('#d9d2c3'), rockM = lam('#9aa0a8'), rockM2 = lam('#b5bac1');
     var snowM = lam('#f7fbff'), iceM = new T.MeshLambertMaterial({ color: '#bfe6ff', transparent: true, opacity: 0.82, flatShading: true }), cactusM = lam('#4c9e4a'), tireM = lam('#2f3136'), boneM = lam('#efe6d2');
-    var pineM1 = lam('#2e8a3e'), pineM2 = lam('#3ea34a'), trunkM = lam('#7a5232'), goldM = new T.MeshLambertMaterial({ color: '#ffc83d', emissive: '#6b4a00', flatShading: true });
+    var pineM1 = lam('#315c43'), pineM2 = lam('#507c51'), trunkM = lam('#7a5232'), goldM = new T.MeshLambertMaterial({ color: '#ffc83d', emissive: '#6b4a00', flatShading: true });
     var crateTex = ctex(64, 64, function (x, w, h) { x.fillStyle = '#c98f52'; x.fillRect(0, 0, w, h); x.strokeStyle = '#8a5a30'; x.lineWidth = 6; x.strokeRect(3, 3, w - 6, h - 6); x.lineWidth = 5; x.beginPath(); x.moveTo(6, 6); x.lineTo(w - 6, h - 6); x.stroke(); x.fillStyle = 'rgba(0,0,0,.08)'; x.fillRect(0, h / 2, w, 2); });
     var crateM = new T.MeshLambertMaterial({ map: crateTex });
     // 0.3.0 regions
     var basaltM = lam('#2f2729'), basaltM2 = lam('#403538'), lavaGlowM = new T.MeshBasicMaterial({ color: '#ff7a1a' }), emberM = new T.MeshBasicMaterial({ color: '#ffb23a' });
-    var palmTrunkM = lam('#9a6a3c'), palmLeafM = lam('#2fa34a'), palmLeafM2 = lam('#46bd5a'), fernM = lam('#2e9a48');
+    var palmTrunkM = lam('#9a6a3c'), palmLeafM = lam('#357847'), palmLeafM2 = lam('#619451'), fernM = lam('#2e9a48');
     var autumnM = [lam('#e8742a'), lam('#d2412c'), lam('#f2b233'), lam('#c9602a')], barkM = lam('#6b4a2e');
     var mesaM = lam('#b85a36'), mesaTopM = lam('#d98556'), mesaBandM = lam('#9c4528'), boulderM = lam('#c2754a');
     var quayM = lam('#8a93a8'), hullM = lam('#7a4b2a'), lampM = new T.MeshBasicMaterial({ color: '#ffe08a' }), postM = lam('#2b2f3a');
@@ -1704,20 +1725,29 @@ var OPScene = (function () {
     var palmTrunkG = merge([[new T.CylinderGeometry(0.055, 0.075, 0.42, 6), M(0, 0.21, 0)], [new T.CylinderGeometry(0.05, 0.06, 0.42, 6), M(0.035, 0.6, 0, 0, 0, -0.14)], [new T.CylinderGeometry(0.045, 0.055, 0.4, 6), M(0.1, 0.97, 0, 0, 0, -0.24)]]);
     var palmLeafG = (function () { var fr = new T.BoxGeometry(0.62, 0.025, 0.16); fr.translate(0.3, 0, 0); var l = []; for (var i = 0; i < 7; i++) l.push([fr, M(0.14, 1.15, 0, 0, i / 7 * 6.283 + 0.3, -0.42 - (i % 2) * 0.15)]); l.push([new T.IcosahedronGeometry(0.08, 0), M(0.14, 1.13, 0)]); return merge(l); })();
     var oakTrunkG = new T.CylinderGeometry(0.06, 0.085, 0.5, 6); oakTrunkG.translate(0, 0.25, 0);
-    var oakTopG = merge([[new T.IcosahedronGeometry(0.36, 0), M(0, 0.72, 0)], [new T.IcosahedronGeometry(0.26, 0), M(0.2, 0.62, 0.1)], [new T.IcosahedronGeometry(0.24, 0), M(-0.18, 0.66, -0.08)]]);
+    var oakTopG = merge([[new T.IcosahedronGeometry(0.36, 1), M(0, 0.72, 0)], [new T.IcosahedronGeometry(0.26, 1), M(0.2, 0.62, 0.1)], [new T.IcosahedronGeometry(0.24, 1), M(-0.18, 0.66, -0.08)]]);
     var mesaG = new T.CylinderGeometry(0.85, 1.0, 0.7, 7); mesaG.translate(0, 0.35, 0);
     var mesaTopG = new T.CylinderGeometry(0.72, 0.85, 0.36, 7); mesaTopG.translate(0, 0.88, 0);
     var mesaBandG = new T.CylinderGeometry(0.855, 0.9, 0.12, 7); mesaBandG.translate(0, 0.52, 0);
     var cubeRockG = new T.BoxGeometry(0.5, 0.5, 0.5); cubeRockG.translate(0, 0.22, 0);
-    var pineLow = new T.ConeGeometry(0.42, 0.75, 7); pineLow.translate(0, 0.62, 0);
-    var pineTop = new T.ConeGeometry(0.3, 0.6, 7); pineTop.translate(0, 1.05, 0);
+    // Layered needle branches, gently irregular silhouettes; still one instanced mesh per material.
+    var needles=ctex(128,128,function(x,w,h){x.fillStyle='#bcc9a6';x.fillRect(0,0,w,h);for(var k=0;k<6000;k++){x.strokeStyle=R()<.5?'rgba(14,40,19,.24)':'rgba(239,255,215,.3)';var xx=rnd(0,w),yy=rnd(0,h);x.beginPath();x.moveTo(xx,yy);x.lineTo(xx+rnd(-3,3),yy+rnd(1,5));x.stroke();}});
+    [pineM1,pineM2,palmLeafM,palmLeafM2,bushM,bushM2].forEach(function(m){m.map=needles;m.flatShading=false;m.needsUpdate=true;});
+    function pineCrown(radius,height,base){var parts=[];for(var layer=0;layer<5;layer++){var rr=radius*(1-layer*.15),yy=base+height*layer*.15;var cone=new T.ConeGeometry(rr,height*.48,12,3);var pp=cone.attributes.position;for(var v=0;v<pp.count;v++){var xx=pp.getX(v),zz=pp.getZ(v),angle=Math.atan2(zz,xx),f=1+.14*Math.sin(angle*7+layer*2)+.07*Math.cos(angle*11);pp.setX(v,xx*f);pp.setZ(v,zz*f);}cone.computeVertexNormals();parts.push([cone,M(0,yy,0,0,layer*.8,0)]);}return merge(parts);}
+    var pineLow=pineCrown(.46,.78,.35),pineTop=pineCrown(.27,.55,.85);
     var trunkG = new T.CylinderGeometry(0.07, 0.09, 0.3, 6); trunkG.translate(0, 0.15, 0);
 
     // ---------------- borders (per region, rebuilt when the region changes) ----------------
     var border = new T.Group(); scene.add(border); var borderReg = -1;
+    var treeReady=false,treeCard=new T.PlaneGeometry(1.2,1.8);treeCard.rotateX(-PITCH);treeCard.translate(0,Math.cos(PITCH)*.9,-Math.sin(PITCH)*.9);
+    var treeMat=new T.MeshBasicMaterial({transparent:false,alphaTest:.45,side:T.DoubleSide,toneMapped:false});
+    new T.TextureLoader().load('assets/spruce-v1.webp',function(t){t.colorSpace=T.SRGBColorSpace;t.anisotropy=2;treeMat.map=t;treeMat.needsUpdate=true;treeReady=true;if(borderReg===0)buildBorder(0);},undefined,function(){});
     function instanced(geo, mat, spots) {
+      var photo=treeReady&&borderReg===0&&geo===pineLow;
+      if(treeReady&&borderReg===0&&(geo===pineTop||geo===trunkG))return;
+      if(photo){geo=treeCard;mat=treeMat;}
       var im = new T.InstancedMesh(geo, mat, Math.max(1, spots.length)); im.count = spots.length;
-      spots.forEach(function (p, i) { q.setFromAxisAngle(up, p[3] !== undefined ? p[3] : rnd(0, 6)); mtx.compose(v3.set(X(p[0]), p[4] || 0, Z(p[1])), q, sc3.set(p[2], p[2] * (p[5] || 1), p[2])); im.setMatrixAt(i, mtx); });
+      spots.forEach(function (p, i) { q.setFromAxisAngle(up, photo ? 0 : p[3] !== undefined ? p[3] : rnd(0, 6)); mtx.compose(v3.set(X(p[0]), p[4] || 0, Z(p[1])), q, sc3.set(p[2], p[2] * (p[5] || 1), p[2])); im.setMatrixAt(i, mtx); });
       border.add(im); return im;
     }
     function outside(n, pad, far) { var o = []; for (var i = 0; i < n * 3 && o.length < n; i++) { var fx = rnd(-far, W + far), fy = rnd(-far, H + far); if (fx > -pad && fx < W + pad && fy > -pad && fy < H + pad) continue; o.push([fx, fy, rnd(0.9, 1.5)]); } return o; }
@@ -1740,7 +1770,7 @@ var OPScene = (function () {
         var wag = new T.Group(); var wb = new T.Mesh(new T.BoxGeometry(1.1, 0.42, 0.62), lam('#8a5a30')); wb.position.y = 0.33; wag.add(wb);
         var wt = new T.Mesh(new T.BoxGeometry(1.16, 0.08, 0.68), lam('#5b3b1f')); wt.position.y = 0.56; wag.add(wt);
         [-0.35, 0.35].forEach(function (wx) { [-0.3, 0.3].forEach(function (wz) { var wh = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 0.06, 10), metalM); wh.rotation.x = Math.PI / 2; wh.position.set(wx, 0.13, wz); wag.add(wh); }); });
-        var ore = new T.Mesh(new T.IcosahedronGeometry(0.26, 0), goldM); ore.position.set(0.1, 0.62, 0); ore.scale.set(1.4, 0.6, 0.9); wag.add(ore);
+        var ore = new T.Mesh(new T.IcosahedronGeometry(0.26, 1), goldM); ore.position.set(0.1, 0.62, 0); ore.scale.set(1.4, 0.6, 0.9); wag.add(ore);
         wag.position.set(X(W * 0.72), 0, Z(y0)); border.add(wag);
         var tank = new T.Group(); var tb = new T.Mesh(new T.CylinderGeometry(0.34, 0.34, 1.0, 12), lam('#c0392b')); tb.rotation.z = Math.PI / 2; tb.position.y = 0.45; tank.add(tb);
         var tb2 = new T.Mesh(new T.BoxGeometry(1.1, 0.1, 0.6), lam('#5b3b1f')); tb2.position.y = 0.12; tank.add(tb2); tank.position.set(X(W * 0.72 - 1.3), 0, Z(y0)); border.add(tank);
@@ -2090,37 +2120,40 @@ var OPScene = (function () {
 
     // ---------------- buildings ----------------
     // a floor: team wall with a band of dark windows (canvas texture, one per team); a light ledge between floors
-    var floorTex = TEAM.map(function (c) {
-      return ctex(256, 64, function (x, w, h) {
-        x.fillStyle = c.main; x.fillRect(0, 0, w, h);
-        x.fillStyle = c.light; x.globalAlpha = 0.45; x.fillRect(0, 0, w, 7); x.globalAlpha = 1;
-        x.fillStyle = c.win; for (var i = 0; i < 8; i++) { var wx = i * 32 + 8; x.beginPath(); if (x.roundRect) x.roundRect(wx, 20, 16, 24, 4); else x.rect(wx, 20, 16, 24); x.fill(); }
-        x.fillStyle = 'rgba(255,255,255,.35)'; for (var j = 0; j < 8; j++) x.fillRect(j * 32 + 10, 22, 4, 9);
-      });
-    });
+    var floorTex = TEAM.map(function(c){return ctex(256,128,function(x,w,h){
+      x.fillStyle='#a7b0b4';x.fillRect(0,0,w,h);
+      for(var i=0;i<5000;i++){x.fillStyle=R()<.5?'rgba(0,0,0,.08)':'rgba(255,255,255,.12)';x.fillRect(rnd(0,w),rnd(0,h),1,1);}
+      x.fillStyle=c.main;x.fillRect(0,0,w,22);x.fillRect(0,h-20,w,20);
+      for(var j=0;j<4;j++){var xx=j*64;x.fillStyle='#34424c';x.fillRect(xx+9,43,46,40);var gr=x.createLinearGradient(0,43,0,83);gr.addColorStop(0,'#172b39');gr.addColorStop(.5,'#567688');gr.addColorStop(1,'#20313e');x.fillStyle=gr;x.fillRect(xx+12,46,40,34);x.fillStyle='#c7d5d9';x.fillRect(xx+31,46,2,34);x.fillStyle='rgba(255,255,255,.4)';x.fillRect(xx+13,47,38,2);x.fillStyle=c.dark;x.fillRect(xx+1,24,4,h-46);}
+    });});
     var FLOOR_H = 0.34, TOWER_R = 0.47;
-    var floorG = new T.CylinderGeometry(TOWER_R, TOWER_R, FLOOR_H, 16, 1, true); floorG.translate(0, FLOOR_H / 2, 0);
-    var ledgeG = new T.CylinderGeometry(TOWER_R + 0.035, TOWER_R + 0.035, 0.055, 16); ledgeG.translate(0, 0.0275, 0);
-    var baseG = new T.CylinderGeometry(0.62, 0.68, 0.16, 18); baseG.translate(0, 0.08, 0);
+    var floorG = new T.CylinderGeometry(TOWER_R, TOWER_R+.035, FLOOR_H, 8, 1, true); floorG.translate(0, FLOOR_H / 2, 0);
+    var ledgeG = new T.CylinderGeometry(TOWER_R + 0.055, TOWER_R + 0.065, 0.065, 8); ledgeG.translate(0, 0.0275, 0);
+    var baseG = new T.CylinderGeometry(0.64, 0.73, 0.16, 8); baseG.translate(0, 0.08, 0);
     var doorG = new T.BoxGeometry(0.2, 0.26, 0.06);
-    var floorM = floorTex.map(function (t) { return new T.MeshLambertMaterial({ map: t }); });
+    var floorM = floorTex.map(function (t) { return new T.MeshStandardMaterial({ map: t,roughness:.7,metalness:.16 }); });
     var teamM = TEAM.map(function (c) { return lam(c.main); }), teamDarkM = TEAM.map(function (c) { return lam(c.dark); });
-    var ledgeLM = TEAM.map(function (c) { return lam(c.light); }), baseM = stoneM, doorM = lam('#4a3322');
+    var ledgeLM = TEAM.map(function (c) { return new T.MeshStandardMaterial({color:c.main,roughness:.38,metalness:.28}); }), baseM = new T.MeshStandardMaterial({color:'#747f83',roughness:.85}), doorM = lam('#28333c');
     // the cube the number sits on: a rounded box
     var cubeShape = new T.Shape(), cs = 0.36, cr = 0.1;
     cubeShape.moveTo(-cs + cr, -cs); cubeShape.lineTo(cs - cr, -cs); cubeShape.quadraticCurveTo(cs, -cs, cs, -cs + cr); cubeShape.lineTo(cs, cs - cr); cubeShape.quadraticCurveTo(cs, cs, cs - cr, cs); cubeShape.lineTo(-cs + cr, cs); cubeShape.quadraticCurveTo(-cs, cs, -cs, cs - cr); cubeShape.lineTo(-cs, -cs + cr); cubeShape.quadraticCurveTo(-cs, -cs, -cs + cr, -cs);
-    var cubeG = new T.ExtrudeGeometry(cubeShape, { depth: 0.42, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 2, curveSegments: 4 });
+    var cubeG = new T.ExtrudeGeometry(cubeShape, { depth: 0.10, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.035, bevelSegments: 2, curveSegments: 4 });
     cubeG.rotateX(-Math.PI / 2); cubeG.translate(0, 0.06, 0);
     var cubeTopM = TEAM.map(function (c) { return new T.MeshLambertMaterial({ color: c.main }); });
     function beam(g, a, b, th, mat) { var d = new T.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), len = d.length(); var m = new T.Mesh(new T.BoxGeometry(th, len, th), mat); m.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); m.quaternion.setFromUnitVectors(up, d.normalize()); g.add(m); return m; }
 
+    var armorM=new T.MeshStandardMaterial({color:'#46535e',roughness:.48,metalness:.36}), roofM=new T.MeshStandardMaterial({color:'#25333e',roughness:.48,metalness:.32});
+    var roofG=new T.CylinderGeometry(.46,.51,.10,8), ribG=new T.BoxGeometry(.055,.3,.075), antennaG=new T.CylinderGeometry(.012,.017,.38,5), ventG=new T.BoxGeometry(.21,.045,.16), boltG=new T.SphereGeometry(.025,5,4);
+    var navM=TEAM.map(function(c){return new T.MeshBasicMaterial({color:c.light,toneMapped:false});});
     var towers = [];
     function labelDraw(tw) {
       var c = tw.lc, x = c.getContext('2d'), w = c.width, S = w / 160;
-      x.clearRect(0, 0, w, w);
+      x.clearRect(0,0,w,w);
+      x.fillStyle='#152735';x.beginPath();x.roundRect(19*S,20*S,122*S,120*S,18*S);x.fill();
+      x.strokeStyle=TEAM[tw.o].main;x.lineWidth=5*S;x.stroke();x.fillStyle=TEAM[tw.o].main;x.fillRect(38*S,22*S,84*S,6*S);
       var txt = tw.n >= tw.cap ? 'Max' : String(tw.n), arrow = tw.type === 'f' && tw.n < tw.cap;
       x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.font = '900 ' + Math.round((txt.length >= 3 ? 54 : arrow && txt.length > 1 ? 62 : 70) * S) + 'px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      x.font = '900 ' + Math.round((txt.length >= 3 ? 49 : arrow && txt.length > 1 ? 58 : 65) * S) + 'px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
       // a factory reads like the original's "↑15": a small up arrow before its number
       var tx = w / 2 + (arrow ? 11 * S : 0);
       x.lineJoin = 'round'; x.lineWidth = 10 * S; x.strokeStyle = 'rgba(10,20,50,.55)'; x.strokeText(txt, tx, 62 * S);
@@ -2163,8 +2196,8 @@ var OPScene = (function () {
         var sc = type === 'F' ? 1.18 : 1, y0 = type === 'F' ? 0.3 : 0.16;
         for (i = 0; i < f; i++) {
           y = y0 + i * (FLOOR_H + 0.055) * sc;
-          var fm = new T.Mesh(floorG, floorM[o]); fm.position.y = y; fm.rotation.y = i * 0.4; fm.scale.set(sc, sc, sc); g.add(fm);
-          var lg = new T.Mesh(ledgeG, i ? ledgeLM[o] : teamDarkM[o]); lg.position.y = y + FLOOR_H * sc; lg.scale.set(sc, 1, sc); g.add(lg);
+          var fm = new T.Mesh(floorG, floorM[o]); fm.position.y = y; fm.rotation.y = Math.PI/8; fm.scale.set(sc, sc, sc); g.add(fm);
+          var lg = new T.Mesh(ledgeG, i ? ledgeLM[o] : teamDarkM[o]); lg.position.y = y + FLOOR_H * sc; lg.rotation.y=Math.PI/8;lg.scale.set(sc, 1, sc); g.add(lg);
         }
         if (type === 'b') { var dr = new T.Mesh(doorG, doorM); dr.position.set(0, 0.29, TOWER_R - 0.01); g.add(dr); }
         if (type === 'F') {
@@ -2236,9 +2269,18 @@ var OPScene = (function () {
         });
         tw.turret = tur;
       }
+      var roofHeight=topY(type,f);
+      if(type==='b'||type==='F'){
+        var roof=new T.Mesh(roofG,roofM);roof.position.y=roofHeight+.015;roof.rotation.y=Math.PI/8;g.add(roof);
+        for(var rr=0;rr<4;rr++){var rib=new T.Mesh(ribG,armorM),angle=rr*Math.PI/2+Math.PI/4;rib.position.set(Math.cos(angle)*.44,.3,Math.sin(angle)*.44);rib.scale.y=Math.max(1,(roofHeight-.16)/.3);rib.position.y=(roofHeight+.16)/2;rib.rotation.y=-angle;g.add(rib);}
+        var antenna=new T.Mesh(antennaG,armorM);antenna.position.set(-.27,roofHeight+.21,-.2);g.add(antenna);
+        var beacon=new T.Mesh(boltG,navM[o]);beacon.position.set(-.27,roofHeight+.41,-.2);g.add(beacon);
+        for(var vv=0;vv<3;vv++){var vent=new T.Mesh(ventG,armorM);vent.position.set(.16,roofHeight+.08,-.2+vv*.15);g.add(vent);}
+      }
+      g.traverse(function(m){if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});renderer.shadowMap.needsUpdate=true;
       var top = topY(type, f);
       tw.cube.position.y = top; tw.cube.material = cubeTopM[o];
-      tw.label.position.set(0, top + (type === 'X' ? 0.62 : 0.5), 0.18);
+      tw.label.position.set(0, top + (type === 'X' ? 0.62 : 0.47), 0.18);
       if (type === 'X') { tw.cube.scale.set(1.3, 1.3, 1.3); tw.label.scale.set(1.4, 1.4, 1); }
       if (tw.range) { tw.range.material.color.set(o ? TEAM[o].light : '#ffffff'); tw.rangeRing.material.color.set(o ? TEAM[o].main : '#ffffff'); }
     }
@@ -2316,8 +2358,8 @@ var OPScene = (function () {
 
     // ---------------- troops: soldiers, tanks, paratroopers, rockets (instanced) ----------------
     var MAXU = 900, MAXT = 260, MAXP = 200, MAXR = 80;
-    var bodyG = new T.CapsuleGeometry(0.075, 0.12, 3, 8); bodyG.translate(0, 0.16, 0);
-    var headG = new T.SphereGeometry(0.085, 10, 8); headG.translate(0, 0.35, 0);
+    var bodyG=merge([[new T.BoxGeometry(.14,.15,.10),M(0,.2,0)],[new T.CapsuleGeometry(.028,.10,2,5),M(-.045,.075,0)],[new T.CapsuleGeometry(.028,.10,2,5),M(.045,.075,0)],[new T.BoxGeometry(.08,.10,.06),M(-.015,.2,-.075)],[new T.BoxGeometry(.16,.035,.035),M(.09,.2,.065)]]);
+    var headG=merge([[new T.SphereGeometry(.08,10,8),M(0,.345,0)],[new T.BoxGeometry(.1,.035,.045),M(0,.34,.067)]]);
     var tankG = merge([[new T.BoxGeometry(0.36, 0.12, 0.26), M(0, 0.12, 0)], [new T.BoxGeometry(0.2, 0.1, 0.18), M(-0.02, 0.23, 0)], [new T.CylinderGeometry(0.028, 0.028, 0.24, 6), M(0.15, 0.24, 0, 0, 0, Math.PI / 2)]]);
     var trackG = merge([[new T.BoxGeometry(0.4, 0.09, 0.07), M(0, 0.06, 0.13)], [new T.BoxGeometry(0.4, 0.09, 0.07), M(0, 0.06, -0.13)]]);
     var canopyG = new T.SphereGeometry(0.26, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); canopyG.scale(1, 0.55, 1); canopyG.translate(0, 0.74, 0);
@@ -2444,6 +2486,8 @@ var OPScene = (function () {
       tgtRing.visible = snap >= 0; if (snap >= 0) { var sb2 = ringS(towers[snap].type); tgtRing.position.set(X(towers[snap].x), 0.03, Z(towers[snap].y)); tgtRing.scale.set(sb2, 1, sb2); tgtRingM.color.set(valid ? '#ffffff' : '#ff3b3b'); }
     }
 
+    var selectedRing=new T.Mesh(new T.RingGeometry(.70,.78,64),new T.MeshBasicMaterial({color:0x75dcff,transparent:true,opacity:.95,depthWrite:false,toneMapped:false}));selectedRing.rotation.x=-Math.PI/2;selectedRing.visible=false;scene.add(selectedRing);
+    function select(index){var t=towers[index];selectedRing.visible=!!t;if(t){selectedRing.position.set(X(t.x),.035,Z(t.y));selectedRing.scale.setScalar(t.type==='F'?1.7:1);}}
     // ---------------- per frame ----------------
     var clock = 0, dummy = new T.Object3D();
     function sync(sim, dt, paused) {
@@ -2543,11 +2587,12 @@ var OPScene = (function () {
     // ---------------- level, camera fit ----------------
     var view = { w: 10, h: 10, m: { top: 70, bottom: 20, side: 10 }, box: null };
     function setLevel(level, sim) {
-      var reg = Math.max(0, Math.min(REG.length - 1, level.region || 0)), G = REG[reg];
+      var reg = Math.max(0, Math.min(REG.length - 1, level.region || 0)), G = REG[reg];terrainActive=reg;terrainTone.value.set(['#6f8058','#c9b181','#c6d7e2','#393a40','#447653','#ac8d57','#b37450','#46557a'][reg]);terrainBlend.value=[.54,.3,.32,.25,.5,.45,.32,0][reg];
+      groundM.color.set(['#ecf2d6','#fff2d7','#edf6ff','#b4b7c3','#b6e5b9','#ead5a2','#df9d71','#ffffff'][reg]);
       if (reg !== borderReg) {
         buildBorder(reg);
         scene.background.set(G.bg); groundM.map = groundTex[reg]; groundM.needsUpdate = true; fieldM.map = fieldTex[reg]; fieldM.needsUpdate = true; blobM.map = blobTex[reg]; blobM.needsUpdate = true;
-        hemi.color.setHex(G.hemi[0]); hemi.groundColor.setHex(G.hemi[1]); hemi.intensity = G.hemi[2]; sun.intensity = G.sun; sun.color.setHex(G.sunC || 0xfff4e0);
+        hemi.color.setHex(G.hemi[0]); hemi.groundColor.setHex(G.hemi[1]); hemi.intensity = G.hemi[2]*.72; sun.intensity = G.sun; sun.color.setHex(G.sunC || 0xfff4e0);
       }
       while (propGroup.children.length) propGroup.remove(propGroup.children[0]);
       (level.props || []).forEach(makeProp);
@@ -2558,7 +2603,7 @@ var OPScene = (function () {
       var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
       level.towers.forEach(function (t) { var r = t[4] === 'F' ? 1.4 : t[4] === 'X' ? 1.6 : 0.9; x0 = Math.min(x0, t[0] - r); x1 = Math.max(x1, t[0] + r); y0 = Math.min(y0, t[1] - r); y1 = Math.max(y1, t[1] + r - 0.05); });
       view.box = { x0: Math.min(0.25, x0), x1: Math.max(W - 0.25, x1), y0: y0, y1: y1 };
-      fit();
+      renderer.shadowMap.needsUpdate=true;fit();
       return G;
     }
     // frame the whole battlefield (buildings at full height included) in the free space between the top HUD and the home bar
@@ -2592,7 +2637,7 @@ var OPScene = (function () {
     function towerScreen(i) { var tw = towers[i]; if (!tw) return null; var a = project(tw.x, tw.y, 0), b = project(tw.x, tw.y, topY(tw.type, tw.f) + 0.85); return { bx: a[0], by: a[1], tx: b[0], ty: b[1], r: (tw.type === 'F' ? 1.1 : tw.type === 'X' ? 1.25 : 0.62) / view.scale }; }
     function meet(lo, hi, p) { var k = lo * 1024 + hi, m = meets[k]; meets[k] = m == null ? p : m + (p - m) * 0.35; }
     function render() { renderer.render(scene, camera); }
-    return { renderer: renderer, scene: scene, camera: camera, view: view, setLevel: setLevel, sync: sync, resize: resize, project: project, ground: groundAt,
+    return { select:select,get terrainReady(){return terrainReady;},get treeReady(){return treeReady;},renderer: renderer, scene: scene, camera: camera, view: view, setLevel: setLevel, sync: sync, resize: resize, project: project, ground: groundAt,
       towerScreen: towerScreen, dragShow: dragShow, dragHide: dragHide, puff: puff, burst: burst, levelUp: levelUp, meet: meet, render: render, TEAM: TEAM,
       shot: shot, boom: boom, rocketHit: rocketHit, fenceHit: fenceHit, fenceBreak: fenceBreak, build: buildFx, bridgeDone: bridgeDone, goldPick: goldPick,
       drawShow: drawShow, gateFx: gateFx, warn: warn, shellHit: shellHit, volleyFx: volleyFx };
@@ -2690,7 +2735,7 @@ var OPScene = (function () {
     var sb = $('sbar'); sb.style.top = Math.round(mb - r.top + 6) + 'px';
     // the horde's wave pill sits under the strength bar on event levels
     var wp = $('wavePill'), wh = wp.classList.contains('show') ? wp.offsetHeight + 6 : 0; wp.style.top = Math.round(mb - r.top + 6 + sb.offsetHeight + 6) + 'px';
-    SC.resize(Math.max(10, r.width), Math.max(10, r.height), { top: Math.max(56, mb - r.top + 6 + sb.offsetHeight + 6 + wh), bottom: (probe ? probe.offsetHeight : 0) + 10 + hb, side: 6 });
+    SC.resize(Math.max(10, r.width), Math.max(10, r.height), { top: Math.max(56, mb - r.top + 6 + sb.offsetHeight + 6 + wh), bottom: (probe ? probe.offsetHeight : 0) + 70 + hb, side: 6 });
     var dpr = Math.min(3, window.devicePixelRatio || 1); fxc.width = Math.round(r.width * dpr); fxc.height = Math.round(r.height * dpr); fxx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
@@ -2700,6 +2745,7 @@ var OPScene = (function () {
   function refitLater() { if (drag) { fitWait = true; return; } resize(); }
   function fitAfterDrag() { if (fitWait) { fitWait = false; setTimeout(resize, 50); } }
   // ================= game =================
+  var planning=false, selected=-1;
   var sim = null, level = null, levelNo = 1, mis = -1, state = 'idle', acc = 0, lastT = 0, speed = 1, lesson = null, endT = 0;
   function startLevel(n) {
     levelNo = Math.max(1, Math.floor(+n) || 1); meta.level = levelNo; saveMeta();
@@ -2793,7 +2839,7 @@ var OPScene = (function () {
     sbarBuild(); sbarT = 0; S.setRegion(level.region || 0);
     // the page behind the canvas takes the region's ground colour (no flash of meadow green on a desert level)
     REGIONS.forEach(function (x, r) { document.body.classList.toggle('reg' + r, (level.region || 0) === r); host.classList.toggle('reg' + r, (level.region || 0) === r); });
-    state = 'play'; acc = 0; endT = 0; stats.tries++; saveStats();
+    state = 'play'; planning=false;selected=-1;commandUI();acc = 0; endT = 0; stats.tries++; saveStats();
     drag = null; SC.dragHide(); trail = [];
     // the lessons: level 1 draw a line, 2 cut one, 3 more lines, 4 send help (the hint fades once you've done it)
     lesson = level.hint ? { n: levelNo, done: false, t0: 0 } : null;
@@ -2893,7 +2939,7 @@ var OPScene = (function () {
   }
   function checkEnd() {
     if (state !== 'play' || !sim.over) return;
-    state = sim.over === 1 ? 'won' : 'lost'; endT = sim.t; S.playing(false);
+    planning=false;selected=-1;state = sim.over === 1 ? 'won' : 'lost';commandUI(); endT = sim.t; S.playing(false);
     stats.playSec += Math.round(sim.t); saveStats();
     // gold bars your troops picked up count win or lose
     barGold = sim.coins[1] || 0; if (barGold) { meta.gold += barGold; stats.goldEarned += barGold; saveMeta(); }
@@ -2970,7 +3016,7 @@ var OPScene = (function () {
     requestAnimationFrame(frame);
     if (!ready) return;
     var dt = Math.min(0.1, lastT ? (tms - lastT) / 1000 : 0); lastT = tms; perf.frame = perf.frame * 0.95 + dt * 1000 * 0.05; perf.frames++;
-    var paused = sheetOpen() || document.hidden;
+    var paused = sheetOpen() || document.hidden || planning;
     S.playing(!paused && state === 'play');
     if (sim && !paused && state !== 'idle') {
       acc += dt * speed; var n = 0, p0 = performance.now(), maxN = Math.max(4, Math.ceil(speed * 4));
@@ -2980,6 +3026,8 @@ var OPScene = (function () {
       if (state === 'play') { $('timePill').textContent = clock(sim.t); if (level.horde) wavePill(); }
     }
     if (sim) { var s0 = performance.now(); SC.sync(sim, dt, paused); perf.sync = perf.sync * 0.9 + (performance.now() - s0) * 0.1; if (!paused) { sbarT -= dt; if (sbarT <= 0) { sbarT = 0.25; sbarSync(); } } }
+    if(selected>=0&&(!sim||sim.towers[selected].o!==1||state!=='play')){selected=-1;commandUI();}
+    if(SC)SC.select(selected);
     drawTrail(dt);
     drawFinger(tms);
     SC.render();
@@ -3014,10 +3062,23 @@ var OPScene = (function () {
     }
     return best;
   }
+  function commandUI(){
+    $('btnPlan').setAttribute('aria-pressed',String(planning));$('btnPlan').textContent=planning?'▶ Go':'Ⅱ Plan';$('btnPlan').disabled=state!=='play';
+    $('btnCancelOrder').hidden=selected<0;
+    $('commandText').textContent=selected>=0?'Tap a destination · ✕ cancels':planning?'Paused · issue orders, then Go':'Drag a route · or tap two outposts';
+    if(SC)SC.select(selected);
+  }
+  function tapOrder(a,b){
+    var why=OP.whyNot(sim,a,b,1);
+    if(why){S.nope();toast({slots:'No free route. Swipe across a blue line to cut it.',dup:'Already sending there.',blocked:isDraw(level)?'Blocked: draw a route around the obstacle.':'Blocked: choose a clear route.',own:'Rockets target enemy buildings.',owner:'That outpost is no longer yours.'}[why]||'Choose a different destination.');return false;}
+    OP.playerLink(sim,a,b);stats.links++;S.link();onEvents();return true;
+  }
   function onDown(e) {
     if (!ready || sheetOpen() || state !== 'play' || drag) return;
     S.unlock(); e.preventDefault();
-    var p = local(e), t = towerAt(p, 16, -1);
+    var p = local(e), t = towerAt(p, 12, -1);
+    if(selected>=0&&sim.towers[selected].o!==1){selected=-1;commandUI();}
+    if(selected>=0&&t!==selected){drag={id:e.pointerId,mode:'command',from:selected,target:t,p:p,moved:false};try{canvas.setPointerCapture(e.pointerId);}catch(err){}return;}
     if (t >= 0 && sim.towers[t].o === 1 && sim.towers[t].type === 's') { toast('Sniper towers shoot on their own: they make no lines'); S.nope(); drag = { id: e.pointerId, mode: 'none' }; return; }
     if (t >= 0 && sim.towers[t].o === 1 && sim.towers[t].type === 'X') { toast('The citadel fires its volleys on its own'); S.nope(); drag = { id: e.pointerId, mode: 'none' }; return; }
     // Draw Mode (0.4.0): from a barracks or factory you draw the way; rocket launchers and forts still drag straight
@@ -3054,13 +3115,19 @@ var OPScene = (function () {
   function onMove(e) {
     if (!drag || e.pointerId !== drag.id || drag.mode === 'none') return;
     var p = local(e);
+    if(drag.mode==='command'){if(Math.hypot(p[0]-drag.p[0],p[1]-drag.p[1])>12){selected=-1;commandUI();drag.mode='cut';trail=[{x:drag.p[0],y:drag.p[1],a:1},{x:p[0],y:p[1],a:1}];cutAlong(drag.p,p);drag.last=p;}return;}
+    if(drag.p&&Math.hypot(p[0]-drag.p[0],p[1]-drag.p[1])>12&&selected>=0){selected=-1;commandUI();}
     if (drag.mode === 'link') { moveLink(p); return; }
     if (drag.mode === 'draw') { moveDraw(p); return; }
     trail.push({ x: p[0], y: p[1], a: 1 }); if (trail.length > 40) trail.shift();
     cutAlong(drag.last, p); drag.last = p;
   }
   function onUp(e) {
-    if (!drag || e.pointerId !== drag.id) return; var d = drag; drag = null; fitAfterDrag();
+    if (!drag || e.pointerId !== drag.id) return; if(drag.mode==='link')moveLink(local(e));else if(drag.mode==='draw')moveDraw(local(e));var d = drag; drag = null; fitAfterDrag();
+    if(d.mode==='command'){if(Math.hypot(local(e)[0]-d.p[0],local(e)[1]-d.p[1])>12)d.moved=true;if(!d.moved&&state==='play'){if(d.target<0||tapOrder(d.from,d.target))selected=-1;commandUI();}return;}
+    if((d.mode==='link'||d.mode==='draw')&&!d.moved&&sim.towers[d.from].type!=='r'){
+      SC.dragHide();selected=selected===d.from?-1:d.from;commandUI();return;
+    }
     if (d.mode === 'draw') {
       SC.dragHide();
       if (state !== 'play' || d.snap < 0) { if (d.moved && state === 'play') toast('Draw all the way to a building'); return; }
@@ -3079,7 +3146,7 @@ var OPScene = (function () {
       // a tap on your rocket launcher (no drag) stops it firing: its target is cleared until you drag a new one
       var R = sim.towers[d.from];
       if (state === 'play' && !d.moved && R.type === 'r' && R.o === 1 && R.links.length) { OP.cut(sim, R.links[0], 'cut'); S.cut(); toast('Rocket launcher stopped: drag from it to pick a new target'); onEvents(); return; }
-      if (!d.moved && R.type === 'r' && R.o === 1) { toast('Drag from the launcher to a building to fire at it'); return; }
+      if (!d.moved && R.type === 'r' && R.o === 1) {selected=selected===d.from?-1:d.from;commandUI();return;}
       if (state !== 'play' || d.snap < 0) return;
       var why = OP.whyNot(sim, d.from, d.snap, 1);
       if (!why) { OP.playerLink(sim, d.from, d.snap); stats.links++; if (sim.towers[d.from].type === 'r') S.aim(); else S.link(); onEvents(); }
@@ -3280,10 +3347,11 @@ var OPScene = (function () {
     $('helpTitle').textContent = 'How to play Outpost Rush';
     $('helpList').innerHTML = [
       'You are <b>blue</b>. Take every building on the field to win. Red, green and yellow fight you and each other.',
-      '<b>Drag from your tower to another building</b> to draw a line. Your troops march along it one after another. Sending is free: your tower keeps its number and keeps growing (slower while it sends).',
+      '<b>Drag from your tower to another building</b>, or tap your outpost then tap its destination, to draw a line. Your troops march along it one after another. Sending is free: your tower keeps its number and keeps growing (slower while it sends).',
       'A troop that reaches an enemy or gray building takes 1 off it. At <b>0 it is yours</b>. One that reaches your own building adds 1 (send help to the front).',
       'Buildings grow by themselves up to <b>Max</b> (63). One with no lines grows faster. Gray buildings never grow and never fight back.',
       'The dots under the number are lines: one line below 10, <b>two from 10, three from 30</b>. If enemies push a tower below that, it drops its newest line.',
+      '<b>Plan</b> pauses the battle and its timer. Issue or cut orders while paused, then press <b>Go</b> to resume. No cost or cooldown.',
       '<b>Swipe across one of your lines</b> to cut it. Troops already on the way keep going.',
       'Two enemy lines between the same buildings meet head on: troops fight where they meet.',
       '<b>Factory</b>: sends tanks, slower but worth 2 soldiers. <b>Sniper tower</b>: shoots enemy troops in its circle (bigger at 10 and 30), makes no lines. <b>Rocket launcher</b>: drag from it to any building to fire rockets at it (-3 each; troops still have to take it). Drag again to switch targets, tap it to stop. <b>Fort</b>: big, grows to 99, drops paratroopers that fly over everything.',
@@ -3327,6 +3395,8 @@ var OPScene = (function () {
   }
   function init() {
     Goobs.themePicker($('themes'));
+    $('btnPlan').addEventListener('click',function(){if(state!=='play')return;planning=!planning;acc=0;commandUI();});
+    $('btnCancelOrder').addEventListener('click',function(){selected=-1;commandUI();});
     host = $('stage'); canvas = $('cv'); fxc = $('fx'); fxx = fxc.getContext('2d');
     probe = document.createElement('div'); probe.className = 'sbprobe'; document.body.appendChild(probe);
     canvas.addEventListener('pointerdown', onDown); canvas.addEventListener('pointermove', onMove); canvas.addEventListener('pointerup', onUp);
@@ -3379,7 +3449,7 @@ var OPScene = (function () {
     }).catch(function (err) { $('loading').textContent = 'Couldn’t load the game. Check the connection once, then it works offline.'; if (window.console) console.warn(err); });
   }
   // test hook
-  window.__op = { get sim() { return sim; }, get state() { return state; }, get level() { return level; }, get levelNo() { return levelNo; }, startLevel: startLevel, OP: OP,
+  window.__op = {get planning(){return planning;},get selected(){return selected;},get sim() { return sim; }, get state() { return state; }, get level() { return level; }, get levelNo() { return levelNo; }, startLevel: startLevel, OP: OP,
     startMission: startMission, get mis() { return mis; }, missions: MISSIONS, openLevels: openLevels, misOpenCount: misOpenCount, ground: function (x, y) { var r = canvas.getBoundingClientRect(); return SC.ground(x - r.left, y - r.top); },
     get SC() { return SC; }, meta: function () { return meta; }, gen: GEN, genPump: genPump, levelAt: function (n) { return levelAt(n); }, stats: function () { return stats; }, perf: perf, get ready() { return ready; },
     set speed(v) { speed = v; }, get speed() { return speed; },
