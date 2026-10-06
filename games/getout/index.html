@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="../../shared/goobs.css">
 <script src="../../shared/goobs.js"></script>
 <script src="materials.js"></script>
+<script src="study-art.js"></script>
 <title>Get Out!</title>
 <style>
 /* Get Out! styles (themes, sheets, cards and ad cards come from /shared/goobs.css).
@@ -11115,6 +11116,7 @@ var GOArt = (function () {
       c.globalAlpha = 1; c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 2;
       for (var k = -2; k <= 2; k++) { c.beginPath(); c.ellipse(cx, cy + oy, r * Math.abs(k) / 2.6 + 1, r, 0, 0, TAU); c.stroke(); }
       c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(cx - r * 0.4, cy - r * 0.45 + oy, r * 0.22, r * 0.12, -0.6, 0, TAU); c.fill();
+      if(typeof GOStudy!=='undefined'&&GOStudy.has('shelf')){c.save();c.beginPath();c.arc(cx,cy+oy,r,0,TAU);c.clip();GOStudy.crop(c,'shelf',[727,625,206,206],[cx-r,cy-r+oy,r*2,r*2]);c.restore();}
       c.restore();
     }
     if (open) {
@@ -11162,6 +11164,7 @@ var GOArt = (function () {
     c.fillStyle = 'rgba(255,255,255,.7)'; var rnd = seeded(3); for (var i = 0; i < 14; i++) c.fillRect(ix + rnd() * iw, iy + rnd() * ih * 0.3, 2, 2);
     // brush texture
     c.globalAlpha = 0.07; c.strokeStyle = '#000'; c.lineWidth = 3; for (i = 0; i < 40; i++) { var px = ix + rnd() * iw, py = iy + rnd() * ih; line(c, px, py, px + 30, py + 6, '#000', 3); } c.globalAlpha = 1;
+    if (typeof GOStudy!=='undefined') GOStudy.crop(c,'desk',[305,189,378,269],[ix,iy,iw,ih]);
     // the painting's hidden layer (Medium, Hard; drawn once room state says it was revealed)
     if (X.st.f['f:uvSeen'] && X.R.clues.painting) {
       c.fillStyle = 'rgba(40,0,90,' + (big ? 0.55 : 0.35) + ')'; c.fillRect(ix, iy, iw, ih);
@@ -11333,6 +11336,7 @@ var GOArt = (function () {
     for (var yy = Math.floor(e.y0 / 30) * 30; yy < e.y1; yy += 30) { c.beginPath(); for (var xx = Math.floor(e.x0 / 30) * 30; xx < e.x1; xx += 30) { c.moveTo(xx, yy); c.lineTo(xx + 15, yy + 15); c.lineTo(xx + 30, yy); } c.stroke(); }
     c.restore();
     line(c, 120, e.y0, 150, e.y1, 'rgba(40,20,5,.45)', 6); [300, 560, 820].forEach(function (b) { circ(c, 90, b, 26, '#3a2410', '#1a0e06', 3); });
+    if(typeof GOMaterial!=='undefined')GOMaterial.paint(c,'fabric',e.x0,e.y0,e.x1-e.x0,e.y1-e.y0,false,.8);
     // pocket: the dark inside, the flashlight poking out of it, then the pocket's front and its open flap
     var torch = X.diff !== 'e' && !X.st.done.take_torch;
     box(c, 250, 560, 500, 460, 60, 'rgba(0,0,0,.22)');
@@ -11680,12 +11684,49 @@ var GOArt = (function () {
     light(c, e, 500, 400, 900, 'rgba(255,200,120,.12)', 0.4);
   };
 
+  // Photographic Room 1 walls with live clues and progress layered on top.
+  function studyWall(c,view,X) {
+    if(!/^(door|shelf|desk|fire)$/.test(view)||typeof GOStudy==='undefined'||!GOStudy.wall(c,view,X.ext))return false;
+    var st=X.st,p=X.P;
+    if(view==='door'){
+      var op=X.doorT!=null?X.doorT:(st.f['f:doorOpen']?1:0);
+      if(op>0)doorSlab(c,350,300,300,800,op,X);
+      else if(X.diff==='h'){circ(c,500,635,55,brass(c,445,580,555,690),'#53391e',3);[39,24].forEach(function(r){c.strokeStyle='#64441e';c.lineWidth=2;c.beginPath();c.arc(500,635,r,0,TAU);c.stroke();});}
+      if(p.photos.door)photo(c,L.ph_door[0],L.ph_door[1],L.ph_door[2],L.ph_door[3],X.R.clues.ph_door,false);
+    }
+    if(view==='shelf'){
+      if(p.photos.shelf)photo(c,L.ph_shelf[0],L.ph_shelf[1],L.ph_shelf[2],L.ph_shelf[3],X.R.clues.ph_shelf,false);
+      if(p.photos.sill)photo(c,L.ph_sill[0],L.ph_sill[1],L.ph_sill[2],L.ph_sill[3],X.R.clues.ph_sill,false);
+      // The globe's live band and opening animation share the original coordinates.
+      c.save();c.beginPath();c.rect(710,560,250,295);c.clip();globeArt(c,830,730,105,X,false);c.restore();
+    }
+    if(view==='desk'){
+      if(p.photos.desk)photo(c,L.ph_desk[0],L.ph_desk[1],L.ph_desk[2],L.ph_desk[3],X.R.clues.ph_desk,false);
+      box(c,600,784,200,54,8,brass(c,600,784,800,838));
+      var n=X.R.puzzles.order.answer.length;for(var i=0;i<n;i++)circ(c,620+160/(n-1)*i,811,13,st.pz.order.got.length>i?'#8fe08a':'#fbf3df','#5a3a10',2);
+      if(!st.f['f:drawer2']){c.strokeStyle='#b0b6c0';c.lineWidth=7;c.beginPath();c.arc(700,970,18,PI,0);c.stroke();box(c,672,966,56,54,10,brass(c,672,966,728,1020),'#5a3a10',2);}
+      if(st.f['f:drawer1']){c.fillStyle='#170d08';c.fillRect(585,744,240,14);}
+      if(X.diff==='h'){c.save();c.translate(520,690);c.rotate(-.08);box(c,-10,-8,60,14,2,'#fbf4e2','#53432e',1);c.restore();}
+      if(st.f['f:uvSeen'])paintingArt(c,L.painting[0],L.painting[1],L.painting[2],L.painting[3],X,false);
+    }
+    if(view==='fire'){
+      // A clean, correctly numbered face prevents generated markings from becoming false clues.
+      clockFace(c,810,324,77,st.pz.clock.h,st.pz.clock.m);
+      if(st.f['f:clockOpen']){c.fillStyle='#21130a';c.fillRect(760,478,103,344);c.fillStyle='#754828';c.beginPath();c.moveTo(760,478);c.lineTo(726,468);c.lineTo(726,840);c.lineTo(760,822);c.fill();}
+      pokerStand(c,X);
+      [[600,520],[128,520]].forEach(function(a,k){if(k===1&&p.photos.mantel)return;box(c,a[0]-8,a[1]-90,16,90,3,brass(c,a[0]-8,0,a[0]+8,0));circ(c,a[0],a[1]-2,16,'#ae843f');box(c,a[0]-7,a[1]-150,14,62,4,'#f6efe0');});
+      if(p.photos.mantel)photo(c,150,400,120,120,X.R.clues.ph_mantel,false);
+    }
+    return true;
+  }
+
   // ================= public =================
   // rooms 2+ bring their own art module (art2.js, art3.js) and register it here; Room 1 is drawn by this file
   var ROOMART = {};
   function roomArt(X) { var id = X && (X.R ? X.R.id : X.room); return id && id !== 1 ? ROOMART[id] : null; }
   function draw(c, view, X) {
     var ra = roomArt(X);
+    if (!ra && X.R && X.R.id === 1 && studyWall(c,view,X)) return;
     if (ra) ra.draw(c, view, X);
     else if (/^ph_/.test(view)) V.ph(c, X, view.slice(3));
     else if (V[view]) V[view](c, X);
@@ -32223,7 +32264,7 @@ var GOSound = (function () {
 (function () {
   'use strict';
   var E = GOEngine, A = GOArt, S = GOSound;
-  var VERSION = '0.16.0';
+  var VERSION = '0.17.0';
   // rooms 1-5: Keyhole Lane (the brass pieces and the finale); rooms 6+: Beyond the Lane (0.5.0), each a separate file that
   // defines GORoom<n> with its own STORY (name, desc, stamp, notes). Rooms 10 and 11 are the two parts of one place.
   var ROOMS = {};
