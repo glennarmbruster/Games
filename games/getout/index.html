@@ -16,6 +16,7 @@
 <script src="../../shared/goobs.js"></script>
 <script src="materials.js"></script>
 <script src="study-art.js"></script>
+<script src="levels23-art.js"></script>
 <title>Get Out!</title>
 <style>
 /* Get Out! styles (themes, sheets, cards and ad cards come from /shared/goobs.css).
@@ -12448,7 +12449,7 @@ var GOArt2 = (function () {
   };
 
   // ================= close-ups =================
-  function mintBg(c, e, dark) { c.fillStyle = MINT; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); c.save(); c.globalAlpha = 0.18; c.fillStyle = '#fff'; for (var x = Math.floor(e.x0 / 60) * 60; x < e.x1; x += 60) c.fillRect(x, e.y0, 4, e.y1 - e.y0); c.restore(); if (dark) { c.fillStyle = 'rgba(20,20,40,' + dark + ')'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); } }
+  function mintBg(c, e, dark) { if(typeof GOLevels!=="undefined"&&GOLevels.background(c,2,"wall",e)){if(dark){c.fillStyle="rgba(15,20,24,"+dark+")";c.fillRect(e.x0,e.y0,e.x1-e.x0,e.y1-e.y0);}return;} c.fillStyle = MINT; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); c.save(); c.globalAlpha = 0.18; c.fillStyle = '#fff'; for (var x = Math.floor(e.x0 / 60) * 60; x < e.x1; x += 60) c.fillRect(x, e.y0, 4, e.y1 - e.y0); c.restore(); if (dark) { c.fillStyle = 'rgba(20,20,40,' + dark + ')'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); } }
   function counterBg(c, e, top) {
     mintBg(c, e, 0.15);
     c.fillStyle = lin(c, 0, top, 0, Math.max(e.y1, top + 10), [[0, '#fffaf0'], [1, '#e2d5bc']]); c.fillRect(e.x0, top, e.x1 - e.x0, Math.max(10, e.y1 - top));
@@ -12833,10 +12834,17 @@ var GOArt2 = (function () {
     c.restore();
   }
 
+  // Tactile live surfaces: numbers, symbols and hit areas remain procedural.
+  var plainBox=box;
+  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOLevels!=='undefined')GOLevels.skin(c,2,x,y,w,h,r,fill);};
   // ================= public =================
-  function draw(c, view, X) {
-    if (/^rc_/.test(view)) return V.rc(c, X, view.slice(3));
-    if (V[view]) V[view](c, X);
+  function drawOriginal(c,view,X){
+    if (/^rc_/.test(view)) return V.rc(c,X,view.slice(3));
+    if(V[view])V[view](c,X);
+  }
+  function draw(c,view,X){
+    if(typeof GOLevels!=='undefined'&&GOLevels.render(c,2,view,X,drawOriginal))return;
+    drawOriginal(c,view,X);
   }
   function animated(view, X) { return powered(X) && view === 'juke'; }
   // moving bits over the cached scene: bubbles in the jukebox tubes, a flickering neon letter
@@ -13247,8 +13255,8 @@ var GOArt3 = (function () {
   };
 
   // ================= close-ups =================
-  function creamBg(c, e) { c.fillStyle = lin(c, 0, e.y0, 0, e.y1, [[0, '#e8dfc8'], [1, '#c9bc9c']]); c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); for (var y = Math.floor(e.y0 / 120) * 120; y < e.y1; y += 120) line(c, e.x0, y, e.x1, y, 'rgba(90,80,60,.18)', 3); }
-  function deskTop(c, e) { wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#7a4a26', false, 101); }
+  function creamBg(c, e) { if(typeof GOLevels!=="undefined"&&GOLevels.background(c,3,"wall",e))return; c.fillStyle = lin(c, 0, e.y0, 0, e.y1, [[0, '#e8dfc8'], [1, '#c9bc9c']]); c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0); for (var y = Math.floor(e.y0 / 120) * 120; y < e.y1; y += 120) line(c, e.x0, y, e.x1, y, 'rgba(90,80,60,.18)', 3); }
+  function deskTop(c, e) { if(typeof GOLevels!=="undefined"&&GOLevels.background(c,3,"wood",e))return; wood(c, e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0, '#7a4a26', false, 101); }
   function card(c, x, y, w, h, rot, col) { c.save(); c.translate(x + w / 2, y + h / 2); c.rotate(rot || 0); dropShadow(c, 24, 10, 0.4); box(c, -w / 2, -h / 2, w, h, 8, col || '#fbf7ee'); noShadow(c); c.restore(); }
   V.doorz = function (c, X) {
     var e = X.ext, st = X.st;
@@ -13585,10 +13593,17 @@ var GOArt3 = (function () {
     c.restore();
   }
 
+  // Tactile live surfaces: numbers, symbols and hit areas remain procedural.
+  var plainBox=box;
+  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOLevels!=='undefined')GOLevels.skin(c,3,x,y,w,h,r,fill);};
   // ================= public =================
-  function draw(c, view, X) {
-    if (/^pg_/.test(view)) return V.pg(c, X, view.slice(3));
-    if (V[view]) V[view](c, X);
+  function drawOriginal(c,view,X){
+    if (/^pg_/.test(view)) return V.pg(c,X,view.slice(3));
+    if(V[view])V[view](c,X);
+  }
+  function draw(c,view,X){
+    if(typeof GOLevels!=='undefined'&&GOLevels.render(c,3,view,X,drawOriginal))return;
+    drawOriginal(c,view,X);
   }
   function animated(view, X) {
     if (view === 'farview') return true;
