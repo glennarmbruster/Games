@@ -638,7 +638,7 @@ var BKSound = (function () {
     var light = c.createRadialGradient(VW * .35, VH * .15, 0, VW * .5, VH * .3, Math.max(VW, VH));
     light.addColorStop(0, bg[1]); light.addColorStop(1, bg[0]);
     c.fillStyle = light; c.fillRect(0, 0, VW, VH);
-    c.globalAlpha = .28; c.fillStyle = bg[1];
+    c.globalAlpha = .12; c.fillStyle = bg[1];
     var j0 = Math.floor(-OY / s2) - 1, j1 = Math.ceil((VH - OY) / s2) + 1, i0 = Math.floor(-OX / s2) - 1, i1 = Math.ceil((VW - OX) / s2) + 1;
     for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
       var x = OX + i * s2 + (((j % 2) + 2) % 2) * 0.6 * k, y = OY + j * s2, d = 0.25 * k;
@@ -708,11 +708,13 @@ var BKSound = (function () {
     // the walls the ball bounces off: the ceiling band and the two sides, fading out under the paddle (the bottom is open)
     var wg = cx.createLinearGradient(0, OY + BK.PADY * k, 0, OY + fh);
     wg.addColorStop(0, '#3a3f6b'); wg.addColorStop(1, 'rgba(58,63,107,0)');
-    cx.fillStyle = '#3a3f6b';
+    var rail = cx.createLinearGradient(0, OY, 0, OY + ceil); rail.addColorStop(0, '#59637c'); rail.addColorStop(.22, '#39435c'); rail.addColorStop(1, '#242d45');
+    cx.fillStyle = rail;
     rr(OX - WALL, OY, fw + 2 * WALL, ceil, Math.min(8, ceil / 2)); cx.fill();
     cx.fillRect(OX - WALL, OY + ceil / 2, WALL, BK.PADY * k - ceil / 2); cx.fillRect(OX + fw, OY + ceil / 2, WALL, BK.PADY * k - ceil / 2);
     cx.fillStyle = wg; cx.fillRect(OX - WALL, OY + BK.PADY * k, WALL, fh - BK.PADY * k); cx.fillRect(OX + fw, OY + BK.PADY * k, WALL, fh - BK.PADY * k);
-    cx.fillStyle = 'rgba(255,255,255,.10)'; cx.fillRect(OX - 1, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX + fw, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX, OY + ceil, fw, 1);
+    cx.fillStyle = 'rgba(0,0,0,.22)'; cx.fillRect(OX, OY + ceil, 3, BK.PADY * k - ceil); cx.fillRect(OX + fw - 3, OY + ceil, 3, BK.PADY * k - ceil);
+    cx.fillStyle = 'rgba(220,232,255,.24)'; cx.fillRect(OX - 1, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX + fw, OY + ceil, 1, BK.PADY * k - ceil); cx.fillRect(OX, OY + ceil, fw, 1);
     // the Break door: a glowing gap in the right wall at paddle height
     if (g.breakOpen) {
       var gl = 0.5 + 0.5 * Math.sin(now / 150);
@@ -741,13 +743,16 @@ var BKSound = (function () {
     g.shots.forEach(function (s) { cx.fillRect(s.x * k - 1.5, s.y * k - 0.35 * k, 3, 0.45 * k); });
     // the paddle
     var p = g.pad, pw = p.w * k, ph = BK.PADH * k, pxx = (p.x - p.w / 2) * k, pyy = BK.PADY * k;
-    rr(pxx, pyy, pw, ph, ph / 2); var pg = cx.createLinearGradient(0, pyy, 0, pyy + ph); pg.addColorStop(0, '#a38bff'); pg.addColorStop(1, '#6a4cf0'); cx.fillStyle = pg; cx.fill();
-    cx.fillStyle = g.power === 'C' ? '#40c057' : '#ffd43b'; rr(pxx + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill(); rr(pxx + pw - ph + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill();
+    rr(pxx, pyy, pw, ph, ph / 2); var pg = cx.createLinearGradient(0, pyy, 0, pyy + ph); pg.addColorStop(0, '#f1f5fa'); pg.addColorStop(.28, '#bccadb'); pg.addColorStop(.52, '#7d90a8'); pg.addColorStop(.65, '#aebdd0'); pg.addColorStop(1, '#53667d'); cx.fillStyle = pg; cx.fill();
+    cx.fillStyle = g.power === 'C' ? '#40c057' : '#d9ad53'; rr(pxx + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill(); rr(pxx + pw - ph + 2, pyy + 2, ph - 4, ph - 4, (ph - 4) / 2); cx.fill();
     if (g.power === 'L') { cx.fillStyle = '#fa5252'; cx.fillRect(pxx + 0.12 * k, pyy - 0.25 * k, 0.26 * k, 0.3 * k); cx.fillRect(pxx + pw - 0.38 * k, pyy - 0.25 * k, 0.26 * k, 0.3 * k); }
     // balls
     g.balls.forEach(function (b) {
       cx.fillStyle = 'rgba(255,255,255,.18)'; cx.beginPath(); cx.arc((b.x - b.vx * 1.5) * k, (b.y - b.vy * 1.5) * k, BK.BALLR * k * 0.9, 0, Math.PI * 2); cx.fill();
-      cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(b.x * k, b.y * k, BK.BALLR * k, 0, Math.PI * 2); cx.fill();
+      var bx = b.x * k, by = b.y * k, br = BK.BALLR * k;
+      var pearl = cx.createRadialGradient(bx - br * .3, by - br * .35, 0, bx, by, br);
+      pearl.addColorStop(0, '#ffffff'); pearl.addColorStop(.55, '#f5f8ff'); pearl.addColorStop(1, '#b9cce2');
+      cx.fillStyle = pearl; cx.beginPath(); cx.arc(bx, by, br, 0, Math.PI * 2); cx.fill();
     });
     if (g.balls.some(function (b) { return b.stuck; }) && phase === 'run') {
       cx.fillStyle = 'rgba(255,255,255,.75)'; cx.font = '800 ' + Math.round(k * 0.5) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.fillText('Tap to launch', W * k / 2, (BK.PADY - 2.2) * k);
