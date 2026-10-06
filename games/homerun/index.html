@@ -537,7 +537,7 @@ var MSRender = (function () {
     plate.rotation.y = Math.PI / 5 + Math.PI; plate.position.set(0, 0.03, 0.15); scene.add(plate);
     [-1, 1].forEach(function (s) { // foul lines
       var ln = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 100), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      ln.rotation.x = -Math.PI / 2; ln.rotation.z = -s * Math.PI / 4; ln.position.set(s * Math.sin(Math.PI / 4) * 50, 0.03, Math.cos(Math.PI / 4) * 50); scene.add(ln);
+      ln.rotation.x = -Math.PI / 2; ln.rotation.z = s * Math.PI / 4; ln.position.set(s * Math.sin(Math.PI / 4) * 50, 0.03, Math.cos(Math.PI / 4) * 50); scene.add(ln);
     });
     for (var bI = 0; bI < 3; bI++) { // bases
       var ang = (bI - 1) * Math.PI / 2, base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), new THREE.MeshLambertMaterial({ color: 0xffffff }));
@@ -569,8 +569,7 @@ var MSRender = (function () {
         var len = p1.distanceTo(p2) + 0.2, mid = p1.clone().add(p2).multiplyScalar(0.5), yaw = Math.atan2(p2.x - p1.x, p2.z - p1.z);
         var wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, MS.FENCE_H, len), wallMat); wall.position.set(mid.x, MS.FENCE_H / 2, mid.z); wall.rotation.y = yaw; fenceGroup.add(wall);
         var pad = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, len), padMat); pad.position.set(mid.x, MS.FENCE_H + 0.12, mid.z); pad.rotation.y = yaw; fenceGroup.add(pad);
-        var track = new THREE.Mesh(new THREE.PlaneGeometry(4.5, len), dirtMat); track.rotation.x = -Math.PI / 2; track.rotation.z = -yaw;
-        var out = mid.clone().multiplyScalar((mid.length() - 2.4) / mid.length()); track.position.set(out.x, 0.02, out.z); fenceGroup.add(track);
+
         for (var tier = 0; tier < 4; tier++) { // stands rise in tiers behind the wall
           var d = 6 + tier * 5, sm = mid.clone().multiplyScalar((mid.length() + d) / mid.length());
           var st = new THREE.Mesh(new THREE.BoxGeometry(5, 4 + tier * 4, len * (1 + d / r)), new THREE.MeshLambertMaterial({ color: standColors[(i + tier) % 4], map: crowd }));
@@ -578,6 +577,18 @@ var MSRender = (function () {
         }
       }
     }
+    // Continuous warning track: follow the same 36 fence chords, with shared edges
+    // and world-space clay UVs so the surface has no gaps or texture seams.
+    var trackPositions=[],trackUVs=[];
+    function trackPoint(a,r){return [Math.sin(a)*r,.025,Math.cos(a)*r];}
+    function trackTri(a,b,c){[a,b,c].forEach(function(v){trackPositions.push(v[0],v[1],v[2]);trackUVs.push(v[0]/27.4,v[2]/27.4);});}
+    for(var ti=0;ti<N;ti++){
+      var ta=-Math.PI/4+Math.PI/2*ti/N,tb=-Math.PI/4+Math.PI/2*(ti+1)/N,ra=MS.fenceAt(ta),rb=MS.fenceAt(tb);
+      var ai=trackPoint(ta,ra-4.5),ao=trackPoint(ta,ra),bi=trackPoint(tb,rb-4.5),bo=trackPoint(tb,rb);
+      trackTri(ai,ao,bo);trackTri(ai,bo,bi);
+    }
+    var trackGeo=new THREE.BufferGeometry();trackGeo.setAttribute('position',new THREE.Float32BufferAttribute(trackPositions,3));trackGeo.setAttribute('uv',new THREE.Float32BufferAttribute(trackUVs,2));trackGeo.computeVertexNormals();
+    var trackMesh=new THREE.Mesh(trackGeo,dirtMat);trackMesh.name='warning-track';fenceGroup.add(trackMesh);
     // stands along the first-base side and behind the plate: the backdrop of the side view
     (function () {
       var u = new THREE.Vector3(1, 0, 1).normalize(), o = new THREE.Vector3(1, 0, -1).normalize(), yaw = Math.atan2(u.x, u.z);
@@ -815,6 +826,12 @@ var MSSide = (function () {
       if(stadiumPhotos[sky]) {
         var photo=stadiumPhotos[sky],scale=Math.max(W/photo.width,H/photo.height),dw=photo.width*scale,dh=photo.height*scale;
         x.drawImage(photo,(W-dw)/2,(H-dh)/2,dw,dh);
+        // Chalk first/third-base foul lines, tapered into the photographic field.
+        x.save();x.fillStyle='rgba(249,247,232,.88)';
+        [-1,1].forEach(function(side){var nearX=L.plateX+side*H*.04,farX=L.plateX+side*W*.78,farY=H*.64,nearY=L.groundY+H*.008;
+          var dx=farX-nearX,dy=farY-nearY,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len,nearW=H*.0035,farW=H*.001;
+          x.beginPath();x.moveTo(nearX-nx*nearW,nearY-ny*nearW);x.lineTo(farX-nx*farW,farY-ny*farW);x.lineTo(farX+nx*farW,farY+ny*farW);x.lineTo(nearX+nx*nearW,nearY+ny*nearW);x.closePath();x.fill();
+        });x.restore();
         // A subtle ground shadow anchors equipment without obscuring the pitch.
         var mx=L.mouthX,my=L.groundY;var sh=x.createRadialGradient(mx+H*.09,my,0,mx+H*.09,my,H*.18);sh.addColorStop(0,'rgba(0,0,0,.42)');sh.addColorStop(1,'rgba(0,0,0,0)');x.save();x.translate(mx+H*.09,my);x.scale(1,.18);x.fillStyle=sh;x.translate(-mx-H*.09,-my);x.fillRect(mx-H*.12,my-H*.2,H*.42,H*.4);x.restore();
         x.fillStyle='#e7e3d8';x.beginPath();x.moveTo(L.plateX-H*.04,L.groundY);x.lineTo(L.plateX+H*.04,L.groundY);x.lineTo(L.plateX+H*.04,L.groundY+H*.015);x.lineTo(L.plateX,L.groundY+H*.029);x.lineTo(L.plateX-H*.04,L.groundY+H*.015);x.closePath();x.fill();

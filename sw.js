@@ -11,7 +11,7 @@ const VERSIONS = {
   skeehop: '1.4.0',
   merge: '1.2.0',
   tapaway: '1.2.0',
-  homerun: '1.5.0',
+  homerun: '1.5.1',
   match3: '1.1.0',
   snake: '1.1.0',
   solitaire: '1.1.1',
