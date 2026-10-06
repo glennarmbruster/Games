@@ -136,6 +136,19 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .week div { background: var(--surface-2); border-radius: 10px; padding: 6px 2px; text-align: center; font-size: 11px; color: var(--muted); font-weight: 700; }
 .week div b { display: block; font-size: 16px; color: var(--ink); }
 .week div.today { box-shadow: inset 0 0 0 2px var(--accent); }
+/* Question-first refinement: paper cards, calmer borders and readable hierarchy. */
+.qcard { background:#fffdf8; border-radius:19px; box-shadow:0 1px 0 #ffffff80,0 8px 24px #0a284633; }
+.qtext { font-weight:750; line-height:1.38; letter-spacing:-.3px; }
+.chip { border-radius:9px; font-size:13px; font-weight:700; }
+.ans { border-width:1.5px; border-radius:11px; box-shadow:0 2px 0 #2534490d; font-weight:600; }
+.ans .k { border-radius:7px; background:#eef0ee; color:#52626a; font-weight:750; }
+.ans.right { box-shadow:inset 3px 0 #22a06b; }
+.ans.wrong { box-shadow:inset 3px 0 #e5484d; }
+.fact { border-radius:10px; background:#eef3f1; line-height:1.5; }
+.flagbtn { border-width:1.5px; border-radius:11px; }
+.modes2 button,.catgrid button { border-radius:12px; box-shadow:inset 0 1px #ffffff33,0 1px 2px #00000008; }
+@media(prefers-reduced-motion:reduce) { .qcard.in,.ans.wrong,.after.show { animation:none; } }
+
 </style>
 </head>
 <body>

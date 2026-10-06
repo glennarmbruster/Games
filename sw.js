@@ -46,11 +46,11 @@ const VERSIONS = {
   getout: '0.16.0',
   sudoku: '0.1.0',
   wordwheel: '0.2.1',
-  trivia: '0.2.0',
+  trivia: '0.2.1',
   links: '0.2.0',
   bowling: '0.3.0',
   deck: '0.1.0',
-  wordboard: '0.1.1',
+  wordboard: '0.1.2',
   nonogram: '0.1.0',
   getout2: '1.1.0',
   huddle: '0.1.0',
@@ -62,7 +62,7 @@ const VERSIONS = {
   spotdiff: '0.4.0',
   hidden: '0.3.0',
   cases: '0.1.0',
-  spin: '0.1.0',
+  spin: '0.1.1',
   three: '0.186.1',  // shared 3D library; bump only when three.js itself changes
   planck: '1.5.0',   // shared 2D physics library (planck.js); bump only when planck itself changes
   cannon: '0.20.0'   // shared 3D physics library (cannon-es) for Number Nook's Chain Cube
@@ -121,7 +121,7 @@ const GROUPS = {
   links: ['games/links/', 'games/links/index.html'],
   bowling: ['games/bowling/', 'games/bowling/index.html', 'games/bowling/assets/lane-grain-v1.webp'],
   deck: ['games/deck/', 'games/deck/index.html'],
-  wordboard: ['games/wordboard/', 'games/wordboard/index.html'],
+  wordboard: ['games/wordboard/', 'games/wordboard/index.html', 'games/wordboard/assets/wood-v1.webp'],
   nonogram: ['games/nonogram/', 'games/nonogram/index.html'],
   getout2: ['games/getout2/', 'games/getout2/index.html', 'games/getout2/materials.js', 'games/getout2/assets/fabric-v1.webp', 'games/getout2/assets/leather-v1.webp', 'games/getout2/assets/plaster-v1.webp', 'games/getout2/assets/wood-v1.webp'],
   huddle: ['games/huddle/', 'games/huddle/index.html'],
@@ -133,7 +133,7 @@ const GROUPS = {
   spotdiff: ['games/spotdiff/photo-tour-data.js', 'games/spotdiff/photo-tour.js', 'games/spotdiff/assets/photo-tour/cafe/awning-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/chair-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/flowers-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/hat-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/juice-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/menu-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/mug-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/napkin-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/ring-color-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/scene-v1.webp', 'games/spotdiff/assets/photo-tour/cafe/shade-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/book-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/can-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/cushion-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/door-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/flowers-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/napkin-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/planter-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/pot-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/scene-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/shade-color-v1.webp', 'games/spotdiff/assets/photo-tour/courtyard/shutters-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/book-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/bowl-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/can-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/chair-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/flowers-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/hat-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/lantern-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/mug-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/scene-v1.webp', 'games/spotdiff/assets/photo-tour/garden/shade-color-v1.webp', 'games/spotdiff/assets/photo-tour/garden/towel-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/book-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/box-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/cup-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/curtain-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/cushion-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/flowers-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/lamp-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/mug-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/scene-v1.webp', 'games/spotdiff/assets/photo-tour/study/seat-color-v1.webp', 'games/spotdiff/assets/photo-tour/study/vase-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/bluecushion-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/book-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/case-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/cup-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/curtain-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/flowers-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/juice-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/lamp-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/scene-v1.webp', 'games/spotdiff/assets/photo-tour/train/seat-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/vase-color-v1.webp', 'games/spotdiff/assets/photo-tour/train/yellowcushion-color-v1.webp', 'games/spotdiff/', 'games/spotdiff/index.html', 'games/spotdiff/cruise-art.js', 'games/spotdiff/assets/cruise-deck.webp', 'games/spotdiff/photo-cruise.js', 'games/spotdiff/assets/photo-cruise/scene-v1.webp', 'games/spotdiff/assets/photo-cruise/book-absent-v1.webp', 'games/spotdiff/assets/photo-cruise/ball-absent-v1.webp', 'games/spotdiff/assets/photo-cruise/hat-absent-v1.webp', 'games/spotdiff/assets/photo-cruise/shade-color-v1.webp', 'games/spotdiff/assets/photo-cruise/upper-color-v1.webp', 'games/spotdiff/assets/photo-cruise/ring-color-v1.webp', 'games/spotdiff/assets/photo-cruise/chair-color-v1.webp', 'games/spotdiff/assets/photo-cruise/towel-color-v1.webp', 'games/spotdiff/assets/photo-cruise/flower-color-v1.webp', 'games/spotdiff/assets/photo-cruise/hat-color-v1.webp', 'games/spotdiff/assets/photo-cruise/book-color-v1.webp', 'games/spotdiff/assets/photo-cruise/drink-color-v1.webp', 'games/spotdiff/assets/photo-cruise/paper-color-v1.webp'],
   hidden: ['games/hidden/', 'games/hidden/index.html', 'games/hidden/materials.js', 'games/hidden/assets/wood-v1.webp', 'games/hidden/assets/fabric-v1.webp', 'games/hidden/assets/plaster-v1.webp'],
   cases: ['games/cases/', 'games/cases/index.html'],
-  spin: ['games/spin/', 'games/spin/index.html'],
+  spin: ['games/spin/', 'games/spin/index.html', 'games/spin/assets/cloth-v1.webp'],
   three: ['shared/three.module.min.js'],
   planck: ['shared/planck.min.js'],
   cannon: ['shared/cannon-es.min.js']

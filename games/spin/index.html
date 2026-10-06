@@ -338,6 +338,21 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
   .clock { width: min(220px, 60%); }
   .clock b { font-size: 64px; }
 }
+/* Theatre materials and tile clarity; wheel art and motion logic retained. */
+:root { --gold-grad:linear-gradient(180deg,#f3e6bc,#d4b777 50%,#ac864a); }
+.curtain { background-image:repeating-linear-gradient(90deg,var(--velvet2),var(--velvet) 8px,var(--velvet2) 20px),url('assets/cloth-v1.webp'); background-size:auto,160px; background-blend-mode:multiply; }
+.bulbs,.board::before { animation:none; opacity:.35; }
+.board { border-color:#b89b61; box-shadow:0 0 0 2px #4b3820,0 6px 18px #0006,inset 0 0 16px #0005; }
+.cell .t { font-weight:800; box-shadow:inset 0 1px #ffffffb3,inset 0 -2px #00000015,0 1px 2px #0005; }
+.cell.cursor .t { box-shadow:0 0 0 2px var(--typed),0 0 10px #1f6fd6b3; }
+.cell.lit .t { box-shadow:0 0 10px #78dcffe6; }
+.pod { border-radius:10px; }
+.pod.on { box-shadow:0 0 0 2px var(--sc),0 4px 10px #0004; }
+.hostline p { border-radius:10px; }
+.key { border-radius:7px; font-weight:750; box-shadow:inset 0 1px #ffffffcc,0 2px 0 #8b93a3; }
+.key.sel { box-shadow:inset 0 1px #fff8,0 2px 0 #8a6410; }
+.key:disabled { box-shadow:none; }
+
 </style>
 </head>
 <body>
