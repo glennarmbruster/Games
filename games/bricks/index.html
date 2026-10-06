@@ -635,12 +635,16 @@ var BKSound = (function () {
     var c = bgCache.getContext('2d'), s2 = 1.2 * k;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.fillStyle = bg[0]; c.fillRect(0, 0, VW, VH);
-    c.fillStyle = bg[1];
+    var light = c.createRadialGradient(VW * .35, VH * .15, 0, VW * .5, VH * .3, Math.max(VW, VH));
+    light.addColorStop(0, bg[1]); light.addColorStop(1, bg[0]);
+    c.fillStyle = light; c.fillRect(0, 0, VW, VH);
+    c.globalAlpha = .28; c.fillStyle = bg[1];
     var j0 = Math.floor(-OY / s2) - 1, j1 = Math.ceil((VH - OY) / s2) + 1, i0 = Math.floor(-OX / s2) - 1, i1 = Math.ceil((VW - OX) / s2) + 1;
     for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
       var x = OX + i * s2 + (((j % 2) + 2) % 2) * 0.6 * k, y = OY + j * s2, d = 0.25 * k;
       c.beginPath(); c.moveTo(x, y - d); c.lineTo(x + d, y); c.lineTo(x, y + d); c.lineTo(x - d, y); c.fill();
     }
+    c.globalAlpha = 1;
     document.documentElement.style.setProperty('--bk-bg', bg[0]); // the page behind the canvas matches (overscroll, rotation)
     return bgCache;
   }
@@ -659,6 +663,40 @@ var BKSound = (function () {
     } else if (pw) h = '<small>You have</small>' + capBadge(pw) + '<span><strong>' + CAPSHORT[pw][0] + '</strong>: ' + CAPSHORT[pw][1] + '</span>';
     el.innerHTML = h;
     el.className = 'powerline' + (h ? ' show' : '') + (cap ? ' falling' : '');
+  }
+  // Cached enamel surfaces: rendering only; no game state or random-number use.
+  var enamelCache = new Map();
+  function enamel(x, y, w, h, radius, color) {
+    var key = [w, h, radius, color, dpr].join(':');
+    var tile = enamelCache.get(key);
+    if (!tile) {
+      if (enamelCache.size >= 128) enamelCache.clear();
+      tile = document.createElement('canvas');
+      tile.width = Math.ceil(w * dpr); tile.height = Math.ceil(h * dpr);
+      var q = tile.getContext('2d'); q.scale(dpr, dpr);
+      q.beginPath(); q.roundRect(0, 0, w, h, radius); q.clip();
+      q.fillStyle = color; q.fillRect(0, 0, w, h);
+      var face = q.createLinearGradient(0, 0, w * 0.18, h);
+      face.addColorStop(0, 'rgba(255,255,255,.48)');
+      face.addColorStop(.16, 'rgba(255,255,255,.15)');
+      face.addColorStop(.48, 'rgba(255,255,255,0)');
+      face.addColorStop(1, 'rgba(0,0,0,.38)');
+      q.fillStyle = face; q.fillRect(0, 0, w, h);
+      var shine = q.createLinearGradient(0, 0, w, h * .65);
+      shine.addColorStop(0, 'rgba(255,255,255,.27)');
+      shine.addColorStop(.45, 'rgba(255,255,255,.05)');
+      shine.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = shine; q.beginPath(); q.moveTo(0, 0); q.lineTo(w, 0);
+      q.lineTo(w, h * .18); q.quadraticCurveTo(w * .45, h * .3, 0, h * .64); q.fill();
+      q.lineWidth = Math.max(.7, Math.min(w, h) * .045);
+      q.strokeStyle = 'rgba(0,0,0,.35)'; q.beginPath(); q.roundRect(.5, .5, w - 1, h - 1, radius); q.stroke();
+      q.strokeStyle = 'rgba(255,255,255,.48)'; q.beginPath();
+      q.moveTo(radius, 1.2); q.lineTo(w - radius, 1.2); q.stroke();
+      q.strokeStyle = 'rgba(255,255,255,.16)'; q.beginPath();
+      q.roundRect(2, 2, Math.max(1, w - 4), Math.max(1, h - 4), Math.max(1, radius - 1)); q.stroke();
+      enamelCache.set(key, tile);
+    }
+    cx.drawImage(tile, x, y, w, h);
   }
   function draw() {
     if (!cx || !g) return;
@@ -687,9 +725,7 @@ var BKSound = (function () {
     // bricks
     g.bricks.forEach(function (b) {
       var x = b.x * k + 1, y = b.y * k + 1, w = k - 2, h = BK.BH * k - 2, col = BCOL[b.kind];
-      rr(x, y, w, h, Math.min(4, h * 0.3)); cx.fillStyle = col; cx.fill();
-      cx.fillStyle = 'rgba(255,255,255,.35)'; cx.fillRect(x + 2, y + 1.5, w - 4, Math.max(1.5, h * 0.22));
-      cx.fillStyle = 'rgba(0,0,0,.2)'; cx.fillRect(x + 2, y + h - Math.max(1.5, h * 0.18), w - 4, Math.max(1.5, h * 0.18));
+      enamel(x, y, w, h, Math.min(4, h * 0.3), col);
       if (b.kind === 9 || b.kind === 10) { cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(x + w * 0.2, y + h - 2); cx.lineTo(x + w * 0.35, y + 2); cx.moveTo(x + w * 0.45, y + h - 2); cx.lineTo(x + w * 0.6, y + 2); cx.stroke(); }
       if (b.flash) { rr(x, y, w, h, 3); cx.fillStyle = 'rgba(255,255,255,' + (b.flash / 10).toFixed(2) + ')'; cx.fill(); }
     });

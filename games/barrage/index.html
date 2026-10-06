@@ -1151,6 +1151,40 @@ var BBSound = (function () {
     cv.width = Math.round(COLS * k * dpr); cv.height = Math.round(FIELD_H * k * dpr);
   }
   function rr(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+  // Cached enamel surfaces: rendering only; no game state or random-number use.
+  var enamelCache = new Map();
+  function enamel(x, y, w, h, radius, color) {
+    var key = [w, h, radius, color, dpr].join(':');
+    var tile = enamelCache.get(key);
+    if (!tile) {
+      if (enamelCache.size >= 128) enamelCache.clear();
+      tile = document.createElement('canvas');
+      tile.width = Math.ceil(w * dpr); tile.height = Math.ceil(h * dpr);
+      var q = tile.getContext('2d'); q.scale(dpr, dpr);
+      q.beginPath(); q.roundRect(0, 0, w, h, radius); q.clip();
+      q.fillStyle = color; q.fillRect(0, 0, w, h);
+      var face = q.createLinearGradient(0, 0, w * 0.18, h);
+      face.addColorStop(0, 'rgba(255,255,255,.48)');
+      face.addColorStop(.16, 'rgba(255,255,255,.15)');
+      face.addColorStop(.48, 'rgba(255,255,255,0)');
+      face.addColorStop(1, 'rgba(0,0,0,.38)');
+      q.fillStyle = face; q.fillRect(0, 0, w, h);
+      var shine = q.createLinearGradient(0, 0, w, h * .65);
+      shine.addColorStop(0, 'rgba(255,255,255,.27)');
+      shine.addColorStop(.45, 'rgba(255,255,255,.05)');
+      shine.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = shine; q.beginPath(); q.moveTo(0, 0); q.lineTo(w, 0);
+      q.lineTo(w, h * .18); q.quadraticCurveTo(w * .45, h * .3, 0, h * .64); q.fill();
+      q.lineWidth = Math.max(.7, Math.min(w, h) * .045);
+      q.strokeStyle = 'rgba(0,0,0,.35)'; q.beginPath(); q.roundRect(.5, .5, w - 1, h - 1, radius); q.stroke();
+      q.strokeStyle = 'rgba(255,255,255,.48)'; q.beginPath();
+      q.moveTo(radius, 1.2); q.lineTo(w - radius, 1.2); q.stroke();
+      q.strokeStyle = 'rgba(255,255,255,.16)'; q.beginPath();
+      q.roundRect(2, 2, Math.max(1, w - 4), Math.max(1, h - 4), Math.max(1, radius - 1)); q.stroke();
+      enamelCache.set(key, tile);
+    }
+    cx.drawImage(tile, x, y, w, h);
+  }
   function draw() {
     if (!cx || !g) return;
     var W = COLS * k, now = performance.now();
@@ -1230,9 +1264,7 @@ var BBSound = (function () {
       var bw = cell.w || 1, bh = cell.h || 1, sw = bw * k - p * 2, sh = bh * k - p * 2, rad = k * (bw * bh > 1 ? 0.2 : 0.14);
       y = (r - bh + 1) * k;
       var col = hue(cell.hp);
-      rr(x + p, y + p, sw, sh, rad); cx.fillStyle = col; cx.fill();
-      cx.fillStyle = 'rgba(255,255,255,.18)'; rr(x + p, y + p, sw, Math.min(sh * 0.32, k * 0.32), rad * 0.85); cx.fill();
-      cx.fillStyle = 'rgba(0,0,0,.18)'; cx.fillRect(x + p + k * 0.1, y + p + sh - k * 0.09, sw - k * 0.2, k * 0.06);
+      enamel(x + p, y + p, sw, sh, rad, col);
       if (bw * bh > 1) { cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = Math.max(1, k * 0.045); rr(x + p * 2.2, y + p * 2.2, sw - p * 2.4, sh - p * 2.4, rad * 0.8); cx.stroke(); }
       if (cell.flash) { cx.fillStyle = 'rgba(255,255,255,' + (cell.flash / 10).toFixed(2) + ')'; rr(x + p, y + p, sw, sh, rad); cx.fill(); }
       num(cell.hp, x + bw * k / 2, y + bh * k / 2, '#ffffff', bw, bh);
