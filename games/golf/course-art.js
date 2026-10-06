@@ -12,7 +12,7 @@ window.PinHighArt = function (T, renderer) {
     float phHash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
     float phNoise(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(phHash(i),phHash(i+vec2(1.,0.)),f.x),mix(phHash(i+vec2(0.,1.)),phHash(i+1.),f.x),f.y); }
   `;
-  function turf(extra) {
+  function turf(extra, quiet) {
     var m = new T.MeshStandardMaterial(Object.assign({vertexColors:true,roughness:1},extra||{}));
     m.onBeforeCompile = function (s) {
       s.vertexShader = 'varying vec3 phWorld;\n'+s.vertexShader;
@@ -23,10 +23,10 @@ window.PinHighArt = function (T, renderer) {
         float grain=phNoise(p*22.0), blades=phNoise(p*vec2(85.,12.));
         float broad=phNoise(p*.23)*.5+phNoise(p*.73)*.3+phNoise(p*2.1)*.2;
         float fade=1.-smoothstep(25.,160.,length(cameraPosition-phWorld));
-        diffuseColor.rgb*=.90+broad*.17+(grain-.5)*.13*fade+(blades-.5)*.12*fade;
+        diffuseColor.rgb*=mix(1.,.90+broad*.17+(grain-.5)*.13*fade+(blades-.5)*.12*fade,${quiet ? ".18" : "1."});
       `);
     };
-    m.customProgramCacheKey=function(){return 'pin-high-turf-v1';}; return m;
+    m.customProgramCacheKey=function(){return 'pin-high-turf-v2-'+!!quiet;}; return m;
   }
   function lake() {
     var m=new T.MeshStandardMaterial({color:0x287d89,roughness:.28,metalness:.24,transparent:true,opacity:.94});

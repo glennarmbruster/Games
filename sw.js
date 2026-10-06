@@ -39,7 +39,7 @@ const VERSIONS = {
   minigolf: '2.1.0',
   board: '1.1.1',
   buzz: '2.2.0',
-  golf: '0.5.0',
+  golf: '0.5.1',
   shelf: '1.2.0',
   castle: '1.7.0',
   outpost: '0.6.1',
