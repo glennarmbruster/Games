@@ -83,6 +83,12 @@ html.gg-fs-over .top .info .lbl { font-size: 10px; color: #5b6280; letter-spacin
 html.gg-fs-over .top .info .big { font-size: 21px; color: #1b1f33; }
 html.gg-fs-over .top .info .mid { font-size: 15px; color: #1b1f33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html.gg-fs-over .top .info .right { text-align: left; }
+/* Course HUD: compact, legible, and outside the playable bounds. */
+html.gg-fs-over .top .info > div { background:rgba(250,248,238,.96); border:1px solid #aab39b; border-radius:10px; box-shadow:0 3px 12px #142e2433; }
+html.gg-fs-over .top .info .lbl { color:#516455; }
+html.gg-fs-over .top .info .mid { font-size:13px; }
+html.gg-fs-over .top .info .big,html.gg-fs-over .top .info .mid { color:#173f32; }
+html.gg-fs-over .top .iconbtn { background:rgba(250,248,238,.96); color:#173f32; border-color:#aab39b; border-radius:10px; }
 </style>
 </head>
 <body>
@@ -472,6 +478,7 @@ var SPArt = (function () {
   return { sea: sea, hole: hole, blades: blades, mover: mover, bumper: bumper, lighthouse: lighthouse, flag: flag, ball: ball, rr: rr };
 })();
 </script>
+<script src="course-art.js"></script>
 <script>
 /* Seaside Putt sounds: synthesized with Web Audio (no audio files). */
 var SPSound = (function () {
@@ -687,7 +694,7 @@ var SPSound = (function () {
     var tr = document.querySelector('.top').getBoundingClientRect(), sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp-sb')) || 0;
     MT = Math.max(0, tr.bottom - r.top + 4); MB = sb + 6;
     var fh = Math.max(100, H - MT - MB);
-    s = Math.min((W - 8) / 84, fh / 166); ox = W / 2 - 50 * s; oy = MT + fh / 2 - 89 * s; cache = null;
+    s = Math.min((W - 12) / 86, fh / 176); ox = W / 2 - 50 * s; oy = MT + fh / 2 - 87 * s; cache = null;
   }
   function toUnits(px, py) { return [(px - ox) / s, (py - oy) / s]; }
   function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
@@ -758,8 +765,10 @@ var SPSound = (function () {
     fx.parts = fx.parts.filter(function (p) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; if (p.rot !== undefined) p.rot += p.vr * dt; return p.t < p.life; });
     fx.parts.forEach(function (p) { cx.globalAlpha = Math.max(0, 1 - p.t / p.life); cx.fillStyle = p.c; if (p.conf) { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); cx.restore(); } else { cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill(); } });
     cx.globalAlpha = 1;
-    // banners (screen pixels)
+    // Shot strength remains outside the course; dragging still uses the original controls.
     cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if(v && v.ok && !b.moving && !cur.done){var bw=Math.min(180,W*.48),bx=(W-bw)/2,by=H-MB-18;SPArt.rr(cx,bx-10,by-8,bw+20,24,9);cx.fillStyle='#102d25e6';cx.fill();SPArt.rr(cx,bx,by,bw,5,2);cx.fillStyle='#ffffff33';cx.fill();SPArt.rr(cx,bx,by,Math.max(3,bw*v.pw),5,2);cx.fillStyle='#ead79c';cx.fill();cx.fillStyle='#fff8e7';cx.font='700 10px system-ui';cx.textAlign='center';cx.fillText(Math.round(v.pw*100)+'%',W/2,by-13);}
+    // banners (screen pixels)
     if (fx.banner) { var bn = fx.banner; bn.t += dt; var a = bn.t < 0.3 ? bn.t / 0.3 : bn.t > 2.4 ? Math.max(0, 1 - (bn.t - 2.4) / 0.5) : 1; if (bn.t > 2.9) fx.banner = null; else pill(bn.text, bn.sub, Math.max(H * 0.3, MT + 8), a, '#ffffff'); }
     if (fx.big) { var bg = fx.big; bg.t += dt; var sc = Math.min(1, bg.t / 0.25), pop = sc < 1 ? 0.6 + 0.4 * sc + Math.sin(sc * Math.PI) * 0.15 : 1; bigText(bg.text, bg.sub, pop, Math.min(1, bg.t / 0.15), bg.color); }
   }
@@ -799,7 +808,7 @@ var SPSound = (function () {
     if (mode === 'round') { var c = round.cards[p], played = 0, strokes = 0; for (var k = 0; k < round.hole; k++) if (c[k]) { played += HOLES[k].par; strokes += c[k]; } tot = (round.hole ? ' · ' + vs(strokes - played) : ''); }
     var who = mode === 'round' && round.n > 1 ? '<span class="pdot" style="background:' + PCOL[p] + '"></span>' : '';
     $('info').innerHTML = '<div><div class="lbl">' + (mode === 'prac' ? 'Practice' : 'Hole') + '</div><div class="big">' + (i + 1) + '</div></div>' +
-      '<div class="right"><div class="lbl">' + h.name + ' · Par ' + h.par + '</div><div class="mid">' + who + 'Stroke ' + cur.strokes + tot + '</div></div>';
+      '<div class="right"><div class="lbl">' + h.name + '</div><div class="mid">' + who + cur.strokes + ' putts · Par ' + h.par + tot + '</div></div>';
   }
   var toastT = 0;
   function toast(tx) { var el = $('toast'); el.textContent = tx; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2000); }
