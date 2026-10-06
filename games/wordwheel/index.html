@@ -42,7 +42,9 @@
 html, body { height: 100%; }
 body { background: #2b2350; overflow: hidden; }
 .scene { position: fixed; inset: 0; z-index: 0; }
-.scene svg { width: 100%; height: 100%; display: block; }
+.scene img { width:100%; height:100%; display:block; object-fit:cover; }
+.scene { pointer-events:none; background:#566b69; }
+.scene::after { content:""; position:absolute; inset:0; background:rgba(19,36,35,.22); }
 html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
   padding: calc(env(safe-area-inset-top, 0px) + 58px) calc(env(safe-area-inset-right, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px); }
 
@@ -109,7 +111,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .maplist { display: flex; flex-direction: column; gap: 8px; }
 .place { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; background: var(--surface-2); }
 .place .thumb { width: 64px; height: 44px; border-radius: 10px; overflow: hidden; flex: none; }
-.place .thumb svg { width: 100%; height: 100%; display: block; }
+.place .thumb img { width:100%; height:100%; display:block; object-fit:cover; }
 .place b { display: block; font-size: 16px; }
 .place small { color: var(--muted); font-size: 13px; }
 .place.here { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -124,6 +126,20 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .ltr.sel { background:#5a54f0; box-shadow:inset 0 1px #ffffff40,0 2px 0 #3933ac; text-shadow:none; }
 .sbtn { box-shadow:inset 0 1px #fff,0 2px 0 #d8d1c5,0 5px 10px #140a5033; }
 .cur { letter-spacing:2px; font-family:-apple-system,system-ui,sans-serif; }
+
+/* Natural materials: quiet scenery, readable recessed slots and ivory tokens. */
+.sq { background:rgba(33,51,49,.82); color:#253c39; box-shadow:inset 0 1px 3px #0004,inset 0 0 0 1px #fff8; border-radius:13%; }
+.sq.on,.sq.hinted { background:linear-gradient(145deg,#fffef8,#ece4d5); box-shadow:inset 0 1px #fff,0 2px 0 #bcb09b,0 3px 6px #0004; }
+.sq.hinted { color:#6b7770; }
+.sq.pickable { background:#f6e1a9; box-shadow:inset 0 0 0 2px #ba8b32; }
+.wheel { background:linear-gradient(#e6c69240,#78533250),url('assets/wood-v1.webp') center/cover; box-shadow:inset 0 0 0 2px #f4dfb080,inset 0 0 0 8px #4e321e30,0 4px 0 #60462e,0 10px 22px #0005; }
+.ltr { color:#263e39; background:linear-gradient(145deg,#fffef8,#ece4d5); box-shadow:inset 0 1px #fff,0 2px 0 #bbae98,0 3px 5px #0003; }
+.ltr.sel { background:#245e55; color:#fff; box-shadow:inset 0 1px #ffffff55,0 2px 0 #173e38; }
+.wheel .lines path { stroke:#a8d6c5; opacity:.95; }
+.sbtn { color:#294c43; background:#fffdf4; }
+.sbtn.on { background:#f0cb79; }
+.cur { background:#223e37eb; }
+@media(prefers-reduced-motion:reduce) { .sq.flash,.sq.seen,.board.won .sq,.coins.bump { animation:none; } .ltr { transition:none; } }
 
 </style>
 </head>
@@ -144,7 +160,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 <symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
 </defs></svg>
 
-<div class="scene" id="scene"></div>
+<div class="scene" id="scene" aria-hidden="true"></div>
 
 <div class="app" id="app">
   <div class="top">
@@ -2564,36 +2580,15 @@ var WWGen = (function () {
     return o;
   }
   function placeName(p) { var x = placeParts(p); return x.adj + ' ' + x.noun + (x.round ? ' ' + roman(x.round + 1) : ''); }
-  // an original scene for each place: sky, sun or moon, three layers of land (hills, peaks, dunes or water); seeded by
-  // the place number, so later places with a familiar name still get their own scene
+  // Landscape families follow the existing place names and 16-level progression.
+  // Art is finite; puzzle generation and the unlimited place sequence are unchanged.
   function sceneSVG(p) {
-    var r = rng(9001 + p * 7919), noun = placeParts(p).noun;
-    var sky = SKIES[p % SKIES.length], land = LANDS[(p * 3 + 1) % LANDS.length], night = sky[0] === '#14233f';
-    var kind = /Bay|Lagoon|Shore|Isle|Cove|Reef|Lake|Inlet|Marsh/.test(noun) ? 'water' : /Ridge|Peaks|Canyon|Falls|Heights|Bluffs|Pass|Summit|Cliffs|Mesa/.test(noun) ? 'peaks' : /Dunes|Sands/.test(noun) ? 'dunes' : 'hills';
-    var h = '<svg viewBox="0 0 100 200" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sk' + p + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + sky[0] + '"/><stop offset=".7" stop-color="' + sky[1] + '"/></linearGradient></defs>';
-    h += '<rect width="100" height="200" fill="url(#sk' + p + ')"/>';
-    if (night) for (var s = 0; s < 40; s++) h += '<circle cx="' + (r() * 100).toFixed(1) + '" cy="' + (r() * 110).toFixed(1) + '" r="' + (0.2 + r() * 0.45).toFixed(2) + '" fill="#fff" opacity="' + (0.4 + r() * 0.6).toFixed(2) + '"/>';
-    var sx = 18 + r() * 64, sy = 34 + r() * 40;
-    h += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="13" fill="' + sky[2] + '" opacity=".35"/><circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="8" fill="' + sky[2] + '"/>';
-    for (var c = 0; c < 3; c++) { // a few soft clouds
-      var cx = r() * 100, cy = 18 + r() * 70; if (night) break;
-      h += '<g fill="#fff" opacity=".55"><ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="11" ry="3.2"/><ellipse cx="' + (cx + 4).toFixed(1) + '" cy="' + (cy - 2.2).toFixed(1) + '" rx="6" ry="3"/></g>';
-    }
-    for (var L = 0; L < 3; L++) {
-      var base = 118 + L * 26, d = 'M0 200V' + base.toFixed(1), amp = kind === 'peaks' ? 26 - L * 6 : kind === 'dunes' ? 9 : kind === 'water' && L === 2 ? 2 : 11 - L * 2;
-      var steps = kind === 'peaks' ? 5 + Math.floor(r() * 3) : 4, ph = r() * 6;
-      for (var k = 1; k <= steps; k++) {
-        var x = k * 100 / steps, y = base - (kind === 'peaks' ? (k % 2 ? amp * (0.5 + r() * 0.5) : -amp * 0.2) : Math.sin(k * 1.7 + ph) * amp);
-        if (kind === 'peaks') d += 'L' + x.toFixed(1) + ' ' + y.toFixed(1);
-        else d += 'Q' + (x - 50 / steps).toFixed(1) + ' ' + (y - amp * (r() - 0.5) * 2).toFixed(1) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1);
-      }
-      d += 'V200z';
-      var col = kind === 'water' && L === 2 ? '#3a86c8' : land[L];
-      h += '<path d="' + d + '" fill="' + col + '"' + (L === 0 ? ' opacity=".85"' : '') + '/>';
-      if (kind === 'water' && L === 2) for (var w = 0; w < 7; w++) h += '<path d="M' + (r() * 90).toFixed(1) + ' ' + (base + 6 + r() * 26).toFixed(1) + 'h' + (5 + r() * 8).toFixed(1) + '" stroke="#bfe3ff" stroke-width=".7" stroke-linecap="round" opacity=".7"/>';
-    }
-    h += '<rect width="100" height="200" fill="#1b1033" opacity=".12"/></svg>';
-    return h;
+    var noun = placeParts(p).noun;
+    var kind = /Bay|Lagoon|Shore|Isle|Cove|Reef|Lake|Inlet|Marsh/.test(noun) ? 'coast' :
+      /Ridge|Peaks|Canyon|Falls|Heights|Bluffs|Pass|Summit|Cliffs|Mesa/.test(noun) ? 'mountains' :
+      /Dunes|Sands/.test(noun) ? 'dunes' : 'hills';
+    var focus = 44 + Math.floor(rng(9001 + p * 7919)() * 13);
+    return '<img src="assets/' + kind + '-v1.webp" alt="" draggable="false" style="object-position:' + focus + '% center">';
   }
 
   // ================= level state =================
@@ -2857,7 +2852,7 @@ var WWGen = (function () {
     var here = placeOf(g.level), h = '';
     for (var p = Math.max(0, here - 6); p <= here + 3; p++) {
       var a = p * PER_PLACE + 1, z = a + PER_PLACE - 1, st = p < here ? 'Done' : p === here ? 'now on level ' + fmt(g.level) : 'Ahead';
-      h += '<div class="place' + (p === here ? ' here' : '') + (p > here ? ' locked' : '') + '"><div class="thumb">' + sceneSVG(p).replace(/id="sk(\d+)"/, 'id="skt$1"').replace(/url\(#sk(\d+)\)/, 'url(#skt$1)') + '</div><div><b>' + placeName(p) + '</b><small>Levels ' + fmt(a) + '–' + fmt(z) + ' · ' + st + '</small></div></div>';
+      h += '<div class="place' + (p === here ? ' here' : '') + (p > here ? ' locked' : '') + '"><div class="thumb">' + sceneSVG(p) + '</div><div><b>' + placeName(p) + '</b><small>Levels ' + fmt(a) + '–' + fmt(z) + ' · ' + st + '</small></div></div>';
     }
     $('mapList').innerHTML = h;
     $('ovMap').classList.add('show');
