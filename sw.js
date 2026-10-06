@@ -34,7 +34,7 @@ const VERSIONS = {
   beacon: '0.4.0',
   sort: '1.2.0',
   triple: '1.1.0',
-  pinball: '2.0.0',
+  pinball: '2.0.1',
   parking: '1.1.0',
   minigolf: '2.0.0',
   board: '1.1.1',
