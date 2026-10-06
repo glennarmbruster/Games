@@ -102,14 +102,28 @@ html.gg-fs .kb button.wide { font-size: 14px; }
 :root[data-theme="dark"] .kb button.p, :root[data-theme="blue"] .kb button.p { background: var(--lm-p); }
 :root[data-theme="dark"] .kb button.hint, :root[data-theme="blue"] .kb button.hint { background: #3d6fd8; color: #fff; }
 :root[data-theme="dark"] .kb button.hint.open, :root[data-theme="blue"] .kb button.hint.open { background: transparent; color: var(--ink); }
-/* Visual refinement: quiet ceramic tiles and tactile keyboard keys. */
-.cell { border-width:1.5px; border-radius:7px; font-weight:800; font-variant-numeric:tabular-nums; box-shadow:inset 0 1px #ffffff40,0 2px 0 color-mix(in srgb,var(--lm-edge) 60%,transparent); }
-.cell.full { border-color:var(--muted); background-image:linear-gradient(150deg,#ffffff18,transparent); }
-.cell.c, .cell.p, .cell.a { box-shadow:inset 0 1px #ffffff4d,inset 0 -2px #0000001a,0 2px 3px #00000012; }
-.kb button { border-radius:7px; box-shadow:inset 0 1px #ffffff40,0 2px 0 color-mix(in srgb,var(--ink) 22%,transparent); font-weight:700; }
+/* Lettermind: a quiet jade tile tray, porcelain faces and tactile keys.
+   Paint only: the existing board measurements, controls and game rules stay intact. */
+:root { --lm-tray:#b7cbc5; --lm-tray-edge:#91aca5; --lm-empty:#fffef9; --lm-edge:#b4c3bc; --lm-detail:#257564; --lm-key:#e4e9e5; }
+:root[data-theme="dark"] { --lm-tray:#263b39; --lm-tray-edge:#46615a; --lm-empty:#25302f; --lm-edge:#51635c; --lm-detail:#8ed0b6; }
+:root[data-theme="blue"] { --lm-tray:#203e55; --lm-tray-edge:#41637c; --lm-empty:#193148; --lm-edge:#47657b; --lm-detail:#8bcbd5; }
+:root[data-skin="halloween"] { --lm-tray:#352740; --lm-tray-edge:#655271; --lm-empty:var(--surface); --lm-edge:#66536f; --lm-detail:var(--gold); }
+body { background-image:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--ink) 4%,transparent) .6px,transparent .9px),linear-gradient(145deg,color-mix(in srgb,var(--lm-tray) 24%,var(--bg)),var(--bg) 65%); background-size:5px 5px,100% 100%; }
+.brand h1 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-.5px; }
+.brand .chev { color:var(--lm-detail); }
+.modes { background:color-mix(in srgb,var(--lm-tray) 25%,var(--surface-2)); box-shadow:inset 0 1px 2px #00000008; }
+.modes button.on { color:var(--lm-detail); box-shadow:inset 0 -3px var(--lm-detail),0 2px 4px #0000000a; }
+.grid { position:relative; isolation:isolate; }
+.grid::before { content:""; position:absolute; inset:-5px; z-index:-1; border:1px solid var(--lm-tray-edge); border-radius:12px; background:var(--lm-tray); box-shadow:inset 0 1px #ffffff40,0 3px 0 color-mix(in srgb,var(--lm-tray-edge) 70%,transparent),0 6px 14px #142e2410; pointer-events:none; }
+.cell { border-width:1px; border-radius:7px; font-weight:800; font-variant-numeric:tabular-nums; background-image:linear-gradient(155deg,#ffffff16,transparent 55%,#00000006); box-shadow:inset 0 1px #ffffff60,inset 0 -2px #00000009,0 2px 2px #142e2424; }
+.cell.full { border-color:var(--lm-detail); box-shadow:inset 0 0 0 1px var(--lm-detail),0 2px 2px #142e2424; }
+.cell.c, .cell.p, .cell.a { background-image:linear-gradient(155deg,#ffffff24,transparent 60%,#00000012); box-shadow:inset 0 1px #ffffff4d,inset 0 -2px #00000024,0 2px 2px #00000020; }
+.kb button { border-radius:7px; box-shadow:inset 0 1px #ffffff50,inset 0 -1px #00000008,0 2px 0 color-mix(in srgb,var(--ink) 22%,transparent); font-weight:700; }
 .kb button:active { transform:translateY(1px); box-shadow:inset 0 1px 3px #0002; }
 .kb button.hint.open { box-shadow:inset 0 0 0 2px #3d6fd8; }
 .kb button.off { box-shadow:none; }
+.tool.go { background:#247b59; box-shadow:inset 0 1px #ffffff40,inset 0 -2px #00000020,0 3px 8px #12482d20; }
+button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
 @media (prefers-reduced-motion:reduce) { .cell.full, .cell.flip, .cell.win, .lrow.shake { animation:none; } }
 
 </style>
