@@ -131,6 +131,9 @@ html.gg-fs-over .app.padon .stagewrap { bottom: calc(env(safe-area-inset-bottom,
   html.gg-fs-over .top .info .big { font-size: 17px; }
   html.gg-fs-over .top .info .mid { font-size: 14px; }
 }
+.stage {border-radius:12px;box-shadow:0 0 0 1px #839bad55,0 0 0 4px #16253022,0 12px 30px #09101b44;}
+:root:not([data-theme="dark"]):not([data-theme="blue"]) {--td-well:#182b3a;--td-well-2:#7bafcc08;--td-strip:#23384a;--td-edge:#698598;--td-label:#c5dce7;}
+.ready {background:rgba(10,24,37,.88);}
 </style>
 </head>
 <body>
@@ -708,11 +711,17 @@ var TDSound = (function () {
   function sprite(ci, size) {
     var key = ci + ':' + size; if (sprites[key]) return sprites[key];
     var c = document.createElement('canvas'), px = Math.max(2, Math.round(size * dpr)); c.width = c.height = px;
-    var x = c.getContext('2d'), col = COLORS[ci], r = px * 0.2, p = Math.max(1, px * 0.05);
-    rr(x, p, p, px - 2 * p, px - 2 * p, r); x.fillStyle = shade(col, -0.25); x.fill();
-    var g = x.createLinearGradient(0, 0, 0, px); g.addColorStop(0, shade(col, 0.25)); g.addColorStop(1, col);
-    rr(x, p, p, px - 2 * p, px - 2 * p - px * 0.1, r); x.fillStyle = g; x.fill();
-    rr(x, px * 0.22, px * 0.14, px * 0.56, px * 0.13, px * 0.065); x.fillStyle = 'rgba(255,255,255,.45)'; x.fill();
+    var x=c.getContext('2d'),col=COLORS[ci],p=px*.045,b=px*.16;
+    rr(x,p,p,px-p*2,px-p*2,px*.075);x.fillStyle=shade(col,-.65);x.fill();
+    // Four bevel planes surround a saturated, matte enamel face.
+    x.fillStyle=shade(col,.5);x.beginPath();x.moveTo(p,p);x.lineTo(px-p,p);x.lineTo(px-b,b);x.lineTo(b,b);x.closePath();x.fill();
+    x.fillStyle=shade(col,.16);x.beginPath();x.moveTo(p,p);x.lineTo(b,b);x.lineTo(b,px-b);x.lineTo(p,px-p);x.closePath();x.fill();
+    x.fillStyle=shade(col,-.3);x.beginPath();x.moveTo(px-p,p);x.lineTo(px-p,px-p);x.lineTo(px-b,px-b);x.lineTo(px-b,b);x.closePath();x.fill();
+    var g=x.createLinearGradient(b,b,px-b,px-b);g.addColorStop(0,shade(col,.12));g.addColorStop(1,shade(col,-.1));x.fillStyle=g;x.fillRect(b,b,px-b*2,px-b*2);
+    x.strokeStyle='#ffffff55';x.lineWidth=Math.max(.6,px*.018);x.strokeRect(b+.5,b+.5,px-b*2-1,px-b*2-1);
+    x.strokeStyle='#ffffff77';x.beginPath();x.moveTo(b,p+1);x.lineTo(px-b,p+1);x.stroke();
+    // Tiny etched center detail keeps big and small previews crisp.
+    x.fillStyle='#ffffff13';x.fillRect(px*.31,px*.3,px*.38,px*.035);
     sprites[key] = c; return c;
   }
   function block(ci, x, y, size, alpha) {
@@ -756,8 +765,9 @@ var TDSound = (function () {
     var ox = L.bx, oy = L.by, jolt = now - shake < 120 ? Math.round(2 * (1 - (now - shake) / 120)) : 0;
     cx.save();
     rr(cx, ox, oy, L.bw, L.bh, 12); cx.clip();
-    cx.fillStyle = colors['--td-well']; cx.fillRect(ox, oy, L.bw, L.bh);
+    var well=cx.createLinearGradient(ox,oy,ox+L.bw,oy+L.bh);well.addColorStop(0,colors['--td-well']);well.addColorStop(1,'#070e1b');cx.fillStyle=well;cx.fillRect(ox,oy,L.bw,L.bh);
     cx.fillStyle = colors['--td-well-2']; for (var gx = 1; gx < W; gx += 2) cx.fillRect(ox + gx * c, oy, c, L.bh);
+    cx.strokeStyle='#7198b822';cx.lineWidth=.5;for(var gy=1;gy<VIS;gy++){cx.beginPath();cx.moveTo(ox,oy+gy*c);cx.lineTo(ox+L.bw,oy+gy*c);cx.stroke();}cx.fillStyle='#accbdb66';cx.fillRect(ox,oy,1,L.bh);cx.fillRect(ox+L.bw-1,oy,1,L.bh);
     cx.translate(0, jolt);
     var danger = TD.stackHeight(s) >= VIS - 3 && phase === 'run';
     // settled blocks
