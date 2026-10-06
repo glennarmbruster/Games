@@ -1,0 +1,14 @@
+// Development-only checks; never loaded or cached by the game.
+const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
+const server=http.createServer((req,res)=>{let p=path.join(TEST_ROOT,decodeURIComponent(req.url.split('?')[0]));if(p.endsWith('/'))p+='index.html';try{res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.html')?'text/html':p.endsWith('.css')?'text/css':p.endsWith('.webp')?'image/webp':'application/octet-stream');res.end(fs.readFileSync(p))}catch{res.statusCode=404;res.end('missing')}}).listen(8774,'127.0.0.1');
+
+const TEST_ROOT=path.resolve(__dirname,'../../..');
+const BASELINE_ROOT=process.env.DOUBLE_TAKE_BASELINE;
+const OUTPUT=process.env.DOUBLE_TAKE_TEST_OUTPUT||path.join(TEST_ROOT,'test-results','spotdiff');
+fs.mkdirSync(path.join(OUTPUT,'screens'),{recursive:true});
+function out(name){return path.join(OUTPUT,name);}
+(async()=>{let report=[];const b=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:['--no-sandbox']});for(const dpr of [2,3]){const c=await b.newContext({viewport:{width:375,height:667},deviceScaleFactor:dpr,hasTouch:true,isMobile:true,serviceWorkers:'block'}),p=await c.newPage();await p.goto('http://127.0.0.1:8774/games/spotdiff/');await p.locator('#btnCloseHelp').click();await p.waitForFunction(()=>PhotoCruise.ready&&__spotdiff.crispReady());assert.equal(await p.evaluate(()=>document.querySelector('#cvA').width),355*dpr);let before=await p.evaluate(()=>__spotdiff.state().secs);await p.waitForTimeout(1100);assert((await p.evaluate(()=>__spotdiff.state().secs))>before+.5);const elapsed=await p.evaluate(()=>{let l=__spotdiff.lv,canvas=document.createElement('canvas');canvas.width=1065;canvas.height=710;const ctx=canvas.getContext('2d');ctx.scale(1065/900,1065/900);let start=performance.now();for(let i=0;i<20;i++)SceneArt.drawScene(ctx,l.scene,i%2?'a':'b');return(performance.now()-start)/20;});report.push({dpr,canvasWidth:355*dpr,averageRenderMs:elapsed,timer:'advances'});if(dpr===3)await p.screenshot({path:out('screens/phone-retina.png'),scale:'css'});await c.close();}
+const c=await b.newContext({serviceWorkers:'block'}),p=await c.newPage();await p.route('**/assets/photo-cruise/scene-v1.webp',r=>r.abort());await p.goto('http://127.0.0.1:8774/games/spotdiff/');await p.waitForFunction(()=>document.querySelector('.photo-loading').textContent.includes('could'));
+assert.equal(await p.evaluate(()=>localStorage.getItem('spotdiff.game')),null);
+assert.equal(await p.evaluate(()=>PhotoCruise.ready),false);
+report.push({missingImage:'Shows retry; does not start an invisible puzzle or overwrite a save'});await c.close();await b.close();server.close();fs.writeFileSync(out('photo-extra-verification.json'),JSON.stringify(report,null,2));console.log(report)})().catch(e=>{console.error(e);process.exit(1)});

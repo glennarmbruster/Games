@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en" class="k-lines">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<title>Fly Away</title>
+<style>
+/* Fly Away styles (themes, UI kit and ad cards come from /shared/goobs.css) */
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100%; min-height: 0; }
+.brand svg { border-radius: 10px; }
+
+.coins { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; }
+.coins svg { width: 20px; height: 20px; }
+.info .moves b { font-size: 22px; }
+.info .moves.low b { color: var(--bad); }
+
+/* the stage: its background is the chosen backdrop */
+.stage { position: relative; width: 100%; flex: 1; min-height: 220px; border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; background: var(--fa-bg, linear-gradient(#dff1ff, #f5fbff)); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.turnhint {
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; pointer-events: none;
+  background: rgba(20,24,36,.6); color: #fff; font-weight: 700; font-size: 14px; padding: 5px 12px; border-radius: 20px; transition: opacity .6s; white-space: nowrap;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.turnhint svg { width: 20px; height: 20px; }
+.turnhint.hide { opacity: 0; }
+.bombhint {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: none; align-items: center; gap: 10px; white-space: nowrap;
+  background: #1d2240; color: #fff; font-weight: 700; font-size: 14px; padding: 6px 8px 6px 14px; border-radius: 20px; box-shadow: var(--shadow);
+}
+.bombhint.show { display: flex; }
+.bombhint button { border: 0; border-radius: 14px; padding: 5px 10px; font-weight: 800; background: rgba(255,255,255,.18); color: #fff; }
+.tool.armed { background: #1d2240; color: #fff; border-color: transparent; }
+.tool .cnt { font-size: 11px; font-weight: 800; background: var(--gold); color: #3a2a00; border-radius: 6px; padding: 0 5px; margin-left: 3px; }
+.building { position: absolute; inset: 0; display: none; place-items: center; font-weight: 800; font-size: 16px; color: var(--muted); pointer-events: none; z-index: 2; text-align: center; padding: 20px; }
+.building.show { display: grid; }
+.cheer { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font-size: 34px; font-weight: 900; color: #fff; text-shadow: 0 3px 0 var(--accent), 0 0 14px rgba(0,0,0,.3); pointer-events: none; opacity: 0; }
+.cheer.show { animation: cheer 1.4s ease-out forwards; }
+@keyframes cheer { 0% { opacity: 0; transform: scale(.6); } 20% { opacity: 1; transform: scale(1.1); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translateY(-20px); } }
+.coinpop { position: fixed; z-index: 15; pointer-events: none; font-weight: 900; color: #d99a12; font-size: 18px; text-shadow: 0 1px 0 #fff; animation: coinpop .8s ease-out forwards; }
+@keyframes coinpop { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 20% { opacity: 1; transform: translate(-50%, -8px) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -40px) scale(1); } }
+
+/* skins sheet */
+.shopgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 14px; }
+.shopitem { border: 2px solid var(--line); border-radius: 14px; background: var(--surface); padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ink); }
+.shopitem.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+.shopitem .sw { width: 100%; height: 34px; border-radius: 9px; display: flex; overflow: hidden; }
+.shopitem .sw i { flex: 1; }
+.shopitem small { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
+.shopitem small svg { width: 13px; height: 13px; }
+.shopitem.locked .sw { opacity: .45; }
+.buyrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.buyrow .btn { width: auto; padding: 8px 14px; }
+
+/* challenge list */
+.lvgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.lv { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); height: 48px; font-weight: 800; font-size: 16px; color: var(--ink); }
+.lv.done { background: var(--surface-2); color: var(--muted); }
+.lv.cur { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.lv:disabled { opacity: .35; }
+.lvnext { margin: 0 0 10px; color: var(--muted); }
+.modes button.locked { opacity: .5; }
+.cardicon svg { border-radius: 16px; }
+
+/* ---------- two modes: Lines and Blocks ---------- */
+html.k-lines .onlyB, html.k-blocks .onlyL { display: none !important; }
+.kinds button { height: 36px; }
+.tier { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .5px; color: #fff; background: var(--bad, #e5484d); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+.tier.x { background: linear-gradient(135deg, #e5484d, #8a3cff); }
+.minis { display: inline-flex; gap: 1px; vertical-align: -2px; }
+.minis svg { width: 16px; height: 16px; color: var(--line); }
+.minis svg.on { color: #ffc23a; }
+.info .ttl .minis { margin-right: 6px; }
+.stars3 { display: flex; justify-content: center; gap: 6px; margin: 2px 0 8px; }
+.stars3 svg { width: 50px; height: 50px; color: var(--line); }
+.stars3 svg:nth-child(2) { transform: translateY(-9px); }
+.stars3 svg.on { color: #ffc23a; animation: starpop .4s cubic-bezier(.3,1.6,.5,1) both; }
+.stars3 svg.on:nth-child(2) { animation-delay: .15s; }
+.stars3 svg.on:nth-child(3) { animation-delay: .3s; }
+@keyframes starpop { 0% { scale: 0; } 100% { scale: 1; } }
+/* Lines level list */
+.lgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.lgrid .lvl { position: relative; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); min-height: 58px; font-weight: 800; font-size: 17px; color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; }
+.lgrid .lvl .minis svg { width: 12px; height: 12px; }
+.lgrid .lvl.cur { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.lgrid .lvl.cur .minis svg { color: rgba(255,255,255,.35); }
+.lgrid .lvl.cur .minis svg.on { color: #ffe08a; }
+.lgrid .lvl.hard::after { content: "HARD"; position: absolute; top: -7px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: 900; letter-spacing: .3px; background: var(--bad, #e5484d); color: #fff; border-radius: 5px; padding: 1px 4px; }
+.lgrid .lvl.xhard::after { content: "EXTRA"; background: linear-gradient(135deg, #e5484d, #8a3cff); }
+.lgrid .lvl:disabled { opacity: .35; }
+.toolbar.onlyL .tool { font-size: 12px; }
+
+/* ---------- Full screen (1.2.0, Glenn: "every game full screen") ----------
+   The stage (and its backdrop) fills the whole screen; the counters float as white pills under the top row, Hint or
+   Bomb and Restart float at the bottom clear of the home bar. The renderers fit the whole shape into the free box
+   between them (setMargins), so it is never cropped. */
+html.gg-fs-over .stage { position: fixed; inset: 0; z-index: 0; border-radius: 0; box-shadow: none; min-height: 0; }
+html.gg-fs-over .info { position: fixed; z-index: 5; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 56px); width: auto; min-height: 0; gap: 6px; pointer-events: none;
+  padding: 0 calc(env(safe-area-inset-right, 0px) + 10px) 0 calc(env(safe-area-inset-left, 0px) + 10px); align-items: stretch; }
+html.gg-fs-over .info > div { background: rgba(255,255,255,.9); color: #1b1f33; border-radius: 16px; box-shadow: 0 3px 10px rgba(0,0,0,.18); padding: 5px 12px; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; }
+html.gg-fs-over .info .lbl { font-size: 11px; color: #5b6280; line-height: 1.2; }
+html.gg-fs-over .info .ttl { font-size: 17px; }
+html.gg-fs-over .info .moves b { line-height: 1.1; }
+html.gg-fs-over .info .coins { justify-content: flex-end; color: #1b1f33; }
+html.gg-fs-over .info .minis svg { color: #d4d8e4; }
+html.gg-fs-over .info .minis svg.on { color: #ffc23a; }
+html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 116px); }
+html.gg-fs-over .toolbar { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; width: auto; max-width: 480px; margin: 0 auto;
+  padding: 0 calc(env(safe-area-inset-right, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 10px) calc(env(safe-area-inset-left, 0px) + 10px); }
+html.gg-fs-over .toolbar .tool { box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+html.gg-fs-over .toolbar.onlyL .tool { font-size: 13px; }
+html.gg-fs-over .bombhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+.ggmenu .modes { margin: 2px 0 6px; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="fa-logo" viewBox="0 0 100 100"><defs><linearGradient id="fabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#4f7dff"/></linearGradient></defs>
+<rect width="100" height="100" rx="24" fill="url(#fabg)"/>
+<g stroke="rgba(20,30,60,.35)" stroke-width="2" stroke-linejoin="round">
+<path d="M22 46 L42 36 L62 46 L42 56Z" fill="#ffffff"/><path d="M22 46 L42 56 L42 78 L22 68Z" fill="#dfe8ff"/><path d="M42 56 L62 46 L62 68 L42 78Z" fill="#c3d2ff"/>
+<path d="M56 24 L72 16 L88 24 L72 32Z" fill="#ffd166"/><path d="M56 24 L72 32 L72 50 L56 42Z" fill="#ffc03d"/><path d="M72 32 L88 24 L88 42 L72 50Z" fill="#f0a91d"/></g>
+<path d="M36 64 L36 50 M30 55 L36 49 L42 55" stroke="#1d2446" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 22 L40 14 M18 32 L34 26" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"/></symbol>
+<symbol id="i-bomb" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="14" r="7" fill="currentColor" fill-opacity=".18"/><path d="M15.5 9l2-2M17.5 7l1.5-1.5M20 4l.5-.5M19 7.5h1.5M17 4.5V3"/></g></symbol>
+<symbol id="i-skin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="currentColor" fill-opacity=".15"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></g></symbol>
+<symbol id="i-turn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 4 0 0 0 16 0"/><path d="M20 12a8 4 0 0 0-14.5-2.3"/><path d="M5 5.5l.5 4.2 4-1"/></g></symbol>
+<symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffc83d" stroke="#d99a12" stroke-width="2"/><path d="M12 6.5v11M9 9.5c0-1.4 1.3-2 3-2s3 .7 3 2-1.3 1.8-3 2.3-3 1-3 2.3 1.3 2 3 2 3-.6 3-2" stroke="#9a6a00" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
+<symbol id="i-sound-off" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor" fill-opacity=".35"/></g></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="currentColor" fill-opacity=".15"/></g></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="currentColor"/></symbol>
+<symbol id="i-lines" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11h7V5h8"/><path d="M16 2l3 3-3 3"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+</defs></svg>
+
+<div class="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#fa-logo"/></svg>
+      <h1>Fly Away</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
+      <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <div class="modes kinds" id="kinds">
+    <button data-kind="lines" id="kindLines">Lines</button>
+    <button data-kind="blocks" id="kindBlocks">Blocks</button>
+  </div>
+
+  <div class="modes onlyB" id="modes">
+    <button data-mode="level" id="modeLevel">Level 1</button>
+    <button data-mode="challenge" id="modeChallenge">Challenges</button>
+  </div>
+
+  <div class="info" id="info"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" class="onlyB"></canvas>
+    <canvas id="cvL" class="onlyL"></canvas>
+    <div class="building" id="building">Loading&hellip;</div>
+    <div class="turnhint onlyB" id="turnHint"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg> Drag to turn &middot; tap a block</div>
+    <div class="turnhint onlyL" id="turnHintL"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg> Drag to turn &middot; tap a line</div>
+    <div class="bombhint onlyB" id="bombHint">Tap a block to blow it up <button id="bombCancel">Cancel</button></div>
+    <div class="cheer" id="cheer"></div>
+  </div>
+
+  <div class="toolbar onlyL">
+    <button class="tool" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-hint"/></svg><span id="hintLabel">Hint</span></button>
+    <button class="tool onlyL" id="btnLevelsL"><svg viewBox="0 0 24 24"><use href="#i-levels"/></svg><span>Levels</span></button>
+    <button class="tool onlyL" id="btnSkinsL"><svg viewBox="0 0 24 24"><use href="#i-skin"/></svg><span>Skins</span></button>
+    <button class="tool onlyL" id="btnHelpL"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnNewL"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+  <div class="toolbar onlyB">
+    <button class="tool" id="btnBomb"><svg viewBox="0 0 24 24"><use href="#i-bomb"/></svg><span id="bombLabel">Bomb</span></button>
+    <button class="tool onlyB" id="btnSkins"><svg viewBox="0 0 24 24"><use href="#i-skin"/></svg><span>Skins</span></button>
+    <button class="tool onlyB" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
+    <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>Restart</span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Sound<small>Whooshes, bumps and chimes.</small></div>
+        <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Fly Away</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="overlay" id="ovStats">
+  <div class="sheet" role="dialog" aria-label="Stats">
+    <h2>Your records</h2>
+    <div class="sheetbody" id="statsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseStats">Done</button></div>
+  </div>
+</div>
+
+<!-- Skins and backgrounds -->
+<div class="overlay" id="ovSkins">
+  <div class="sheet" role="dialog" aria-label="Skins">
+    <h2>Skins</h2>
+    <div class="sheetbody" id="skinsBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseSkins">Done</button></div>
+  </div>
+</div>
+
+<!-- Challenges -->
+<div class="overlay" id="ovChallenges">
+  <div class="sheet" role="dialog" aria-label="Challenges">
+    <h2>Challenges</h2>
+    <div class="sheetbody" id="chBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseCh">Done</button></div>
+  </div>
+</div>
+
+<!-- Lines level list -->
+<div class="overlay" id="ovLevelsL">
+  <div class="sheet" role="dialog" aria-label="Levels">
+    <h2>Levels</h2>
+    <div class="sheetbody" id="levelsLBody"></div>
+    <div class="actions"><button class="btn red" id="btnCloseLevelsL">Done</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play</h2>
+    <div class="sheetbody">
+      <ol class="helplist onlyL">
+        <li><b>Drag</b> to turn the shape any way you like. Pinch to zoom.</li>
+        <li><b>Tap</b> a line and it slides out head first, the way its arrow points, and flies off over the edge.</li>
+        <li>If another line is anywhere on its way out, it bumps into it and goes back. That's a <b>mistake</b>, and it still uses a move.</li>
+        <li>Clear every line before you run out of moves. <b>Stars:</b> no mistakes = 3, one or two = 2, more = 1.</li>
+        <li><b>HARD</b> levels have fewer spare moves.</li>
+        <li><b>Locked lines</b> (a colored line with a lock) can only leave after the <b>key line</b> of the same color has gone.</li>
+        <li><b>Timer lines</b> (a red number) must be cleared before the count reaches 0. Every tap counts it down.</li>
+        <li><b>Hint</b> shows a line that can leave. You earn coins every level; coins buy more hints.</li>
+      </ol>
+      <ol class="helplist onlyB">
+        <li><b>Drag</b> to turn the shape any way you like. Pinch to zoom.</li>
+        <li><b>Tap</b> a block and it flies off the way its arrow points, if nothing is in the way. A dot shows where an arrow points straight at you.</li>
+        <li>If another block is in the way, it bumps into it and goes back.</li>
+        <li>Clear every block to win the level.</li>
+        <li><b>Gold blocks</b> pay 5 coins when they fly off. Every level pays coins too.</li>
+        <li><b>Challenges</b> (from level 10) have a limited number of moves; every tap counts, bumps too.</li>
+        <li><b>Bomb:</b> tap it, then a block: that block and everything touching it (a 3&times;3&times;3 space) is gone, without using a move. Coins buy more bombs and new skins.</li>
+      </ol>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon" id="cardIcon"></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Fly Away game logic (no DOM). Modeled on Tap Away 3D (Popcore).
+   A shape made of blocks; each block has an arrow. Tap a block: if nothing is in the way it flies out in its
+   arrow's direction. If something is in the way it moves up to it, bumps and goes back to its place (the tap
+   still counts as a move). Clear every block to win. (A guide says blocks stop where they hit; that lets a
+   careless player lock a level for good, so we follow the bounce-back most versions show. See questions.md.)
+   Levels are built so they can always be cleared: arrows are given in reverse order of a removal order, each
+   pointing a way that is clear of the blocks removed after it. */
+var FA = (function () {
+  'use strict';
+  function mix32(x) {
+    x = x >>> 0;
+    x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // directions: 0 +x, 1 -x, 2 +y (up), 3 -y, 4 +z (toward the front), 5 -z
+  var DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+  function key(x, y, z) { return ((x + 8) * 64 + (y + 8)) * 64 + (z + 8); }
+
+  // ---------- state ----------
+  // st: { sx, sy, sz, blocks: [{id, x, y, z, d, gold, out}], occ: {key: id}, left, moves, limit }
+  function makeState(level) {
+    var st = { sx: level.sx, sy: level.sy, sz: level.sz, blocks: [], occ: {}, left: 0, moves: 0, limit: level.limit || 0 };
+    level.blocks.forEach(function (b, i) {
+      var nb = { id: i, x: b[0], y: b[1], z: b[2], d: b[3], gold: !!b[4], out: false };
+      st.blocks.push(nb); st.occ[key(nb.x, nb.y, nb.z)] = i; st.left++;
+    });
+    return st;
+  }
+  function inside(st, x, y, z) { return x >= 0 && y >= 0 && z >= 0 && x < st.sx && y < st.sy && z < st.sz; }
+  // what tapping block id would do: { kind: 'fly', steps } | { kind: 'bump', steps (free cells before the blocker), blocker }
+  function look(st, id) {
+    var b = st.blocks[id], v = DIRS[b.d], x = b.x, y = b.y, z = b.z;
+    for (var k = 1; ; k++) {
+      x += v[0]; y += v[1]; z += v[2];
+      if (!inside(st, x, y, z)) return { kind: 'fly', steps: k };
+      var o = st.occ[key(x, y, z)];
+      if (o !== undefined) return { kind: 'bump', steps: k - 1, blocker: o };
+    }
+  }
+  function tap(st, id) {
+    var b = st.blocks[id];
+    if (!b || b.out) return null;
+    var r = look(st, id);
+    st.moves++;
+    if (r.kind === 'fly') { delete st.occ[key(b.x, b.y, b.z)]; b.out = true; st.left--; }
+    return r;
+  }
+  // the bomb: clears the block and everything around it (a 3x3x3 space); no move used
+  function bomb(st, id) {
+    var c = st.blocks[id], gone = [];
+    if (!c || c.out) return gone;
+    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) for (var dz = -1; dz <= 1; dz++) {
+      var o = st.occ[key(c.x + dx, c.y + dy, c.z + dz)];
+      if (o === undefined) continue;
+      var b = st.blocks[o];
+      delete st.occ[key(b.x, b.y, b.z)]; b.out = true; st.left--; gone.push(o);
+    }
+    return gone;
+  }
+  function won(st) { return st.left === 0; }
+  function outOfMoves(st) { return st.limit > 0 && st.moves >= st.limit && st.left > 0; }
+  function freeBlocks(st) { return st.blocks.filter(function (b) { return !b.out && look(st, b.id).kind === 'fly'; }); }
+
+  // ---------- shapes ----------
+  function cellsOf(fn, n) { var out = []; for (var x = 0; x < n; x++) for (var y = 0; y < n; y++) for (var z = 0; z < n; z++) if (fn(x, y, z)) out.push([x, y, z]); return out; }
+  var SHAPES = {
+    box: function (s, R) {
+      var a = Math.max(1, Math.round(s * (0.7 + R() * 0.6))), b = Math.max(1, Math.round(s * (0.7 + R() * 0.6))), c = Math.max(1, Math.round(s * (0.7 + R() * 0.6)));
+      return cellsOf(function (x, y, z) { return x < a && y < b && z < c; }, 12);
+    },
+    ball: function (s) { var r = s / 2, c = r - 0.5; return cellsOf(function (x, y, z) { return (x - c) * (x - c) + (y - c) * (y - c) + (z - c) * (z - c) <= r * r + 0.3; }, Math.ceil(s)); },
+    pyramid: function (s) {
+      var n = Math.max(2, Math.round(s * 1.2));
+      return cellsOf(function (x, y, z) { var h = n - 2 * y; if (h <= 0) return false; var o = (n - h) / 2; return x >= o && x < o + h && z >= o && z < o + h; }, n);
+    },
+    cross: function (s) {
+      var n = Math.max(3, Math.round(s * 1.4) | 1), m = (n - 1) / 2, t = n >= 7 ? 1 : 0;
+      return cellsOf(function (x, y, z) {
+        var ax = Math.abs(x - m) <= t, ay = Math.abs(y - m) <= t, az = Math.abs(z - m) <= t;
+        return (ay && az) || (ax && az) || (ax && ay);
+      }, n);
+    },
+    tower: function (s) {
+      var r = Math.max(1, s * 0.45), h = Math.max(2, Math.round(s * 1.6)), c = Math.ceil(r * 2) / 2 - 0.5, n = Math.max(h, Math.ceil(r * 2));
+      return cellsOf(function (x, y, z) { return y < h && (x - c) * (x - c) + (z - c) * (z - c) <= r * r + 0.3; }, n);
+    },
+    stairs: function (s) {
+      var n = Math.max(2, Math.round(s * 1.2)), w = Math.max(1, Math.round(s * 0.8));
+      return cellsOf(function (x, y, z) { return x < n && z < w && y <= x; }, Math.max(n, w));
+    },
+    ring: function (s) {
+      var R0 = Math.max(1.5, s * 0.55), t = Math.max(0.8, s * 0.22), n = Math.ceil((R0 + t) * 2) + 1, c = (n - 1) / 2;
+      return cellsOf(function (x, y, z) { var q = Math.hypot(x - c, z - c) - R0; return q * q + (y - c) * (y - c) <= t * t + 0.2 && Math.abs(y - c) <= Math.max(0.5, t); }, n);
+    },
+    heart: function (s) {
+      var n = Math.max(5, Math.round(s * 1.5)), th = Math.max(1, Math.round(s * 0.4));
+      return cellsOf(function (x, y, z) {
+        if (z >= th) return false;
+        var u = (x + 0.5) / n * 2.6 - 1.3, v = (y + 0.5) / n * 2.6 - 1.2;
+        var q = u * u + v * v - 1; return q * q * q - u * u * v * v * v <= 0;
+      }, n);
+    },
+    plus: function (s) { // a flat plus sign, several layers thick
+      var n = Math.max(3, Math.round(s * 1.5)), t = Math.max(1, Math.round(n / 3)), o = Math.floor((n - t) / 2), th = Math.max(1, Math.round(s * 0.5));
+      return cellsOf(function (x, y, z) { return z < th && ((x >= o && x < o + t) || (y >= o && y < o + t)); }, n);
+    }
+  };
+  var SHAPE_ORDER = ['box', 'pyramid', 'box', 'cross', 'ball', 'stairs', 'heart', 'tower', 'plus', 'ring'];
+  function normalize(cells) {
+    var mn = [99, 99, 99], mx = [-99, -99, -99];
+    cells.forEach(function (c) { for (var k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], c[k]); mx[k] = Math.max(mx[k], c[k]); } });
+    return { cells: cells.map(function (c) { return [c[0] - mn[0], c[1] - mn[1], c[2] - mn[2]]; }), sx: mx[0] - mn[0] + 1, sy: mx[1] - mn[1] + 1, sz: mx[2] - mn[2] + 1 };
+  }
+  // pick a size for the shape that gives about `want` blocks
+  function shapeFor(kind, want, R) {
+    var best = null;
+    for (var s = 1; s <= 11; s += 0.5) {
+      var seedR = rng(Math.floor(R() * 4294967296));
+      var c = SHAPES[kind](s, seedR);
+      if (!c.length) continue;
+      var nz = normalize(c);
+      if (Math.max(nz.sx, nz.sy, nz.sz) > 11) break; // keep shapes within 11 blocks across
+      if (!best || Math.abs(c.length - want) < Math.abs(best.length - want)) best = c;
+      if (c.length > want * 1.3) break;
+    }
+    return normalize(best);
+  }
+
+  // ---------- arrows ----------
+  // Take the shape apart one block at a time: each step picks a block that has a clear way out past the blocks
+  // still there, and gives it that way as its arrow. The order used is always a way to clear the level.
+  // `hard` (0..1) is how often a block gets the clear way that is most blocked in the full shape (so it looks
+  // stuck at the start and has to wait its turn).
+  function arrows(shape, R, hard) {
+    var n = shape.cells.length, d = new Array(n), order = [], full = {}, here = {}, left = [], i;
+    shape.cells.forEach(function (c, i2) { full[key(c[0], c[1], c[2])] = 1; here[key(c[0], c[1], c[2])] = 1; left.push(i2); });
+    function run(c, v, set) { // how many blocks of `set` are on the way out
+      var x = c[0], y = c[1], z = c[2], hits = 0;
+      for (;;) {
+        x += v[0]; y += v[1]; z += v[2];
+        if (x < 0 || y < 0 || z < 0 || x >= shape.sx || y >= shape.sy || z >= shape.sz) return hits;
+        if (set[key(x, y, z)]) hits++;
+      }
+    }
+    while (left.length) {
+      var cand = [];
+      for (i = 0; i < left.length; i++) {
+        var c = shape.cells[left[i]], clear = [];
+        for (var k = 0; k < 6; k++) if (run(c, DIRS[k], here) === 0) clear.push(k);
+        if (clear.length) cand.push({ at: i, clear: clear });
+      }
+      var pk = cand[Math.floor(R() * cand.length)], id = left[pk.at], cc = shape.cells[id], pick;
+      if (R() < hard) {
+        var bestH = -1;
+        pk.clear.forEach(function (k) { var h = run(cc, DIRS[k], full) + R() * 0.5; if (h > bestH) { bestH = h; pick = k; } });
+      } else pick = pk.clear[Math.floor(R() * pk.clear.length)];
+      d[id] = pick; order.push(id);
+      delete here[key(cc[0], cc[1], cc[2])];
+      left.splice(pk.at, 1);
+    }
+    return { d: d, order: order };
+  }
+
+  // ---------- levels ----------
+  var LEVEL_SCHEME = 1;
+  function tier(L) { return L <= 5 ? 0 : L <= 15 ? 1 : L <= 40 ? 2 : L <= 100 ? 3 : 4; }
+  function levelSpec(L, challenge) {
+    var t = tier(L), seed = mix32(Math.imul(L, 0x9E3779B1) ^ (challenge ? 0xC4A11 : 0x7A9A7));
+    var want = L <= 2 ? [4, 8][L - 1] : Math.min(420, Math.round(8 + 5.2 * Math.pow(L - 2, 0.85)));
+    if (challenge) want = Math.min(480, Math.round(want * 1.25) + 6);
+    var kind = L <= 2 ? 'box' : SHAPE_ORDER[(L + (challenge ? 3 : 0)) % SHAPE_ORDER.length];
+    return { level: L, challenge: !!challenge, seed: seed, want: want, kind: kind,
+      hard: [0.3, 0.5, 0.65, 0.78, 0.85][t] + (challenge ? 0.08 : 0), gold: L >= 3 ? [0, 1, 2, 2, 3][t] : 0,
+      slack: challenge ? Math.max(2, Math.round(want * [0.3, 0.22, 0.16, 0.12, 0.1][t])) : 0 };
+  }
+  function build(spec) {
+    var R = rng(spec.seed), shape = spec.want <= 4 ? normalize([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]]) : shapeFor(spec.kind, spec.want, R);
+    var a = arrows(shape, R, spec.hard), blocks = shape.cells.map(function (c, i) { return [c[0], c[1], c[2], a.d[i], 0]; });
+    // gold blocks: some of the blocks that start out free-ish (so they're found along the way)
+    for (var g = 0; g < spec.gold && blocks.length > 6; g++) blocks[Math.floor(R() * blocks.length)][4] = 1;
+    var lv = { scheme: LEVEL_SCHEME, level: spec.level, challenge: spec.challenge, kind: spec.kind, sx: shape.sx, sy: shape.sy, sz: shape.sz, blocks: blocks, order: a.order };
+    lv.limit = spec.challenge ? blocks.length + spec.slack : 0;
+    return lv;
+  }
+  function newGame(L, challenge) { var lv = build(levelSpec(L, challenge)), st = makeState(lv); st.level = L; st.challenge = !!challenge; st.kind = lv.kind; return st; }
+  // replay a saved list of moves: [id] = tap, ['b', id] = bomb
+  function replay(L, challenge, moves) {
+    var st = newGame(L, challenge);
+    (moves || []).forEach(function (m) { if (Array.isArray(m)) bomb(st, m[1]); else tap(st, m); });
+    return st;
+  }
+  // ---------- test players ----------
+  function solveGreedy(st) { for (var g = 0; g < 5000 && st.left; g++) { var f = freeBlocks(st); if (!f.length) return false; tap(st, f[0].id); } return st.left === 0; }
+  // a careless player taps a random block that has an open side
+  function careless(L, challenge, R) {
+    var st = newGame(L, challenge), wasted = 0;
+    for (var g = 0; g < 20000 && st.left; g++) {
+      var vis = st.blocks.filter(function (b) {
+        if (b.out) return false;
+        for (var k = 0; k < 6; k++) { var v = DIRS[k]; if (st.occ[key(b.x + v[0], b.y + v[1], b.z + v[2])] === undefined) return true; }
+        return false;
+      });
+      var b = vis[Math.floor(R() * vis.length)], r = tap(st, b.id);
+      if (r.kind !== 'fly') wasted++;
+      if (!freeBlocks(st).length && st.left) return { stuck: true, wasted: wasted, moves: st.moves, n: st.blocks.length };
+    }
+    return { stuck: false, wasted: wasted, moves: st.moves, n: st.blocks.length };
+  }
+
+  return { DIRS: DIRS, LEVEL_SCHEME: LEVEL_SCHEME, mix32: mix32, rng: rng, key: key, makeState: makeState, look: look, tap: tap, bomb: bomb,
+    won: won, outOfMoves: outOfMoves, freeBlocks: freeBlocks, levelSpec: levelSpec, build: build, newGame: newGame, replay: replay,
+    solveGreedy: solveGreedy, careless: careless, SHAPES: SHAPES, SHAPE_ORDER: SHAPE_ORDER };
+})();
+if (typeof module !== 'undefined') module.exports = FA;
+</script>
+<script>
+/* Fly Away, Lines mode: game logic (no DOM). Modeled on CubeAway – 3DPuzzle (GOODROID).
+   A shape (a cube, later other block shapes) whose faces are divided into cells and covered with lines.
+   Each line is a path of cells ending in an arrowhead. Tap a line: it slides out head first, its body
+   following its own path like a snake; the head keeps going straight in the arrow's direction and leaves
+   over the edge of its face. If another line sits anywhere on that route, the line is blocked: it bumps,
+   goes back, and the tap counts as a mistake. Clear every line to win.
+   Levels are built from a removal order: lines are added one at a time, each with a clear route past the
+   lines already there, so removing them in the reverse order always works. solve() checks every level.
+   Gimmicks (guesses until Glenn's recordings): locked lines (a colored line leaves only after the key line
+   of the same color has gone) and timer lines (a red circle counts down with every tap). */
+var FL = (function () {
+  'use strict';
+  var LINE_SCHEME = 1;
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(a, R) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(R() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  // directions: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z, 5 -z. d ^ 1 is the opposite direction.
+  var DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+
+  // ---------- shapes (unit blocks; every face of the shape is split into g x g cells) ----------
+  var SHAPES = {
+    cube: [[0, 0, 0]],
+    tower: [[0, 0, 0], [0, 1, 0]],
+    bar: [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
+    stairs: [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+    slab: [[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 0, 1]],
+    corner: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
+    tee: [[0, 1, 0], [1, 1, 0], [2, 1, 0], [1, 0, 0]],
+    plus: [[1, 0, 1], [0, 0, 1], [2, 0, 1], [1, 0, 0], [1, 0, 2]],
+    chunk: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1]],
+    bigcube: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
+  };
+  var SHAPE_NAMES = { cube: 'Cube', tower: 'Tower', bar: 'Bar', stairs: 'Step', slab: 'Slab', corner: 'Corner', tee: 'Tee', plus: 'Plus', chunk: 'Chunk', bigcube: 'Big cube' };
+  function exposedFaces(vox) {
+    var solid = {}, n = 0;
+    vox.forEach(function (v) { solid[v.join(',')] = 1; });
+    vox.forEach(function (v) { for (var d = 0; d < 6; d++) if (!solid[(v[0] + DIRS[d][0]) + ',' + (v[1] + DIRS[d][1]) + ',' + (v[2] + DIRS[d][2])]) n++; });
+    return n;
+  }
+
+  // ---------- the surface: cells and how to walk between them ----------
+  // Positions are kept in "doubled" fine units (a cell is 2 wide) so every centre is a whole number.
+  var surfCache = {};
+  function surface(shape, g) {
+    var ck = shape + ':' + g;
+    if (surfCache[ck]) return surfCache[ck];
+    var vox = SHAPES[shape], solid = {}, cells = [], index = {};
+    vox.forEach(function (v) { solid[v.join(',')] = 1; });
+    function k3(x, y, z, n) { return x + ',' + y + ',' + z + '|' + n; }
+    var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+    vox.forEach(function (v) {
+      for (var a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], v[a]); hi[a] = Math.max(hi[a], v[a] + 1); }
+      for (var d = 0; d < 6; d++) {
+        if (solid[(v[0] + DIRS[d][0]) + ',' + (v[1] + DIRS[d][1]) + ',' + (v[2] + DIRS[d][2])]) continue;
+        var ax = d >> 1, b = (ax + 1) % 3, c = (ax + 2) % 3;
+        for (var i = 0; i < g; i++) for (var j = 0; j < g; j++) {
+          var p = [0, 0, 0];
+          p[ax] = 2 * g * (v[ax] + ((d & 1) ? 0 : 1)); p[b] = 2 * (g * v[b] + i) + 1; p[c] = 2 * (g * v[c] + j) + 1;
+          index[k3(p[0], p[1], p[2], d)] = cells.length;
+          cells.push({ p: p, n: d });
+        }
+      }
+    });
+    // nbr[c * 6 + d] = next cell going direction d (d along the face), kind, and the direction you are then going
+    var N = cells.length, nc = new Int32Array(N * 6).fill(-1), nd = new Int8Array(N * 6).fill(-1), nk = new Int8Array(N * 6); // kind: 0 flat, 1 over an outer edge, 2 up an inner wall
+    for (var ci = 0; ci < N; ci++) {
+      var C = cells[ci].p, n = cells[ci].n, NV = DIRS[n];
+      for (var d2 = 0; d2 < 6; d2++) {
+        if ((d2 >> 1) === (n >> 1)) continue;
+        var D = DIRS[d2], id;
+        id = index[k3(C[0] + D[0] + NV[0], C[1] + D[1] + NV[1], C[2] + D[2] + NV[2], d2 ^ 1)];
+        if (id !== undefined) { nc[ci * 6 + d2] = id; nd[ci * 6 + d2] = n; nk[ci * 6 + d2] = 2; continue; }
+        id = index[k3(C[0] + 2 * D[0], C[1] + 2 * D[1], C[2] + 2 * D[2], n)];
+        if (id !== undefined) { nc[ci * 6 + d2] = id; nd[ci * 6 + d2] = d2; nk[ci * 6 + d2] = 0; continue; }
+        id = index[k3(C[0] + D[0] - NV[0], C[1] + D[1] - NV[1], C[2] + D[2] - NV[2], d2)];
+        if (id !== undefined) { nc[ci * 6 + d2] = id; nd[ci * 6 + d2] = n ^ 1; nk[ci * 6 + d2] = 1; }
+      }
+    }
+    var s = { shape: shape, g: g, cells: cells, index: index, nc: nc, nd: nd, nk: nk, N: N,
+      c2: [g * (lo[0] + hi[0]), g * (lo[1] + hi[1]), g * (lo[2] + hi[2])], size: [g * (hi[0] - lo[0]), g * (hi[1] - lo[1]), g * (hi[2] - lo[2])], key: k3 };
+    surfCache[ck] = s;
+    return s;
+  }
+  // the head's route: straight on along its face until it goes over an outer edge (leaves) or meets an inner wall (never leaves)
+  function route(S, head, d) {
+    var out = [], c = head;
+    for (var guard = 0; guard < 400; guard++) {
+      var k = c * 6 + d, nx = S.nc[k];
+      if (nx < 0) return null;
+      if (S.nk[k] === 1) return out; // over the edge: gone
+      if (S.nk[k] === 2) return null; // an inner wall: this way never leaves
+      out.push(nx); c = nx;
+    }
+    return null;
+  }
+  function dirTo(S, a, b) { for (var d = 0; d < 6; d++) if (S.nc[a * 6 + d] === b) return d; return -1; }
+
+  // ---------- levels ----------
+  function tierOf(n) {
+    if (n <= 3) return 0;
+    if (n % 20 === 0) return 4;
+    return [3, 1, 2, 2, 1, 3, 0, 2, 2, 1][n % 10];
+  }
+  var TIERS = ['Super easy', 'Easy', 'Normal', 'HARD', 'EXTRA HARD'];
+  var SHAPE_CYCLE = ['tower', 'cube', 'stairs', 'cube', 'slab', 'cube', 'bar', 'cube', 'corner', 'cube', 'tee', 'cube', 'plus', 'cube', 'chunk', 'cube', 'bigcube', 'cube'];
+  function config(n) {
+    var tier = tierOf(n), shape = n <= 12 ? 'cube' : SHAPE_CYCLE[(n - 13) % SHAPE_CYCLE.length];
+    var base = n <= 1 ? 2 : n <= 4 ? 3 : n <= 10 ? 4 : n <= 18 ? 5 : n <= 34 ? 6 : 7;
+    if (tier >= 3) base = Math.min(8, base + 1);
+    if (tier === 0 && n > 3) base = Math.max(3, base - 1);
+    var g;
+    if (shape === 'cube') g = base;
+    else g = Math.max(2, Math.min(6, Math.round(Math.sqrt(6 * base * base / exposedFaces(SHAPES[shape])))));
+    var prog = Math.min(1, (n - 1) / 60);
+    return {
+      n: n, tier: tier, shape: shape, g: g,
+      lmax: 4 + Math.round(prog * 6) + (tier >= 3 ? 2 : 0) - (tier === 0 ? 1 : 0),
+      turn: 0.28 + 0.08 * tier + prog * 0.1,
+      bias: Math.min(0.95, 0.25 + 0.2 * tier + prog * 0.2),
+      freeTarget: [0.55, 0.4, 0.3, 0.2, 0.14][tier],
+      spare: [0.5, 0.4, 0.3, 0.2, 0.12][tier],
+      locks: n >= 16 && n % 3 === 1 ? (n > 40 ? 2 : 1) : 0,
+      timers: n >= 24 && n % 4 === 0 ? (n > 50 ? 2 : 1) : 0,
+      slack: [6, 5, 4, 3, 3][tier],
+      seed: (n * 2654435761 + LINE_SCHEME * 97) >>> 0
+    };
+  }
+
+  // one attempt at a level: lines in insertion order (the reverse of a removal order)
+  function build(S, cfg, R) {
+    var N = S.N, occ = new Int16Array(N).fill(-1), onRay = new Int16Array(N), lines = [], empty = [], i;
+    for (i = 0; i < N; i++) empty.push(i);
+    var fails = 0;
+    function lenPick() { return 2 + Math.floor(Math.pow(R(), 0.6) * (cfg.lmax - 1)); }
+    for (;;) {
+      // pick a head: sometimes on a route that's already there (so that line has to wait for this one)
+      var free = [];
+      for (i = 0; i < N; i++) if (occ[i] < 0) free.push(i);
+      if (free.length < 2) break;
+      var h;
+      if (R() < cfg.bias) { var onr = free.filter(function (c) { return onRay[c] > 0; }); h = onr.length ? onr[Math.floor(R() * onr.length)] : free[Math.floor(R() * free.length)]; }
+      else h = free[Math.floor(R() * free.length)];
+      var dirs = shuffle([0, 1, 2, 3, 4, 5].filter(function (d) { return (d >> 1) !== (S.cells[h].n >> 1); }), R), placed = false;
+      for (var di = 0; di < dirs.length && !placed; di++) {
+        var d = dirs[di], rt = route(S, h, d);
+        if (!rt) continue;
+        var ok = true, rset = {};
+        for (i = 0; i < rt.length; i++) { if (occ[rt[i]] >= 0) { ok = false; break; } rset[rt[i]] = 1; }
+        if (!ok) continue;
+        var bk = h * 6 + (d ^ 1), p = S.nc[bk];
+        if (p < 0 || occ[p] >= 0 || rset[p]) continue;
+        if (S.nc[p * 6 + (S.nd[bk] ^ 1)] !== h) continue;
+        var body = [h, p], bset = {}, cur = p, bd = S.nd[bk], want = lenPick();
+        bset[h] = 1; bset[p] = 1;
+        while (body.length < want) {
+          var n0 = S.cells[cur].n, straight = bd, side = shuffle([0, 1, 2, 3, 4, 5].filter(function (x) { return (x >> 1) !== (n0 >> 1) && (x >> 1) !== (bd >> 1); }), R);
+          var order = R() < cfg.turn ? side.concat([straight]) : [straight].concat(side), moved = false;
+          if (R() < cfg.bias) order.sort(function (x, y) { var a = S.nc[cur * 6 + x], b = S.nc[cur * 6 + y]; return (b >= 0 && onRay[b] > 0 ? 1 : 0) - (a >= 0 && onRay[a] > 0 ? 1 : 0); });
+          for (var oi = 0; oi < order.length; oi++) {
+            var k = cur * 6 + order[oi], nx = S.nc[k];
+            if (nx < 0 || occ[nx] >= 0 || bset[nx] || rset[nx]) continue;
+            body.push(nx); bset[nx] = 1; cur = nx; bd = S.nd[k]; moved = true; break;
+          }
+          if (!moved) break;
+        }
+        var cellsTH = body.slice().reverse(), id = lines.length;
+        cellsTH.forEach(function (c) { occ[c] = id; });
+        rt.forEach(function (c) { onRay[c]++; });
+        lines.push({ cells: cellsTH, hd: d, route: rt });
+        placed = true;
+      }
+      if (!placed) { if (++fails > free.length * 2 + 20) break; } else fails = 0;
+    }
+    // grow tails into cells left empty, where that doesn't block a line added after it
+    var later = new Int16Array(N).fill(-1); // latest line whose route crosses the cell
+    lines.forEach(function (L, id) { L.route.forEach(function (c) { later[c] = Math.max(later[c], id); }); });
+    for (var pass = 0; pass < 3; pass++) {
+      var grew = false;
+      lines.forEach(function (L, id) {
+        if (L.cells.length >= cfg.lmax + 2) return;
+        var t = L.cells[0], own = {};
+        L.route.forEach(function (c) { own[c] = 1; });
+        var ds = shuffle([0, 1, 2, 3, 4, 5], R);
+        for (var q = 0; q < 6; q++) {
+          var nx = S.nc[t * 6 + ds[q]];
+          if (nx < 0 || occ[nx] >= 0 || own[nx] || later[nx] > id) continue;
+          L.cells.unshift(nx); occ[nx] = id; grew = true; break;
+        }
+      });
+      if (!grew) break;
+    }
+    return lines;
+  }
+  // which lines must go before line i can leave (the lines on its route, and its key)
+  function deps(lines, occOf) {
+    return lines.map(function (L, i) {
+      var s = {};
+      L.route.forEach(function (c) { var o = occOf[c]; if (o >= 0 && o !== i) s[o] = 1; });
+      if (L.key != null) s[L.key] = 1;
+      return Object.keys(s).map(Number);
+    });
+  }
+  function analyse(S, lines) {
+    var occ = new Int16Array(S.N).fill(-1);
+    lines.forEach(function (L, i) { L.cells.forEach(function (c) { occ[c] = i; }); });
+    var D = deps(lines, occ), depth = [], freeN = 0;
+    for (var i = lines.length - 1; i >= 0; i--) { // deps always point to later lines
+      var m = 0; D[i].forEach(function (j) { m = Math.max(m, depth[j] + 1); }); depth[i] = m;
+      if (!D[i].length) freeN++;
+    }
+    return { deps: D, depth: Math.max.apply(null, depth.concat([0])), free: freeN / Math.max(1, lines.length), occ: occ };
+  }
+  function closure(D, i) { var seen = {}, st = D[i].slice(); while (st.length) { var j = st.pop(); if (seen[j]) continue; seen[j] = 1; st = st.concat(D[j]); } return Object.keys(seen).map(Number); }
+
+  var levelCache = {};
+  function level(n) {
+    if (levelCache[n]) return levelCache[n];
+    var cfg = config(n), S = surface(cfg.shape, cfg.g), R = rng(cfg.seed), best = null, bestScore = 1e9;
+    for (var tries = 0; tries < 6; tries++) {
+      var ls = build(S, cfg, R);
+      if (ls.length < 3) continue;
+      var an = analyse(S, ls), cover = ls.reduce(function (a, L) { return a + L.cells.length; }, 0) / S.N;
+      var score = Math.abs(an.free - cfg.freeTarget) * 3 + Math.max(0, 0.95 - cover) * 20 - (cfg.tier >= 3 ? an.depth * 0.03 : 0);
+      if (score < bestScore) { bestScore = score; best = ls; }
+    }
+    var lines = best;
+    // gimmicks
+    var an0 = analyse(S, lines), used = {}, colors = 0;
+    for (var k = 0; k < cfg.locks; k++) {
+      // a lock (earlier line) and its key (a later line, so it can always leave first); not already free, so the lock matters
+      var cand = [];
+      for (var a = 0; a < lines.length; a++) if (!used[a] && lines[a].cells.length >= 3) cand.push(a);
+      shuffle(cand, R);
+      for (var ci = 0; ci < cand.length; ci++) {
+        var lk = cand[ci], keys = [];
+        for (var b = lk + 1; b < lines.length; b++) if (!used[b] && lines[b].cells.length >= 2 && an0.deps[lk].indexOf(b) < 0) keys.push(b);
+        if (!keys.length) continue;
+        var ky = keys[Math.floor(R() * keys.length)];
+        lines[lk].key = ky; lines[lk].color = colors; lines[ky].color = colors; lines[ky].isKey = true; colors++;
+        used[lk] = used[ky] = 1; break;
+      }
+    }
+    var an = analyse(S, lines), timers = [];
+    if (cfg.timers) {
+      var tc = [];
+      for (var t = 0; t < lines.length; t++) if (!used[t] && an.deps[t].length) tc.push(t);
+      tc.sort(function (x, y) { return closure(an.deps, x).length - closure(an.deps, y).length; });
+      tc = tc.slice(0, Math.max(cfg.timers, Math.ceil(tc.length * 0.4)));
+      shuffle(tc, R);
+      timers = tc.slice(0, cfg.timers);
+      timers.forEach(function (t) { used[t] = 1; });
+    }
+    // timer counts: play the timers first (each after the lines it needs), give each its tap number + slack
+    var order = [], done = {};
+    function take(i) { if (done[i]) return; an.deps[i].forEach(take); done[i] = 1; order.push(i); }
+    timers.forEach(function (t) { take(t); });
+    timers.forEach(function (t) { lines[t].timer = order.indexOf(t) + 1 + cfg.slack; });
+    var lv = {
+      n: n, tier: cfg.tier, shape: cfg.shape, g: cfg.g,
+      lines: lines.map(function (L) {
+        var o = { c: L.cells, d: L.hd };
+        if (L.key != null) o.key = L.key;
+        if (L.color != null) o.color = L.color;
+        if (L.isKey) o.isKey = true;
+        if (L.timer) o.timer = L.timer;
+        return o;
+      })
+    };
+    lv.limit = lv.lines.length + Math.max(3, Math.round(lv.lines.length * cfg.spare));
+    lv.depth = an.depth; lv.free = an.free;
+    levelCache[n] = lv;
+    return lv;
+  }
+
+  // ---------- play ----------
+  // st: { n, tier, shape, S, lines: [{id, cells, ld (way out of each cell), hd, key, color, isKey, timer, out}], occ, left, moves, limit, mistakes, boom }
+  function makeState(lv) {
+    var S = surface(lv.shape, lv.g), st = { n: lv.n, tier: lv.tier, shape: lv.shape, S: S, lines: [], occ: new Int16Array(S.N).fill(-1), left: 0, moves: 0, limit: lv.limit, mistakes: 0, boom: -1, extraTimer: 0 };
+    lv.lines.forEach(function (o, i) {
+      var ld = [];
+      for (var j = 0; j < o.c.length - 1; j++) ld.push(dirTo(S, o.c[j], o.c[j + 1]));
+      ld.push(o.d);
+      var L = { id: i, cells: o.c.slice(), ld: ld, hd: o.d, key: o.key == null ? -1 : o.key, color: o.color == null ? -1 : o.color, isKey: !!o.isKey, timer: o.timer || 0, isTimer: !!o.timer, out: false };
+      L.cells.forEach(function (c) { st.occ[c] = i; });
+      st.lines.push(L); st.left++;
+    });
+    return st;
+  }
+  // what tapping line id would do: { kind: 'fly', route } | { kind: 'bump', steps, blocker, route } | { kind: 'locked', key }
+  function look(st, id) {
+    var L = st.lines[id], rt = route(st.S, L.cells[L.cells.length - 1], L.hd) || [];
+    for (var i = 0; i < rt.length; i++) {
+      var o = st.occ[rt[i]];
+      if (o >= 0) return { kind: 'bump', steps: i, blocker: o, route: rt };
+    }
+    if (L.key >= 0 && !st.lines[L.key].out) return { kind: 'locked', key: L.key, route: rt };
+    return { kind: 'fly', route: rt };
+  }
+  function tap(st, id) {
+    var L = st.lines[id];
+    if (!L || L.out || st.boom >= 0) return null;
+    var r = look(st, id);
+    st.moves++;
+    if (r.kind === 'fly') { L.cells.forEach(function (c) { st.occ[c] = -1; }); L.out = true; st.left--; }
+    else st.mistakes++;
+    // timers count down with every tap
+    st.lines.forEach(function (T) { if (T.isTimer && !T.out) { T.timer--; if (T.timer <= 0 && st.boom < 0) st.boom = T.id; } });
+    if (st.boom >= 0) r.boom = st.boom;
+    return r;
+  }
+  function addTimer(st, k) { st.lines.forEach(function (T) { if (T.isTimer && !T.out) T.timer = Math.max(0, T.timer) + k; }); st.boom = -1; }
+  function won(st) { return st.left === 0; }
+  function outOfMoves(st) { return st.limit > 0 && st.moves >= st.limit && st.left > 0; }
+  function freeLines(st) { return st.lines.filter(function (L) { return !L.out && look(st, L.id).kind === 'fly'; }); }
+  function stars(st) { return st.mistakes === 0 ? 3 : st.mistakes <= 2 ? 2 : 1; }
+  // a free line to show as a hint: timer lines (or what they wait for) first
+  function hint(st) {
+    var fl = freeLines(st);
+    if (!fl.length) return null;
+    var tl = st.lines.filter(function (L) { return L.isTimer && !L.out; }).sort(function (a, b) { return a.timer - b.timer; });
+    for (var i = 0; i < tl.length; i++) {
+      var need = needFor(st, tl[i].id);
+      for (var j = 0; j < fl.length; j++) if (need[fl[j].id]) return fl[j];
+    }
+    return fl[0];
+  }
+  function needFor(st, id) {
+    var seen = {}, stack = [id];
+    while (stack.length) {
+      var i = stack.pop(); if (seen[i]) continue; seen[i] = 1;
+      var L = st.lines[i], rt = route(st.S, L.cells[L.cells.length - 1], L.hd) || [];
+      rt.forEach(function (c) { var o = st.occ[c]; if (o >= 0 && o !== i) stack.push(o); });
+      if (L.key >= 0 && !st.lines[L.key].out) stack.push(L.key);
+    }
+    return seen;
+  }
+  function replay(n, taps, extra, extraTimer) {
+    var st = makeState(level(n));
+    if (extra) st.limit += extra;
+    (taps || []).forEach(function (t) { if (typeof t === 'number') tap(st, t); else if (t === 'T') addTimer(st, 5); });
+    return st;
+  }
+  // proof: clear the level with no mistakes and no timer going off (timer lines are taken as soon as they can be)
+  function solve(n) {
+    var st = makeState(level(n)), guard = 0;
+    while (st.left > 0 && guard++ < 5000) {
+      var h = hint(st);
+      if (!h) return { ok: false, why: 'stuck', left: st.left };
+      var r = tap(st, h.id);
+      if (r.kind !== 'fly') return { ok: false, why: 'hint blocked' };
+      if (st.boom >= 0) return { ok: false, why: 'timer', line: st.boom };
+    }
+    return { ok: st.left === 0 && st.moves <= st.limit, moves: st.moves, limit: st.limit };
+  }
+
+  // ---------- drawing help: polylines in cell units (1 = one cell), centred on the shape ----------
+  function world(S, p2) { return [(p2[0] - S.c2[0]) / 2, (p2[1] - S.c2[1]) / 2, (p2[2] - S.c2[2]) / 2]; }
+  // points of a line from tail to head: [x, y, z, normal of the piece that starts here]
+  function linePoints(st, L) {
+    var S = st.S, out = [];
+    for (var i = 0; i < L.cells.length; i++) {
+      var c = S.cells[L.cells[i]], w = world(S, c.p);
+      out.push([w[0], w[1], w[2], c.n]);
+      if (i < L.cells.length - 1) {
+        var nx = S.cells[L.cells[i + 1]];
+        if (nx.n !== c.n) { var D = DIRS[L.ld[i]]; out.push([w[0] + D[0] / 2, w[1] + D[1] / 2, w[2] + D[2] / 2, nx.n]); }
+      }
+    }
+    return out;
+  }
+  // the way out after the head: along the route, over the edge, then far away
+  function exitPoints(st, L) {
+    var S = st.S, head = L.cells[L.cells.length - 1], rt = route(S, head, L.hd) || [], n = S.cells[head].n, D = DIRS[L.hd], out = [];
+    rt.forEach(function (c) { var w = world(S, S.cells[c].p); out.push([w[0], w[1], w[2], n]); });
+    var last = world(S, S.cells[rt.length ? rt[rt.length - 1] : head].p);
+    out.push([last[0] + D[0] / 2, last[1] + D[1] / 2, last[2] + D[2] / 2, n]);
+    out.push([last[0] + D[0] * 40, last[1] + D[1] * 40, last[2] + D[2] * 40, n]);
+    return out;
+  }
+
+  return {
+    LINE_SCHEME: LINE_SCHEME, DIRS: DIRS, SHAPES: SHAPES, SHAPE_NAMES: SHAPE_NAMES, TIERS: TIERS,
+    surface: surface, route: route, config: config, tierOf: tierOf, level: level, makeState: makeState, look: look, tap: tap, addTimer: addTimer,
+    won: won, outOfMoves: outOfMoves, freeLines: freeLines, stars: stars, hint: hint, replay: replay, solve: solve,
+    world: world, linePoints: linePoints, exitPoints: exitPoints, cellAt: function (S, p2, n) { var i = S.index[S.key(p2[0], p2[1], p2[2], n)]; return i === undefined ? -1 : i; }
+  };
+})();
+if (typeof module !== 'undefined') module.exports = FL;
+</script>
+<script>
+/* Fly Away shared core: free turning (drag any way, all the way round), pinch zoom, flick spin and taps.
+   Used by Lines now; Blocks moves onto it in Phase 3 (its renderer still has its own copy of the same code). */
+var FACore = (function () {
+  'use strict';
+  // THREE: the three.js module; canvas: the element touched; kick(): ask for a redraw; tap(x, y): a tap in canvas pixels
+  function controls(THREE, canvas, kick, tap) {
+    var orient = new THREE.Quaternion(), QT = new THREE.Quaternion(), AX = new THREE.Vector3(1, 0, 0), AY = new THREE.Vector3(0, 1, 0);
+    var vyaw = 0, vpitch = 0, zoom = 1, pointers = {}, dragging = false, down = null, pinch = null, enabled = true;
+    function home(yaw, pitch) { orient.setFromEuler(new THREE.Euler(pitch == null ? -0.5 : pitch, yaw == null ? 0.62 : yaw, 0, 'YXZ')); zoom = 1; vyaw = vpitch = 0; }
+    home();
+    function turn(dx, dy) { if (dx) orient.multiply(QT.setFromAxisAngle(AY, dx)); if (dy) orient.multiply(QT.setFromAxisAngle(AX, dy)); orient.normalize(); }
+    function pts() { return Object.keys(pointers).map(function (k) { return pointers[k]; }); }
+    canvas.addEventListener('pointerdown', function (e) {
+      if (!enabled) return;
+      pointers[e.pointerId] = [e.clientX, e.clientY];
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      var p = pts();
+      if (p.length === 1) { down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false }; dragging = true; vyaw = vpitch = 0; }
+      if (p.length === 2) { pinch = { d: Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) || 1, z: zoom }; if (down) down.moved = true; }
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!pointers[e.pointerId]) return;
+      var prev = pointers[e.pointerId]; pointers[e.pointerId] = [e.clientX, e.clientY];
+      var p = pts();
+      if (p.length >= 2 && pinch) { zoom = Math.max(0.6, Math.min(3, pinch.z * Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) / pinch.d)); kick(); return; }
+      if (!down) return;
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) down.moved = true;
+      if (!down.moved) return;
+      vyaw = -(e.clientX - prev[0]) * 0.011; vpitch = -(e.clientY - prev[1]) * 0.009;
+      turn(vyaw, vpitch); kick();
+    });
+    function up(e) {
+      var wasTap = down && !down.moved && performance.now() - down.t < 500 && Object.keys(pointers).length === 1;
+      delete pointers[e.pointerId];
+      if (!Object.keys(pointers).length) { dragging = false; pinch = null; }
+      if (wasTap && tap) { var r = canvas.getBoundingClientRect(); tap(e.clientX - r.left, e.clientY - r.top); }
+      if (!Object.keys(pointers).length) down = null;
+      kick();
+    }
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', function (e) { delete pointers[e.pointerId]; dragging = false; down = null; pinch = null; });
+    return {
+      orient: orient, home: function (y, p) { home(y, p); kick(); }, turn: turn,
+      zoom: function () { return zoom; },
+      // one frame of flick spin; true while it is still turning
+      step: function () {
+        var spin = Math.abs(vyaw) + Math.abs(vpitch) > 0.0005;
+        if (!dragging && spin) { turn(vyaw, vpitch); vyaw *= 0.92; vpitch *= 0.92; }
+        return !dragging && Math.abs(vyaw) + Math.abs(vpitch) > 0.0005;
+      },
+      enable: function (v) { enabled = !!v; }
+    };
+  }
+  return { controls: controls };
+})();
+</script>
+<script>
+/* Fly Away, Lines mode renderer (three.js from shared/three.module.min.js).
+   The shape is white; the lines are flat ribbons laid on its faces with an arrowhead at the front.
+   A line that is tapped slides along its own path like a snake, turns blue, and flies off over the edge;
+   a blocked line turns red, slides up to what's in the way and goes back. Turning and taps come from FACore. */
+var FLRender = (function () {
+  'use strict';
+  var INK = '#1e2233', BLUE = '#3b7bff', RED = '#ff3b4f';
+  var PAIR = ['#ff8a1f', '#12b3a6', '#8a5cff', '#ff4f9a'];
+  var HW = 0.13, LIFT = 0.025, SPEED = 13, ACC = 42;
+
+  function create(THREE, canvas) {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setClearColor(0x000000, 0);
+    var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(36, 1, 0.1, 800);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb7bfd0, 1.6));
+    var sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-5, 10, 8); scene.add(sun);
+    var fill = new THREE.DirectionalLight(0xffffff, 0.8); scene.add(fill); scene.add(fill.target);
+    var root = new THREE.Group(); scene.add(root);
+    var W = 1, H = 1, st = null, raf = 0, dist = 20, tapCb = null;
+    var ctl = FACore.controls(THREE, canvas, kick, function (x, y) { if (tapCb) tapCb(x, y); });
+
+    // ---------- the shape ----------
+    var shapeMesh = null, edgeLines = null;
+    var shapeMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fc, roughness: 0.75, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    var edgeMat = new THREE.LineBasicMaterial({ color: 0xc3cad8 });
+    function buildShape() {
+      if (shapeMesh) { root.remove(shapeMesh); shapeMesh.geometry.dispose(); root.remove(edgeLines); edgeLines.geometry.dispose(); }
+      var S = st.S, g = S.g, vox = FL.SHAPES[st.shape], solid = {}, pos = [], nor = [];
+      vox.forEach(function (v) { solid[v.join(',')] = 1; });
+      vox.forEach(function (v) {
+        for (var d = 0; d < 6; d++) {
+          var D = FL.DIRS[d];
+          if (solid[(v[0] + D[0]) + ',' + (v[1] + D[1]) + ',' + (v[2] + D[2])]) continue;
+          var ax = d >> 1, b = (ax + 1) % 3, c = (ax + 2) % 3, sg = (d & 1) ? -1 : 1, q = [];
+          [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(function (uv) {
+            var p = [0, 0, 0];
+            p[ax] = g * (v[ax] + (sg > 0 ? 1 : 0)) - S.c2[ax] / 2; p[b] = g * (v[b] + uv[0]) - S.c2[b] / 2; p[c] = g * (v[c] + uv[1]) - S.c2[c] / 2;
+            q.push(p);
+          });
+          // wind so the face points outward
+          var tri = sg > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2];
+          tri.forEach(function (i) { pos.push(q[i][0], q[i][1], q[i][2]); nor.push(D[0], D[1], D[2]); });
+        }
+      });
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      shapeMesh = new THREE.Mesh(geo, shapeMat); root.add(shapeMesh);
+      edgeLines = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), edgeMat); root.add(edgeLines);
+    }
+
+    // ---------- lines: one ribbon mesh rebuilt when something changes ----------
+    var lineGeo = new THREE.BufferGeometry(), lineMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    var lineMesh = new THREE.Mesh(lineGeo, lineMat); lineMesh.frustumCulled = false; root.add(lineMesh);
+    var P = [], C = [], col = new THREE.Color();
+    var V = { a: new THREE.Vector3(), b: new THREE.Vector3(), t: new THREE.Vector3(), n: new THREE.Vector3(), w: new THREE.Vector3() };
+    function nrm(i) { var d = FL.DIRS[i]; return V.n.set(d[0], d[1], d[2]); }
+    function pushV(x, y, z) { P.push(x, y, z); C.push(col.r, col.g, col.b); }
+    function quad(a, b, n, hw) {
+      V.t.subVectors(b, a); if (V.t.lengthSq() < 1e-8) return; V.t.normalize();
+      V.w.crossVectors(n, V.t).multiplyScalar(hw);
+      var lx = n.x * LIFT, ly = n.y * LIFT, lz = n.z * LIFT;
+      var p1 = [a.x - V.w.x + lx, a.y - V.w.y + ly, a.z - V.w.z + lz], p2 = [a.x + V.w.x + lx, a.y + V.w.y + ly, a.z + V.w.z + lz];
+      var p3 = [b.x + V.w.x + lx, b.y + V.w.y + ly, b.z + V.w.z + lz], p4 = [b.x - V.w.x + lx, b.y - V.w.y + ly, b.z - V.w.z + lz];
+      [p1, p2, p3, p1, p3, p4].forEach(function (p) { pushV(p[0], p[1], p[2]); });
+    }
+    var DISC = 10, U = new THREE.Vector3(), W2 = new THREE.Vector3();
+    function disc(c, n, r) {
+      U.set(1, 0, 0); if (Math.abs(n.x) > 0.9) U.set(0, 1, 0);
+      U.cross(n).normalize(); W2.crossVectors(n, U);
+      var cx = c.x + n.x * LIFT, cy = c.y + n.y * LIFT, cz = c.z + n.z * LIFT;
+      for (var i = 0; i < DISC; i++) {
+        var a0 = i / DISC * Math.PI * 2, a1 = (i + 1) / DISC * Math.PI * 2;
+        pushV(cx, cy, cz);
+        pushV(cx + (U.x * Math.cos(a0) + W2.x * Math.sin(a0)) * r, cy + (U.y * Math.cos(a0) + W2.y * Math.sin(a0)) * r, cz + (U.z * Math.cos(a0) + W2.z * Math.sin(a0)) * r);
+        pushV(cx + (U.x * Math.cos(a1) + W2.x * Math.sin(a1)) * r, cy + (U.y * Math.cos(a1) + W2.y * Math.sin(a1)) * r, cz + (U.z * Math.cos(a1) + W2.z * Math.sin(a1)) * r);
+      }
+    }
+    function arrow(tip, t, n) {
+      var lx = n.x * LIFT * 1.2, ly = n.y * LIFT * 1.2, lz = n.z * LIFT * 1.2;
+      V.w.crossVectors(n, t).multiplyScalar(0.3);
+      var bx = tip.x - t.x * 0.4, by = tip.y - t.y * 0.4, bz = tip.z - t.z * 0.4;
+      pushV(tip.x + lx, tip.y + ly, tip.z + lz);
+      pushV(bx - V.w.x + lx, by - V.w.y + ly, bz - V.w.z + lz);
+      pushV(bx + V.w.x + lx, by + V.w.y + ly, bz + V.w.z + lz);
+    }
+    // a piece of a path: from arc length s0 to s1. path: [[x, y, z, n], ...] with cumulative lengths in path.len
+    function prep(path) {
+      var len = [0];
+      for (var i = 1; i < path.length; i++) len.push(len[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1], path[i][2] - path[i - 1][2]));
+      path.len = len; return path;
+    }
+    function at(path, s, out) {
+      var L = path.len, i = 1;
+      while (i < L.length - 1 && L[i] < s) i++;
+      var a = path[i - 1], b = path[i], seg = L[i] - L[i - 1], k = seg > 0 ? Math.max(0, Math.min(1, (s - L[i - 1]) / seg)) : 0;
+      out.set(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k);
+      return i;
+    }
+    var A = new THREE.Vector3(), B = new THREE.Vector3(), T = new THREE.Vector3();
+    function ribbon(path, s0, s1) {
+      var L = path.len, i0 = at(path, s0, A), i1 = at(path, s1, B), pts = [[A.x, A.y, A.z, path[i0 - 1][3]]];
+      for (var i = i0; i < i1; i++) pts.push([path[i][0], path[i][1], path[i][2], path[i][3]]);
+      pts.push([B.x, B.y, B.z, path[i1 - 1][3]]);
+      // pull the body back a touch so the arrowhead covers its end
+      for (var j = 0; j < pts.length - 1; j++) {
+        var n = nrm(pts[j][3]).clone();
+        A.set(pts[j][0], pts[j][1], pts[j][2]); B.set(pts[j + 1][0], pts[j + 1][1], pts[j + 1][2]);
+        if (j === pts.length - 2) { T.subVectors(B, A); var l = T.length(); if (l > 0.12) B.addScaledVector(T.normalize(), -0.12); }
+        quad(A, B, n, HW);
+        if (j > 0 && pts[j - 1][3] === pts[j][3]) disc(A, n, HW);
+        if (j === 0) disc(A, n, HW);
+      }
+      // arrowhead at the front
+      var last = pts[pts.length - 1], prev = pts[pts.length - 2];
+      T.set(last[0] - prev[0], last[1] - prev[1], last[2] - prev[2]);
+      if (T.lengthSq() < 1e-8) { var ld = path.hd; var dd = FL.DIRS[ld]; T.set(dd[0], dd[1], dd[2]); }
+      T.normalize(); B.set(last[0], last[1], last[2]).addScaledVector(T, 0.3);
+      arrow(B, T, nrm(prev[3]).clone());
+      return pts[0];
+    }
+
+    // ---------- per-line drawing info ----------
+    var paths = [], anims = [], hintId = -1, hintT = 0;
+    function lineColor(L) { return L.color >= 0 ? PAIR[L.color % PAIR.length] : INK; }
+    function setState(s) {
+      st = s; anims = []; hintId = -1;
+      paths = st.lines.map(function (L) {
+        var body = FL.linePoints(st, L), ex = FL.exitPoints(st, L), full = prep(body.concat(ex.map(function (p) { return p; })));
+        full.hd = L.hd; full.body = full.len[body.length - 1]; full.exitAt = full.len[full.len.length - 2];
+        return full;
+      });
+      ctl.home(); buildShape(); fit(); clearBadges(); rebuild(); kick();
+    }
+    function refresh() { anims = []; rebuild(); kick(); }
+    function rebuild() {
+      P = []; C = [];
+      var now = performance.now(), animOf = {};
+      anims.forEach(function (a) { animOf[a.id] = a; });
+      var tails = {};
+      st.lines.forEach(function (L) {
+        var a = animOf[L.id], path = paths[L.id], s = 0, c = lineColor(L);
+        if (L.out && !a) return;
+        if (a) { s = a.s; if (a.kind === 'fly') c = BLUE; else if (a.kind === 'bump' || a.kind === 'locked' || a.kind === 'boom') c = mixCol(lineColor(L), RED, a.red); else if (a.kind === 'flash') c = mixCol(lineColor(L), RED, a.red); }
+        else if (L.id === hintId) c = mixCol(lineColor(L), BLUE, 0.65 + 0.35 * Math.sin((now - hintT) / 140));
+        col.set(c);
+        tails[L.id] = ribbon(path, s, s + path.body);
+      });
+      lineGeo.dispose(); lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+      lineGeo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      lineMesh.geometry = lineGeo;
+      placeBadges(tails);
+    }
+    var tmpA = new THREE.Color(), tmpB = new THREE.Color();
+    function mixCol(a, b, k) { tmpA.set(a); tmpB.set(b); tmpA.lerp(tmpB, Math.max(0, Math.min(1, k))); return '#' + tmpA.getHexString(); }
+
+    // ---------- badges: lock, key, timer (a round sticker at the line's tail) ----------
+    var badgeTex = {}, badges = {}, badgeGeo = new THREE.PlaneGeometry(0.78, 0.78);
+    function tex(kind, color, num) {
+      var k = kind + color + (num == null ? '' : num);
+      if (badgeTex[k]) return badgeTex[k];
+      var c = document.createElement('canvas'); c.width = c.height = 128;
+      var x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.beginPath(); x.arc(64, 64, 62, 0, Math.PI * 2); x.fill();
+      x.fillStyle = color; x.beginPath(); x.arc(64, 64, 54, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#fff'; x.strokeStyle = '#fff'; x.lineCap = 'round'; x.lineJoin = 'round';
+      if (kind === 'timer') { x.font = '900 64px -apple-system, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(num), 64, 68); }
+      else if (kind === 'lock') { x.lineWidth = 10; x.beginPath(); x.arc(64, 54, 16, Math.PI, 0); x.stroke(); x.fillRect(38, 54, 52, 38); }
+      else { x.lineWidth = 10; x.beginPath(); x.arc(48, 64, 14, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.moveTo(62, 64); x.lineTo(96, 64); x.moveTo(84, 64); x.lineTo(84, 78); x.moveTo(94, 64); x.lineTo(94, 74); x.stroke(); }
+      var t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      badgeTex[k] = t; return t;
+    }
+    function clearBadges() { for (var k in badges) { root.remove(badges[k]); badges[k].material.dispose(); } badges = {}; }
+    var BN = new THREE.Vector3(), BU = new THREE.Vector3(), BR = new THREE.Vector3(), BM = new THREE.Matrix4(), CAMUP = new THREE.Vector3();
+    function placeBadges(tails) {
+      st.lines.forEach(function (L) {
+        var kind = L.isTimer ? 'timer' : L.key >= 0 ? 'lock' : L.isKey ? 'key' : null;
+        var b = badges[L.id], tail = tails[L.id];
+        if (!kind || !tail || (L.out && !tails[L.id])) { if (b) b.visible = false; return; }
+        var color = kind === 'timer' ? RED : lineColor(L), t = tex(kind, color, kind === 'timer' ? Math.max(0, L.timer) : null);
+        if (kind === 'lock' && st.lines[L.key].out) t = tex('open', color);
+        if (!b) { b = new THREE.Mesh(badgeGeo, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); b.renderOrder = 2; badges[L.id] = b; root.add(b); }
+        if (b.material.map !== t) { b.material.map = t; b.material.needsUpdate = true; }
+        b.visible = true;
+        var d = FL.DIRS[tail[3]]; BN.set(d[0], d[1], d[2]);
+        b.position.set(tail[0] + BN.x * LIFT * 2, tail[1] + BN.y * LIFT * 2, tail[2] + BN.z * LIFT * 2);
+        b.userData.n = BN.clone();
+      });
+      orientBadges();
+    }
+    function orientBadges() { // keep the number upright for the viewer
+      CAMUP.set(0, 1, 0).applyQuaternion(camera.quaternion);
+      for (var k in badges) {
+        var b = badges[k]; if (!b.visible || !b.userData.n) continue;
+        var n = b.userData.n;
+        BU.copy(CAMUP).addScaledVector(n, -CAMUP.dot(n));
+        if (BU.lengthSq() < 1e-4) { BU.set(1, 0, 0).addScaledVector(n, -n.x); }
+        BU.normalize(); BR.crossVectors(BU, n);
+        BM.makeBasis(BR, BU, n); b.quaternion.setFromRotationMatrix(BM);
+      }
+    }
+    function lockOpen(L) { if (badges[L]) kick(); }
+
+    // ---------- camera ----------
+    // Full screen (1.2.0): fitted into the free box inside the margins (px), the view shifted to its middle (as render.js)
+    var M = { top: 0, bottom: 0, side: 0 };
+    function fit() {
+      camera.setViewOffset(W, H, 0, (M.bottom - M.top) / 2, W, H);
+      if (!st) return;
+      var s = st.S.size, R = 0.42 * Math.hypot(s[0], s[1], s[2]) + 0.3, t = Math.tan(camera.fov * Math.PI / 360);
+      var vf = Math.atan(t * Math.max(40, H - M.top - M.bottom) / H), hf = Math.atan(t * camera.aspect * Math.max(40, W - 2 * M.side) / W);
+      dist = R / Math.sin(Math.min(vf, hf)) * 1.04;
+    }
+    function setMargins(m) { M = { top: m.top || 0, bottom: m.bottom || 0, side: m.side || 0 }; fit(); kick(); }
+    function place() {
+      camera.position.set(0, 0, dist / ctl.zoom()).applyQuaternion(ctl.orient);
+      camera.quaternion.copy(ctl.orient);
+      fill.position.copy(camera.position); fill.target.updateMatrixWorld();
+    }
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H; camera.updateProjectionMatrix();
+      fit(); kick();
+    }
+    function checkSize() { var r = canvas.getBoundingClientRect(); if (Math.abs(r.width - W) > 0.5 || Math.abs(r.height - H) > 0.5) resize(); }
+
+    // ---------- animations ----------
+    function fly(id, onDone) { anims = anims.filter(function (a) { return a.id !== id; }); anims.push({ id: id, kind: 'fly', t: performance.now(), s: 0, red: 0, done: onDone }); kick(); }
+    function bump(id, steps, blocker) {
+      anims = anims.filter(function (a) { return a.id !== id; });
+      anims.push({ id: id, kind: 'bump', t: performance.now(), s: 0, red: 1, reach: steps + 0.45 });
+      if (blocker != null && blocker >= 0) anims.push({ id: blocker, kind: 'flash', t: performance.now(), s: 0, red: 0 });
+      kick();
+    }
+    function locked(id) { anims = anims.filter(function (a) { return a.id !== id; }); anims.push({ id: id, kind: 'locked', t: performance.now(), s: 0, red: 1 }); kick(); }
+    function boom(id) { anims.push({ id: id, kind: 'boom', t: performance.now(), s: 0, red: 1 }); kick(); }
+    var turnAnim = null;
+    function hint(id) {
+      hintId = id; hintT = performance.now();
+      // turn the shape so the hinted line's head faces you
+      var L = st.lines[id], c = st.S.cells[L.cells[L.cells.length - 1]], d = FL.DIRS[c.n];
+      var n = new THREE.Vector3(d[0], d[1], d[2]), cur = new THREE.Vector3(0, 0, 1).applyQuaternion(ctl.orient);
+      if (cur.dot(n) < 0.55) {
+        var target = cur.dot(n) > -0.9 ? n.clone().multiplyScalar(0.8).addScaledVector(cur, 0.2).normalize() : n.clone();
+        var q = new THREE.Quaternion().setFromUnitVectors(cur, target);
+        turnAnim = { t: performance.now(), from: ctl.orient.clone(), to: ctl.orient.clone().premultiply(q) };
+      }
+      kick();
+    }
+    function step(now) {
+      anims = anims.filter(function (a) {
+        var t = (now - a.t) / 1000, path = paths[a.id];
+        if (a.kind === 'fly') {
+          a.s = SPEED * t + ACC * t * t / 2;
+          if (a.s > path.exitAt + 2.5) { if (a.done) a.done(); return false; }
+          return true;
+        }
+        if (a.kind === 'bump') {
+          var go = a.reach / SPEED * 1.1, k = t / go;
+          if (k >= 2) return false;
+          a.s = k < 1 ? a.reach * (1 - (1 - k) * (1 - k)) : a.reach * (1 - (k - 1) * (k - 1));
+          a.red = k < 1.6 ? 1 : 1 - (k - 1.6) / 0.4;
+          return true;
+        }
+        if (a.kind === 'locked') {
+          if (t > 0.45) return false;
+          a.s = Math.sin(t * 40) * 0.12 * (1 - t / 0.45); a.red = 1 - t / 0.45; return true;
+        }
+        if (a.kind === 'flash') { if (t > 0.5) return false; a.red = Math.sin(t / 0.5 * Math.PI) * 0.7; return true; }
+        if (a.kind === 'boom') { if (t > 1.2) return false; a.red = 0.5 + 0.5 * Math.sin(t * 20); a.s = 0; return true; }
+        return false;
+      });
+      if (hintId >= 0 && (now - hintT > 2600 || st.lines[hintId].out)) hintId = -1;
+      if (turnAnim) {
+        var k = Math.min(1, (now - turnAnim.t) / 450), e = k * k * (3 - 2 * k);
+        ctl.orient.copy(turnAnim.from).slerp(turnAnim.to, e);
+        if (k >= 1) turnAnim = null;
+      }
+    }
+    function draw() {
+      raf = 0;
+      if (!st) return;
+      var spinning = ctl.step(), now = performance.now();
+      var busy = anims.length > 0 || hintId >= 0 || turnAnim;
+      if (busy) { step(now); rebuild(); }
+      place(); orientBadges();
+      renderer.render(scene, camera);
+      if (spinning || anims.length || hintId >= 0 || turnAnim) kick();
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(draw); }
+    if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
+    canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); });
+    canvas.addEventListener('webglcontextrestored', function () { if (st) setState(st); });
+
+    // ---------- picking: which line is under a tap ----------
+    var ray = new THREE.Raycaster(), HP = new THREE.Vector3();
+    function lineAt(x, y) {
+      if (!st || !shapeMesh) return null;
+      checkSize(); place(); camera.updateMatrixWorld(); root.updateMatrixWorld();
+      ray.setFromCamera(new THREE.Vector2(x / W * 2 - 1, -(y / H) * 2 + 1), camera);
+      var hits = ray.intersectObject(shapeMesh, false);
+      if (!hits.length) return null;
+      var h = hits[0], fn = h.face.normal, ax = Math.abs(fn.x) > 0.5 ? 0 : Math.abs(fn.y) > 0.5 ? 1 : 2, n = ax * 2 + ((ax === 0 ? fn.x : ax === 1 ? fn.y : fn.z) > 0 ? 0 : 1);
+      HP.copy(h.point);
+      var S = st.S, q = [HP.x * 2 + S.c2[0], HP.y * 2 + S.c2[1], HP.z * 2 + S.c2[2]], p2 = [0, 0, 0];
+      for (var a = 0; a < 3; a++) p2[a] = a === ax ? Math.round(q[a] / 2) * 2 : Math.floor(q[a] / 2) * 2 + 1;
+      var c = FL.cellAt(S, p2, n);
+      if (c < 0) return null;
+      // this cell, else the nearest line cell around it (lines are thin; be kind to fingers)
+      var best = -1, bestD = 0.95, cand = [c];
+      for (var d = 0; d < 6; d++) { var c1 = S.nc[c * 6 + d]; if (c1 >= 0) { cand.push(c1); for (var e = 0; e < 6; e++) { var c2 = S.nc[c1 * 6 + e]; if (c2 >= 0) cand.push(c2); } } }
+      cand.forEach(function (ci) {
+        var o = st.occ[ci]; if (o < 0) return;
+        var w = FL.world(S, S.cells[ci].p), dd = Math.hypot(w[0] - HP.x, w[1] - HP.y, w[2] - HP.z);
+        if (ci === c) dd = 0;
+        if (dd < bestD) { bestD = dd; best = o; }
+      });
+      return best >= 0 ? st.lines[best] : null;
+    }
+    function screenOf(L) { // for tests: the middle of a line's head cell on screen
+      checkSize(); place(); camera.updateMatrixWorld();
+      var c = L.cells[L.cells.length - 1], w = FL.world(st.S, st.S.cells[c].p), v = new THREE.Vector3(w[0], w[1], w[2]).project(camera);
+      return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H, v.z];
+    }
+    function facing(L) { // for tests: is the line's head face turned toward the camera?
+      place(); var c = st.S.cells[L.cells[L.cells.length - 1]], d = FL.DIRS[c.n], w = FL.world(st.S, c.p);
+      return (camera.position.x - w[0]) * d[0] + (camera.position.y - w[1]) * d[1] + (camera.position.z - w[2]) * d[2] > 0;
+    }
+
+    return {
+      setState: setState, refresh: refresh, resize: resize, redraw: kick, setMargins: setMargins,
+      reset: function () { ctl.home(); }, onTap: function (cb) { tapCb = cb; }, turn: function (a, b) { ctl.turn(a, b); kick(); },
+      lineAt: lineAt, screenOf: screenOf, facing: facing, fly: fly, bump: bump, locked: locked, boom: boom, hint: hint, lockOpen: lockOpen,
+      update: function () { rebuild(); kick(); },
+      busy: function () { return anims.length > 0; }
+    };
+  }
+  return { create: create };
+})();
+</script>
+<script>
+/* Fly Away renderer: the blocks drawn with three.js (shared/three.module.min.js).
+   Blocks are 6 instanced meshes, one per arrow direction, so each face can show the right arrow.
+   Drag to turn the shape any way (all the way round, over the top and under), pinch to zoom, tap a block. */
+var FARender = (function () {
+  'use strict';
+  function create(THREE, canvas) {
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setClearColor(0x000000, 0);
+    var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(36, 1, 0.1, 500);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa3b8, 1.35));
+    var sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(-5, 10, 8); scene.add(sun);
+    var fill = new THREE.DirectionalLight(0xffffff, 0.7); scene.add(fill); scene.add(fill.target);
+    var root = new THREE.Group(); scene.add(root);
+    var W = 1, H = 1, st = null, raf = 0, dist = 20, zoom = 1, center = new THREE.Vector3();
+
+    // ---------- face pictures: an arrow along the face, a dot where the arrow points out, a ring at its tail ----------
+    function faceTex(kind, rot) {
+      var c = document.createElement('canvas'); c.width = c.height = 128;
+      var x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, 128, 128);
+      var g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.07)');
+      x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+      x.strokeStyle = 'rgba(0,0,0,.16)'; x.lineWidth = 6; x.strokeRect(3, 3, 122, 122);
+      x.fillStyle = 'rgba(20,24,40,.78)'; x.strokeStyle = 'rgba(20,24,40,.78)';
+      x.save(); x.translate(64, 64); x.rotate(rot || 0);
+      if (kind === 'arrow') {
+        x.lineWidth = 14; x.lineCap = 'round'; x.beginPath(); x.moveTo(0, 34); x.lineTo(0, -14); x.stroke();
+        x.beginPath(); x.moveTo(0, -40); x.lineTo(-26, -8); x.lineTo(26, -8); x.closePath(); x.lineJoin = 'round'; x.lineWidth = 6; x.fill(); x.stroke();
+      } else if (kind === 'head') { x.beginPath(); x.arc(0, 0, 20, 0, Math.PI * 2); x.fill(); }
+      else { x.lineWidth = 7; x.beginPath(); x.arc(0, 0, 18, 0, Math.PI * 2); x.stroke(); }
+      x.restore();
+      var t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      return t;
+    }
+    var TEX = { up: faceTex('arrow', 0), right: faceTex('arrow', Math.PI / 2), down: faceTex('arrow', Math.PI), left: faceTex('arrow', -Math.PI / 2), head: faceTex('head'), tail: faceTex('tail') };
+    var DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+    var geo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    // each face of three's box: which way its texture's u and v run in 3D (worked out from the geometry itself)
+    var faceAxes = (function () {
+      var pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, out = [];
+      geo.groups.forEach(function (gr) {
+        var a = idx.getX(gr.start), b = idx.getX(gr.start + 1), c = idx.getX(gr.start + 2);
+        var P = [a, b, c].map(function (i) { return new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)); });
+        var T = [a, b, c].map(function (i) { return [uv.getX(i), uv.getY(i)]; });
+        var e1 = P[1].clone().sub(P[0]), e2 = P[2].clone().sub(P[0]);
+        var du1 = T[1][0] - T[0][0], dv1 = T[1][1] - T[0][1], du2 = T[2][0] - T[0][0], dv2 = T[2][1] - T[0][1], det = du1 * dv2 - du2 * dv1;
+        var U = e1.clone().multiplyScalar(dv2).sub(e2.clone().multiplyScalar(dv1)).divideScalar(det).normalize();
+        var V = e2.clone().multiplyScalar(du1).sub(e1.clone().multiplyScalar(du2)).divideScalar(det).normalize();
+        var N = new THREE.Vector3().crossVectors(e1, e2).normalize();
+        out.push({ U: U, V: V, N: N });
+      });
+      return out;
+    })();
+    function materialsFor(d) {
+      var D = new THREE.Vector3(DIRS[d][0], DIRS[d][1], DIRS[d][2]);
+      return faceAxes.map(function (f) {
+        var n = f.N.dot(D), tex;
+        if (n > 0.5) tex = TEX.head; else if (n < -0.5) tex = TEX.tail;
+        else { var a = D.dot(f.U), b = D.dot(f.V); tex = Math.abs(b) >= Math.abs(a) ? (b > 0 ? TEX.up : TEX.down) : (a > 0 ? TEX.right : TEX.left); }
+        return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+      });
+    }
+    var MATS = [0, 1, 2, 3, 4, 5].map(materialsFor);
+    var meshes = [], slotOf = [], M4 = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), Q0 = new THREE.Quaternion();
+    var palette = ['#6aa8ff'], colors = [], goldColor = new THREE.Color('#ffc83d');
+
+    function blockPos(b, out) { return (out || new THREE.Vector3()).set(b.x - (st.sx - 1) / 2, b.y - (st.sy - 1) / 2, b.z - (st.sz - 1) / 2); }
+    function colorOf(b) { return b.gold ? goldColor : colors[b.id]; }
+    function setPalette(p) {
+      palette = p;
+      if (st) { colors = st.blocks.map(function (b) { return new THREE.Color(palette[(b.id * 7 + (b.x + b.y * 3 + b.z * 5)) % palette.length]); }); paintAll(); kick(); }
+    }
+    function paintAll() {
+      if (!st) return;
+      st.blocks.forEach(function (b) { var s = slotOf[b.id]; meshes[s.d].setColorAt(s.k, colorOf(b)); });
+      meshes.forEach(function (m) { if (m.instanceColor) m.instanceColor.needsUpdate = true; });
+    }
+    function setState(s) {
+      st = s; anims = [];
+      meshes.forEach(function (m) { root.remove(m); m.dispose(); });
+      meshes = []; slotOf = [];
+      var counts = [0, 0, 0, 0, 0, 0];
+      st.blocks.forEach(function (b) { counts[b.d]++; });
+      for (var d = 0; d < 6; d++) { var m = new THREE.InstancedMesh(geo, MATS[d], Math.max(1, counts[d])); m.count = counts[d]; m.userData.d = d; m.userData.ids = []; meshes.push(m); root.add(m); }
+      st.blocks.forEach(function (b) { var m = meshes[b.d]; slotOf[b.id] = { d: b.d, k: m.userData.ids.length }; m.userData.ids.push(b.id); });
+      colors = st.blocks.map(function (b) { return new THREE.Color(palette[(b.id * 7 + (b.x + b.y * 3 + b.z * 5)) % palette.length]); });
+      st.blocks.forEach(function (b) { setMatrix(b, b.out ? null : blockPos(b)); });
+      paintAll();
+      meshes.forEach(function (m) { m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); });
+      center.set(0, 0, 0);
+      fit(); kick();
+    }
+    function setMatrix(b, p, scale) {
+      var s = slotOf[b.id], m = meshes[s.d];
+      if (!p) m.setMatrixAt(s.k, ZERO);
+      else { var sc = scale == null ? 1 : scale; M4.compose(p, Q0, new THREE.Vector3(sc, sc, sc)); m.setMatrixAt(s.k, M4); }
+      m.instanceMatrix.needsUpdate = true;
+    }
+    function refresh() { // put every block where the state says (after undo-free replays, restarts)
+      st.blocks.forEach(function (b) { setMatrix(b, b.out ? null : blockPos(b)); });
+      meshes.forEach(function (m) { m.computeBoundingSphere(); });
+      kick();
+    }
+
+    // ---------- camera: free turning (quaternion), pinch zoom ----------
+    var orient = new THREE.Quaternion(), QT = new THREE.Quaternion(), AX = new THREE.Vector3(1, 0, 0), AY = new THREE.Vector3(0, 1, 0), vyaw = 0, vpitch = 0;
+    function home() { orient.setFromEuler(new THREE.Euler(-0.5, 0.62, 0, 'YXZ')); zoom = 1; vyaw = vpitch = 0; }
+    home();
+    function turn(dx, dy) { if (dx) orient.multiply(QT.setFromAxisAngle(AY, dx)); if (dy) orient.multiply(QT.setFromAxisAngle(AX, dy)); orient.normalize(); }
+    // Full screen (1.2.0): the canvas fills the phone and the counters and buttons float on it, so the shape is fitted
+    // into the free box inside the margins (px: top, bottom, side) and the view is shifted to that box's middle
+    var M = { top: 0, bottom: 0, side: 0 };
+    function fit() {
+      camera.setViewOffset(W, H, 0, (M.bottom - M.top) / 2, W, H);
+      if (!st) return;
+      var R = 0.5 * Math.hypot(st.sx, st.sy, st.sz) + 0.3, t = Math.tan(camera.fov * Math.PI / 360);
+      var vf = Math.atan(t * Math.max(40, H - M.top - M.bottom) / H), hf = Math.atan(t * camera.aspect * Math.max(40, W - 2 * M.side) / W);
+      dist = R / Math.sin(Math.min(vf, hf)) * 1.02;
+    }
+    function setMargins(m) { M = { top: m.top || 0, bottom: m.bottom || 0, side: m.side || 0 }; fit(); kick(); }
+    function place() {
+      camera.position.set(0, 0, dist / zoom).applyQuaternion(orient).add(center);
+      camera.quaternion.copy(orient);
+      fill.target.position.copy(center); fill.position.copy(camera.position); fill.target.updateMatrixWorld();
+    }
+    function resize() {
+      var r = canvas.getBoundingClientRect();
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false);
+      camera.aspect = W / H; camera.updateProjectionMatrix();
+      fit(); kick();
+    }
+    function checkSize() { var r = canvas.getBoundingClientRect(); if (Math.abs(r.width - W) > 0.5 || Math.abs(r.height - H) > 0.5) resize(); }
+
+    // ---------- animations ----------
+    var anims = [];
+    function fly(b, onDone) { anims.push({ t: performance.now(), b: b, kind: 'fly', done: onDone }); kick(); }
+    function bump(b, steps, blocker) { anims.push({ t: performance.now(), b: b, kind: 'bump', steps: steps }); if (blocker != null) anims.push({ t: performance.now(), b: st.blocks[blocker], kind: 'flash' }); kick(); }
+    function boom(ids) { ids.forEach(function (id) { anims.push({ t: performance.now(), b: st.blocks[id], kind: 'boom' }); }); kick(); }
+    var RED = new THREE.Color('#ff4d5e'), TMPC = new THREE.Color(), P = new THREE.Vector3();
+    function animate(now) {
+      anims = anims.filter(function (a) {
+        var b = a.b, v = DIRS[b.d], k;
+        if (a.kind === 'fly') {
+          k = (now - a.t) / 520;
+          if (k >= 1) { setMatrix(b, null); if (a.done) a.done(); return false; }
+          var go = 0.6 * k + 14 * k * k * k;
+          blockPos(b, P); P.x += v[0] * go; P.y += v[1] * go; P.z += v[2] * go;
+          setMatrix(b, P, k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1);
+          return true;
+        }
+        if (a.kind === 'bump') {
+          k = (now - a.t) / (220 + a.steps * 70);
+          if (k >= 1) { setMatrix(b, blockPos(b)); return false; }
+          var reach = a.steps + 0.08, off = k < 0.5 ? reach * (k / 0.5) * (k / 0.5) : reach * (1 - (k - 0.5) / 0.5);
+          blockPos(b, P); P.x += v[0] * off; P.y += v[1] * off; P.z += v[2] * off;
+          setMatrix(b, P);
+          return true;
+        }
+        if (a.kind === 'flash') {
+          k = (now - a.t) / 420;
+          var s = slotOf[b.id], m = meshes[s.d];
+          if (k >= 1 || b.out) { m.setColorAt(s.k, colorOf(b)); m.instanceColor.needsUpdate = true; return false; }
+          TMPC.copy(colorOf(b)).lerp(RED, Math.sin(k * Math.PI) * 0.8); m.setColorAt(s.k, TMPC); m.instanceColor.needsUpdate = true;
+          return true;
+        }
+        if (a.kind === 'boom') {
+          k = (now - a.t) / 360;
+          if (k >= 1) { setMatrix(b, null); return false; }
+          blockPos(b, P);
+          setMatrix(b, P, k < 0.35 ? 1 + k : 1.35 * (1 - (k - 0.35) / 0.65));
+          return true;
+        }
+        return false;
+      });
+      if (anims.length) meshes.forEach(function (m) { m.computeBoundingSphere(); });
+    }
+    function draw() {
+      raf = 0;
+      if (!st) return;
+      var spin = Math.abs(vyaw) + Math.abs(vpitch) > 0.0005;
+      if (!dragging && spin) { turn(vyaw, vpitch); vyaw *= 0.92; vpitch *= 0.92; }
+      animate(performance.now());
+      place();
+      renderer.render(scene, camera);
+      if (anims.length || (!dragging && Math.abs(vyaw) + Math.abs(vpitch) > 0.0005)) kick();
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(draw); }
+
+    // ---------- touch: turn, pinch, tap ----------
+    var pointers = {}, dragging = false, down = null, pinch = null, tapCb = null;
+    function pts() { return Object.keys(pointers).map(function (k) { return pointers[k]; }); }
+    canvas.addEventListener('pointerdown', function (e) {
+      pointers[e.pointerId] = [e.clientX, e.clientY];
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      var p = pts();
+      if (p.length === 1) { down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false }; dragging = true; vyaw = vpitch = 0; }
+      if (p.length === 2) { pinch = { d: Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) || 1, z: zoom }; if (down) down.moved = true; }
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      if (!pointers[e.pointerId]) return;
+      var prev = pointers[e.pointerId]; pointers[e.pointerId] = [e.clientX, e.clientY];
+      var p = pts();
+      if (p.length >= 2 && pinch) { zoom = Math.max(0.6, Math.min(3, pinch.z * Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) / pinch.d)); kick(); return; }
+      if (!down) return;
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) down.moved = true;
+      if (!down.moved) return;
+      vyaw = -(e.clientX - prev[0]) * 0.011; vpitch = -(e.clientY - prev[1]) * 0.009;
+      turn(vyaw, vpitch); kick();
+    });
+    function up(e) {
+      var wasTap = down && !down.moved && performance.now() - down.t < 500 && Object.keys(pointers).length === 1;
+      delete pointers[e.pointerId];
+      if (!Object.keys(pointers).length) { dragging = false; pinch = null; }
+      if (wasTap && tapCb) { var r = canvas.getBoundingClientRect(); tapCb(e.clientX - r.left, e.clientY - r.top); }
+      if (!Object.keys(pointers).length) down = null;
+      kick();
+    }
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', function (e) { delete pointers[e.pointerId]; dragging = false; down = null; pinch = null; });
+    if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
+    canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); });
+    canvas.addEventListener('webglcontextrestored', function () { if (st) setState(st); });
+
+    // ---------- picking ----------
+    var ray = new THREE.Raycaster();
+    function blockAt(x, y) {
+      if (!st) return null;
+      checkSize(); place(); camera.updateMatrixWorld(); root.updateMatrixWorld();
+      ray.setFromCamera(new THREE.Vector2(x / W * 2 - 1, -(y / H) * 2 + 1), camera);
+      var hits = ray.intersectObjects(meshes, false);
+      for (var i = 0; i < hits.length; i++) {
+        var id = hits[i].object.userData.ids[hits[i].instanceId], b = st.blocks[id];
+        if (b && !b.out) return b;
+      }
+      return null;
+    }
+    function screenOf(b) { // for tests: where a block's centre is on screen
+      checkSize(); place(); camera.updateMatrixWorld();
+      var v = blockPos(b).project(camera);
+      return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H];
+    }
+
+    return {
+      setState: setState, refresh: refresh, resize: resize, redraw: kick, setPalette: setPalette, setMargins: setMargins,
+      reset: function () { home(); kick(); }, onTap: function (cb) { tapCb = cb; },
+      blockAt: blockAt, screenOf: screenOf, fly: fly, bump: bump, boom: boom,
+      busy: function () { return anims.length > 0; }
+    };
+  }
+  return { create: create };
+})();
+</script>
+<script>
+/* Fly Away sounds: synthesized with Web Audio (no audio files). */
+var FASound = (function () {
+  'use strict';
+  var ac = null, master = null, on = false;
+  function ctx() {
+    if (!on) return null;
+    if (!ac) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ac = new AC(); } catch (e) { return null; }
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) { /* ignore */ } }
+    return ac;
+  }
+  function tone(type, f0, f1, dur, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function knock(freq, gain, delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.07);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 3;
+    var g = a.createGain(); g.gain.value = gain;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+    tone('sine', freq * 0.35, freq * 0.25, 0.09, gain * 0.5, delay);
+  }
+  function whoosh(delay) {
+    var a = ctx(); if (!a) return;
+    var t = a.currentTime + (delay || 0), len = Math.floor(a.sampleRate * 0.28);
+    var buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+    var s = a.createBufferSource(); s.buffer = buf;
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(700, t); bp.frequency.exponentialRampToValueAtTime(3200, t + 0.28); bp.Q.value = 1.4;
+    var g = a.createGain(); g.gain.value = 0.4;
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    setEnabled: function (v) { on = !!v; if (on) ctx(); },
+    unlock: function () { if (on) ctx(); },
+    fly: function () { if (on) { whoosh(); tone('sine', 520, 880, 0.12, 0.12); } },
+    bump: function () { if (on) { knock(420, 0.7); tone('triangle', 170, 120, 0.12, 0.2); } },
+    gold: function () { if (on) { tone('sine', 1319, 0, 0.18, 0.22); tone('sine', 1760, 0, 0.3, 0.2, 0.08); } },
+    boom: function () { if (!on) return; knock(160, 1.2); knock(90, 1.0, 0.03); tone('sawtooth', 110, 40, 0.4, 0.2); },
+    win: function () { if (!on) return; [523, 659, 784, 1047, 784, 1047].forEach(function (f, i) { tone('triangle', f, 0, i === 5 ? 0.6 : 0.2, 0.3, i * 0.1); }); },
+    over: function () { if (!on) return; [392, 330, 262].forEach(function (f, i) { tone('triangle', f, 0, 0.3, 0.3, i * 0.2); }); },
+    buy: function () { if (on) { tone('sine', 988, 0, 0.12, 0.2); tone('sine', 1319, 0, 0.25, 0.2, 0.09); } },
+    ding: function () { if (on) { tone('sine', 1319, 0, 0.4, 0.25); tone('sine', 1568, 0, 0.5, 0.2, 0.12); } },
+    sign: function () { if (on) knock(900, 0.3); }
+  };
+})();
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Fly Away, Lines mode: the screen (levels, taps, moves, stars, hints, cards). Shared things (coins, skins,
+   settings, cards, ads) come from app.js through ctx. Saves: tapaway.lines.meta / .stats / .game */
+var FLApp = (function () {
+  'use strict';
+  var HINT_PRICE = 50, CONTINUE_MOVES = 5, CONTINUE_TIMER = 5;
+  var X = null, S = null, R = null, st = null, game = null, lm = null, ls = null, ready = false;
+  function $(id) { return document.getElementById(id); }
+
+  function load() {
+    lm = X.store.get('lines.meta', null) || {};
+    var D = { level: 1, stars: {}, hints: 3, seenHelp: false, seenLock: false, seenTimer: false, turned: false };
+    for (var k in D) if (lm[k] === undefined) lm[k] = D[k];
+    ls = X.store.get('lines.stats', null) || {};
+    var SD = { levels: 0, perfect: 0, lines: 0, mistakes: 0, hints: 0, fails: 0, hard: 0 };
+    for (var s in SD) if (typeof ls[s] !== 'number') ls[s] = SD[s];
+  }
+  function saveMeta() { X.store.set('lines.meta', lm); }
+  function saveStats() { X.store.set('lines.stats', ls); }
+  function saveGame() { if (game && !game.done) X.store.set('lines.game', game); }
+  function star(on) { return '<svg viewBox="0 0 24 24" class="' + (on ? 'on' : '') + '"><use href="#i-star"/></svg>'; }
+  function minis(n) { return '<span class="minis">' + star(n >= 1) + star(n >= 2) + star(n >= 3) + '</span>'; }
+  function tierTag(t) { return t === 4 ? '<span class="tier x">EXTRA HARD</span>' : t === 3 ? '<span class="tier">HARD</span>' : ''; }
+
+  // ================= a level =================
+  function start(n, fresh) {
+    saveGame();
+    var sv = !fresh && X.store.get('lines.game', null);
+    if (sv && sv.n === n && sv.scheme === FL.LINE_SCHEME && !sv.done) game = sv;
+    else game = { n: n, scheme: FL.LINE_SCHEME, taps: [], extra: 0, done: false };
+    st = FL.replay(n, game.taps, game.extra * CONTINUE_MOVES);
+    R.setState(st);
+    render();
+    saveGame();
+    if (!game.taps.length) intro();
+    else if (st.boom >= 0) setTimeout(timerOut, 300);
+    else if (FL.outOfMoves(st)) setTimeout(outOfMoves, 300);
+  }
+  function intro() {
+    var hasLock = st.lines.some(function (L) { return L.key >= 0; }), hasTimer = st.lines.some(function (L) { return L.isTimer; });
+    if (hasLock && !lm.seenLock) {
+      lm.seenLock = true; saveMeta();
+      X.showCard('Locked lines', 'A line with a <b>lock</b> can only leave after the <b>key line</b> of the same color has gone. Tapping it before then is a mistake.', [{ label: 'Got it', red: true, go: function () {} }]);
+      return;
+    }
+    if (hasTimer && !lm.seenTimer) {
+      lm.seenTimer = true; saveMeta();
+      X.showCard('Timer lines', 'A line with a <b>red number</b> must be cleared before the number reaches 0. Every tap counts it down, mistakes too.', [{ label: 'Got it', red: true, go: function () {} }]);
+      return;
+    }
+    if (st.tier >= 3) X.showCard(st.tier === 4 ? 'EXTRA HARD level' : 'HARD level', 'Fewer spare moves. Look before you tap.', [{ label: 'Let’s go', red: true, go: function () {} }]);
+  }
+
+  function onTap(x, y) {
+    if (!game || game.done || X.locked()) return;
+    if (st.boom >= 0) { timerOut(); return; }
+    if (FL.outOfMoves(st)) { outOfMoves(); return; }
+    var L = R.lineAt(x, y);
+    if (!lm.turned) { lm.turned = true; saveMeta(); $('turnHintL').classList.add('hide'); }
+    if (!L) return;
+    var r = FL.tap(st, L.id);
+    if (!r) return;
+    game.taps.push(L.id);
+    if (r.kind === 'fly') { R.fly(L.id); S.fly(); ls.lines++; }
+    else if (r.kind === 'bump') { R.bump(L.id, r.steps, r.blocker); S.bump(); ls.mistakes++; if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) { /* ignore */ } }
+    else { R.locked(L.id); S.bump(); ls.mistakes++; }
+    R.update();
+    saveStats(); saveGame(); renderInfo();
+    if (r.boom != null && r.boom >= 0) { R.boom(r.boom); setTimeout(function () { S.boom(); }, 150); setTimeout(timerOut, 900); }
+    else if (FL.won(st)) setTimeout(levelDone, 650);
+    else if (FL.outOfMoves(st)) setTimeout(outOfMoves, 520);
+  }
+
+  function finish() { game.done = true; X.store.del('lines.game'); X.meta.finished++; X.saveMeta(); }
+  function payFor(n, stars, tier, replay) { return replay ? 5 : 10 + 5 * stars + (tier === 3 ? 10 : tier === 4 ? 20 : 0); }
+  function levelDone() {
+    if (game.done) return;
+    var n = game.n, stars = FL.stars(st), prev = lm.stars[n] || 0, replay = n < lm.level, pay = payFor(n, stars, st.tier, replay), tier = st.tier;
+    finish();
+    S.win(); X.cheer(stars === 3 ? 'Perfect!' : 'Cleared!');
+    X.addCoins(pay);
+    if (stars > prev) lm.stars[n] = stars;
+    if (n === lm.level) lm.level = n + 1;
+    if (n % 10 === 0 && !replay) lm.hints++;
+    ls.levels++; if (stars === 3) ls.perfect++; if (tier >= 3) ls.hard++;
+    saveMeta(); saveStats(); render();
+    setTimeout(function () {
+      var next = replay ? n + 1 : lm.level;
+      var btns = [{ label: 'Next level: ' + next, red: true, go: function () { X.between(function () { start(next, true); }); } },
+        { label: 'Replay', go: function () { X.between(function () { start(n, true); }); } }];
+      X.showCard('Level ' + n + ' cleared!', '<div class="stars3">' + star(stars >= 1) + star(stars >= 2) + star(stars >= 3) + '</div>' +
+        (st.mistakes ? st.mistakes + ' mistake' + (st.mistakes === 1 ? '' : 's') : 'No mistakes') + ' · ' + st.moves + ' moves<br>' +
+        '<span class="coins"><svg viewBox="0 0 24 24"><use href="#coin"/></svg>+' + pay + '</span>' + (n % 10 === 0 && !replay ? ' · <b>+1 hint</b>' : ''), btns, 'stars');
+    }, 700);
+  }
+  function outOfMoves() {
+    if (!game || game.done || !FL.outOfMoves(st) || X.isOpen('ovEnd')) return;
+    S.over(); ls.fails++; saveStats();
+    X.showCard('Out of moves', st.left + ' line' + (st.left === 1 ? '' : 's') + ' left.', [
+      { label: X.adsOn() ? 'Continue: +' + CONTINUE_MOVES + ' moves (quick ad)' : 'Continue: +' + CONTINUE_MOVES + ' moves', red: true, go: function () {
+        var go = function () { game.extra++; st.limit += CONTINUE_MOVES; saveGame(); renderInfo(); };
+        if (X.adsOn()) X.showAd(go); else go();
+      } },
+      { label: 'Try again', go: function () { finish(); X.between(function () { start(game.n, true); }); } }]);
+  }
+  function timerOut() {
+    if (!game || game.done || st.boom < 0 || X.isOpen('ovEnd')) return;
+    S.over(); ls.fails++; saveStats();
+    X.showCard('The timer ran out', 'A timer line has to be cleared before its number reaches 0.', [
+      { label: X.adsOn() ? 'Continue: +' + CONTINUE_TIMER + ' on the timer (quick ad)' : 'Continue: +' + CONTINUE_TIMER + ' on the timer', red: true, go: function () {
+        var go = function () { FL.addTimer(st, CONTINUE_TIMER); game.taps.push('T'); saveGame(); R.update(); renderInfo(); };
+        if (X.adsOn()) X.showAd(go); else go();
+      } },
+      { label: 'Try again', go: function () { finish(); X.between(function () { start(game.n, true); }); } }]);
+  }
+
+  // ================= hint =================
+  function useHint() {
+    if (!game || game.done || X.locked()) return;
+    if (lm.hints <= 0) {
+      if (X.meta.coins >= HINT_PRICE) X.showCard('Out of hints', 'Buy a hint for <b>' + HINT_PRICE + '</b> coins? You have ' + X.fmt(X.meta.coins) + '.', [
+        { label: 'Buy a hint', red: true, go: function () { X.meta.coins -= HINT_PRICE; X.saveMeta(); lm.hints++; saveMeta(); S.buy(); render(); useHint(); } },
+        { label: 'Not now', go: function () {} }]);
+      else X.showCard('Out of hints', 'A hint costs ' + HINT_PRICE + ' coins. You have ' + X.fmt(X.meta.coins) + '. Clear levels to earn more; every 10th level also gives a free hint.', [{ label: 'OK', red: true, go: function () {} }]);
+      return;
+    }
+    var h = FL.hint(st);
+    if (!h) return;
+    lm.hints--; ls.hints++; saveMeta(); saveStats();
+    R.hint(h.id); S.ding(); renderTools();
+  }
+
+  // ================= screens =================
+  function renderInfo() {
+    if (!st) return;
+    var ml = Math.max(0, st.limit - st.moves);
+    $('info').innerHTML = '<div><div class="lbl">Level ' + game.n + tierTag(st.tier) + '</div><div class="ttl">' + minis(FL.stars(st)) + st.left + ' left</div></div>' +
+      '<div class="moves' + (ml <= 3 ? ' low' : '') + '" style="text-align:center"><div class="lbl">Moves</div><b>' + ml + '</b></div>' +
+      '<div class="right"><div class="lbl">Coins</div><div class="coins"><svg viewBox="0 0 24 24"><use href="#coin"/></svg>' + X.fmt(X.meta.coins) + '</div></div>';
+  }
+  function renderTools() { $('hintLabel').innerHTML = 'Hint<span class="cnt">' + lm.hints + '</span>'; }
+  function render() { renderInfo(); renderTools(); }
+  function renderLevels() {
+    var top = Math.max(30, Math.ceil((lm.level + 5) / 5) * 5), h = '<p class="lvnext">Next up: <b>Level ' + lm.level + '</b> · ' + totalStars() + ' stars</p><div class="lgrid">';
+    for (var n = 1; n <= top; n++) {
+      var t = FL.tierOf(n), cls = 'lvl' + (n === lm.level ? ' cur' : '') + (t === 3 ? ' hard' : t === 4 ? ' hard xhard' : '');
+      h += '<button class="' + cls + '" data-n="' + n + '"' + (n > lm.level ? ' disabled' : '') + '>' + n + (n < lm.level ? minis(lm.stars[n] || 0) : '') + '</button>';
+    }
+    $('levelsLBody').innerHTML = h + '</div>';
+  }
+  function totalStars() { var t = 0; for (var k in lm.stars) t += lm.stars[k]; return t; }
+  function renderStats() {
+    return '<div class="tiles"><div class="tile"><b>' + (lm.level - 1) + '</b><span>Levels</span></div><div class="tile"><b>' + totalStars() + '</b><span>Stars</span></div>' +
+      '<div class="tile"><b>' + X.fmt(ls.perfect) + '</b><span>Perfect</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + X.fmt(ls.lines) + '</b><span>Lines cleared</span></div><div class="tile"><b>' + X.fmt(ls.hard) + '</b><span>Hard levels</span></div>' +
+      '<div class="tile"><b>' + X.fmt(ls.hints) + '</b><span>Hints used</span></div></div>' +
+      '<p class="version">' + X.fmt(ls.mistakes) + ' mistakes · ' + ls.fails + ' times out of moves or time</p>';
+  }
+
+  // ================= wiring =================
+  function init(ctx, THREE) {
+    X = ctx; S = ctx.S; load();
+    R = FLRender.create(THREE, $('cvL'));
+    R.onTap(onTap);
+    if (lm.turned) $('turnHintL').classList.add('hide');
+    $('btnHint').addEventListener('click', useHint);
+    $('btnLevelsL').addEventListener('click', function () { renderLevels(); $('ovLevelsL').classList.add('show'); });
+    $('btnCloseLevelsL').addEventListener('click', function () { $('ovLevelsL').classList.remove('show'); });
+    $('ovLevelsL').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('levelsLBody').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-n]');
+      if (!b) return;
+      $('ovLevelsL').classList.remove('show');
+      var n = +b.dataset.n;
+      if (game && n === game.n && !game.done) return;
+      start(n, n !== lm.level);
+    });
+    $('btnNewL').addEventListener('click', function () {
+      if (!game || game.done || !game.taps.length) { start(game ? game.n : lm.level, true); return; }
+      X.showCard('Restart this level?', 'The shape goes back to how it started.', [
+        { label: 'Restart', red: true, go: function () { X.store.del('lines.game'); start(game.n, true); } },
+        { label: 'Keep playing', go: function () {} }]);
+    });
+    ready = true;
+  }
+  function show() {
+    if (!ready) return;
+    R.resize();
+    if (!game) { var sv = X.store.get('lines.game', null); start(sv && !sv.done && sv.n <= lm.level ? sv.n : lm.level); }
+    else { render(); R.redraw(); }
+    if (!lm.seenHelp) { lm.seenHelp = true; saveMeta(); X.openHelp(); }
+  }
+
+  return {
+    init: init, show: show, save: saveGame, renderStats: renderStats, render: render, setMargins: function (m) { if (R) R.setMargins(m); },
+    // hooks for automated tests
+    test: { get st() { return st; }, get game() { return game; }, get meta() { return lm; }, start: start, R: function () { return R; },
+      tap: function (id) { var L = st.lines[id]; for (var tries = 0; tries < 40; tries++) { if (R.facing(L)) { var p = R.screenOf(L); if (p[0] > 0 && p[1] > 0) { var hit = R.lineAt(p[0], p[1]); if (hit && hit.id === id) { onTap(p[0], p[1]); return true; } } } R.turn(0.35, tries % 3 === 0 ? 0.3 : 0); } return false; } }
+  };
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  var S = FASound, THREE = null, R3 = null;
+  var NAMES = { box: 'Block', ball: 'Ball', pyramid: 'Pyramid', cross: 'Jack', tower: 'Tower', stairs: 'Stairs', ring: 'Ring', heart: 'Heart', plus: 'Plus' };
+  var SKINS = [
+    { id: 'sky', name: 'Sky', price: 0, c: ['#6aa8ff', '#8fbaff', '#5b93f5'] },
+    { id: 'mint', name: 'Mint', price: 150, c: ['#5fd6b0', '#8ae6c8', '#3cc49a'] },
+    { id: 'candy', name: 'Candy', price: 200, c: ['#ff8fb8', '#ffb3cf', '#ff6f9f'] },
+    { id: 'snow', name: 'Snow', price: 200, c: ['#f4f6fb', '#e3e8f2', '#d3dae8'] },
+    { id: 'sunset', name: 'Sunset', price: 250, c: ['#ff9f5a', '#ffc15e', '#ff7a6b'] },
+    { id: 'grape', name: 'Grape', price: 300, c: ['#9b7bff', '#b89dff', '#7f5cf0'] },
+    { id: 'rainbow', name: 'Rainbow', price: 500, c: ['#ff6b6b', '#ffb84d', '#ffe066', '#6bd98a', '#5fb8ff', '#a88bff'] }
+  ];
+  var BACKS = [
+    { id: 'day', name: 'Day', price: 0, bg: 'linear-gradient(#dff1ff, #f5fbff)', sw: ['#dff1ff', '#f5fbff'] },
+    { id: 'meadow', name: 'Meadow', price: 150, bg: 'linear-gradient(#dff7e3, #f6fff2)', sw: ['#cdeed5', '#f6fff2'] },
+    { id: 'dusk', name: 'Dusk', price: 150, bg: 'linear-gradient(#ffd6b3, #ffeef2)', sw: ['#ffd6b3', '#ffeef2'] },
+    { id: 'blossom', name: 'Blossom', price: 200, bg: 'linear-gradient(#ffdcee, #fff6fb)', sw: ['#ffdcee', '#fff6fb'] },
+    { id: 'night', name: 'Night', price: 250, bg: 'linear-gradient(#141a33, #2c3160)', sw: ['#141a33', '#2c3160'] }
+  ];
+  var BOMB_PRICE = 100, CONTINUE_MOVES = 5, CH_UNLOCK = 10;
+
+  // ================= storage =================
+  var store = Goobs.store('tapaway');
+  var settings = { sound: false, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  var MD = { kind: 'lines', mode: 'level', level: 1, ch: 1, coins: 0, bombs: 1, skin: 'sky', back: 'day', owned: ['sky', 'day'], finished: 0, lastAdAt: 0, seenHelp: false, turned: false };
+  for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  function saveMeta() { store.set('meta', meta); }
+  var stats = store.get('stats', null) || {};
+  var SD = { levels: 0, challenges: 0, blocks: 0, bumps: 0, gold: 0, bombs: 0, coins: 0, fails: 0 };
+  for (var sk in SD) if (typeof stats[sk] !== 'number') stats[sk] = SD[sk];
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function isOpen(id) { return $(id).classList.contains('show'); }
+  function locked() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkins') || isOpen('ovChallenges') || isOpen('ovLevelsL') || GoobsAds.isOpen(); }
+  function coinIcon() { return '<svg viewBox="0 0 24 24"><use href="#coin"/></svg>'; }
+  function skinById(id) { for (var i = 0; i < SKINS.length; i++) if (SKINS[i].id === id) return SKINS[i]; return SKINS[0]; }
+  function backById(id) { for (var i = 0; i < BACKS.length; i++) if (BACKS[i].id === id) return BACKS[i]; return BACKS[0]; }
+
+  // ================= game =================
+  // game: { mode: 'level'|'challenge', n (level or challenge number), moves: [id | ['b', id]], extra, done }
+  var game = null, st = null, armed = false;
+  function keyFor(mode) { return 'game.' + mode; }
+  function saveGame() { if (game && !game.done) store.set(keyFor(game.mode), game); }
+  function start(mode, n, fresh) {
+    if (game && !game.done) saveGame();
+    var saved = !fresh && store.get(keyFor(mode), null);
+    if (saved && saved.n === n && saved.scheme === FA.LEVEL_SCHEME && !saved.done) game = saved;
+    else game = { mode: mode, n: n, scheme: FA.LEVEL_SCHEME, moves: [], extra: 0, done: false };
+    st = FA.replay(n, mode === 'challenge', game.moves);
+    if (st.limit) st.limit += game.extra * CONTINUE_MOVES;
+    meta.mode = mode; saveMeta();
+    disarm();
+    R3.setState(st);
+    renderAll();
+    saveGame();
+    if (FA.outOfMoves(st)) setTimeout(outOfMoves, 300);
+  }
+  function coinsFor(mode, n) { return mode === 'challenge' ? 25 + Math.min(25, Math.floor(n / 5) * 5) : 10 + Math.min(15, Math.floor(n / 10)); }
+
+  // ================= tapping =================
+  function onTap(x, y) {
+    if (!game || game.done || locked()) return;
+    if (FA.outOfMoves(st)) { outOfMoves(); return; }
+    var b = R3.blockAt(x, y);
+    if (!meta.turned) { meta.turned = true; saveMeta(); $('turnHint').classList.add('hide'); }
+    if (!b) return;
+    if (armed) { useBomb(b); return; }
+    var r = FA.tap(st, b.id);
+    if (!r) return;
+    game.moves.push(b.id);
+    if (r.kind === 'fly') {
+      R3.fly(b); S.fly(); stats.blocks++;
+      if (b.gold) { addCoins(5, x, y); stats.gold++; setTimeout(S.gold, 120); }
+    } else { R3.bump(b, r.steps, r.blocker); S.bump(); stats.bumps++; }
+    saveStats(); saveGame(); renderInfo();
+    if (FA.won(st)) setTimeout(levelDone, 560);
+    else if (FA.outOfMoves(st)) setTimeout(outOfMoves, 480);
+  }
+  function addCoins(n, x, y) {
+    meta.coins += n; stats.coins += n; saveMeta(); saveStats();
+    if (x != null) {
+      var r = $('cv').getBoundingClientRect(), p = document.createElement('div');
+      p.className = 'coinpop'; p.textContent = '+' + n;
+      p.style.left = (r.left + x) + 'px'; p.style.top = (r.top + y - 20) + 'px';
+      document.body.appendChild(p); setTimeout(function () { p.remove(); }, 850);
+    }
+  }
+
+  // ================= bomb =================
+  function arm() {
+    if (!game || game.done) return;
+    if (armed) { disarm(); return; }
+    if (meta.bombs <= 0) {
+      if (meta.coins >= BOMB_PRICE) showCard('Out of bombs', 'Buy a bomb for <b>' + BOMB_PRICE + '</b> coins? You have ' + fmt(meta.coins) + '.', [
+        { label: 'Buy a bomb', red: true, go: function () { buyBomb(); arm(); } }, { label: 'Not now', go: function () {} }]);
+      else showCard('Out of bombs', 'A bomb costs ' + BOMB_PRICE + ' coins. You have ' + fmt(meta.coins) + '. Clear levels and fly gold blocks to earn more.', [{ label: 'OK', red: true, go: function () {} }]);
+      return;
+    }
+    armed = true;
+    $('btnBomb').classList.add('armed'); $('bombHint').classList.add('show');
+  }
+  function disarm() { armed = false; $('btnBomb').classList.remove('armed'); $('bombHint').classList.remove('show'); }
+  function useBomb(b) {
+    var gold = 0, gone = FA.bomb(st, b.id);
+    disarm();
+    if (!gone.length) return;
+    gone.forEach(function (id) { if (st.blocks[id].gold) gold++; });
+    game.moves.push(['b', b.id]);
+    meta.bombs--; stats.bombs++; stats.blocks += gone.length; saveMeta();
+    R3.boom(gone); S.boom();
+    if (gold) { addCoins(5 * gold); stats.gold += gold; }
+    saveStats(); saveGame(); renderInfo(); renderTools();
+    if (FA.won(st)) setTimeout(levelDone, 500);
+  }
+  function buyBomb() { if (meta.coins < BOMB_PRICE) return false; meta.coins -= BOMB_PRICE; meta.bombs++; saveMeta(); S.buy(); renderInfo(); renderTools(); return true; }
+
+  // ================= end of a level =================
+  function showCard(title, html, buttons, look) {
+    $('cardIcon').innerHTML = look === 'stars' ? '' : '<svg viewBox="0 0 100 100"><use href="#fa-logo"/></svg>';
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions');
+    box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : '');
+      el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function finish() { game.done = true; store.del(keyFor(game.mode)); meta.finished++; saveMeta(); }
+  function levelDone() {
+    if (game.done) return;
+    var n = game.n, mode = game.mode, pay = coinsFor(mode, n), wasCur;
+    finish();
+    S.win(); cheer(mode === 'challenge' ? 'Challenge done!' : 'Cleared!');
+    addCoins(pay);
+    if (mode === 'challenge') { wasCur = meta.ch === n; if (wasCur) meta.ch = n + 1; stats.challenges++; }
+    else { wasCur = meta.level === n; if (wasCur) meta.level = n + 1; stats.levels++; }
+    saveMeta(); saveStats(); renderModes(); renderInfo();
+    setTimeout(function () {
+      var next = mode === 'challenge' ? meta.ch : meta.level, label = mode === 'challenge' ? 'Next challenge: ' + next : 'Next level: ' + next;
+      var btns = [{ label: label, red: true, go: function () { between(function () { start(mode, next, true); }); } }];
+      if (mode === 'level' && meta.level > CH_UNLOCK && meta.level - 1 === CH_UNLOCK && wasCur) btns.push({ label: 'Try a challenge', go: function () { between(function () { start('challenge', meta.ch); }); } });
+      showCard((mode === 'challenge' ? 'Challenge ' : 'Level ') + n + ' done!', '<span class="coins">' + coinIcon() + '+' + pay + '</span><br>' +
+        fmt(st.blocks.length) + ' blocks in ' + st.moves + ' taps' + (mode === 'level' && meta.level - 1 === CH_UNLOCK && wasCur ? '<br><b>Challenges are open!</b> They have a move limit.' : ''), btns);
+    }, 700);
+  }
+  function outOfMoves() {
+    if (!game || game.done || !FA.outOfMoves(st) || isOpen('ovEnd')) return;
+    S.over(); stats.fails++; saveStats();
+    showCard('Out of moves', st.left + ' block' + (st.left === 1 ? '' : 's') + ' left.', [
+      { label: Goobs.adsOn() ? 'Continue: +' + CONTINUE_MOVES + ' moves (quick ad)' : 'Continue: +' + CONTINUE_MOVES + ' moves', red: true, go: function () {
+        var go = function () { game.extra++; st.limit += CONTINUE_MOVES; saveGame(); renderInfo(); };
+        if (Goobs.adsOn()) showAd(go); else go();
+      } },
+      { label: 'Try again', go: function () { finish(); between(function () { start(game.mode, game.n, true); }); } }
+    ]);
+  }
+  function cheer(t) { var c = $('cheer'); c.textContent = t; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
+  function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta();
+      next(); showAd(function () {});
+      return;
+    }
+    next();
+  }
+
+  // ================= rendering (UI) =================
+  function renderInfo() {
+    if (meta.kind === 'lines') { FLApp.render(); return; }
+    if (!game) return;
+    var left = game.mode === 'challenge' ? 'Challenge ' + game.n : 'Level ' + game.n, h;
+    h = '<div><div class="lbl">' + left + '</div><div class="ttl">' + (NAMES[st.kind] || 'Shape') + ' · ' + st.left + ' left</div></div>';
+    if (st.limit) {
+      var ml = Math.max(0, st.limit - st.moves);
+      h += '<div class="moves' + (ml <= 3 ? ' low' : '') + '" style="text-align:center"><div class="lbl">Moves</div><b>' + ml + '</b></div>';
+    }
+    h += '<div class="right"><div class="lbl">Coins</div><div class="coins">' + coinIcon() + fmt(meta.coins) + '</div></div>';
+    $('info').innerHTML = h;
+  }
+  function renderModes() {
+    $('modeLevel').textContent = 'Level ' + meta.level;
+    $('modeLevel').classList.toggle('on', game.mode === 'level');
+    $('modeChallenge').classList.toggle('on', game.mode === 'challenge');
+    $('modeChallenge').classList.toggle('locked', meta.level <= CH_UNLOCK);
+    $('modeChallenge').textContent = meta.level <= CH_UNLOCK ? 'Challenges 🔒' : 'Challenge ' + (game.mode === 'challenge' ? game.n : meta.ch);
+  }
+  function renderTools() { $('bombLabel').innerHTML = 'Bomb<span class="cnt">' + meta.bombs + '</span>'; }
+  function applyLook() {
+    R3.setPalette(skinById(meta.skin).c);
+    $('stage').style.setProperty('--fa-bg', backById(meta.back).bg);
+  }
+  function renderAll() { renderModes(); renderInfo(); renderTools(); }
+  function renderSkins() {
+    function item(x, kind) {
+      var own = meta.owned.indexOf(x.id) >= 0, on = (kind === 'skin' ? meta.skin : meta.back) === x.id, cols = kind === 'skin' ? x.c : x.sw;
+      return '<button class="shopitem' + (on ? ' on' : '') + (own ? '' : ' locked') + '" data-kind="' + kind + '" data-id="' + x.id + '">' +
+        '<div class="sw">' + cols.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') + '</div>' + x.name +
+        '<small>' + (on ? 'In use' : own ? 'Tap to use' : coinIcon() + x.price) + '</small></button>';
+    }
+    $('skinsBody').innerHTML = '<p class="lvnext">You have <span class="coins">' + coinIcon() + fmt(meta.coins) + '</span></p>' +
+      '<div class="themelabel">Blocks</div><div class="shopgrid">' + SKINS.map(function (x) { return item(x, 'skin'); }).join('') + '</div>' +
+      '<div class="themelabel">Backdrop</div><div class="shopgrid">' + BACKS.map(function (x) { return item(x, 'back'); }).join('') + '</div>' +
+      '<div class="buyrow"><div><b>Bomb</b><br><small>You have ' + meta.bombs + '</small></div><button class="btn red" id="buyBomb"' + (meta.coins < BOMB_PRICE ? ' disabled' : '') + '>Buy for ' + BOMB_PRICE + '</button></div>';
+  }
+  function onShop(e) {
+    if (e.target.id === 'buyBomb') { buyBomb(); renderSkins(); return; }
+    var b = e.target.closest('.shopitem');
+    if (!b) return;
+    var kind = b.dataset.kind, x = kind === 'skin' ? skinById(b.dataset.id) : backById(b.dataset.id);
+    if (meta.owned.indexOf(x.id) < 0) {
+      if (meta.coins < x.price) { S.bump(); b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 250 }); return; }
+      meta.coins -= x.price; meta.owned.push(x.id); S.buy();
+    }
+    if (kind === 'skin') meta.skin = x.id; else meta.back = x.id;
+    saveMeta(); applyLook(); renderSkins(); renderInfo();
+  }
+  function renderChallenges() {
+    var cur = meta.ch, maxShown = cur + 9, h = '<p class="lvnext">Each challenge has a move limit. Next up: <b>Challenge ' + cur + '</b></p><div class="lvgrid">';
+    for (var n = 1; n <= maxShown; n++) h += '<button class="lv ' + (n < cur ? 'done' : n === cur ? 'cur' : '') + '" data-n="' + n + '"' + (n > cur ? ' disabled' : '') + '>' + n + '</button>';
+    $('chBody').innerHTML = h + '</div>';
+  }
+  function renderStats() {
+    if (meta.kind === 'lines') { $('statsBody').innerHTML = FLApp.renderStats(); return; }
+    $('statsBody').innerHTML =
+      '<div class="tiles"><div class="tile"><b>' + (meta.level - 1) + '</b><span>Levels</span></div><div class="tile"><b>' + (meta.ch - 1) + '</b><span>Challenges</span></div>' +
+      '<div class="tile"><b>' + fmt(stats.blocks) + '</b><span>Blocks flown</span></div></div>' +
+      '<div class="tiles"><div class="tile"><b>' + fmt(stats.gold) + '</b><span>Gold blocks</span></div><div class="tile"><b>' + fmt(stats.bombs) + '</b><span>Bombs used</span></div>' +
+      '<div class="tile"><b>' + fmt(stats.coins) + '</b><span>Coins earned</span></div></div>' +
+      '<p class="version">' + fmt(stats.bumps) + ' bumps · ' + stats.fails + ' times out of moves</p>';
+  }
+
+  // ================= Lines / Blocks =================
+  var blocksStarted = false;
+  function setKind(k) {
+    if (k !== 'lines' && k !== 'blocks') k = 'lines';
+    if (meta.kind !== k) { if (meta.kind === 'lines') FLApp.save(); else saveGame(); }
+    meta.kind = k; saveMeta(); disarm();
+    document.documentElement.classList.toggle('k-lines', k === 'lines');
+    document.documentElement.classList.toggle('k-blocks', k === 'blocks');
+    $('kindLines').classList.toggle('on', k === 'lines');
+    $('kindBlocks').classList.toggle('on', k === 'blocks');
+    fitMargins();
+    if (k === 'lines') { FLApp.show(); return; }
+    R3.resize();
+    if (!blocksStarted) {
+      blocksStarted = true;
+      if (meta.mode === 'challenge' && meta.level > CH_UNLOCK) { var sv = store.get(keyFor('challenge'), null); start('challenge', sv && !sv.done ? sv.n : meta.ch); }
+      else { var lv = store.get(keyFor('level'), null); start('level', lv && !lv.done && lv.n <= meta.level ? lv.n : meta.level); }
+      if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); $('ovHelp').classList.add('show'); }
+    } else renderAll();
+  }
+  function saveAll() { saveGame(); FLApp.save(); }
+
+  // ================= wiring =================
+  function syncSound() {
+    $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>';
+    $('btnSound').classList.toggle('on', settings.sound);
+    $('setSound').checked = settings.sound;
+    S.setEnabled(settings.sound);
+  }
+  function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
+  function sheet(btn, ov, close, onOpen) {
+    if (btn) $(btn).addEventListener('click', function () { if (onOpen) onOpen(); $(ov).classList.add('show'); });
+    $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
+    $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+  }
+  // Full screen (1.2.0): the free box for the shape is between the floating counters and the floating toolbar
+  function fitMargins() {
+    var H = window.innerHeight, top = $('info').getBoundingClientRect().bottom, bars = document.querySelectorAll('.toolbar'), bot = H;
+    Array.prototype.forEach.call(bars, function (b) { var r = b.getBoundingClientRect(); if (r.height) bot = Math.min(bot, r.top); });
+    var m = { top: Math.round(top + 6), bottom: Math.round(H - bot + 8), side: 6 };
+    if (R3) R3.setMargins(m); FLApp.setMargins(m);
+  }
+  function menuInfo() {
+    if (meta.kind === 'lines') return '<b>Lines</b> · ' + $('info').querySelector('.lbl').textContent;
+    return '<b>Blocks</b> · ' + (game ? (game.mode === 'challenge' ? 'Challenge ' : 'Level ') + game.n : '');
+  }
+  function init() {
+    Goobs.themePicker($('themes'));
+    // Full screen (1.2.0): the shape and its backdrop fill the screen; the counters float under the top row, Hint or
+    // Bomb and Restart float at the bottom; Lines/Blocks, Level/Challenges and the rarely used buttons are in the Menu
+    var fs = Goobs.fullscreen({ overlay: true, menu: ['btnLevelsL', 'btnSkinsL', 'btnSkins', 'btnHelpL', 'btnHelp', 'btnStats', 'btnSettings'], info: menuInfo });
+    var sh = fs.el.querySelector('.sheet');
+    sh.insertBefore($('kinds'), fs.list); sh.insertBefore($('modes'), fs.list);
+    ['kinds', 'modes'].forEach(function (id) { $(id).addEventListener('click', function (e) { if (e.target.closest('button')) fs.close(); }); });
+    try { R3 = FARender.create(THREE, $('cv')); }
+    catch (e) { $('building').textContent = 'This phone couldn’t start the 3D view.'; $('building').classList.add('show'); return; }
+    FLApp.init({
+      store: store, meta: meta, saveMeta: saveMeta, S: S, fmt: fmt, locked: locked, isOpen: isOpen, showCard: showCard, cheer: cheer, between: between, showAd: showAd,
+      adsOn: function () { return Goobs.adsOn(); }, addCoins: function (n) { addCoins(n); }, openHelp: function () { $('ovHelp').classList.add('show'); }
+    }, THREE);
+    R3.onTap(onTap);
+    applyLook();
+    if (meta.turned) $('turnHint').classList.add('hide');
+    ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
+    $('btnHome').addEventListener('click', function () { saveAll(); Goobs.home(); });
+    $('kinds').addEventListener('click', function (e) { var b = e.target.closest('button[data-kind]'); if (b) setKind(b.dataset.kind); });
+    $('btnHelpL').addEventListener('click', function () { $('ovHelp').classList.add('show'); });
+    $('btnSkinsL').addEventListener('click', function () { renderSkins(); $('ovSkins').classList.add('show'); });
+    $('btnBomb').addEventListener('click', arm);
+    $('bombCancel').addEventListener('click', disarm);
+    $('btnNew').addEventListener('click', function () {
+      if (!game.moves.length || game.done) { start(game.mode, game.n, true); return; }
+      showCard('Restart this level?', 'The shape goes back to how it started.', [
+        { label: 'Restart', red: true, go: function () { store.del(keyFor(game.mode)); start(game.mode, game.n, true); } },
+        { label: 'Keep playing', go: function () {} }]);
+    });
+    $('modes').addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.mode === 'level') { if (game.mode !== 'level') start('level', meta.level); return; }
+      if (meta.level <= CH_UNLOCK) { showCard('Challenges', 'Challenges open after level ' + CH_UNLOCK + '. They have a move limit: every tap counts.', [{ label: 'OK', red: true, go: function () {} }]); return; }
+      renderChallenges(); $('ovChallenges').classList.add('show');
+    });
+    $('chBody').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-n]');
+      if (!b) return;
+      $('ovChallenges').classList.remove('show'); start('challenge', +b.dataset.n);
+    });
+    $('skinsBody').addEventListener('click', onShop);
+    sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
+    sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
+    sheet('btnHelp', 'ovHelp', 'btnCloseHelp');
+    sheet('btnSkins', 'ovSkins', 'btnCloseSkins', renderSkins);
+    sheet(null, 'ovChallenges', 'btnCloseCh');
+    $('btnCloseHelp').addEventListener('click', function () { if (meta.kind === 'blocks' && !meta.seenHelp) { meta.seenHelp = true; saveMeta(); } });
+    $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
+    $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) saveAll(); });
+    window.addEventListener('pagehide', saveAll);
+    syncSound(); syncAds();
+    var rq = 0; window.addEventListener('resize', function () { if (!rq) rq = requestAnimationFrame(function () { rq = 0; fitMargins(); }); });
+    setKind(meta.kind);
+    Goobs.markPlayed('tapaway');
+    Goobs.initUpdates({
+      beforeReload: saveAll,
+      onVersions: function (v) { $('version').textContent = 'Fly Away ' + (v.tapaway || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+    });
+  }
+
+  // hook for automated tests
+  window.__fl = FLApp.test;
+  window.__fa = { get game() { return game; }, get st() { return st; }, start: start, tap: function (id) { var b = st.blocks[id], p = R3.screenOf(b); onTap(p[0], p[1]); }, screen: function (id) { return R3.screenOf(st.blocks[id]); }, pick: function (x, y) { var b = R3.blockAt(x, y); return b ? b.id : -1; }, meta: function () { return meta; }, FA: FA };
+
+  window.FAApp = { start: function (T) { if (THREE) return; THREE = T; init(); }, started: function () { return !!THREE; } };
+})();
+</script>
+<script type="module">
+import * as THREE from '../../shared/three.module.min.js';
+FAApp.start(THREE);
+</script>
+<script>
+setTimeout(function () { if (!window.FAApp || !FAApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
+</script>
+</body>
+</html>

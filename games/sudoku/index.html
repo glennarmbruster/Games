@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5a54f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Goobs-Games">
+<link rel="manifest" href="../../manifest.json">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../../icons/icon-192.png">
+<link rel="stylesheet" href="../../shared/goobs.css">
+<script src="../../shared/goobs.js"></script>
+<script>
+/* if Ninefold can't open, say so on screen (never a blank page) and offer a fresh start */
+(function () {
+  var shown = false;
+  function fail(msg) {
+    if (shown || window.__sdReady) return; shown = true;
+    function put() {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#f4f5f9;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.innerHTML = '<b style="font-size:21px">Ninefold didn’t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
+      function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('sudoku.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('All games', '#6b7080', function () { location.href = '../../'; });
+      document.body.appendChild(d);
+    }
+    if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+  }
+  window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+  setTimeout(function () { if (!window.__sdReady) fail('It took too long to start.'); }, 8000);
+})();
+</script>
+<title>Ninefold</title>
+<style>
+/* Ninefold: portrait. The grid fills the width (as much height as the phone allows), tools and the number pad
+   sit under it within thumb reach. Colours come from the arcade theme (light / dark / blue). */
+:root {
+  --sd-thin: var(--line-strong);
+  --sd-thick: color-mix(in srgb, var(--ink) 78%, transparent);
+  --sd-peer: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  --sd-same: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  --sd-sel: color-mix(in srgb, var(--accent) 38%, var(--surface));
+  --sd-user: var(--accent);
+  --sd-bad-bg: color-mix(in srgb, var(--bad) 18%, var(--surface));
+  --sd-hint: color-mix(in srgb, var(--gold) 45%, var(--surface));
+  --sd-elim: color-mix(in srgb, var(--bad) 14%, var(--surface));
+}
+html.gg-fs .app { gap: 6px; }
+
+/* info row */
+.sdinfo { width: 100%; display: flex; align-items: center; gap: 5px; flex: none; min-height: 40px; min-width: 0; }
+.sdinfo .grow { flex: 1; }
+.lvpill { font-weight: 800; font-size: 15px; padding: 7px 11px; border-radius: 18px; color: #fff; background: var(--accent); white-space: nowrap; }
+.lvpill.l1 { background: #22a06b; } .lvpill.l2 { background: #2f7ff5; } .lvpill.l3 { background: #e5793b; } .lvpill.l4 { background: #c2338f; }
+.sdinfo .ggpill { font-size: 15px; padding: 6px 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sdinfo .ggpill.hide, .chk.hide { display: none; }
+.miss.bad { color: var(--bad); }
+.chk, .newmain, .newpick { border: 0; font: inherit; font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; gap: 4px; height: 38px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.chk { border-radius: 19px; padding: 0 12px 0 9px; }
+.chk svg, .newmain svg, .newpick svg { width: 18px; height: 18px; }
+.newbtn { display: flex; flex: none; }
+.newmain { border-radius: 19px 0 0 19px; padding: 0 9px 0 10px; background: var(--accent); color: #fff; border-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.newpick { border-radius: 0 19px 19px 0; padding: 0 7px 0 5px; background: var(--accent); color: #fff; border-color: transparent; border-left: 1px solid rgba(255,255,255,.35); }
+.chk:active, .newmain:active, .newpick:active { transform: scale(.96); }
+
+/* the grid */
+.ggfit { display: flex; align-items: flex-start; justify-content: center; }
+.boardwrap { position: relative; width: min(100cqw, 100cqh, 620px); aspect-ratio: 1; }
+.board { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
+  background: var(--surface); border: 3px solid var(--sd-thick); border-radius: 10px; overflow: hidden; touch-action: manipulation; }
+.cell { position: relative; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--sd-thin); border-bottom: 1px solid var(--sd-thin);
+  font-family: var(--round); font-weight: 700; font-size: calc(min(100cqw, 100cqh, 620px) / 9 * .62); line-height: 1; color: var(--sd-user);
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color .12s; }
+.cell.c8 { border-right: 0; } .cell.r8 { border-bottom: 0; }
+.cell.c2, .cell.c5 { border-right: 2.5px solid var(--sd-thick); }
+.cell.r2, .cell.r5 { border-bottom: 2.5px solid var(--sd-thick); }
+.cell.given { color: var(--ink); font-weight: 800; }
+.cell.peer { background: var(--sd-peer); }
+.cell.same { background: var(--sd-same); }
+.cell.sel { background: var(--sd-sel); }
+.cell.bad { color: var(--bad); background: var(--sd-bad-bg); }
+.cell.clash { color: var(--bad); }
+.cell.hl { background: var(--sd-hint); }
+.cell.hx { background: var(--sd-elim); }
+.cell.ht { box-shadow: inset 0 0 0 3px var(--gold); }
+.notes { position: absolute; inset: 2px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.notes i { font-style: normal; display: flex; align-items: center; justify-content: center; font-family: var(--font); font-weight: 600;
+  font-size: calc(min(100cqw, 100cqh, 620px) / 9 * .27); color: var(--muted); border-radius: 4px; }
+.notes i.on { color: #fff; background: var(--accent); }
+.notes i.gone { color: var(--bad); text-decoration: line-through; }
+.cell.pop { animation: pop .45s ease-out both; }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.18); background: var(--sd-same); } 100% { transform: scale(1); } }
+.board.won .cell { animation: wave .7s ease-out both; }
+@keyframes wave { 0% { transform: scale(1); } 35% { transform: scale(.82); background: color-mix(in srgb, var(--ok) 35%, var(--surface)); } 100% { transform: scale(1); } }
+.toast { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 86%; text-align: center; pointer-events: none; z-index: 3;
+  opacity: 0; transition: opacity .2s; background: rgba(20,24,40,.88); color: #fff; font-weight: 700; font-size: 16px; line-height: 1.3; padding: 10px 15px; border-radius: 14px; }
+.toast.show { opacity: 1; }
+
+/* hint bar (replaces the tools while it shows) */
+.hintbar { display: none; width: 100%; flex: none; background: var(--surface); border: 2px solid var(--gold); border-radius: 16px; padding: 9px 10px 9px 12px; gap: 8px; align-items: center; box-shadow: var(--shadow-sm); }
+.hintbar.show { display: flex; }
+.hintbar .htext { flex: 1; font-size: 14.5px; line-height: 1.3; color: var(--ink); max-height: 30vh; overflow-y: auto; }
+.hintbar .htext b { display: block; font-size: 15px; color: #b07400; }
+.hintbar .hbtns { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.hintbar .btn { min-height: 38px; padding: 0 14px; font-size: 15px; }
+
+/* tools */
+.sdtools { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; width: 100%; flex: none; }
+.sdtools.hide { display: none; }
+.stool { position: relative; border: 0; background: none; color: var(--ink); font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 0 3px; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+.stool svg { width: 26px; height: 26px; }
+.stool span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.stool:active { background: var(--surface-2); }
+.stool:disabled { opacity: .35; }
+.stool .onoff { position: absolute; top: 0; right: calc(50% - 26px); font-style: normal; font-size: 9px; font-weight: 900; padding: 1px 4px; border-radius: 6px; background: var(--surface-2); color: var(--muted); }
+.stool.on { color: var(--accent); }
+.stool.on .onoff { background: var(--accent); color: #fff; }
+
+/* number pad */
+.pad { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; width: 100%; flex: none; padding-bottom: 2px; }
+.pad button { position: relative; min-width: 0; padding: 0; height: var(--padh, clamp(54px, 8.4vh, 76px)); border: 0; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm); border: 1px solid var(--line);
+  color: var(--accent); font: inherit; font-family: var(--round); font-size: clamp(26px, 4.4vh, 36px); font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.pad button small { font-family: var(--font); font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.pad button:active { transform: scale(.94); }
+.pad button.done { opacity: .28; }
+.pad button.lock { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pad button.lock small { color: rgba(255,255,255,.85); }
+.pad.notes button { color: var(--muted); font-size: clamp(20px, 3.4vh, 28px); }
+.pad.notes button.lock { color: #fff; }
+
+/* sheets */
+.setlabel { font-size: 17px; font-weight: 700; padding: 12px 0 6px; }
+.setlabel small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); margin-top: 2px; }
+.setnote { font-size: 14px; color: var(--muted); margin: 6px 2px 4px; }
+.lvchecks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-bottom: 6px; }
+.lvchecks label { position: relative; display: block; }
+.lvchecks input { position: absolute; opacity: 0; pointer-events: none; }
+.lvchecks span { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px 10px 38px; border-radius: 14px; background: var(--surface-2); border: 2px solid transparent; min-height: 58px; justify-content: center; }
+.lvchecks span::before { content: ""; position: absolute; left: 11px; top: 50%; margin-top: -11px; width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--line-strong); background: var(--surface); }
+.lvchecks input:checked + span { border-color: var(--accent); background: var(--accent-soft); }
+.lvchecks input:checked + span::before { background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat; border-color: var(--accent); }
+.lvchecks b, .pickgrid b { font-size: 16px; }
+.lvchecks small, .pickgrid small { font-size: 12px; color: var(--muted); }
+.seg { display: flex; gap: 3px; background: var(--surface-2); border-radius: 14px; padding: 3px; }
+.seg button { flex: 1; border: 0; background: none; font: inherit; font-weight: 700; font-size: 15px; color: var(--muted); padding: 10px 6px; border-radius: 11px; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+.picknote { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+.pickgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pickgrid button { border: 0; font: inherit; color: var(--ink); background: var(--surface-2); border-radius: 16px; padding: 14px 10px; display: flex; flex-direction: column; gap: 3px; align-items: center; min-height: 70px; }
+.pickgrid button:active { transform: scale(.97); }
+.pickgrid button[data-lv="1"] b { color: #22a06b; } .pickgrid button[data-lv="2"] b { color: #2f7ff5; }
+.pickgrid button[data-lv="3"] b { color: #e5793b; } .pickgrid button[data-lv="4"] b { color: #c2338f; }
+.endstats { display: flex; gap: 8px; justify-content: center; margin: 4px 0 14px; }
+.endstats div { flex: 1; background: var(--surface-2); border-radius: 14px; padding: 8px 4px; }
+.endstats b { display: block; font-size: 22px; color: var(--ink); }
+.endstats span { font-size: 12px; color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="sd-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#5a54f0"/>
+<rect x="14" y="14" width="72" height="72" rx="10" fill="#fff"/>
+<g stroke="#5a54f0" stroke-width="2.6"><path d="M38 14v72M62 14v72M14 38h72M14 62h72"/></g>
+<g font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="18" text-anchor="middle" fill="#1b2130">
+<text x="26" y="32.5">5</text><text x="74" y="32.5">3</text><text x="50" y="56.5" fill="#5a54f0">9</text><text x="26" y="80.5">7</text><text x="74" y="80.5">1</text></g>
+<g fill="#b9b6f7"><circle cx="46" cy="22" r="2"/><circle cx="54" cy="22" r="2"/><circle cx="50" cy="29" r="2"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></g></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></g></symbol>
+<symbol id="i-erase" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 20H20"/><path d="M4.6 14.6l9.9-9.9a2 2 0 0 1 2.8 0l2.5 2.5a2 2 0 0 1 0 2.8L11.6 18.2a2 2 0 0 1-1.4.6H7.6a2 2 0 0 1-1.4-.6l-1.6-1.6a1.4 1.4 0 0 1 0-2z"/><path d="M9.5 9.7l5.3 5.3"/></g></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 0l.5.5a2.1 2.1 0 0 1 0 3L8.5 19z"/><path d="M13.5 7l3.5 3.5"/></g></symbol>
+<symbol id="i-fill" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/></g><g fill="currentColor"><circle cx="8" cy="8" r="1.4"/><circle cx="12" cy="8" r="1.4"/><circle cx="16" cy="8" r="1.4"/><circle cx="8" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="16" cy="12" r="1.4"/><circle cx="8" cy="16" r="1.4"/><circle cx="12" cy="16" r="1.4"/><circle cx="16" cy="16" r="1.4"/></g></symbol>
+<symbol id="i-hint" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z" fill="currentColor" fill-opacity=".15"/></g></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></g></symbol>
+<symbol id="i-new" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-restart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></g></symbol>
+<symbol id="i-levels" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20v-5M10 20v-9M15 20v-12M20 20V4"/></g></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+</defs></svg>
+
+<div class="app" id="app">
+  <div class="top">
+    <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
+      <span class="chev" aria-hidden="true">&#8249;</span>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#sd-logo"/></svg>
+      <h1>Ninefold</h1>
+    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="btnPick" aria-label="Pick a level"><svg viewBox="0 0 24 24"><use href="#i-levels"/></svg></button>
+      <button class="iconbtn" id="btnRestart" aria-label="Restart this puzzle"><svg viewBox="0 0 24 24"><use href="#i-restart"/></svg></button>
+      <button class="iconbtn" id="btnHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+      <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+    </div>
+  </div>
+
+  <!-- the current puzzle: level, clock, mistakes; New puzzle (hold it, or tap the arrow, to pick a level) -->
+  <div class="sdinfo">
+    <span class="lvpill" id="lvPill">Normal</span>
+    <span class="ggpill clock" id="clock">0:00</span>
+    <span class="ggpill miss" id="miss"></span>
+    <span class="grow"></span>
+    <button class="chk" id="btnCheck"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Check</button>
+    <div class="newbtn"><button class="newmain" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg>New</button><button class="newpick" id="btnNewPick" aria-label="Pick the level of the next puzzle"><svg viewBox="0 0 24 24"><use href="#i-down"/></svg></button></div>
+  </div>
+
+  <div class="ggfit">
+    <div class="boardwrap" id="boardwrap">
+      <div class="board" id="board"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <!-- hint: what the next step is; tap Show me again to make it -->
+  <div class="hintbar" id="hintbar">
+    <div class="htext"><b id="hintTech"></b><span id="hintText"></span></div>
+    <div class="hbtns"><button class="btn red" id="hintGo">Do it</button><button class="btn" id="hintClose">Close</button></div>
+  </div>
+
+  <div class="sdtools" id="sdtools">
+    <button class="stool" id="btnUndo"><svg viewBox="0 0 24 24"><use href="#i-undo"/></svg><span>Undo</span></button>
+    <button class="stool" id="btnRedo"><svg viewBox="0 0 24 24"><use href="#i-redo"/></svg><span>Redo</span></button>
+    <button class="stool" id="btnErase"><svg viewBox="0 0 24 24"><use href="#i-erase"/></svg><span>Erase</span></button>
+    <button class="stool" id="btnNotes"><svg viewBox="0 0 24 24"><use href="#i-pencil"/></svg><span>Notes</span><i class="onoff" id="notesOn">OFF</i></button>
+    <button class="stool" id="btnFill"><svg viewBox="0 0 24 24"><use href="#i-fill"/></svg><span>Fill</span></button>
+    <button class="stool" id="btnHint"><svg viewBox="0 0 24 24"><use href="#i-hint"/></svg><span>Hint</span></button>
+  </div>
+  <div class="pad" id="pad"></div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="sheetbody">
+      <div class="setlabel">Levels for New puzzle<small>New puzzle picks at random from the ones you tick (at least one).</small></div>
+      <div class="lvchecks" id="lvChecks">
+        <label><input type="checkbox" data-lv="1"><span><b>Easy</b><small>Singles only</small></span></label>
+        <label><input type="checkbox" data-lv="2"><span><b>Normal</b><small>Pairs, pointing</small></span></label>
+        <label><input type="checkbox" data-lv="3"><span><b>Hard</b><small>Triples, X-Wing, XY-Wing</small></span></label>
+        <label><input type="checkbox" data-lv="4"><span><b>Expert</b><small>Chains, coloring, wings</small></span></label>
+      </div>
+      <div class="setlabel">Mistakes</div>
+      <div class="seg" id="segMistakes"><button data-v="now">Show right away</button><button data-v="check">Only when I check</button></div>
+      <label class="row" id="rowLimit"><div>3-mistake limit<small>The puzzle ends at the third wrong number (only with Show right away).</small></div>
+        <span class="switch"><input type="checkbox" id="setLimit"><span></span></span></label>
+      <div class="setlabel">Number pad</div>
+      <div class="seg" id="segPad"><button data-v="cell">Cell first</button><button data-v="number">Number first</button></div>
+      <div class="setnote" id="padNote"></div>
+      <label class="row"><div>Show the timer<small>It still keeps your time for records.</small></div>
+        <span class="switch"><input type="checkbox" id="setTimer"><span></span></span></label>
+      <label class="row"><div>Highlight matching numbers<small>Every cell and note with the number you picked.</small></div>
+        <span class="switch"><input type="checkbox" id="setSame"><span></span></span></label>
+      <div class="themelabel">Theme (all games)</div>
+      <div class="themes" id="themes"></div>
+      <label class="row"><div>Old-time ads<small>Joke ads between puzzles. This switch is shared by all Goobs-Games.</small></div>
+        <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
+      <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished puzzles.</small></div>
+        <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
+      <div class="version" id="version">Ninefold</div>
+    </div>
+    <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- Pick the level of the next puzzle (doesn't change the Settings ticks) -->
+<div class="overlay" id="ovPick">
+  <div class="sheet" role="dialog" aria-label="Pick a level">
+    <h2>Next puzzle</h2>
+    <p class="picknote">Just this once: your level ticks in Settings stay as they are.</p>
+    <div class="pickgrid" id="pickGrid">
+      <button data-lv="1"><b>Easy</b><small>Singles only</small></button>
+      <button data-lv="2"><b>Normal</b><small>Pairs, pointing</small></button>
+      <button data-lv="3"><b>Hard</b><small>Triples, X-Wing, XY-Wing</small></button>
+      <button data-lv="4"><b>Expert</b><small>Chains, coloring, wings</small></button>
+    </div>
+    <div class="actions"><button class="btn" id="btnClosePick">Cancel</button></div>
+  </div>
+</div>
+
+<!-- How to play -->
+<div class="overlay" id="ovHelp">
+  <div class="sheet" role="dialog" aria-label="How to play">
+    <h2>How to play Ninefold</h2>
+    <div class="sheetbody"><ol class="helplist" id="helpList"></ol></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="overlay center" id="ovEnd">
+  <div class="card" role="dialog">
+    <div class="cardicon"><svg viewBox="0 0 100 100"><use href="#sd-logo"/></svg></div>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="actions" id="endActions"></div>
+  </div>
+</div>
+
+<script>
+/* Ninefold engine: classic 9x9 Sudoku. Fast solution counter, a human-style logic solver that names every step
+   (used to grade puzzles and to explain hints), a generator, puzzle transforms and the compact bank codec.
+   Runs in the page, in a Web Worker and in Node (tools/gen.js, tools/check.js).
+   Cells are 0..80 (row * 9 + col). A grid is an array of 81 digits (0 = empty). Candidates are 9-bit masks
+   (bit d-1 = digit d). Levels: 1 Easy, 2 Normal, 3 Hard, 4 Expert (graded by the hardest technique needed). */
+var SD = (function () {
+  'use strict';
+
+  // ================= geometry =================
+  var ROWS = [], COLS = [], BOXES = [], UNITS = [], R = [], C = [], B = [], PEERS = [], SEE = [];
+  (function () {
+    var i, u;
+    for (u = 0; u < 9; u++) { ROWS.push([]); COLS.push([]); BOXES.push([]); }
+    for (i = 0; i < 81; i++) {
+      var r = (i / 9) | 0, c = i % 9, b = ((r / 3) | 0) * 3 + ((c / 3) | 0);
+      R.push(r); C.push(c); B.push(b); ROWS[r].push(i); COLS[c].push(i); BOXES[b].push(i);
+    }
+    UNITS = ROWS.concat(COLS, BOXES); // 0-8 rows, 9-17 columns, 18-26 boxes
+    for (i = 0; i < 81; i++) {
+      var row = new Uint8Array(81), list = [];
+      for (var j = 0; j < 81; j++) if (j !== i && (R[i] === R[j] || C[i] === C[j] || B[i] === B[j])) { row[j] = 1; list.push(j); }
+      SEE.push(row); PEERS.push(list);
+    }
+  })();
+  var POP = new Uint8Array(512), LOW = new Int8Array(512);
+  for (var p = 1; p < 512; p++) { POP[p] = POP[p >> 1] + (p & 1); var q = 0; while (!(p & (1 << q))) q++; LOW[p] = q + 1; }
+  function bit(d) { return 1 << (d - 1); }
+  function digits(m) { var a = []; for (var d = 1; d <= 9; d++) if (m & (1 << (d - 1))) a.push(d); return a; }
+  function sees(a, b) { return a !== b && SEE[a][b] === 1; }
+
+  // ================= random =================
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(a, rand) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rand() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  // ================= grids =================
+  function parse(s) { var g = []; for (var i = 0; i < 81; i++) { var ch = s.charAt(i); g.push(ch >= '1' && ch <= '9' ? +ch : 0); } return g; }
+  function str(g) { var s = ''; for (var i = 0; i < 81; i++) s += g[i] ? g[i] : '.'; return s; }
+  function clues(g) { var n = 0; for (var i = 0; i < 81; i++) if (g[i]) n++; return n; }
+  // candidates from the placed digits only
+  function candidates(g) {
+    var cand = new Array(81);
+    for (var i = 0; i < 81; i++) {
+      if (g[i]) { cand[i] = 0; continue; }
+      var m = 511, pl = PEERS[i];
+      for (var k = 0; k < 20; k++) if (g[pl[k]]) m &= ~bit(g[pl[k]]);
+      cand[i] = m;
+    }
+    return cand;
+  }
+  // two equal digits in one row, column or box
+  function conflicts(g) {
+    var bad = [];
+    for (var i = 0; i < 81; i++) if (g[i]) { var pl = PEERS[i]; for (var k = 0; k < 20; k++) if (g[pl[k]] === g[i]) { bad.push(i); break; } }
+    return bad;
+  }
+
+  // ================= solution counter (bitmask search, fewest-options cell first) =================
+  function count(g, limit, out) {
+    var rows = new Int32Array(9), cols = new Int32Array(9), boxes = new Int32Array(9), v = g.slice(), empty = [], n = 0, found = 0;
+    for (var i = 0; i < 81; i++) {
+      if (v[i]) {
+        var b = bit(v[i]);
+        if ((rows[R[i]] | cols[C[i]] | boxes[B[i]]) & b) return 0;
+        rows[R[i]] |= b; cols[C[i]] |= b; boxes[B[i]] |= b;
+      } else empty.push(i);
+    }
+    n = empty.length;
+    limit = limit || 2;
+    function rec(k) {
+      if (k === n) { found++; if (out && found === 1) for (var t = 0; t < 81; t++) out[t] = v[t]; return found >= limit; }
+      // pick the empty cell with the fewest options among the rest
+      var best = -1, bm = 0, bc = 10;
+      for (var j = k; j < n; j++) {
+        var c = empty[j], m = ~(rows[R[c]] | cols[C[c]] | boxes[B[c]]) & 511, pc = POP[m];
+        if (pc < bc) { bc = pc; best = j; bm = m; if (pc <= 1) break; }
+      }
+      if (bc === 0) return false;
+      var tmp = empty[k]; empty[k] = empty[best]; empty[best] = tmp;
+      var cell = empty[k];
+      while (bm) {
+        var lb = bm & -bm; bm ^= lb;
+        var d = LOW[lb];
+        v[cell] = d; rows[R[cell]] |= lb; cols[C[cell]] |= lb; boxes[B[cell]] |= lb;
+        if (rec(k + 1)) return true;
+        rows[R[cell]] ^= lb; cols[C[cell]] ^= lb; boxes[B[cell]] ^= lb; v[cell] = 0;
+      }
+      empty[best] = empty[k]; empty[k] = tmp;
+      return false;
+    }
+    rec(0);
+    return found;
+  }
+  function solve(g) { var out = new Array(81); return count(g, 2, out) === 1 ? out : null; }
+  function unique(g) { return count(g, 2) === 1; }
+
+  // a random complete grid
+  function fullGrid(rand) {
+    var v = new Array(81).fill(0), rows = new Int32Array(9), cols = new Int32Array(9), boxes = new Int32Array(9);
+    function rec(i) {
+      if (i === 81) return true;
+      var m = ~(rows[R[i]] | cols[C[i]] | boxes[B[i]]) & 511, ds = shuffle(digits(m), rand);
+      for (var k = 0; k < ds.length; k++) {
+        var d = ds[k], b = bit(d);
+        v[i] = d; rows[R[i]] |= b; cols[C[i]] |= b; boxes[B[i]] |= b;
+        if (rec(i + 1)) return true;
+        rows[R[i]] ^= b; cols[C[i]] ^= b; boxes[B[i]] ^= b; v[i] = 0;
+      }
+      return false;
+    }
+    rec(0);
+    return v;
+  }
+
+  // ================= logic solver =================
+  // State: { v: digits, c: candidate masks }. Every technique looks for one step and returns it (or null):
+  // { tech, lvl, place: [cell, digit] | null, elim: [[cell, digit], ...], cells: [...], unit?, digit?, links?, text }
+  // Steps are found on the state; apply() changes it.
+  var LEVEL_NAMES = ['', 'Easy', 'Normal', 'Hard', 'Expert'];
+  function rc(i) { return 'row ' + (R[i] + 1) + ', column ' + (C[i] + 1); }
+  function unitName(u) { return u < 9 ? 'row ' + (u + 1) : u < 18 ? 'column ' + (u - 8) : 'box ' + (u - 17); }
+  function plural(d) { return d + 's'; }
+  function listAnd(a) { return a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  function elimText(elim) {
+    // "removes 7 from row 5, column 3 and row 6, column 3"
+    var byD = {};
+    elim.forEach(function (e) { (byD[e[1]] = byD[e[1]] || []).push(rc(e[0])); });
+    return Object.keys(byD).map(function (d) { return d + ' from ' + listAnd(byD[d]); }).join('; ');
+  }
+  function newState(g) { return { v: g.slice(), c: candidates(g) }; }
+  function apply(st, step) {
+    if (step.place) {
+      var i = step.place[0], d = step.place[1], b = bit(d);
+      st.v[i] = d; st.c[i] = 0;
+      var pl = PEERS[i]; for (var k = 0; k < 20; k++) st.c[pl[k]] &= ~b;
+    }
+    if (step.elim) step.elim.forEach(function (e) { st.c[e[0]] &= ~bit(e[1]); });
+  }
+  function positions(st, u, d) { var b = bit(d), out = [], cells = UNITS[u]; for (var k = 0; k < 9; k++) if (st.c[cells[k]] & b) out.push(cells[k]); return out; }
+  function placedIn(st, u, d) { var cells = UNITS[u]; for (var k = 0; k < 9; k++) if (st.v[cells[k]] === d) return true; return false; }
+  // cells (not in `except`) that still have d and see every cell in `of`
+  function seeAll(st, d, of, except) {
+    var b = bit(d), out = [];
+    for (var i = 0; i < 81; i++) {
+      if (!(st.c[i] & b) || (except && except.indexOf(i) >= 0)) continue;
+      var ok = true; for (var k = 0; k < of.length; k++) if (!sees(i, of[k])) { ok = false; break; }
+      if (ok) out.push(i);
+    }
+    return out;
+  }
+  function combos(arr, n, fn) { // calls fn(subset) for every n-subset; stops when fn returns a truthy value
+    var idx = [], res = null;
+    function rec(start, depth) {
+      if (depth === n) { res = fn(idx.map(function (k) { return arr[k]; })); return !!res; }
+      for (var k = start; k <= arr.length - (n - depth); k++) { idx[depth] = k; if (rec(k + 1, depth + 1)) return true; }
+      return false;
+    }
+    rec(0, 0);
+    return res;
+  }
+
+  // ----- level 1 -----
+  function hiddenSingle(st) {
+    // boxes first: that is how most people look
+    var order = [18, 19, 20, 21, 22, 23, 24, 25, 26, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+    for (var o = 0; o < 27; o++) {
+      var u = order[o];
+      for (var d = 1; d <= 9; d++) {
+        if (placedIn(st, u, d)) continue;
+        var ps = positions(st, u, d);
+        if (ps.length === 1) return { tech: 'Hidden single', lvl: 1, place: [ps[0], d], elim: [], cells: [ps[0]], unit: u, digit: d,
+          text: 'In ' + unitName(u) + ', the ' + d + ' can only go in ' + rc(ps[0]) + '.' };
+      }
+    }
+    return null;
+  }
+  function nakedSingle(st) {
+    for (var i = 0; i < 81; i++) if (!st.v[i] && POP[st.c[i]] === 1) {
+      var d = LOW[st.c[i]];
+      return { tech: 'Naked single', lvl: 1, place: [i, d], elim: [], cells: [i], digit: d,
+        text: rc(i).charAt(0).toUpperCase() + rc(i).slice(1) + ' can only be ' + d + ': every other number is already in its row, column or box.' };
+    }
+    return null;
+  }
+  // ----- level 2 -----
+  function pointing(st) {
+    for (var bx = 18; bx < 27; bx++) for (var d = 1; d <= 9; d++) {
+      var ps = positions(st, bx, d);
+      if (ps.length < 2 || ps.length > 3) continue;
+      var lines = [];
+      if (ps.every(function (x) { return R[x] === R[ps[0]]; })) lines.push(R[ps[0]]);
+      if (ps.every(function (x) { return C[x] === C[ps[0]]; })) lines.push(9 + C[ps[0]]);
+      for (var k = 0; k < lines.length; k++) {
+        var elim = [];
+        UNITS[lines[k]].forEach(function (x) { if (B[x] !== bx - 18 && (st.c[x] & bit(d))) elim.push([x, d]); });
+        if (elim.length) return { tech: 'Pointing', lvl: 2, place: null, elim: elim, cells: ps, unit: bx, line: lines[k], digit: d,
+          text: 'In ' + unitName(bx) + ', every place for ' + d + ' is in ' + unitName(lines[k]) + ', so the rest of ' + unitName(lines[k]) + ' can’t be ' + d + ': removes ' + elimText(elim) + '.' };
+      }
+    }
+    return null;
+  }
+  function claiming(st) {
+    for (var u = 0; u < 18; u++) for (var d = 1; d <= 9; d++) {
+      var ps = positions(st, u, d);
+      if (ps.length < 2 || ps.length > 3 || !ps.every(function (x) { return B[x] === B[ps[0]]; })) continue;
+      var bx = 18 + B[ps[0]], elim = [];
+      UNITS[bx].forEach(function (x) { if (ps.indexOf(x) < 0 && (u < 9 ? R[x] !== u : C[x] !== u - 9) && (st.c[x] & bit(d))) elim.push([x, d]); });
+      if (elim.length) return { tech: 'Box/line', lvl: 2, place: null, elim: elim, cells: ps, unit: u, line: bx, digit: d,
+        text: 'In ' + unitName(u) + ', the ' + d + ' must be inside ' + unitName(bx) + ', so the rest of ' + unitName(bx) + ' can’t be ' + d + ': removes ' + elimText(elim) + '.' };
+    }
+    return null;
+  }
+  var SUBSET = ['', '', 'pair', 'triple', 'quad'];
+  function nakedSubset(n, lvl) {
+    return function (st) {
+      for (var u = 0; u < 27; u++) {
+        var open = UNITS[u].filter(function (x) { return !st.v[x] && POP[st.c[x]] >= 2 && POP[st.c[x]] <= n; });
+        var empties = UNITS[u].filter(function (x) { return !st.v[x]; });
+        if (open.length < n || empties.length <= n) continue;
+        var r = combos(open, n, function (set) {
+          var m = 0; set.forEach(function (x) { m |= st.c[x]; });
+          if (POP[m] !== n) return null;
+          var elim = [];
+          empties.forEach(function (x) { if (set.indexOf(x) < 0) digits(st.c[x] & m).forEach(function (d) { elim.push([x, d]); }); });
+          if (!elim.length) return null;
+          return { tech: 'Naked ' + SUBSET[n], lvl: lvl, place: null, elim: elim, cells: set, unit: u, digits: digits(m),
+            text: 'In ' + unitName(u) + ', ' + listAnd(set.map(rc)) + ' can only hold ' + listAnd(digits(m)) + ' between them, so the other cells of ' + unitName(u) + ' can’t: removes ' + elimText(elim) + '.' };
+        });
+        if (r) return r;
+      }
+      return null;
+    };
+  }
+  function hiddenSubset(n, lvl) {
+    return function (st) {
+      for (var u = 0; u < 27; u++) {
+        var ds = [], pos = {};
+        for (var d = 1; d <= 9; d++) { if (placedIn(st, u, d)) continue; var ps = positions(st, u, d); pos[d] = ps; if (ps.length >= 1 && ps.length <= n) ds.push(d); }
+        var empties = UNITS[u].filter(function (x) { return !st.v[x]; });
+        if (ds.length < n || empties.length <= n) continue;
+        var r = combos(ds, n, function (set) {
+          var cells = [];
+          set.forEach(function (d) { pos[d].forEach(function (x) { if (cells.indexOf(x) < 0) cells.push(x); }); });
+          if (cells.length !== n) return null;
+          var m = 0; set.forEach(function (d) { m |= bit(d); });
+          var elim = [];
+          cells.forEach(function (x) { digits(st.c[x] & ~m).forEach(function (d) { elim.push([x, d]); }); });
+          if (!elim.length) return null;
+          return { tech: 'Hidden ' + SUBSET[n], lvl: lvl, place: null, elim: elim, cells: cells, unit: u, digits: set,
+            text: 'In ' + unitName(u) + ', ' + listAnd(set) + ' can only go in ' + listAnd(cells.map(rc)) + ', so those cells can’t hold anything else: removes ' + elimText(elim) + '.' };
+        });
+        if (r) return r;
+      }
+      return null;
+    };
+  }
+  // ----- level 3 -----
+  var FISH = ['', '', 'X-Wing', 'Swordfish', 'Jellyfish'];
+  function fish(n, lvl) {
+    return function (st) {
+      for (var d = 1; d <= 9; d++) for (var dir = 0; dir < 2; dir++) {
+        var base = [], masks = {};
+        for (var l = 0; l < 9; l++) {
+          var u = dir ? 9 + l : l;
+          if (placedIn(st, u, d)) continue;
+          var m = 0; positions(st, u, d).forEach(function (x) { m |= 1 << (dir ? R[x] : C[x]); });
+          if (POP[m] >= 2 && POP[m] <= n) { base.push(l); masks[l] = m; }
+        }
+        if (base.length < n) continue;
+        var r = combos(base, n, function (set) {
+          var cover = 0; set.forEach(function (l) { cover |= masks[l]; });
+          if (POP[cover] !== n) return null;
+          var elim = [], cells = [], coverLines = [];
+          for (var k = 0; k < 9; k++) if (cover & (1 << k)) coverLines.push(k);
+          coverLines.forEach(function (k) {
+            UNITS[dir ? k : 9 + k].forEach(function (x) {
+              var line = dir ? C[x] : R[x];
+              if (!(st.c[x] & bit(d))) return;
+              if (set.indexOf(line) >= 0) cells.push(x); else elim.push([x, d]);
+            });
+          });
+          if (!elim.length) return null;
+          var bw = dir ? 'columns' : 'rows', cw = dir ? 'rows' : 'columns';
+          return { tech: FISH[n], lvl: lvl, place: null, elim: elim, cells: cells, digit: d,
+            text: FISH[n] + ' on ' + plural(d) + ' in ' + bw + ' ' + listAnd(set.map(function (l) { return l + 1; })) + ': there the ' + d + ' can only be in ' + cw + ' ' + listAnd(coverLines.map(function (l) { return l + 1; })) + ', so the rest of those ' + cw + ' can’t be ' + d + ': removes ' + elimText(elim) + '.' };
+        });
+        if (r) return r;
+      }
+      return null;
+    };
+  }
+  function bivalues(st) { var a = []; for (var i = 0; i < 81; i++) if (!st.v[i] && POP[st.c[i]] === 2) a.push(i); return a; }
+  function xyWing(st) {
+    var bv = bivalues(st);
+    for (var a = 0; a < bv.length; a++) {
+      var P = bv[a], pm = st.c[P];
+      for (var b = 0; b < bv.length; b++) {
+        var A = bv[b]; if (A === P || !sees(A, P)) continue;
+        var am = st.c[A], sh = am & pm; if (POP[sh] !== 1) continue;
+        var z = am & ~pm;
+        for (var c = b + 1; c < bv.length; c++) {
+          var Bc = bv[c]; if (Bc === P || !sees(Bc, P)) continue;
+          var bm = st.c[Bc];
+          if (bm !== ((pm & ~sh) | z)) continue;
+          var zd = LOW[z], elim = seeAll(st, zd, [A, Bc], [P, A, Bc]).map(function (x) { return [x, zd]; });
+          if (elim.length) return { tech: 'XY-Wing', lvl: 3, place: null, elim: elim, cells: [P, A, Bc], digit: zd,
+            text: 'XY-Wing: ' + rc(P) + ' is ' + listAnd(digits(pm)) + '. Either way, ' + rc(A) + ' or ' + rc(Bc) + ' must be ' + zd + ', so cells that see both can’t be ' + zd + ': removes ' + elimText(elim) + '.' };
+        }
+      }
+    }
+    return null;
+  }
+  // ----- level 4 -----
+  function xyzWing(st) {
+    var bv = bivalues(st);
+    for (var P = 0; P < 81; P++) {
+      if (st.v[P] || POP[st.c[P]] !== 3) continue;
+      var pm = st.c[P];
+      for (var a = 0; a < bv.length; a++) {
+        var A = bv[a]; if (!sees(A, P) || (st.c[A] & ~pm)) continue;
+        for (var b = a + 1; b < bv.length; b++) {
+          var Bc = bv[b]; if (!sees(Bc, P) || (st.c[Bc] & ~pm) || st.c[Bc] === st.c[A]) continue;
+          var z = st.c[A] & st.c[Bc]; if (POP[z] !== 1) continue;
+          var zd = LOW[z], elim = seeAll(st, zd, [P, A, Bc], [P, A, Bc]).map(function (x) { return [x, zd]; });
+          if (elim.length) return { tech: 'XYZ-Wing', lvl: 4, place: null, elim: elim, cells: [P, A, Bc], digit: zd,
+            text: 'XYZ-Wing: ' + rc(P) + ' (' + listAnd(digits(pm)) + ') with ' + rc(A) + ' and ' + rc(Bc) + ': one of the three must be ' + zd + ', so cells that see all three can’t be ' + zd + ': removes ' + elimText(elim) + '.' };
+        }
+      }
+    }
+    return null;
+  }
+  // strong links: units where d has exactly two places
+  function strongLinks(st, d) {
+    var out = [];
+    for (var u = 0; u < 27; u++) { var ps = positions(st, u, d); if (ps.length === 2) out.push([ps[0], ps[1], u]); }
+    return out;
+  }
+  function wWing(st) {
+    var bv = bivalues(st);
+    for (var a = 0; a < bv.length; a++) for (var b = a + 1; b < bv.length; b++) {
+      var A = bv[a], Bc = bv[b];
+      if (st.c[A] !== st.c[Bc] || sees(A, Bc)) continue;
+      var ds = digits(st.c[A]);
+      for (var k = 0; k < 2; k++) {
+        var x = ds[k], y = ds[1 - k], links = strongLinks(st, x);
+        for (var l = 0; l < links.length; l++) {
+          var p = links[l][0], q = links[l][1];
+          if (p === A || p === Bc || q === A || q === Bc) continue;
+          var ok = (sees(p, A) && sees(q, Bc)) ? [p, q] : (sees(q, A) && sees(p, Bc)) ? [q, p] : null;
+          if (!ok) continue;
+          var elim = seeAll(st, y, [A, Bc], [A, Bc]).map(function (c) { return [c, y]; });
+          if (elim.length) return { tech: 'W-Wing', lvl: 4, place: null, elim: elim, cells: [A, Bc, ok[0], ok[1]], digit: y,
+            links: [[A, ok[0], 0], [ok[0], ok[1], 1], [ok[1], Bc, 0]],
+            text: 'W-Wing: ' + rc(A) + ' and ' + rc(Bc) + ' are both ' + x + ' or ' + y + ', and the ' + x + ' in ' + unitName(links[l][2]) + ' must be next to one of them, so one of the two is ' + y + ': removes ' + elimText(elim) + '.' };
+        }
+      }
+    }
+    return null;
+  }
+  // Skyscraper and 2-String Kite: two strong links joined by a weak link (the shortest X-Chains, by their names)
+  function twoLinks(kind) {
+    return function (st) {
+      for (var d = 1; d <= 9; d++) {
+        var links = strongLinks(st, d);
+        for (var a = 0; a < links.length; a++) for (var b = a + 1; b < links.length; b++) {
+          var L1 = links[a], L2 = links[b], u1 = L1[2], u2 = L2[2];
+          if (L1[0] === L2[0] || L1[0] === L2[1] || L1[1] === L2[0] || L1[1] === L2[1]) continue;
+          if (kind === 'sky') { if (!((u1 < 9 && u2 < 9) || (u1 >= 9 && u1 < 18 && u2 >= 9 && u2 < 18))) continue; }
+          else if (!((u1 < 9 && u2 >= 9 && u2 < 18) || (u2 < 9 && u1 >= 9 && u1 < 18))) continue;
+          for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) {
+            var j1 = L1[i], j2 = L2[j], e1 = L1[1 - i], e2 = L2[1 - j];
+            var joined = kind === 'sky' ? (u1 < 9 ? C[j1] === C[j2] : R[j1] === R[j2]) : B[j1] === B[j2];
+            if (!joined) continue;
+            if (kind === 'sky' && (u1 < 9 ? C[e1] === C[e2] : R[e1] === R[e2])) continue; // that is an X-Wing
+            var elim = seeAll(st, d, [e1, e2], [j1, j2, e1, e2]).map(function (c) { return [c, d]; });
+            if (!elim.length) continue;
+            var name = kind === 'sky' ? 'Skyscraper' : '2-String Kite';
+            return { tech: name, lvl: 4, place: null, elim: elim, cells: [e1, j1, j2, e2], digit: d,
+              links: [[e1, j1, 1], [j1, j2, 0], [j2, e2, 1]],
+              text: name + ' on ' + plural(d) + ': ' + unitName(u1) + ' and ' + unitName(u2) + ' each have only two places for ' + d + ', joined at ' + rc(j1) + ' and ' + rc(j2) + '. So ' + rc(e1) + ' or ' + rc(e2) + ' is ' + d + ': removes ' + elimText(elim) + '.' };
+          }
+        }
+      }
+      return null;
+    };
+  }
+  function uniqueRect(st) {
+    for (var r1 = 0; r1 < 9; r1++) for (var r2 = r1 + 1; r2 < 9; r2++) for (var c1 = 0; c1 < 9; c1++) for (var c2 = c1 + 1; c2 < 9; c2++) {
+      var sameBand = ((r1 / 3) | 0) === ((r2 / 3) | 0), sameStack = ((c1 / 3) | 0) === ((c2 / 3) | 0);
+      if (sameBand === sameStack) continue; // the four cells must sit in exactly two boxes
+      var cells = [r1 * 9 + c1, r1 * 9 + c2, r2 * 9 + c1, r2 * 9 + c2];
+      if (cells.some(function (x) { return st.v[x]; })) continue;
+      var com = st.c[cells[0]] & st.c[cells[1]] & st.c[cells[2]] & st.c[cells[3]];
+      if (POP[com] < 2) continue;
+      var pairs = digits(com);
+      for (var a = 0; a < pairs.length; a++) for (var b = a + 1; b < pairs.length; b++) {
+        var ab = bit(pairs[a]) | bit(pairs[b]);
+        var exact = cells.filter(function (x) { return st.c[x] === ab; }), extra = cells.filter(function (x) { return st.c[x] !== ab; });
+        if (exact.length === 3) {
+          var X = extra[0], elim = [[X, pairs[a]], [X, pairs[b]]];
+          return { tech: 'Unique Rectangle', lvl: 4, place: null, elim: elim, cells: cells, digits: [pairs[a], pairs[b]],
+            text: 'Unique Rectangle: ' + listAnd(exact.map(rc)) + ' are all ' + pairs[a] + ' or ' + pairs[b] + '. If ' + rc(X) + ' were too, the puzzle would have two answers, so it can’t be ' + pairs[a] + ' or ' + pairs[b] + '.' };
+        }
+        if (exact.length === 2 && (R[extra[0]] === R[extra[1]] || C[extra[0]] === C[extra[1]])) {
+          var m0 = st.c[extra[0]] & ~ab, m1 = st.c[extra[1]] & ~ab;
+          if (m0 === m1 && POP[m0] === 1) {
+            var z = LOW[m0], el = seeAll(st, z, extra, cells).map(function (x) { return [x, z]; });
+            if (el.length) return { tech: 'Unique Rectangle', lvl: 4, place: null, elim: el, cells: cells, digits: [pairs[a], pairs[b], z],
+              text: 'Unique Rectangle: these four cells would have two answers with only ' + pairs[a] + ' and ' + pairs[b] + ', so ' + rc(extra[0]) + ' or ' + rc(extra[1]) + ' must be ' + z + ': removes ' + elimText(el) + '.' };
+          }
+        }
+      }
+    }
+    return null;
+  }
+  function simpleColoring(st) {
+    for (var d = 1; d <= 9; d++) {
+      var links = strongLinks(st, d), adj = {};
+      links.forEach(function (l) { (adj[l[0]] = adj[l[0]] || []).push(l[1]); (adj[l[1]] = adj[l[1]] || []).push(l[0]); });
+      var color = {}, done = {};
+      for (var s in adj) {
+        s = +s; if (done[s]) continue;
+        var comp = [s], cl = [[s], []], qi = 0, chain = [];
+        color[s] = 0; done[s] = 1;
+        while (qi < comp.length) {
+          var x = comp[qi++];
+          adj[x].forEach(function (y) { if (done[y]) return; done[y] = 1; color[y] = 1 - color[x]; cl[color[y]].push(y); comp.push(y); chain.push([x, y, 1]); });
+        }
+        if (comp.length < 3) continue;
+        // color wrap: two cells of one color see each other, so that color is false
+        for (var k = 0; k < 2; k++) {
+          var bad = null;
+          for (var i = 0; i < cl[k].length && !bad; i++) for (var j = i + 1; j < cl[k].length; j++) if (sees(cl[k][i], cl[k][j])) { bad = [cl[k][i], cl[k][j]]; break; }
+          if (bad) return { tech: 'Simple Coloring', lvl: 4, place: null, elim: cl[k].map(function (c) { return [c, d]; }), cells: comp, digit: d, links: chain, colors: cl,
+            text: 'Simple Coloring on ' + plural(d) + ': following the cells where ' + d + ' has only two places, ' + rc(bad[0]) + ' and ' + rc(bad[1]) + ' get the same color but see each other. That color can’t be ' + d + ': removes ' + elimText(cl[k].map(function (c) { return [c, d]; })) + '.' };
+        }
+        // color trap: a cell that sees both colors
+        var elim = [];
+        for (var c = 0; c < 81; c++) {
+          if (!(st.c[c] & bit(d)) || color[c] !== undefined && comp.indexOf(c) >= 0) continue;
+          if (cl[0].some(function (a) { return sees(a, c); }) && cl[1].some(function (b) { return sees(b, c); })) elim.push([c, d]);
+        }
+        if (elim.length) return { tech: 'Simple Coloring', lvl: 4, place: null, elim: elim, cells: comp, digit: d, links: chain, colors: cl,
+          text: 'Simple Coloring on ' + plural(d) + ': along the chain of cells where ' + d + ' has only two places, one color or the other is ' + d + '. Cells that see both colors can’t be: removes ' + elimText(elim) + '.' };
+      }
+    }
+    return null;
+  }
+  // X-Chain: strong, weak, strong, ... strong on one digit. If the first cell isn't d, the last one is, so cells
+  // that see both ends can't be d. Shortest chain first (breadth-first search over "cell is d / is not d").
+  function xChain(st) {
+    var best = null;
+    for (var d = 1; d <= 9; d++) {
+      var b = bit(d), cells = [], strong = {};
+      for (var i = 0; i < 81; i++) if (st.c[i] & b) cells.push(i);
+      strongLinks(st, d).forEach(function (l) { (strong[l[0]] = strong[l[0]] || []).push(l[1]); (strong[l[1]] = strong[l[1]] || []).push(l[0]); });
+      for (var si = 0; si < cells.length; si++) {
+        var s = cells[si]; if (!strong[s]) continue;
+        // state = cell * 2 + on (on: reached by a strong link, so it is d)
+        var par = {}, queue = [s * 2], qi = 0; par[s * 2] = -1;
+        while (qi < queue.length) {
+          var stt = queue[qi++], x = stt >> 1, on = stt & 1, depth = 0;
+          for (var t = stt; par[t] !== -1; t = par[t]) depth++;
+          if (best && depth >= best.len) break;
+          if (on && x !== s) {
+            var path = []; for (var t2 = stt; t2 !== -1; t2 = par[t2]) path.unshift(t2 >> 1);
+            var elim = seeAll(st, d, [s, x], path).map(function (c) { return [c, d]; });
+            if (elim.length) { best = { len: depth, path: path, elim: elim, d: d }; break; }
+          }
+          var next = on ? cells.filter(function (y) { return y !== x && sees(x, y); }) : (strong[x] || []);
+          for (var k = 0; k < next.length; k++) { var ns = next[k] * 2 + (on ? 0 : 1); if (par[ns] === undefined) { par[ns] = stt; queue.push(ns); } }
+        }
+      }
+    }
+    if (!best) return null;
+    var p = best.path, links = [];
+    for (var k2 = 0; k2 + 1 < p.length; k2++) links.push([p[k2], p[k2 + 1], k2 % 2 === 0 ? 1 : 0]);
+    return { tech: 'X-Chain', lvl: 4, place: null, elim: best.elim, cells: p, digit: best.d, links: links,
+      text: 'X-Chain on ' + plural(best.d) + ': a chain of ' + (p.length - 1) + ' link' + (p.length > 2 ? 's' : '') + ' from ' + rc(p[0]) + ' to ' + rc(p[p.length - 1]) + ' shows one of the two ends must be ' + best.d + ': removes ' + elimText(best.elim) + '.' };
+  }
+  // XY-Chain: cells with two options each, linked by a shared digit. If the first cell isn't a, it is its other
+  // digit, which forces the next cell, and so on until the last cell is a. Cells that see both ends can't be a.
+  function xyChain(st) {
+    var bv = bivalues(st), best = null;
+    for (var si = 0; si < bv.length; si++) {
+      var s = bv[si], ds = digits(st.c[s]);
+      for (var t = 0; t < 2; t++) {
+        var a = ds[t], o = ds[1 - t];
+        // state = cell * 10 + the digit that cell must be
+        var par = {}, start = s * 10 + o, queue = [start], qi = 0; par[start] = -1;
+        while (qi < queue.length) {
+          var stt = queue[qi++], x = (stt / 10) | 0, v = stt % 10, depth = 0;
+          for (var t1 = stt; par[t1] !== -1; t1 = par[t1]) depth++;
+          if (best && depth >= best.len) break;
+          if (v === a && x !== s) {
+            var path = []; for (var t2 = stt; t2 !== -1; t2 = par[t2]) path.unshift((t2 / 10) | 0);
+            var elim = seeAll(st, a, [s, x], path).map(function (c) { return [c, a]; });
+            if (elim.length) { best = { len: depth, path: path, elim: elim, a: a }; break; }
+          }
+          for (var k = 0; k < bv.length; k++) {
+            var y = bv[k]; if (y === x || !sees(x, y) || !(st.c[y] & bit(v))) continue;
+            var ns = y * 10 + LOW[st.c[y] & ~bit(v)];
+            if (par[ns] === undefined) { par[ns] = stt; queue.push(ns); }
+          }
+        }
+      }
+    }
+    if (!best) return null;
+    var p = best.path, links = [];
+    for (var k2 = 0; k2 + 1 < p.length; k2++) links.push([p[k2], p[k2 + 1], 1]);
+    return { tech: 'XY-Chain', lvl: 4, place: null, elim: best.elim, cells: p, digit: best.a, links: links,
+      text: 'XY-Chain: ' + p.length + ' cells that each have two options, from ' + rc(p[0]) + ' to ' + rc(p[p.length - 1]) + '. If the first isn’t ' + best.a + ', the chain forces the last one to be, so cells that see both ends can’t be ' + best.a + ': removes ' + elimText(best.elim) + '.' };
+  }
+
+  // the techniques, easiest first (the solver always uses the easiest step it can find)
+  var TECHS = [
+    hiddenSingle, nakedSingle,
+    pointing, claiming, nakedSubset(2, 2), hiddenSubset(2, 2),
+    nakedSubset(3, 3), hiddenSubset(3, 3), nakedSubset(4, 3), hiddenSubset(4, 3), fish(2, 3), fish(3, 3), xyWing,
+    twoLinks('sky'), twoLinks('kite'), xyzWing, wWing, uniqueRect, fish(4, 4), simpleColoring, xChain, xyChain
+  ];
+  var TECH_LEVEL = [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+  function nextStep(st, maxLevel) {
+    for (var k = 0; k < TECHS.length; k++) {
+      if (maxLevel && TECH_LEVEL[k] > maxLevel) break;
+      var s = TECHS[k](st);
+      if (s) return s;
+    }
+    return null;
+  }
+  function done(st) { for (var i = 0; i < 81; i++) if (!st.v[i]) return false; return true; }
+  // grade: { level: 1-4, or 0 if these techniques can't finish it; hardest; counts; steps }
+  function grade(g, maxLevel, keepSteps) {
+    var st = newState(g), level = 1, hardest = 'Hidden single', counts = {}, n = 0, steps = keepSteps ? [] : null;
+    while (!done(st)) {
+      var s = nextStep(st, maxLevel);
+      if (!s) return { level: 0, hardest: hardest, counts: counts, steps: steps, n: n };
+      if (s.lvl > level) { level = s.lvl; hardest = s.tech; }
+      counts[s.tech] = (counts[s.tech] || 0) + 1; n++;
+      if (steps) steps.push(s);
+      apply(st, s);
+    }
+    return { level: level, hardest: hardest, counts: counts, steps: steps, n: n };
+  }
+
+  // ================= generator =================
+  // Dig a full grid in 180-degree-symmetric pairs, keeping the puzzle unique and no harder than the target; keep
+  // it when it ends exactly at the target level. Clue count is only a side effect.
+  // Easy and Normal keep a few more clues (a friendlier start); Hard and Expert dig as far as uniqueness allows.
+  var FLOOR = [0, [30, 36], [26, 30], [0, 0], [0, 0]];
+  function generate(level, rand) {
+    var full = fullGrid(rand), g = full.slice(), order = [], fl = FLOOR[level], floor = fl[0] + Math.floor(rand() * (fl[1] - fl[0] + 1)), n = 81;
+    for (var i = 0; i <= 40; i++) order.push(i);
+    shuffle(order, rand);
+    for (var k = 0; k < order.length; k++) {
+      if (n - (order[k] === 40 ? 1 : 2) < floor) continue;
+      var a = order[k], b = 80 - a, keepA = g[a], keepB = g[b];
+      g[a] = 0; g[b] = 0;
+      if (!unique(g) || grade(g, level).level === 0) { g[a] = keepA; g[b] = keepB; } else n -= a === b ? 1 : 2;
+    }
+    var gr = grade(g);
+    return gr.level === level ? { puzzle: str(g), solution: str(full), grade: gr } : null;
+  }
+
+  // ================= transforms (same logic, new look) =================
+  // relabel the digits, then rotate / mirror. Every hint and level stays the same.
+  function transform(g, rand) {
+    var perm = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rand), t = (rand() * 8) | 0, out = new Array(81);
+    for (var i = 0; i < 81; i++) {
+      var r = R[i], c = C[i], nr = r, nc = c;
+      if (t & 1) { var tmp = nr; nr = nc; nc = tmp; }
+      if (t & 2) nr = 8 - nr;
+      if (t & 4) nc = 8 - nc;
+      out[nr * 9 + nc] = g[i] ? perm[g[i] - 1] : 0;
+    }
+    return out;
+  }
+
+  // ================= bank codec =================
+  // one puzzle = 14 chars of clue map (81 bits, 6 per char) + the clue digits two per char (base 9). ~27 chars.
+  var ALPHA = (function () { var s = ''; for (var k = 35; k < 127; k++) if (k !== 39 && k !== 92) s += String.fromCharCode(k); return s; })();
+  var AIDX = {}; for (var ai = 0; ai < ALPHA.length; ai++) AIDX[ALPHA.charAt(ai)] = ai;
+  function encode(g) {
+    var s = '', ds = [];
+    for (var k = 0; k < 14; k++) {
+      var v = 0;
+      for (var j = 0; j < 6; j++) { var i = k * 6 + j; if (i < 81 && g[i]) { v |= 1 << j; ds.push(g[i] - 1); } }
+      s += ALPHA.charAt(v);
+    }
+    if (ds.length & 1) ds.push(0);
+    for (var p2 = 0; p2 < ds.length; p2 += 2) s += ALPHA.charAt(ds[p2] * 9 + ds[p2 + 1]);
+    return s;
+  }
+  function decodeAt(s, pos) { // returns { g, next }
+    var g = new Array(81).fill(0), cells = [];
+    for (var k = 0; k < 14; k++) { var v = AIDX[s.charAt(pos + k)]; for (var j = 0; j < 6; j++) if (v & (1 << j)) cells.push(k * 6 + j); }
+    var p3 = pos + 14;
+    for (var n = 0; n < cells.length; n += 2) {
+      var x = AIDX[s.charAt(p3++)];
+      g[cells[n]] = ((x / 9) | 0) + 1;
+      if (n + 1 < cells.length) g[cells[n + 1]] = (x % 9) + 1;
+    }
+    return { g: g, next: p3 };
+  }
+  // index of every puzzle start in a bank string
+  function bankIndex(s) { var at = [], pos = 0; while (pos < s.length) { at.push(pos); pos = decodeAt(s, pos).next; } return at; }
+
+  return {
+    ROWS: ROWS, COLS: COLS, BOXES: BOXES, UNITS: UNITS, R: R, C: C, B: B, PEERS: PEERS, POP: POP,
+    LEVEL_NAMES: LEVEL_NAMES, bit: bit, digits: digits, sees: sees, rng: rng, shuffle: shuffle,
+    parse: parse, str: str, clues: clues, candidates: candidates, conflicts: conflicts,
+    count: count, solve: solve, unique: unique, fullGrid: fullGrid,
+    newState: newState, apply: apply, nextStep: nextStep, grade: grade, rc: rc, unitName: unitName,
+    generate: generate, transform: transform, encode: encode, decodeAt: decodeAt, bankIndex: bankIndex
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = SD;
+</script>
+<script>
+/* Ninefold puzzle bank: made by tools/gen.js (seed 20261001), checked by tools/check.js. Each level is one string of
+   compact puzzles (SD.decodeAt). e Easy, n Normal, h Hard, x Expert. */
+var SD_BANK = {"e":"20,V-9L4I@FDE&;H_)o;hsI+Kms$r$aW.4&%%:D>c$(%9-qUep&HnWrd01#/2_HFQ1.^FG*#I*;RP+TU9c@hl0E:c&%B-=6b9VHX&%*EM*-/S0NpX9)2c+YoQ$:LAH;)93UQ4&(*8?U<olHr7e;og2K=TC%$2Y566@I&(V+q`&H<h:GFIM^3J=K[QPBEY)%*&%A1XO$b:Y;`@P=I,7fMqj*Y+FQ)80-aEH5$Q1%,IM[t^$0WkK1V<MG-EYP#F<QY,%L=1(;cZnK;#SOb_:0*^SG-X&3M(MH+BE0*^oicPD)cB,:Q5A=RJ*6JORL4L4LLO27%;t4*;f/NslMJk>)$93?$8H.5H.5$XJ+b-KQ]d*k1CZGd[_F6U6>-.@)YEFX6>([KKZmL&9e[pKrqX]HUV#=#^N_(T(<>(Q4g4`pMo*q$K,&R(=4-G7a52J8T($EN.H:tcS_(5?>Q[6I$74<;+;[44*0)4G4`(]TpS*^mI2EC`-*O&#3bI+#R*G(7XXAbsfP%X4@J?P7QmE(8RY5L4@Q7$-(]j2:laIEG*V-ok:DE.L7]*O*`4RD.(*NoKT6I2lCE2+,gQ=9JHEP$6%P-0-7)IQZc^9b:[=mQ>4Z?>(R*$^N_((O&U%O,^IAinAcKYd0g(>bLQ)(5<aU4($QQ#9QDm&6KcJRGIsDg6#@,OHY%>1MJT$#,R95I]M[JmE(FMrQI0F$PMP$0F-Q)KRZ<Dt%eo]tJ[,s4U#=FTJQ$P1?,V(#$Dmq4s2:Y+6n_i);D03)&++*IK-4+dUFNImD)-q[pd3J0X6JRL<=*L#WXLL/&JZD$LS$Mg[HlJKpmM*6?LDZN>/LT:%&%0HS7KbX-NtH(`/(<+N5W#(9)$<:P%+h562DP1p->4I6s@6Y(C#WT7B<*T+=)q4,H3o0,:bFs/4s$Ud-H%NL&]P^#RL%.$;g%m`q^/imW75&SZ(U)$:&:&(A(=&0_u[oYhTt7Hs5%M$&-J0<ZL<WD-G(*bQ`oo+1]c^)=KI*4H-<XHKa-3=UD0$rj>>jXE<q)i/oM(e*HDF=_Q2LDObV0.#?Xn,SCU>_]-PN95tI6*A,4;&&*:;DT)&*nR=)JK0P[:R#39O&=EL*-QI(O,X(*Zh-qnbA3(QY7Ih:^.N>#/*S+G*TNF%4mW4?/D%4^r(7E2):+8&G<E],X,*:$+M/h/DsX]pfndW.<QDDO/.[#<KFR2,#Gd@fPc6CCbQG%Q/dEU8*P9#4Q$7=0()jU%2Anlb97V1a+5W0&Z;#4C&J=:(oKDH(sh93`,4H>q?7r*U,N,WM@JLF<(&fIs,OKcFnr37?[=DGQ4@0$N%HU5L1*X*/b3hM?[lsIK6Fs->(:X5_6@5&UF(n;6&_NTX0b`t<NTqdAN,=$?(U*XHLV)-DpQf)c@3A2ErcHA3YL]5(2NF&5aL<);pP?<2X>_kAhD9m9bJD*HRNORN/$/,&eMGI&bI6IFrGZM?t:E*TQ_,FO2F]NA#&[%UeJ$/%meCFn(GJ*4,/2(>7:7Z%EGJ#$Mq=F7ZWF7=s_sJh62,=X<.8EV<UHD&^JQZo?=bM]o)/t/#[ENM()8$)MP.@+X6Ct)/po3;Ni+(DAlZJ+*8<a]]U4$&3&Ah535-OEX/OcU&c0j6A5DJ.&L#J./4X);t-7?T:FnWd@HG=FG)9(Y7B)5)12%C,e(shj+mK_Y$i;]Q-I%`.YL(M<I_*.)7P<C3oelPjD0<ejoK/1358LEN.P45HK)2N>i(mEkDq6`7^9(iEZP2LT(=LDO=/($UM+b2W=NARRG9NM66*=Y%E91(>Y(7%K$PY/^`b-M+<G]C?ZTY*)40NF5#)?A#/iU+=<H9pm1go]5L1X4>Y(=Y6<EQ#g,?J9P%3Y[U&?%[X54^]&;&M(:+c]8#9MA$=Pa:g/jWC5Rj6<T5D1Y6N6>I14@#HZh;@Z4<gSsX6?5d3>,a5FL,6aETF+t-JNAUu<e5>Q=;Ido..TIE9$810ADF%&9Q=_,WnA)WC[X6E5K5%K%.+60;0(/ZRh?7g^Y:VZ+7IFW?&44VL<64#ZB*EU$M*f5+#0P<+s?R,XLLVUQA@NL<E#fh$Mg`qM@bn]V_ZJ5#aE]6MQQ8_,a$#Q;l)@26_6nS0G)=Qb2%5YF=5X0>9(F&,TFXI9fPWjMH0leqQ(`7<)858$Y4c*$/AE+Sb*ioq)P7)t0Z9V*G0+##K-*?6)0%6qq7cH<TCmeDS1M7=-<N#LVDX8R(46m`=D<m*9U9OV$_`4./,%c&FDJ6]*GN-lWs4)A_rG9N;tH&Z(76*a$76*=&*+>cK6HMl].lnj:+I6I#+:`,(E]:&+,)+ce1,g6e>W2^IMe+V>$9*NLL%7)X>%AOd3t/RF13tC5;U-^8TT+599(C<4^(WIh]%rL8[KE2Aa,KQZG)Y<-4O:DX<)1*&I=,S^rFYH5A]Kk-9H7F/#KN.+D262$]XK=GY+s2T:AU,Qh976<U,&J<X46:)U$oq26`ecqeZh5Rh7EL0@E8-XEM,8*qWY.Mj>FJmhAE50H9]/5.T_>D6Hc4)UkZP9,/^3((?>g_)36)5^:%FN.%6`8()7k;Gpf2+>s6M*Uk^GE^)%9M8)%b00*+T]UgYJC4s,J5&13&LJ5J.(&*E.70O#<Ol80^Qb<mArtt%UY(GER$P/0*=A(:Y,XOr<Ipk0sh^6s,UT-[->**&WF@K@#sQhG.97(j$[M;sqf+pZ.5@&$_%(Z5H>&i1n:Zr5=ZSoF&`29dI,O<aD%.]ULJ,)QI?s2L+9]h3H,7lHJL/4aF#,_5DR,&Np(b-Zg7rFq4SJFP89&E+))3(:9M$t<-MTLSl)>&^M&sjY@VH,G&&*2J,=V$NdWK/]lgo[FWHi:d>B&N?0#DUR%ZW%2dOo`,j*/pM7iA+_&]4@;L$<&Z#P4[5#jK[r)imRID-p=)G#^]=1O6NJYa](#:b-D-j6D4S2fs7tiG/H**(0BP&RUG$$&&YF]HnAi=nmWB(nSO6<]2]&5(cD`T4%dGfRJ`dCg:sdD1F$H*.ID=5:7X0,I%&Ust0MO5j%>_-IS[#=0M65/%F:8NHU(UFF/PB([m4><_m<,QXM2DV(=.DO@M):,R)^GkW*HUgU@Q<6t1$1XMV%>N@E)H)D%0Ii$jqo<r,Kde<01.:481$H954GF)Y6h^5pH]3isX&7bEZ_X44P54<^>/(n`4qA&b:^Q2**U4K-E=<P(V(=%MUT0(g^b.iAY[oJW&%4:&O%]2`#]J`#N**=&-jQ7eKcq?]Wl3=F3)GJ8,/NFJ4-/*)$NZRGRj5J;C2;PrE55<>Y9)9AYV48(,:@i*nJ,p(,@7jmW?@/G.NL(*&MLF.J*c+10TrqEt`C0f(;s/^%T=P5PU@#_H*(7/_[J0W`O(04nlX%-$EI0a29I`E-1((J6GcQ4Er@bOT-fWF$?,*4bWH%.=c9#G#l7,:EdYf&Yal16nEBEB7#]#]#4Z/X&2FsnXlLA+7t7g+%3SNL5$G4,*8PLN+DJm7Dp-RrOQ6El@U#1CF/(+%%+E2VK)rC3$^E4t^mK1QiIU6G9@,;.:L4G6KT5)fDK;*e$o;9Z5NDooR$G;%MVL<N(63*(]Bb>=)<MCsTnesDPK(H5I<LT,90$-+7FqkrD/T%@H;G1W&XMZE)M(1@O@$*D3ODfEN9HS5Tr:iPZT,[.-E2$H/HH>K#n(o&0h^9R;HgT%hAP<E(8]P^4$-XL$/Ni;$qS-bN)Cem;#W5F6ZQA7.6@*#?Z:Tt>C$FYqQgJni*F:1VX#++<=F9/%;P%NO]dPA2++M>Er]ZP-5M$$(P8HP=&T3k6?rHg-NQP7@^>OH6:40%F547.M*F*WS2KHN&m_&;P$`%R/L#N%LDR&_*,ROgSDqn=?J3REOnQ=PaG#aL]$,cMU(7?q^2EX;mC5W:_Sphn-I9EZD$0</81I(6G*Cq-t-9cis:RI=#,JWNW$@R>2G##I^2(oEU2sP0+3)mj->6>cP#L^W6VF([nP+W1;tH+sRGRZFnrEF>GNU%>P.Z..(G)(l]?s12iK+UGN#=GR,<NU(=PVDL/*HApbq+61%[6SDn?[SX%bP])$(bL^)>$>&T%-JN@kc_g;23l?`8.dM,L4LDLaK6$hp=Z161@aXlGjJ?7H6-E$Z5^8@&0H8%9Y9])FOG]ZgYLl]d68(A(B5X&U)55%?srJFmS%D@l/`qMd#aXY2*L#G?A^$#$_+Gf@aoi[krEM-Ap/41=EKP-3XH9D*ZoM^+u_9`eRG;ZK:nWEUG<E4M8,X,B0(?SM[0d5g+uMP/aG--RLH(P$-MLGH(J4@6t^mhngMsFR^25+7E())-8*;H&&=5+S5Y?XRc;%N<O9X0E-$a$H0H=5)e<T$Os#_oYbV1mX-$0=-LO8MRDXH$(TPWhb0(59M*sW+7ZOa%4>-%FX6#_M*T>14RX;Zq+:,fI`&108>a744cU6EE)c4KRf`A(j`h?+>PRZH-F0=ZE$0@WH-F(XJYc2)/mX&.MtjTI7&.<(?%V*UD%:*`e#eE7(t*YY@9NtLN=TQF(-NATPN#T$:E7U:QhWfc0d<RjHFF<A499TY,..$Ce&FQ$PI%G0_47;ZJG@AF#9),VY-2&Q>B[N9-_S[Ei:>bh6ZV@U#&]7c#*<X=%4H+C0hthERW+o&`/#.]+D0XSCE-#dD%nRJG[t_F5JQNY:i5J&XJGP,MLLHL-2?$XmaQ5/=rHpQ=#Nk?W6.O-GI)11JPJ6%J#T::@<tb/O><I2s#S%<0QWE4,@RIU#%-oAE,fMElIJnZ-J?$B(`U$&*@a*U&(mC*^6h/`P_+@P`$eZ&JP+85]48$S-&*E,&SfR&_XjLr]F#S?TD&IA<MXT1)2<#Y7`0HO/G:)l(X1d?N4W_a#($]^>:L%?fYjN0(T6iJg3Y*Lm*(C0/H&2EJU+$&br4_:&C)>EDr0@<SiI#0X@5Q9X=E$,)SG5/YDLT/mM[9p-^:ZH%724D7*.=7&+W7tE4n?fPF-cRS&m209$S%5(N+8IE&I>gQ&JNA^lN%4[)Nm.GV-<*++WD@.J%HbU77lU`Ktt`%S@j9GL$?P0RGMU*P,*F;Zq`6@ROQDAIj6KYj@DV6=.QIV8>.T$l.>ZTfPN,7sMQA4c@$*-^<P]LU]H(&(_l(AZ91`+[)IT5r#U>UT*9(5)?<X>(Y<K`1T;4S5IU#sOb2U2Y<&585(Z<I?(Y$>3UDjbX92$k`@@*dMR&$M@%VM((RO(*MpM;>;NlTn>[rkC6K4?#M$))P(T:,+M@3T)nJhm=>IDsJP1@LE.MH.PTEQ$M?-^X>R:?S[*u-;]4(JQ4I<$X,9L1&$1:/W+D46dMcpi[><-_EID91,1aFX#?IdEeScm0iZoBSZ5?9<:0(9$8)E5W4)5_S*&Voq$D5JtD7>(LV%/MH*>N#U%6^/[>GcQ-NS+P^R/P:UDT7B,<8OE*D-c?.>M;<njPUj$u<dL)K7,,*GD42+Q#TO>*p_#nKV[jI/,<E7)YR(M?)92X#gbPU>dMnDP^4*Aq9#OPP0%M47:L(FMM$p%;PMQg[,0Tse@s#4*>%9IR/9)V%7#+:?7Y1j?frsGh*pI_2GF*PLL$/.J`%J3T=N^hO6g`QC`,p46V#^7X(M(=5c(<%$6<Pb4[JX?JF[K_S(0]:W/)IB:`D$$_<XRJtp2SE%RP?J/Q,G?2B#T)A#TGW2*<)KWJhS)O0Qi$%rKUo1:96U*%%?869G)ShbMu)6gK>3Adn8Xc>M@$9*M(7)XMX%l0KjS4Cu[FCeVn<P77D])DR_N/#b,4*4B5QJRs_dB*qZ>g4mX;40$B^X&H54C$<2?,r:EU)]`l-r,d9-G49,QL%NLI49,*Q7GIAN,W5;@%K,F*S(-5:P57H(M+&YeO:bnFbY-<r$p&6XW(<*6c)b7%W#=*Id?ij@j%i5Z19gs9ZX#ZH^F:(5/_0=&#;D<*XpZ4P=Rhm^iF#b&4c0PE^7#c)#$HG4P/ph6V/q:%PjEO4/2#.SK%DG:L*H9=ri^k/)pNlD@ZFo+<24]W#<c4DW#+rFI`JEM+$A`NJjRAM:5/5DN.4H:8O(4p]5^+&]IJW,ngl)]NL,>]N_TFLL_#%PY7WK4o@W-:%:jXp28?H,:O:G,U:E&2A`7B[ZTY7k0LYMAYh=c8-H/4D2E8^W(2H8i5+?ITPf?Ss-Q_d8-VJX.#D>-?F8$K+9]`q7ubYA%)BsO<5,Q09IMI4XL*`?0O38Ek,3XCC8e?Nm0XL$K:44/+P<E$bIMf$m>hnSjoRgN-#NKT*`$a*?,S%#g/N#@L=YIfRmDfpHU5LXFO6&:N2>M4(UZChdFW&/m4W1ld_dE]+8TIL,A4$d,(?2*o7D*.Qt<eWq+PPYL,c$N%aGL<Q$%c42D=Q^N+s?3CnQeT$1FPT4O:<L-F)($a(4Y[O0]1E,h.H1>-2&-*G(JGXF)5F:eE1u)<-JesO6`e#F1@O=%VPZE1%#3I%lU;$d[s69O[9lZQ(V$VN>%@%MA&p2+4*p8lDdf%0shM+]@*2+07$8J$K&W$N+YAT<>^+X-4%ZU%s(5XG2W)AJ/B5($G:dWf/PD`>pSgjo)h=^L.+M(L#M(KN](2s:G`prA596C2lE$38.HL+++S,E6E+gS]iItQD^5*5g19_&=<H5Y0TN>D=90U#T[g?N76T7%OM9K%b,(Z];M&R8d<&E#T^P,/W>?0tl%mF:=-YM%]FA9a5Y1_#N(lQY2:@(]=@q6b)@bI_mML4,BV9AVG4LL(t1*[<gn>^ePQWu3*m5BP.4F*/6DNU7(n]]$URZ*:?R@H<&O-DN/RI*/QGR.D(iI=]IAEqbAJXpnQ*YJ.aG:DD&2,4/cE%S0J,atYc6$bD+cPI;,^%EJQ1/(_H4+gc7PcA)iG-6:-E7q2>XH%^@I$0Y^(.=$JlQ)nD+n4e;c@(g>[W.%H^LOR]0$F>*5gU+p=@mR_E26WnWl1I)1#3.MHF+D)1)AZIN=-[K<cEMsk/YD2]DMUP=P0]D/#mQ/apcJ*XSE)4$J^5*VLa&($cM<%7(>ZhWTIA);^12Mj%@I7HVH0QI-=.52)mfX76qW3:+u6+75;ZF5[*.-())EH%?;(q?WRAnDZp$_pr.P*,19861^H965II#[<;)*-]:XG0gHY4J#&#Z1//#DJJA&#*`l^p`9>/UcR]/*-[$R,D*O*/DL&@+7qD=[*hFrH9e/PFR_</Z%ETL<,(>GZ#Rd]C2c44RMu(AAc4d,-^X#<^HH];#<TS@0,C</2qf24,OY,]ZWF4]4,>B`D#OJ$G*gXO5p?=J0MsQT>>:(;*7+5WV>#$L]eGN5Z*PmhsXS0+rEJD]2+%%K`,,/(n+iiN?X9.K)p=Efc@)DLI8P5-Q,#Y$gP7/hbT$8^eW?RCY#S-L/LDRDP+<)t;4&8O0m$_>FW;&7d$E0P(1+K)ME-((Kh]3u+5?WM3K2,%#$G]JI&21`,*(#4DcOFE2Cao$i>F#3F%GT=PU@,*.F+b/Q`CYN&ZjO9hu?2fT/%&U)))A(*FB#Je7(GWg*YRj7Q,<>TLGK6L4.3R<T%T,j(,i/Or4N@Ui&.A*-?N&&%%*RVJ(&iNU=9j1jA54JWAoi>L,UULPM<@HLT%6NM%XK<*@lD^Y:Q9]%^=N6N6NVa(_#obD6F*r?$gDO[,iP2g<IMJP5^8P-O0Y#WlJRS3cMW%hW#o_W&`#4.;XNEQ1P>5K6#4lS@g][ugN.ZlgX*o1`8$++FN.%++8^*%FP/Dq=2c+f-Mo::Y349I1$?QY*H199#sGAg[N@YFH:Q4].Tfn14A*L0NFM#W9D)cAr^&@(_n7T;U<p3D1J&`$N%a*2G1#%hcS5*GSCaT->Gg7?HK.>(2aE&UF.3$>FOY4M_3T4G+r;6<0HF-:#9R(M7)4G0%,OCt)m[i_@)1<SsU)$FOONNR2%(A(rZOY=(^4ePD=N>C:DoW4)U/PNNEB(9<**Yf]1bX:;0s@J4uWN9I/H&6;(5;%2E2)&WPiUBJ+q`p)/ZP7QHY)>0+##KU%A1$:Z1*]t1>b1ZhD,?t9L2GN]%_L.JO4)K.Q:]dnT(/Qt@qJ^U$4%U_VJ&2?_>(6#]Nid:HGY-;(GG:UZ+=^F#S6#4N+,_X(Q>9M2JO[qd3=n($DL944c*5(`744Q#*TI-P/^+8&Y6ui_dT%1*?6P5V*G)>#d97h&m3hp?rPiA/i$)4_RGL,R`6#)(,DF,NHb8GHe>3T&PV.P@:(&*5WME>%G[n*_StAbFso+QA<2.?a,F,&J,F]UJ%[,,7MoXORc>i/,K+-%>J0.MHF-W%F(qY_HA7(oiEWdokr,TMTN*7*O>L@D#0Y[`s:D5_7G*emJ--$JJGI%.12/&H(pR&$NhoY)bI:EHc1)DU4CUL<X;<0#)hWG(f<5ghfZ$fqX10HG=Q(*&MY02E$^lRKoR`IKWf+`C&r<.W0_U<$X<aF=J%r=C$fNE,LSQF&n=Q&W5Z#W<a5aU<*<7(@<sSsM$]:s$X@^WO`-V9&(-C6VK($:A%Y^fTNd/pE*&Y9-GStZ)dLJ%&P$*.O]+)Z92JmF<>R_H9)*1BRlMI.4=0%FU8D.Q(6[EH=W>Kq%*PGiH$ZY$<-PEX#@A&(/XSIB7^FQ&hk(2r6Ed0).<LTD%I^3([q+q72DJD-D[4>HP;TM$R+GP-*S&P@#q_-sFU43q9-Ehr/1A_6C/D(34D+-DZ;%T$cD1)jA=,QC%G<F#)5+6Y<4T<9%;()>.6tSM59+_Q4%[HmD%Q)7L;S4*Q).#?U[[F/k_@mpPXL<&mOa*JD<aU,,&`M*SsEnKg1^RC#hKkSqgs#8%HQ`**&`R1$6$Mma56Bm7`oYC(6XDk_$%I/Y.^H>I2)%(E9$;gKWh[7qhmF+W-;DO]<,5HT]L24+%Me)GNqb:5Wr5gIFmICHHHX4<---U3)X3>picd`D:lfQpap(6U%8L1=)YHQ4$>(cIY?OR_h;<@/jDcCV0Q)%.PE%%QI=%1oH3gnf`GNhsAI7sH#3:%A$X)6G+,$*:-@Sf34b2e6N6DQ2,5.-LDH6HDO)t$SOWs6mCid1=0YI^,L8.RG6MD]0)JDT-S?7;jKHd4FIoE1Dc*HHO2-$`/D)[iP%cM6D,I:<AnYJBI#F9=2;(5KW81%#NM2f^c0UB6IPF;/jL8EE*]a^#/08M#i93Ul/*S4f/sLE5#NE&K4$&*8,+2P%:ZHs+.moirZCG])4,?CI]L],Y[J4#YFZ=WP-l;^nW7TdT_o@a&IU]#]<0)cU$+3<YIE%P0Z/XEQ0l,eR:2D6F(-6.D7O&M7&c)c;_7:Yd3?frLF:AL+($ST9/N#o?Xu3HD_Hg)OT:%[E?TGE4APU9,0BT*iqP]dYfUQPFY]an6W1JM%&&:N6&**N0&3fi8)q]fWP*mMoh[L7B*TJ(-?#W7R#[)Qt-nj9E(/iL%TD3E)OG5LMP40R*1(6rhAU=]PIZMQ>A1H76O$DRV&BN/#P:%*5q>6-U:gV9eGe:I;LHDU&2NF&B0,M#N3&R>0+,JU?483:JD?2aD(-]EW2,&>^:$1DHfYn*U<ISlDGD._NU#<P_F.,*1A5Z;23po3R<&&IfVN(<.9&:IV#M>%[rDZI5E%CC,H3K)GMT(6c+%%d7%=L(;DqJD&<lZ&5<cUHp=#^8Q-Ia-IP9^(#5i1:Xqgn,^eMfr*Opm4F+*0[$@K$&36#G3MgLXn]u-<ef2PW7]IJ%L&R#./b4*?5jC1>h8[#.sL3?U>EP-20-MHHEGP-(;`j:ZBlf[qUr2g6Y>4H5+-7J(;05T%3i0^-i#7UH:Du0t68IH0N28EOF--9$,XT*TPF4*EX;Zg<7?LJ0<P<+[LUD-O#5gbH]5hZT>g*R[Gpf>c%,D:*7/D#_W%+pSU%o*]h3iRMFC68Ib$FU(=0%a19$n*&qR5h2TEl5`P@&<?ML057)9:HMLX*IFW>i^OY=2S?P,(.M><T@TP@8UM=T=T#h?49<0%L-W7u/]Mj?_1#2EZM@/H&Db%nCdU?mSFF3tN2*K,_fVZFb#LPM#]1>?%5OYQBNX*G4Y9UfM1Q05]5F.S&RK.6a4(6K,eP*/Y`:nKWnZlI=#9d;6(5(56d;)#$HErkQ/9*GZs/0W:u6HMH-:F&26G0M0$_.tBWKYr<fCojp&/$8D`J7Q92`24$($j[l9#bu/EN5@C6c7T.d$#RPNNM&#aK%M/eTKW2Ge(U]1_$64<*=&L8GS3:M#Z(&Jt1[UQg<p-iG:cDNhT:%HB8=(U8U/$6&6^FgHa+r7raF-<o`T%1AT<PU<TI)>#hT7NYUf(5^HM%oCm(Y57,&7*J4:@)$]0HY<j()p@$bZ@G#89(;8H5055+59$dA;_&me5O%=cU-26>X60IVN>.I5>U%3GF%$DDO]D-JI==n@*#^HTd(L#^C,^(#THW=&Np,;ci16h65?6:,HT5@,E47V*3X9I%PFK/)bq+M<m7$IHU*))?0-)8*Nd5cTKbfpoMh<6YC,)RAZDM0<WQ&I#j?b<,:Vdr<2d3ok^0t149HY=*W@159D)(B2$&8E(`/+Dp;OIF7&7&LPP%NMM#:**-FWl)^mfF&U+K[]&(TG/I8]4-I2B#$i<&?rM&eR:U6-hDZ>M)G<$P$X,*QX%3=)FjU;b1>_Ys%r(NX-40PNNE5D@M%rbJd$Z5@d7sip7N485EUYV8=>A088$-<7:WDjPPl=2WfHED#)&#FKO_N23%#*);eFQ8P2M<pt3H]AC-X<O`04L4D^RZ<$AlIb$Y&9j%o&cVq6D/H8]J/())E2`4-$<qWEQ4/WmnTN3nF]$+)A]:$8`T))+(gm`:gt2<F6l2+YUQhELJ828%6E7-O,(-=c51h9;c9h;GdTS)9,G2$H/J4)Q+n^hWR/ZGX,HZ9AaQO9U7#3`%*&_J+4B(No$*Dl1i*R(=nH^g*o3@#LFSLL3N#TE+9hu/^7YEf5*F<NWh/$+5FP-NFP-6(+(>Z7dQG<%UQaUsT71<?%.%O*F%VZD)_dAcJ0Ug%tCQfGO6>+KH_#5(].-+[%S5bO]Z.A^/g&^oSP+?&48YR0PEM?95#*PRB_i6D8HRtN$gSRO535UM&$(R@8H;(:eq3s&An[DsCSo?7iD4P(7Ya=9*M5,#tU5=(2`o^_d2H<T-T:FMVDN.<N06?#6g;Zj<X,2d@b8E^>4NL6-2dKG8NL6#3b/HS?P&NfRIQ_:*RdUM8]L$6%P]4M@(+R^OmG1,]qhr:,RZ$7FZ0$O*H=/6*(>W$5Me(g/_*J-)r90&GW-.%FF@2*J$rO9rjHhZsdgoNSJ5M6L07PLL5JM4N(=3?L+=s:l]ld6T3H@Q4#5Q8M9(4LY$>eYFLf,Qdn_Jn49Q-%GI(OPM*-1*F(RDH4C[%(Xjm6@^0sX-P<;*%%7[LE@$6M)tg/+I`W3Qt5_d3*L6O<>MXVL:N#&`m[I,(l;-]0)T]Y+MD1<0TI72ADUD1#>C`@PjW,FU%tRJAZ,R&*/+$(K*&RG#i-T04O]Eq,a)1jBs+P2P>,MHTNEO$+F6$`G?LGRsfPg`m91tH72RH4$8,MG72$0mr/Cla7Dh4GGb5UZM#28-9I8E&L@&Ijos?0Sm`NeZAMJRZ0THH+-OJ(3-=D$KT,sH@_,@fT6`iGHGJ4ID1`J1,9,/*SIBL-IjgMm/EmNKEf#J5FJ<2)IW,/60&>dS0Z>1T1r,=O3(A`-@:MM#6%LP8WE(`r$ss$4D;/ME-tKZFUUX9(M(5A=@0%[L5jq^9r4ME&4IW)c%N$U$S*O+@(P%%r@MmK4*bp0<ubS-Y#JR-TUN>@DP/&#MT6du`?<rM,aNI)m1I2XD4$8,<E/I)_?mb8q1mjTPf/QF>P*5-LLLD8(OU%m:/EP4cF9#jU&mD#/$135M8HK)H*#_r3=)[:sDFlJ3S`9T*.T:L4?D%?4)t/PD$FJEJXt26K;6$BH9.%F61U&8%X&*/4oU2Yf4Up066-6/G/%F2J:F8%?1rWKro,BU=o&Th/17(BB$($XW&5J)@SmPT-`:m16Us4EgM7H%Y$>NV%@).5*j--oj2ZUgFpoIHTl(.%S4^Qb8L+F%$I7-bUc)QG=]m?hRWQ,NJ_8D^04^.OF#*4^Wr/6i6mY0SWt.6I=(@L?&ZRT$U0)>D-WnhSnn)QPjj-F0(MP.G..&JF.JNM(c:;?0%ers0o;P]4pHN(F8OPaMM:-%M%l[S@WNoR*9=Q`=at`6#4P]QHR/MbL5##sTRFoITQe7KbEJ]?`EX(E&Q)2(=-a*;chgZD;jJ4Qn3h?b2J,X2O-5Q9HPJ?E#,:F,A1jC0oYN_7F3YDM$D7<[OB[42#P(9+UbbSImt`@Hpf&MP=:/&</5^8HZ#J:&J@efHE?27Fh$D=ntNQ/6J8PJ(-O5-7F*@`Jmr[6PUMn?E_l;C<%>=JK(-3WX%V#1QG5C],F2+2at-&7QXL-TA,6FTADP<$oRZB4r5GZOb13K6-QH,C&9(5)ZK,M)UsG<0frF$B>sdS-JR*.`.>#VQA%TF_J%b?dUn%Y:gZVmhB]PN=.A%.7/OJ:J%VI%QP[m@aTio1$(Trkn3%5P:_9L$P4b6O5(S?bGn_%DL[==[&cJ,F5;6F@+))[-66;(F3*U$qX&pXY92%N3-9N:]9#Z$@&4b4O%I?u27Yh0hp7,/-KU3,_UJ]K#,d,?aF#n/&_`%Y^O)4>b(d^S@F8OO0:44GMR:-%7e;q*t.*F@r?t:/YqQ>U_L41MH9L]>X%l75`6INd?Se<><+r-bV4N?<D91TTR6<%rB`/c5O[gV_F,lMcd4=*N>VM@VN%W8#pSI-F>&HOqi<Y*[Tt*$>7+RPM&;Z%(&^9I-bD0++c7)(Yf4,-?$^-LU4<PDa(X*p)kQmp;IOH;hO@ZTdO(D6+W$@*;.#M*d9`t9P[Aq^gS(cD%LA.G4[$@;,JVQ#ZR3?)dPD;CFS`5X(d>U@<00)b)IEUT=((GAdtVCe>T#16uhCnZYL)<$L*O#X#Q<)Yj*q/]q;k([=qHDX?E#QJP-O),XB$JGW4A0ZU,3Ki%YJhdp5UX&A#S+T)B=8(bOC*(5T3m=Tn<-lTL40_(J+<aU#3&^F$$i@l;Z2PTH`;O0+UemFN6,W9%6AJ4N.%C:0`GJ+4$pO+]H`0D@9GP)8$Q-:Y-#O(sEd=ZRC/DsT(A^6Fb&$XVL<>$(c1%hQ*58.i]5Ql3l6WfCFK#TY+O*CA#,3%5Jl:5=ERG):/lAU6i76W7*(J&2&$7B:%Nin?a9R[Ss%Mnt_,K<$2$d4S;]+H&X#fN2&b5i9,WeSptZ?.f/)H>$_*`%X.$I*^rg-hm57sB;Zne+E1T`94/4*7D:4bB#ZAD>jXoTd3FC-WA;G5)6B4M%N8T7%9(,MlTH,SsD6H@E1=))Q,5*a$7HL)))2G-Oe4QcF:B_5i<#5W^(5FL,6(^@:(oKJ)cArJBIP=`1Gj8;9U6D(-4>89;$0QZ5K*nS#5)K]XQIL+I6U0MH=8.)S#jo@6d`=#;I)?;D)=G#6@)A+7*[)Y5%#C->[eC)jC+<n^f6@-L#C=CTL<T[X+L#o4SD^4Pj(e:CXp^4W(%I5@5+%%;X50)%gM*$;,3`U,>W4mo8U;E,:a5G,8C8$(7F%_42G%CWe;D_-TZ+HUDOR(MO2<0$+0o7lD(*nRlDdIf6Y]?<.B$HTOB,$XGV#^V(>(=3X6B12EYh^[94X62(E7>54A+,X:bWrDF%b]K)<(+`pVND6=1LDY8.L>%_2Rc%q4*#K>nkn4_;T)H=G)1Z0$A4+I,Gihu;0&3gZS*IA=R(8Z>-6P5FX>7$$dIAT(/mTJ-Ze_s=ZNGH96.%F661-R%H0[_gMl]*UoN_2epIQ9,<HQ1UD4Q1)*MnQg2,c36UY.PR*(t1`#V.^%_H>%]J)RdBh<@JWD<Aqs:6RQE_R(:F**&/6&M`%,FSp;7Zi=^?kS#X&fqMT+4F>%V.6#CL(90sMsF-(qWTe^VI&LHTBFR/V?,M#*=N7cM_/AO-/hAXlKX<0<^-X#<EaXDU#AJ&n+T=rh$qA<FW;J==6J#,7VX07++2<mTFqq)/Z[S1=Td[5/;X>8#4U>5K:(qQ>Wk%_t6c4T;<(]dDT51H*S+/E9@,#_&7SPT;4,^/N=YI?LT%3EFQ1.H+>L#/9jIDI?qW.tU&i7e/K4)8(R&5$9,K*=N)YZd_ZoBb0;rAj.^(8*IQ1)7$^H%HmeD-G2U=33XE$gJ*%_DIQE8-P11]%%UNf&X4^SPEH2dP[kQO6-))Y&B))I8N*=HCo^Q4`jo$;4P>QR9E@*JTF:/>,&W-(5&7#T4PEm2F>X;$^6R,&<M>*WNX#JL&Ztq?X3h:Q5?`sC*>?:,/*FJ$0/%GJ4&FZC:mIXoF([8UAi)5XHR#R&L/=5()Ehj5C<6G1lA[,T1cD-/9*A]T)7IJ0#iSqF$b$D:%nbTKP.Z](-:B5+;X7G(^#Dn>5&>e;7*KRoK5A5d-7LXL7P5R<M4J(h;*C`)G7WsIDgLg9H7NN)L/MHR#QN6*<lOE9s>$W?(X_kA,Y^GL4X2<)YD?5L,*@hYgr[oZFq+,NHWP1VH0*J#,&G-=F)cR2t=W%RtdMW,Dh<0TTIJ],/A<DU#r7KK-%h^XPYSj2@H08(SDQ*O1L+5E$1orm/KX^U5fKWt5I),>T<O8L4MZ<TF#)t9]ljKm+oO3&bbFFc,EG&22H]/.%oi^1+q%uZ;q^*P9)NYF#2.&R&JF&,>)2,CsJM96lKIHG+C/HXP&5@QY5(R=-$1SYht&3Q=T.sj&0SOD6@=#dJ4,`+TX5%)79`-mYh]>F-P=SncdE$LT7Z)A7BL#0(j0`5em^Ml?W2b$C;$M(EBR7RW/(M((gr<l0/tVhc,iC5<HEd[9#/.]$aDF*4A+,O`9;Pt[Dj>4QL)5EZH,+%G91*%K,=&g2nUS/[dCRd-Ue@Nd3*H:B(##U7/$G+4Tsi_t1,R)I^j[+S:>LIS844M3QT6&(sb/9_Y$pM>$ZKTRl-H/-4H7IN.925DH*N0q>iQOGWfZ=HI0oH5/U.1)II>H:0$7[b&;36u+7t]gT_s0PF.Q]H(-^LI.N$WFZ.PhR>=eT6/dGqZT-E<&NOR%Z,H@#sJgKr;LnTdX:,o-RPO8*@=$XX$7MR$YFHF46eSoin(H]P?jq2JJ5P&5(R50/G&[=&HZ]_X/@`L)@WS@#+I(9@MLLX5)-)+A_$DqdM3+=2s48X<CBH6%3K4,K+6.U&&4=^7ttIQ,;]I)o@+Q6KT38MLL8EC,;%Ah,RId=EM[>AMgh5RdM<S6%G6.*6N[L(DmK[=b?GokWCUfr^^#5ZE-^E&2aH0@7(T+cSAYDe[dfDt^=$5<EFG2-2*GGH/2.(XaUtEUp^oM=#U36hrOD&>2<$XDW%2L*sI<X9[Msdh@ZfHiNR%2M88$85MH&N&cHld$GGWGZlJ9$ic6,)QP=RWPM)I4%gO%[TdCUm]27msH2l1.ZH40@MXE5,=G%n94H;S?qEd](-pg2&L:a,X^@E]5O#*4c%i4Lemq3G=,^C=3H%S%,JV8=.G#N+%?U5X[-rG<qBM:u4?0^KB%())$V/dH$Ai<h$4^9C`q3Dhr<#:&N&YT*4#?<)R%*3HjBRO]C2%>U[f0ZJMHVP14DQ=.M0&hSm::+g7t`t8r*)u3d$J=3,$;+HD[0&(daX8(`6o_2m;[PQ/dPFYT$=OZ(@<1N$1l]Q@+mED/efR$bKjo1Q$DA1PEY1#PI)Ug>fr$YHD]p)b*FK4`6@T@%JQ1&V=T5%;eEOIu)HbGiNh&h-DJ]V5,,)ID4@_,&oL*XF%m1>4c[Dj1VEIY,LROD<11@%Um&jh%[#e`uSl;SGmWLM:J$=&Z(07OP#Tr$K^$?d@V>-GfDMN>2*P]8#4^L$GW%rC21+u<X(Y[:(p4`E`VLY$%%@Q<_2(J$icJCi)t=QQcq<R/H0>:,I@+[-I4WF$>(QcjDG^:Re_;nEr-92$20)P)Q$IE&H&>*JQ]H2)NASE*D5E+.@ZL(M(M<WE%+n)Jd9HY]CQ7^1O6G<9T6.T`*`BD6>4)espK1G%btDQ<euF>(jNII&BH(-U&21Q%X:pc*g/+Ik26PV<&ZJ9B#cGH(--c&T7)qf[f$`lG=q^,Uf3VI,%]`U%.RG%>ac#%jpe)HCZEp/I7cYNTd7JQ*.0F8-FE%O1&PeBY.,*IQH7,t[U^dK)0*6GP-:%G$1+b7KJD2EIfB2[fAh3?@8.,R<)YLGD6U$NAo,CRd,7JDtaIHW:FLMZ)##AOP,6&W/?Q:^%3r7qS4Y?M8UW,&+))+J<B8$&S3Y?<C0<J`gZt@V+V6J8&-MH(:-7>%Zrp6)h:>MM0o[PK6I/DT:G%.:?,D2)@_r]I?4M>ME:n&Q>W&FW70LD5B2%B*c&ejfWH_$,^h@6q&jPZ0+%(8S;$$%K=&YC8i&/2p$Jap^*PIF#aNM.,aEDNP_$#qs6ds7]MtJ[M6p3m(-3NX0&J=MFK($=/ga$Vc,9.G<JYTdKF6@<2?$XJWT5.%5^d6OBQhRI^(b)Etm80-*[*Q)?+GH5$JE$DdJjnAPiC0H=/bpTX#=>F:/VV(<=#>Qi-ePb<n[9`1c*d/FH0Ga]]-J--F*4J$jeIO)WkD%ODcIX6Z.,*90MH5)GD>&?t8sm?=IE6u`B%gIR]$@L%5(NT$aL&C%)0[l718))b614Q>.M#/1*GI*LHV%e%<h*C*JR^/F5d<C1+@8F&%%26U$K)odN;@XiEoO,.pfQGQ]5Y,3#DK<9aL)1iWh,@+Er2=cW$bp$:LW,#dNNN_+D<R#tCK-i]Ktj&Dj7Y7Nb@4)FNO@PUMR.%9#t&9OW[A#S]dK(jRYQ9JEN`4$8]R.07)5^je9YHM^$DHCe>M^fJZ#88/5H:5$</&)]PO6-UWd4ZKQr3H495^7M)Q8c889#pV_dM3Jg-N]l$WJcAO7%8&b.(E_):$6*_G$rFH7sVZ::&1dJ<G(ZNa$aM>&-Z#MF=p[S0qU,?RZC7<:s2606O-aEP:F5F&3O6`mLrijP>IeHA_DmTb?#.4&:D%TcA#JGW94%r]ITlWJ46t1%`F]04D^,_*F)_oJ)rFD7-Df0E4L%d$9%S&R)Q&R+6)(eWYRO?]tX_^lN2=qSTT80&SDN.L+J5=#+q<b7$b6^Q_X&4ZTF5Z2#2QI&D?70%+Y*gFX(1^):.qq&Qs]8%7UL%N<8*6^#?eYlN6N@Pd^obt-3,-Y$T]<#@IHD+?Ph%^Y$e>bDcX,OQZ*DXG5+;0B-#?&61TISZe@Atad3hAr%N@(__-.NFFa_%U$Ijm7oWG@-rAonT1m_>B%O&,.OJF#R*V&E)<?/Y$(;pR:rNdqWX%>R,@%VELW%>$J4&T2]N.C[sFMlbJZ]T-9$N%8I@]<&&MeTPeWFQ_R,<r+)[U?#@%&`**V$TB(M&fFo256jMPpWRU6d>=F9-4L4D81VX%<,`h-E:nNY=@cfMKDHK7FP-623-,+c)9hgn#UI^GgS(ZXoT%$a20JP-GE`$(%,Jdt*S^:D@ot&gW1,%LU>HO2U>P#F#Cd7j?7Y0*Nt1oojV6^,Z-4D@G]8>%5bn;&[$rk0n_O?;j?Z4J0VNLL>F-7<&[6MGW%?r=1m;/&[tDLL[.FH50-F>SL#G4(`6T(fpfc<]t?UQ)L7G4;#4;,:R#)3>^if4PB/cE*dUF4<Z/EX8=-HBW4#:5Al<1Z61W+-j&sMd#ZDX/1^HIB-<&#jJ+7TDj]Kq5A3Gg6?&:*L(?$X*M#7&*Md%i_)5;iG%YdsTQ844+MaM(;44M)P0dCsUf;n,]b@n9)mS4&*-]L]D(&:L+H>T(W;,`olM-9R*G:LP<XF(->ULM4&AqdcM,IZ@Z<hY1d2IZQ%)/#D*)NA/)FZ7>WdPj#:2HngWMe(?J0LV9AND-W*$2g`dWbrL@foK520+fm:LLaU:$8?aML4&T<P4-`?4LWP-^eKmhE6X1^=6L4VaHA5%dBoi[Ggq3.rZIDG[)9IX=0D@8U-DU@-)b,Uj92>Hi<QT,f^Id%&X*I;%63)?$*%P#75D$Kf^]dp73kM5/1&,B&ZG#JI:(=*frQrKjdLF`Ag-]I,Y$SR6$8NO+@I#CeAQP[9Q6S@,ESeD*e807,WL$P<J4J5$:Vf39eY[Db-`q>-E6GPEF*/.P-:.(n:AfbRlr=^5hB%ro.D6S.Ja-GN;.D%3IVc:.JXr[+A)ClGZ?94,NBU#<XOF44)QeG623QdAqA(i8*P5DB>1#DYV/4P$0J_,]kJ,(g>j/?ZCG&]-2A$XIGa#2*,=U$@sdnaS)41ZpZh5%@KP]GL,cL-[$%<N=D*-FJ4]5(eJ`o-W(5GMGa#]-R0:($Njq:Qot$[tBRlg71-OaTT08E=<]MJ(tEhR%Zn_`d<n#KY[pd.@[%E9M81(>[E%=(@`t1s9Qn`lM;F1m]DVDR[%7*>S/<.#HsdO@]@_`lj-Y4C=q#%?NT2W(=J?LV*%jK*YS$lE:.Ad[+XI_=%@/Y=$*&X@IZ$%_$9fh`gV3(T7_V&j[ZHIDHY4<1-,1=&g5Nf0VnHk6^Sni_@m]>&DQ0%FM1#Z_#gYM/`2n6.6?TSd5H*LI=$^$a(X0Q#&ob(6oh)2G$QtTSZA1LJ)_(_%^%1OD)Oc`:%^ra9,p3N2N9l#,DN&[TP=<+R.D#K`>h[Zit&2(lMAb1TG,%P/QIR$F,B#r$<+[pkH5cb7Q(K-/%9X)758*A5)F*W+oTW5Fs)qQIcC%Cd<EO7.6(5F6R2X#)q[&5;j5gs&MMfB).MVN1,%FDQ>NH%m9(j3dYgs$:)U7lS7.G*,-+KH#/J6*Zg-sJ@oZeCDD)=<qP#Z@JNPM.W=&L$WO(_nXq%]1=)I`lh7fOFN#RG%.R&L.N*$i=HXN5fnK3uIDf*IYF>*@=#TX$W.>)4o#@orl^L7brdbt-^,*JQ@885UM1&G#3JrOW#7KMW>Tj><EQU6Y8L(O*M4=9>(IWlM29=s9-bED@tKiTLM.*VL<%GNP<#*<C$T]p)ZdPcS@g./-0@,&JTEEHJ%3t:0o%CEW+i`$[PJ=/7&(_%$:JZ0&f)pRjYI])E1ZiFJ+<mT6ML/V)AFRL8>#RL$q?>?iEO$>9U3B1(M)W4JL,7<*Q($sI*^OoEMEd<Gm7H>*-.5L+S4HF(W%H;e#WRts9S?UtR>+(*29+:L4&;I&&$mk)+R>tTN/:[i2P%##^WX.QI>=c(##eCU,jX%-Mbq4q[&J,JI2M(%%MH/1G#-Vs8HtmFf-i8U2cLB%T-9+;I@#VO#b23q,XGF[U(S&i=i(R%*89R#L79$&N&,9PV*;j-t1VJt[GdX$G.1D72DI.*@$HgqbGO#FoK]Q/Oc6HV156RLL76HA.$bT<I-Z3iiX:AgC-q)3L#%N2NFO%%LD+^/tQ2dEoSD$h=iEO4W]T,OJ<]<:L*Crh]Ag6jFmYE-J5gAnQT*L6I$09N#?L)O[]dDHlPE9g3(@oZ85NIFEP-0.Q68$O*(D7Zfq*JF5]^gS#L)0ZcP^?G$Q##P$2qp+J-M[NpX&J92EY$UB?#TZ?(@1(c/SlDj1]pr&ONr*AlCA#D3U.RG>H3#T)+^E@=*h2%^;$,F`&S3@FV#X+C$<.VE+7,aIG_C9Wl,=XZ=U[>H%0.Z%;+>GF$.$eD3Me=lH[U=UG?*HFM)G/,PED2*Q0%t)(FPSEo^fDju/%&412,HY)A1EDG9#A1,V]`-RbZKn:*mYPA;#E_4].(4[Q$_6C;0oqAQj9K0:c`d-2%=1?J4,WJY(F&7M/L]th2acKiqfg*0#T;5DUMMP@048C#c4R*/l;]bN&f1*X^-AD8ILDQ1L,9-T)IG`rq:#YA[tOD1%5@SQ(N(($M%MQ[$E=-[KohN/)K[d<U0Ms42O-)6O:%IPJ7#J^=qPe79$lilAToe64<FJ55Q980/V4#L/+7Cs@;P925ImbAE8E8N*O6-8-X)I+9:i*5Cj.<%hj(9j-4/08]&c4EE:D(%6UTZ`iHGENF=&H5J:DELRO,04/7(%qqEZD_S+F5)<$Yd1.1MNH4,MNHIF)IG;pd_S17P$:Yg1%m9,D/>I6.YF2D4)/g1RZAjion+%UmAmT,52]])b]D7H<#*n`+OT*%M0bodU&DT.46QJ)1O96D>#T<L)d<IUZDq7S%mgL.DU;0)I5C0DN#dC#3qRUD4mY:`3ptH25@LTL<LT5H/$SZeNY5(n_/)MI+<8M(XJBNV/?$M8$rI_QpbH<`:1p*m49Ss@J&7YHL,=9*2W$2%At(4YeJC]TWI?X%TL1P*4I(-9#OEQ#Y$$N7U?iNln`4G;NG((/1+KI*$-R%6bHB;Wp*M57XjP#2j.)84`%))_:4$I%nO)Kug*HBfnlH<O6RJ%LI&2Q#.O7%h9Ef(=WL?3I;.<Gj1U20Q$)&*)PIE?(WnPM0ickG7#Rts*-r1GI&<Z#<W#21J)Q^7J+alM67hB]EIc;]0,Y<4R7T<ID^#F[l@;r<M0k)M+jXZD+77V$$(@6:*3#&;`Mt$)mFrF9<]O?*ZLFT%>,N<&W*PR<s-fWtNA$&9_`eC%..1JQOR1GIF%%R`p<dIWo&`lUdO0WJ<12)%$:&:&(%IG)?rPAN3sdY+s`8_m$$N]:9)99`L%((]Y@6`fIPS9UGQ/X-84=JJVP=./W84$)JW]l$?;q]EtW(<peM7P9H.%F.5Q5R(Q]N7RKa)&lah4A_RtVT.T84+;4=D><%j.P^PrjC%<,WMpf02b05H(-5H^IG$UtisJN&j]6YD`@(1cFI4(?7_6Z*5,1%TIA2[,Tp*K1Q2+_nd3<&@6%M(6V$ZD+jU:0Ef@+@XUdnX]0TMJ68T5@45.O@#N.boIc0KsDj,SOXmX%/@Q=#TPYE*>$7jsXJpU*Fc;eK)$;n.%NAM4^8LXQ%F%^4:h;%1Q:1Qep[ZAdK,$>-0;KEX%H,+X*-MgpbUZ0[i4`qS-IEM,,UN>HDL00)lD,E6CfiseA0m;lTP;=5,LD4X8S=#C2Nnf+s4r8b,IA^S#5`<SXL<M[]:(#R=,B[:4E>aFrC6k[qDH(0Z>KL,[>G$-$s@IOYD3PQJt`dN9Zi5X8IGG&2229=5(o4In;+pJ:+d;4<oO3iPLF7:(M(572NL$HorHCS`YH7HlbC1=5,Z.TV8=>D>G4(2dP_D5fAqpZEn:RmE*^<5=$X8X](/(S13)(:Y<,Qa:reJsaHZJ/E4,H2?/^$b@t>?oRj;h^Qp8[QdJQ=P%6X0&J=5%NU(;4X$;U53(?RbDlsI$WNPT.LD>LM>*(3C`$nD0iZ0N1_)mE.Q#c,=(UH]&LI%7Te&jo*XB%pQs1,0%:LE3&a$J3P4&%>O[Ki#;_4TcZ7gsi-G*1@%Y$@)VE)/*Kb8YYjKR_$Siq*i9,SE67W#5(<::.P+fK2(E?4W)36EPn)me?DB-N5H&25PFX/#P>J/mIrE$gb$H]Ct9=EX(-%F(=-X8)Uc*MA+hH^N?_7tC<,02Y-PE@IGET#<9t_%6hTJGi4;opdVDN:U9P5A8O.<%7&MnO<dp/hq-Y+`cF:^WJPDX#<-L-?c(qR?R&hb*15jG)=q,1W1B,:50]D58GTG)^dq=+7PS(7s-:@7cHRL#H5WL<:0$LL&,;<TsfU_Anb3-Nl]]T.-_L]FH>]]#oL&5nSQhA2(<Yq3(s,_)^L](^L](bF#H6K0d:R]i56d>.Cs4#YP+].:G_#S=)#s*fL75%L<GRd7=UsA?c,KH;E#,83-K]&_9/`eY^7+A4nT,jT-hG%*/3DS3DK*&.*X[hHsi6pJeWf[YKEnbM0SD4M_N8,LKM(-bJl@@bB-:SjdM@9qQN50=#M)Q(TH5P%(4>GF]j$JM(`h[F#@4M::O:7O8T$#JZKt;IBM7[&IEd>F>4X8UJ+3?8=5T%C49QY9sP(/b:?=Zs-G*0NJ,1)II,OF$&*LgXRbMds<?C5N@cU&4@0S%NKU5#B(cDfnQp(j_(n`:R1dAE%LRR4Q9LOO#.(56oU&3$l7_5dtTM=%0L]VKE910C_LD$$Mt%(T0*sOR^91rWH;HF1702X5@EG5J1%q@D+P;b%Kd3AeL]uF-TX([E4M8,@+==#1bH5Wg+W52ZP7mQ/L(<-A>NVVIX#M#6i&R6U>Or5X@M,;07A,F>+*&[.FT9*`1>0<SIdD/SCt7>V?h0_$4XW)AB5#aF$3Y6d9>NjoCgZ0XGV<-&P5B)($Y7P$J(3G@^/deMmR;s(>[>PH)NI.MH.Q%1M$^hM]5XRug=mK7*OY&]MHH);*7+1-Ma#i^r*_Q%EP6*PSHMtg%4DX/U&))BHB-4#Vm[bL%u9RHt9(9s87*2]5O:aD&7:$5hAP`-h>63L6eW%D](OEK,D5990D,3P*SNjoi+Y1r?JE:pE$6N-.$bFN._)HFP%:TF:dbM7bV3g;4snA1*JP8,$H4M-&G)lU9NO`5HW5WsM$POL<(H?NV2$ULL*[%C5o,A4ZGF-h%ED$U7L-5%^(6HP4B(/dX3WlLicsIG_AW#X/,9%/_F*6IDB$>d4u_:%e;nl$SQb)-/c+#aLLL]$#dG*&[8n&T@<kFJGTq+Yd<$X50=b&cYH5@$(nMF,U]&XX-64Wq@Al0:F(F10aEE1%-6&Dn2<?eu)eG[i[6imJH+E/HP-E2(3-&jpRA:)md^0H%G%_PZ[@DD]HM0^,,T=+SG$OrCcYX=Zq.F%eWJ5*F@TP=T-%70&E-+MGXK(b_$@trg72V*50O*OJ5(?F&R%H9<5dTF*(Wglq^$=3A_,)L%N#I]VI+9sRZYf9$SrHX39Xg<5;.K:,@$XE4/K6+_&8q-l>h_3;FQUZdY3>6PD7>$X62L5V%+Gq*oKPl(i=_K$/d6&4L1-RGHQ4#:%:peW$pp*iT^2<X[F=(-RH8-MG(U0%l1X)bX,NesBnZeUm4H_PGH$0-R^.5#77HtqDm[k-@c8mFZ2$Y6*TP=#7>)H&9)^Hl]+e<;?23rQJ1NN4MG&2R8LNF)iNmb.(?s,1:Y%iKbh0_Ba(T%4#>#^U`%W-FF>3/_AHD/G,O$ZKD*95X%>58)/,+gYp1`hRGNY$sIgRoD#BAJJ&2/WY&,#^-If)aitR&3le)<,<V7*8HV#<.5$7B%?qY@+nc+MG4(7Xs70<:8*Q)75WD5*FZ<N(29gr3[Ut/cr_-VV.bI#,bI>>F(CZeo]d_Q0s@;,77QB*L4UOU#&*<PB8L#O%WfZn`F<HqFt]$7L_H%XQA$.^N4*O3)08`S$cDi%W#GJ^rBE-UB]#]T?H0X&nOTQ&1n+EhmYeQ]mq`,NF3(3$H+E3NF#G<&pN+K:f5)l@2][(H1&1-)IH)J1$$(O*YgMtCcerA5D[4TO07)^(9JMB4#o@lRO@=<C-so3O]RH,3$>XY%>AU%HK#0+^FJJZrfG=_j9-mK@G&XI:$8/A$2Z$dD8ID7_90V48^,MbW0F&T_DT7B,]>#2%OA*TZK)(/>jDu9lQ6P8$Q/QIR)8M5%JApTnR9l@J#lD*iE=cK0*.(&N%*E%G-+=CW-+KTIt[T9p/*a5VL&I*/)R<6a$qdaq.ZkCeAs9SL0+)1)T*B5N5P6X&?#)^rb%0TWP23+/q`O>?248X$?OZ*@55D&f_<+qp69-hq;-s(=YF_,-HFR/.EH].%5TZu738t0LD-V0h-89&LDTQA,L#:9$0Qq7(@/CcWOm_*4/F1,B%&*VGD1F*`drOpLt0Xq)%^mO7c-FMG<$X,R0Fa&IY]fmC3F%GifPcX*FoS@&D.+%%K.#ZM+$rKF7deN7&;WgU1Y<=A,,>,NFTFDTY(R^HtR1`N=ID`CT<G$B6*:O:&7V&0*p$29TlW1/r]4*JKW6KFC49.>PUF69T3%Kt8UpNJG9(?n<Y&k[Q_;,)..QIF%I4d%6Gi2[m?LbT+`HpHeP^:;%M$5:7(P(6;&3O&eElg%_T,2Jr=?ZHHV.-1RGIH>.-$:b>RQ1=p$NP@3P:^fO,FQ_(##^N1FL*b&C;Jb%hC,U>(FcI/a42a%]#_E7]E*sXAH2%(@FMK1s0;*YH*=?D&d#]+2TZ(&-q^+X]f^2X[COQq4D(N$6LBX#<UO4%P%&`m%Eq%2=K+;QP4#YV%@?MXZ$>>)#+QpIt7*rfB_S.L[XA5*_(A(Q)U)^%7(R]qQIt&p[hgR;+r_gJR%>96(56Y%N/&FJ_W94OY:mfFmP;Z1E#T8:7Q9:7=#,(Z(ep^oC=rr06Ot%X+03.1LDIFK$C$T4:TE:S3Hug0J-^/P*%TUC/9%6IZC@#%SID3gq:9lKnZT7qt)ZTLP2I?%V2IOM<#Jj,M=$Np3O2N`1dC2m@%DA<@^XUT1#V$nApl:]t&P^W(pJRjQ9D2[,$))H<K/4)p)EN(tN7gAFoH/E-CUM7H#]#,5R@X+J*Dt/K1,,Q64jP7=?Z2DcDZB4T?/]/D&$Wg>(26@r^U=)]q9Q`6C<0D*:7:&/DUT+ZhDmGj&_l0[JTcA/cQHG7EN$:&P.822$iK_4X1A/Q_TdsndX?A/X(V5)9@%=EZ)Rc6Z5D1+i$7_R9m,WCPM85%`(^*68MP$5`T*rM<d9+Tnsm;+@K,47=V8=V8:D,+S-[+/CWsH2_9oa/pH/$](`%++_*^#H*[%P,35bFWIFY[STI<.:*G=7#4Z0*7G%pN@_b-<Fh<nl8`i@+D&O:/&J:O*2#+Z4&T7dnQEMQA)jqJi[$K8A.1#DIV9-+((7nVO*PX6GO^=3D_IM]J>%]#V.`L0)$AXsBqk*Qq@6Pt*Up6<&b@F<MX,V^)Z#HW;$it6hX6=uW=R(Nt=X>&:9%69&Z>U(`f(7kCV4c<6ndoC[$p.7N5*=MX(7P6J%Z@<Q2]1u:hd$KT(hD@TA%HX4<-$VAT$;pXJ_RYHG6O5OQ^m=EFG$]]]#02.X(>^-OT(3@a-SG&YX##)7PS%M(NS5*)#,<gm]HgZ29_-Wo,lJZ*>(V)A%U%?/&in#D[6ngeMTd@X9^;dQ8$-2+&*KG(8M)$D<5`16jQrsIK]Aq+87YD/&Q)J2<9:$,DQEi,JTe]UnKn(9fC1<#B3@5XE[&TD)JstW6pXAEeJoE,4?c6,B1E/N#LF2HYG#$HG4:G5S`43Te_u%C.)%.9R7I%%IV+26pAPUAfnU&P:>*]?ML72%:=6V8&F7R#U5n;-]P-:O*sA1V4Z/KN*I$*&0)O.K*fG(C<`4;5J+6RF35^f>)+P4D;34L$+Y%%qhb94(6RE`UG09dmU64?8PMP5U:4>(Mj%WKgc30>HQ[i7l<$7P84.OJ64M5*(-=0uESU/m>IU,@h(-&AA)++YY)J($A<F`,5-Tic&r<fDM&-.B/3F*$(/FKZG%[tnSFArr%EqqS.Gh]T1N4/8N)Q6E:LF)R*>F&t/N9YT.Z>[>gKP84R$++P74M-+U[m56RJai,;jdV,@rdH,,=0[:?KUHD,$:NbpmRF;@KfNt/WMdJ9T?)*($&YB41&(5TInUgcq2er(JgU[-65Q8]#]4M98F([%GlZEgu/J+DW6@;5R,a*%%`EL78+c1Cre,i?85i9?H]D@(G0&YKT(=,C)J-*It*8eK,p.TPoZeM]S^F$/K(B&Z&-K*0%TNX0ZW9f)3D0r:KQK(&:E2:58G/8&*$-R*DhH>2,jS2j+MZ*+9/%P*O$F:)+&p1VFjPt1sT3+G7VE76)<^28Q9E`X#9%r[O3=,<Lr%`OseA$FcGTX%D?PU2#>=,*5(*4`O<Ht$SFF2)EZ:DB<07JUT/4?&[>gN;*4:c0U]-[Vo5gHELU>P;#4SU>P,(&S[GQ<SnhE%Sj&%U+_<.<*^&c(WDV]%Nm^Jg`mURt+pd`6j=KO#4RQ/*GRQ7#L*^McQgK>iO-^O7sCVRG$>$@B8:7UW$X%(I,ImSZ/X?LgTiJdEH/6;8HF+3.55;F*,N5]STo/W(nrH8gci*$:MM>0%FUNP8&(]1Tf_Vcdu@V6b7Ho(<>5a(O*^5XV#$Ai^ZL`e?;h3D@-JcF4.XO())MBE6,%G&8U[1?r4*Nnd<ZE$QTY%a$>AL)0(@s=Ho^RZqD+cJ7p@6W,^VDE8-0<_H<*?ih<%[rZ0XNU:QkHm/M%Y^*($`@)NH*=UW9P2fDcgj7=$a+hT98I=D&($2T095)$XfKOAPefCrrE<PNTG<E:%6/X,BL%eAPeQHbN2,>?`t*PB:I42+($K7,9W&IZG[hE1r0phS(t)2pb(5/JY*5(?1G:($[JQT4JPZj1pRN#4o?PFJ8%=NV(6-/N$-j]FG;h/PHmNj@cUU<6,+U&B(K4V<()9dWp%nH9>5;[N6>N5XR.%($FN?5P%Q7*J9Y[8?.pJh7$Oc0VD6G$0:.<F^&ScFiEllMqSb+I^D(f69<95-SK88Y49%fI9RG<I:0rbt;jB7O?M,9UI4^8,A8IL(F,<+REW7cl7s6>hT-?@KJ=#5(T0/[U*;nO0*m]0d;eqdWeJP$?2F3FP.NFN-F3F&@]m0W6m[7qT<c%?N*p]YD$&?4T**0<b#NG4HsKOrnj6@Hi$H.IFV6DO24>..I%]C:1bnom0^Ji4,[D<+WD,`5aJ,<*[#f$a(u0hrn(iZ?cTf,ZHODMZ#L#<O0L2$<0h*GJTJYF-M@$SN#<JXR$P?-W#L%A5Qh5FUbr_t3eFsGRDE=HH6.-U00L&C/:n^7phueJjCp`HR5F4&WR?*:,6P&$>El[,7S[QnmO$>_b9</U#QP4LM)<HZ#[him;9PdqE2<Du&ZDJ=:WR#L?:W0/#@W,HOE;s-$9Yg*W,PTEZ$1+7P5*K)@/(3DTPi_%FY$r2(l;*@+[J%XDU%>0<$.?+0<qhVf[GH,@d7+]Cn61D@16+;FY-D9%eH@U+GZj2CXZg<S]XC94F1(*&E164Y+P^4%BR=3M2ntb%*qg]EbD>4O:T.]1a#(bc@:>sAEhm[hPS&=c@R0.4]Ma4DFMW$Mg.si?`r0%tI8^PZ;9L1B$H6.$XGQ4)GLfYWg6ps</EpOS&HB)TW28]4E?B#Y&T:jo]l2+R;ho+U2^5;dTa(7_<PU]6*^=#<P^JIX$NN->@lZ8U?U#)OEC<PUT3P*)#PX3_+R^mKgh#RhjHp1TT<II$01Y<<D)E,O:RD/a%ZO6.T)nM=4)F/OJ2%9TP($G4KofmnWgX$=m/C;8F/%8OQQ:$F26$4F*5kZJ*:@qF)-Wj5?%,94MNN84I#V*]&rH<G2I[AL):,=F-THS.7JN3=D0%*f*o1C7Bt2)_%OV@06IP6T=%++V@4N-)YhgsUgZO3mI:^@s5TJ2W#%0NF$%<J/&T(_^i@oM_@?t4MG$%_J&1%F)2`%%(MgP?O7;$<Eq&$GRO$491U4<H99#P*3=nCb%EiZ;Jj.(^mUN(5J$Q)07(M>(o3UnApSTI]geNpoQ-%805U+C8H5$F(eSnZTd=EMced?<YWT16F&O*26FA<*FZ]qliK=C5#[1`bn5OIK#H7.LD62$,3)N&rtq6D2A3&tt63-NGF0X]<E-.RF(?-:r[uSB,T-iJO@mdHGZK#E)1(,C/2$es:[E@%IobLlTs1hW<.?&T;(5C#ZJV#58W?q)p1csQ0i_l=MT+JJ6:)97./&C#]hF@g)2K<Qn%ZGt;$^R$2+1,QID)K&P&=IBb`@+V=(@8Y1p659^8#=EX*?-X(4^(SG.[S$9Id;$sUnP=HD:#>>QYV%4/,$jRfPM4d_rWd6rJ0I0H74PRO542E-)2AOsGQ<]h5@rhX[Qt=63.?.%FVJF;V(WfI>A@_euWnIKt:-Ze?EFT005HE=,.X*<Ip7E>eH[rf[sbM#Y85-QI%.QI88=)/b&neJnAH:WG,XPT:*&,0AB544XWIE#*61,J*V-P`$Kb6(nHN4:<G:(5/Z47L%cdE6YD(tLFS$DN+(R&E&)Y]<))2(R&7g`%Zq6KUeNtK-.q=#ZD4aN%$(N_5,<&,EZS$q5Ddo$GRMf&d3E#M$P(,Hd+*;n$Zp=i3?MO74(W<%t.7NLD5P50LL6J%,:niCM54$:>FWN--2E9J#7*,71HG(mS;`^4g2,=,^bRo#P6H:WGL,B:/5N$c&r.&leM@>+2Sqa+D]G%>NN,QILNV%.**Um5NY/:Y4`(Z79Ge5@>&D/NF2#ZV5(imYh91%&n<-Ci?>2UBW,4<*W4D<Z?(eKuF(8NtmV@_c=Q:eG[$$MEM0P((@3*_$;,iu2d4ps3KeeGW_7%R$<(U#P&6c%bAPDUZ<imlNRj3YAD9O08.8E6EM:1#dX;nI]DQd7S.:Qbm<V6G]TR?],:>V#%41DIrf0)ch0Qj8`NC5WEY$UP=(@1@:(YdC2*i37)CE4)^]t,A&EPRI.)I.QO-(*cANQK[n?6KC7X>?_l()-5=GH50-Z8H()WnZAO0-l<$b%0O2HI8*AGD_.,Z)7-)ciS%5XE%jCffD[6V16RU$H0])bD-$@P&CS5Ujt^To.N)lQ/?WX*6,9(O*5I4%?$7EN#>1FR6FW8+,R[=49&(&*$:9T@+O6@0Mc=X^82clUOQ38916Q&##R9F99$W-&1/X_5i_0)=qt?K5OU4H(-5<P:0+K7XJ3+WJPf^Y?Jk]0T60:?@PUU:G5>#nYf4E,QK@m$FXISUs+1,N]=U*?XaLFD)N0W3=@PXZ>>@c7`=rfPRFQ#=$X(L1NO$TNkEs%dgI+=oH>AqE>9Ha(H+3$^-5Y%?lZ^rCkoTh,Mh?G_3+JQ*#^*L#`(#O1&Y/K4n7gUec=OW6^M>E]I<:N6W,b,X%GXTsbH7TQhf?WQdo6@GVM(D^+d0#M@.*0io3dh&pI<S,buC406.:8(b=PUa)55G%>$/V_W%ID5nA`O)g-qK6W$I&5(2)@:.+lZ@E(Il&Anm$V=5h]-FA?T-.PEF@TZ1%[Fe9)O[_[S+XR$pJCe0?$U..7JF>(XJ$>)@dC.:Wf#IJ2g`-6.I2F(7R7*-F/I%K7X_%Y:se)DI=nMdnA0&:6,QI46&JU):c)J5At^>(5IE*.hYI*0<@DR/TUD$/)eQ8RKP0,_j?2CdUF.[.GF$N%0.J>K%O*G^8@L3GdD6u)67T:5#L:PQQ5O#48&$bq2sU5*JTQh@,l(99MQD+##3LQ89)cM(<d5TSKmLo`<L^iEG&6]E:/a4%22(jU?1ShD2b<7q7M%4Zc36VH$%%0=6Fd&0cX%XN1FLds9TH5M*Aa8HH=_%_V0-5^$_6V4N91*m<>eK_,XTPMGB+<,:GT#[/R(Y^19)9to)3pOpLZX4J#G9B#_(:&^%T71*G4bEm6CV=G)J6F3s@d&D`]U=LT@a]2#*%j)@UoZC1VHb6UH]4JNSH90#*&D51MS%4JsGZ_TM[):tp(U,f5]5?:2LD7W:a4(;?nVK,i3k$T[oF&W/MU)$*_8:7^%&(A(-i9q2E+4sCe)h9[;?/3-P<F#,VLEHK*W6g3oQG36t4Iobr$D/WT5*++7@<J2#q1%E_)*EJdOT_hAQ=MG_(N$&*P%^.R(qeT*OdDb/uDb=qT$WA4&E5S#L;0(:T)WtN#Dm]46i09RjmfENZVI*L#/A>O.(S[q^(dS>J4C;Ng$Sa)N>X=FE#,0V@UN%>0e?<6p(*m=u_iKnc4E4X4R7<5,8]&f_?=0cDKl&;Ts-SNSU)EDU6>0,(AP+,b9=$WoQ@8H^[MqY467GT((2bI&$=,:*4)Z7Zq5<?OOWDm&bm4<*LJ2OJ/O#W4#eP?1;?H`oBjplTHf.0NY4Q4L9<QFE%bM37q7t&&[MFNZtN-(YW.-*##GH>B)$?m=WO%hs=J?n_T5PU%582$H75(>P$=D[9H2^[T(TNpGH,P7U4LMP4<8RE#%6r2=/N/+s?VeKGE4VJ4GM0:,?6,(+-jj5+@9p3$P`7d0G_=0L%NDUa.J$m1c)6fuDcfa/It%UcaUL4W%P$>:L<a$gn_0sR;-N85o&Paq?0+2IG#a$,2I&K$`mO)6bD-XA/HGejD-#[YH<<PUT,=A+#7k*>VkYGDZ4P5IFV0(H:A%C%V+V9/$$^2N(G30qOc:l`$@jbF7^5*1*G)7a82%OSf?HO^/*1:([AG[4s.(3.Wb#]AJF+E%M-fb^%PQgiAP5jA5*h=I>(L]OcL#U.Y(&2_m3?j.mDJ`?O6aDlB#N0O>$XNJM%T&5Sirp7&b7XH>H=<oiX*-X.2$HG>E(?$i-H>9e*fQg_4V#pI9U#ENbL]Q.(<8)1lAeK[t6b=pWJY6lR^&P7-G(-J8R$c(h&oq(+.qF>XIqjFhW/:M:F5&$(:06O8&FHUc8+/d7XqaoO;n=@/)4FP-6#IZU(q?:$n,N56QtMqAO5(J7,b^L]aI42&$Udl-r)PF2&oi*Y3Sf@SE6(5%M(6(5.P+)eAE,dEJDm@lNm=HLF.SGL,RK.N,$)K`U?dc7RtZ9>iYg:1.#N;07J5S%DF)lSZ^is;r[:sU@+O]Q.MJA$*($&X1OH%@O>KW?nr`O[::R_lc,X88Q%N95=E]&O3Wr&IQl?O1?mR^PU4,.:.OT&BLJ6GF#*bnn:7**DT/gc>$UX=H<b%%%_Y,U@$l]^QK`j(r4*N&W5AQ0/V$L7;;R#@FJ$JTe_<UGH5D^`IgoU+Z@DPF-T*?D0N-T$4DZgW@6=q3dPC<p^%&$9R9Q7)(*_(G(0U`T>3n9/jSbte;Z@*<T7;P5;BT#W$_fDN>.oipb`$C4SG&IG?L,HYP=1ELT2*JG2mDM+JI^@re6oiEnMIV6J)]#17>.Q(_>V[GW(G-NQ<m(2@+6.G<P*7N6*OU,J%^+Cr5]p&%RiUdZ4sA;*LTW$&*@BL#7+I`F-nU`0eP)Ud^-:pMT*86HR/56$?L(qh&a7d>F;`p,af#D0LR]L-%FP]LOD$-N=YCZ:@pSaqCRt$F6H*I*^(/)/5.%1TYU$enUZAL4om(Z0S<L(:$8&MTLK$]5Sq[o<H_tq#YI_Q8#W2H<+[,E?*4$)m_CZ@)I^8_6CN5M:?I()*$(&)-Y:&GWOZK-Y[o&]P9/eQ]>5FMLPML06X_#1fg*K)EtEU].ll/r@.^,=5G*/:XH]H%C6s1)h7R&jFP9(YBJVP1/$X$@$HJQ=%mWQAJ3Q2J-XP.,:nQ",
+"n":"8M)*D1%F1#&Q8$,XJ$@q^8F1?=a-$L1TH@(U-=DQ#(F-TfJGN2O:Zi1tX%I>4.)I6T.)>$qF=Qnc:-](YcjID<Z4$UM4L@(8<W#nO7qW7g^lN(s%-d.J*$*558(&(/G%=Nn*5mHFP1K`b?4NV,-7M8JH<N6#hQGZ7dQEsr;&;$$>8@E,4^8D,X5U%0ZdN_Y>0g<LZXJ?/P)Y#D*/#<)QE*=&&e1G(c0t7?YM*?(D@&HP-$Z-#U*hs*bS2O-C=$cnlMW@(846(564$U=**AeCY*4AM5Fa=@1$X,F5)90F<$H)<4;O/EpR-80sg)EB$2#-*G(D&X/([fTci32o+%W&)h.518<,(ET4E9H%gLc>N4)An@Qf[&@&H8$$(8-$Z$*PAU*:4jYQ0m6P.M$#PVM@N$#PH%7#PF*/4<:Gi*tT6L)#@9(5Y$#Q4%>4NYK+-Wl92Cd=,$W..&JF>*HT(l.WHiT,=anT[IXQP$%GN(7*M.*%P$$Wl]-Eh3#=U%b7H,2L+$&5(*(SDG#g:,5hb&.,;g-dH*]$,S<4TLK#a#&P%icJq;9[Mp^HrZ@5F)H#&*,$16X$QP9#h)nD-oqA4<T,)>H(-U%I<T#mf,R]prXHTO`A)M=L-$8$HPTP()cB>_[>jIDAdWti6X%M4V&P$B6L(>$EU-Bc<1T6h2<n,IN*):D<LT,4&)O%nS?A3ib$KtNIK>%NN*9JL,7)ON%%X-SCi%)bm39<V^4dN(&$EF+3.((*M%CW7Ro/+sT]ZUm;6T#^:-%F8`(<4%WtbAUia/4p2bUl(.(,[<NV<K#E%$,D&4P-,C0rSbDAL69%H9(51$69N#4q<G>DZEP,fp2[4RLI4D],4,QL7#M:m?g,fKPbs:eZMX)H$TL<#0$AM(tId/2<Tr%m=ni%H.N5D8)9-4PF.$5VE%ZNK4>,QJ^b@-&*H,_F,$&JX$3t%lW7i/^VtFXU67,$J$@PU$0&H4*]g=RCo3;F%N4J?6252-EL,HH7H7%m1PaF*;4G/$U6mf8/(M5,9I4P(E:$$t5M9ZqWg2(B#5dT80#Q5(5P)D5=#XK$f%4Pf?l-_=5<-0@E(-XEEX4(E5FlL6[#Rl99Pn(&$MH5&:0M((*$]M9I>bGRgJGQEU#HKP5(5P-3$<(Hod/hi%1s$p1T56L%EU8E(-8=0(N#s/E)J)_F_b-uUU,5*)L]L#)7H<(daO0Z+p;7i(j;?E?E4L9(5Q4,X2(t:N)OqZN+5H_-A4LX$D@.$HV-#@M#rDmFmD]<,Kp`hU47*HG(-2$7:<(AdEoi3H7+5iD?OY9551V#]#<F988)?]pU-?cNWbAfu@Q04JVN(##M>.7D$:[?i^pY<@Z9th2V#;,$_%H4+<F&`ClAOHt0<5;I#<d=H#M5<MX4P(,U(-Pq2<oF$X?KTZ/ZH%L.@#TEN#.=&h)Ab?=$r%P0PS^:NE/#8M8$D2P6&Ngl*-^KmYeZsRZP2.H8,5:7H4-EF&(^C[mr;lOQ*t0qdT%U)-=%VH(A(>#*0Uo*R8^(k;6DfU-,0H7]42EED@(QKEPV:Zr7D$J3X6%D:0/5]4HJ5/#%6_Dl#J^2+tCZ7dJ%*MB@#TUO(&.&3mNIDm_tn_8P4MSP#V3JTT(=<,GC%#LmbB/hT:s6ZBJsl(1&)4J(-7#)J)$;N7ei7ZE,/F_pBFL,E6(5.HL,V&_,erH(AOSG2feGD56-R%))NG860#QY5<UbAdN2bK,qV)9-4,)I4D8)A%rA.=cFl1MSTlA((([J,.*GF,?+$$Z)9]C?Q0`lmUW43#<9?HDQ1,U:Y##2cA^-[$WFjpJ_6014,R<(M(ULG4D)Fm.QHR=[H<,Lc9,.(=.P*OEV(EF#?ZfUY:qF*ib@4)1$W%-.MHF(>*H)gW^%c+02s&jZSsQ0#<3=544XH[#D$DT;s#IXcO`fO<-%4P=//#DJZP5#%4K(@<1QK`b,2=,6N5E-9$8I08P6%7uJ.gQ^;tW<n6HJ.4=8U#&*<8U8D%SNm(c-9eXSc1@&V(0,F*/FD$=%*3#GKYP46PW6hnIH6%FXL<-%6.-)l]+ThT3HgP8QAbE0.76&M(:6JF-(?V=fG`->4M)56jp-8]$5*R&7(a4E(sUf2Gb^,X0m<5A+*#0)):M8&)I$#&MTpid6/Nrc$2XI8N*DW#<2#O6-)YKGZ$^H9sRTrf:,@5X6..$HF6>5X$)PJ*nJ)]OobnD`fMGEE%-&J(.00R(N4tWX&6sf(fAbQ[X$I#.=&ZH%,)@$Y4<JdcrgZD0is2$C(,4U6>8D#U+(h@-AIo<,i3UoW#55$6PHL,M5%88(Z=0hHisQG3G)N@D$6KE&20;%0T$X,4H5cPJ?P<,eb9.R8F4T8=4,6MG%^ht^G5&2c8#g_g-U$,-F25H/FH#@(HESdb,D>KghMCmMM$*%T]<#%&PP(T[4&=3Z:hp(Y0d$,A42*Q)G7TI#(PeZ^=JZ4Pc%bU<i,*NJE6L4.0O%G#q-ro?At1Dp2d0b:67-(H4,$E8:6&+U-c=]gN1E+U>-PF&.?,&JTJ%2N$r<FaAjGYF/Zgnj>O_D58(@)Y$550]%nO<nQcF?7q5`4XI<87-4NMP6D8:U#mS`PODM%B<16sWd416UJ,9I,?8F9#gM3EI8jT733D+*H6T%Y6-T*?D8>)>#iEI(F<tm;[:+r.?UE#*LVP=N#&,@(>iU`%3O0^X>S6F&I$$ZFL,>&(0)*4D?HsQ1-bsmlF]0)2M6$M(8NH&I$)/o*+V[M?es,dO3VH<L(H_.$MT,=%6jf/-GN5Yi1^osd0_#(0ZP=G$$]F$cQ=XhmB4qp*CEVO=)#;5EP-88+#Y(fKVIG`)cIJE=o,TDT%@YF*/>Y$>,#OJrZK_#38(Ge%FU7FJ#U-NF@(,/6*sh/+.sC&4PQ2(p7#HI@6%P$6V-1$#qt;A#kWBq^-hpBF.4HH&2-5D.V&/G#_3s#`F3Fi?@jU)E(6*6%7%-(A(7g)^N;=_pqfS*dWD#U4=&Z8<(,<*N,X9H]Dm%g>l4_$V#Q%/MH*N)<%(2]h&54F>gZG:s;E7$5.5_6H6(82(-lc+:R1*V:fD]@m#PK/$(9)$H2S$#@AsMq4_G5$PsUd?X]7#D0*G-#4c<$Z2,<MhA`0nQF[?D-1:DU#<04GI0#%%rS2[7qkE(>d57$H-&M(J0$8:(/d*n;3C7GRs_C/THG.N#&*LF.2=#?6/YdogRPh`b<r&5GU,0%FE<0:(*[qeG(T5=>J(bsILF#9b$($a9),N#2Zh7U&tL+Z>b>J/$%6:4^847%%H*F_L$8QX5TNF8*?a#J-U6(5>H0&]$=Wm-O2+*^QPl4(TH5*@E6P5.X$70$]Q0jT,S4K>T-*pjG4?5HL%N,5X:,*1#3Of2tiq1&7p*o,F@U,TP=D<X-F#/;(SH439AoT0hn5`%,#<PU#D#_:(AI`4]`7ejRGPFJD)3<,%FTD+1,&4Mn]M0X#gCS2hEE#F.3N&RFK.%,((,t)/O(0^lPf-X+Q(0)HFL,.$I$M)$OD/lZS[Sg]&U%]UH#X-$H@$,=a#W+W@nT:krJ?ssA4DP/O)$(QJR-4#Et6M[JmZgI^-eg82-F:(P#L$5/FH&AU^kQrh>KYM-cT/-(#G:%6/*#EH*[foZRPqi@G+g]Da#I>&##Z.)]-#/f*0dtW>RD&:C2(M5%8&:$6P(E&9sC)lEcC3?hSn:,<E67LNN4:.XD#a7h$B`lU;s=Xs@505T$V$@%@4H5(*s%oTZfp+onBU-]2H0<%VD-E`D([ItEWP/hKf)0_f5=2@$DV8=.#XEW(ojX[<em*Br7<YK,6FL>8-Z#<G8UN,%RoORoSF&=1Tnb)$D66*B%8$V&76.#$EJ3GM6nA@f&sd$&$a(*R&&^$(*(U;j0s51fTX0c*nT6Z,@,*GTE<7>#r+?RhlI%amT&:fR?V(--]#]DH(=V*;H@s^X-V?rFdbqTT80=JD)1,WH5=#GZR@b;.EJjA25Z`5_%%-aL]E(%_6(ZACZ[b(oM?nIA_QD1$X9())5A$H1#,BJ[Qh-fg+7^i3TTT84>(U64=<<#rYHh@t_(Teqj96D[,N-%FPF<34%^2:l&(GDd0MSl?PJE4G,5N6H,:,0&)el:)+7_c9(S%nTXWF(L(M#->B=#Xa,M4&DqJZG9N0/02D:7U#<8:/DG$Pf6$Tu0e6Ugmr)tD(L@=5:7XXM#-#q-M5<C+`Dla&k?HFV,N(,SK#MF<.%q23N-R<YHDe<%NK$7&D.N8MF.#:*(ZG/%jo9_RDP;FH6#$[>.%FV>+(4%<=$D>bFq*:/^*nI-$.*M5P(G%H0)h>;XN`MF,W7j4sQN0F.L#*&LD.FM%2AY0/?NgoqT4sI8L.#5+;(DN4-)*4PG@k&2M+%nM>-5LP.4P5DNM4H(3*7$P%HRQ1g]kq(@F<%9$8)V,V$$$Ni*<U>/l?S*CK0F%%FP-%%.F-+,UFCH[:?SR_R9H28%,A8#4UI#6E&Ge/HAN#Y7UDc/$8/]D=4T0]D:$(R<m=RC%*Ks8Kh?&)6XE9#41@5%)*`$W61Q:Db&c:N0<*+%4UR?8#%+W#%TO@@;Wh--XDZJ4W,$=NLLLLV(H<*$`^R<7ZbdMh3]=(5))*.6(5F%&)9(pd**7Qr?4[9K27^(8L6(5N4$^8*nhHD7YE)Eqp-PHXF(5TH6P5.=4(-%me9ZUb9W/O$=D,LF%);58+).ND#.U^IImMe&jp+:?N,0@4M5P8TEEL%2D_+JZmD`IboCM#.$O#J=(U0&L*H%1XW&OnY?[H^<(j+0$I<(M(U,)H$+9i]QFm2o4t_7Jt(,IT@585X=,I#$CEkH7O$LR>Q]rdL7.056L46HE6R#59Al?HViAKWIt`8.I(E<LT,(-I6$lYS%16ODKR>CZD84/0Y%>IE:4-#Xjsg5gKjqDW>7KTEV%6a#]5%>.@#<U?e69R1rb17n6O<444B_V744TL*Ue*65+PX[)0s<&tH2,5I&8%6$29HD&7^-Q7bT;qr65Hn8@F0#1(E)D-V5$X^`=]nN;2k(om<51F,M$PH,F9X#]od?Hne([?cDd];,1845$884EI4++PX1-08q&j$=K-<JD%=/#DZ(.,W#Rd5@Cj),Id/c9$TY%-GN.J(>A#(f^Q-meU6gc+o-_S9;/(,$M(H#E:;)Nd>Q:&s=(e1?qR]PJ4.5LLL4H6,O$?O4QjTa</O,kC)-VN),,:GD#Q>F(d_<Xr1*OU6M%^3QM0.>.6L4FVFFM(?lclI_QAh.<DjrOGD*L1T]<DQ#/,*nD:-Th1f_#gS+rZ.(M6=%M(V8N(E%f,9E2+eY%Tn56D@58:T#M(<475X$5j<E&f4Srr._SF-6.U4<LT4<H6F(&hWdr1f%]s4*5UL--8#^(4EHP<(E2&j>de^,6=rKZ-6MV-$%%H@N8F(AJPCES-pIb67bQ3F>D5H4,50T.F+f5DJ)nc#OmK<h@64F=-0G4,JEX06#ZoeH@D8@tj$+E#26PD0?#TJ-L5F&`46W[b92E/S,WFHT)Z$-A4TI(@&A#Fs*K7h&a`g#.Hs9dD)O2(F*/%EO*1#9#Wt@JgdI*OpXtM4N,N%PMP$NFL6#Kc&[Vj(fj<%hp58D$)*R&R&&)04$HFZnPFKStSj)]1HPL%,/8EJ#NL-$S#e_Nr/B$L/^g#*.6-,Q4LID8F%&b8[HRlL5`64EX#)%FGP8P5M-2%%)lV(+7c9JuWljH7;&056@E4,X56H$*D=@I)%Z;tPje-m18%X(M%N(=$6E)S^GnXJ(S?/EQE1PP0%*)R&)&FMM$Z;M]*Eef&V-9@JUE@5LD0$O*H-L4X$j$K)NV1,cCoT4C,1#T2VQAF?#DI#`AmO3A_F$A,$;UW)>(/$)&*)H*U%)*I;KlEWA6K>r)@@J#&D2MH/#*,W$*Oqgi/Xq_,`le_-->1E14D1HYFH(l9$m<P<B?24md7Z6TR%FX<$X<-%N?#6pJcSl@-*qlb5sRJF0%?&##Z*F-.&oNi.PAM=W?L,Tf)#5aFF%.._5(#)S^GQePD+Cl@ei0L-0*;#4+GEPD$;GNcg^,oOfIN+S5M#P--6FHP$L8((>J@M9m^R+7`3d--DPF2MH/N-DH(-t)G_`jgtPWt&-;L(#B*T7B#W&#M#I`>@H@*o<eM9XZ-8>,BI#,YGT6E(r/5L^5d93l(s?oNEHM$%9$8)%P0-(1)n]p(b4qV$>:,/]*$FP-%(`DJ#O]rLfipR-`4n%+1#%Z<09IU<&%D)oN)>&lcU(F/F+]mTD5%-9R7I(60<#X^,Q3f-UCoZnEjN,P=F@#T-VPEL%5Z7]RDphec@W%EhZUD4,0%FE4,<@&-sSsX,%@XN2sH<(#36W%>:F+#U#9I`g@h$`,FndUZFM,49J4,79DL0%4UjF2fMC5U6OD-/=2,(:L4&EDWH*Js+WCnT&bsdC`Y$87UF-(%%E0>8:$T1]T3<=93Kg-Jc(4,H31PEI3E4#$&YSZc@2^C+@]M=,L(>=DO2TX%MD#[ZlSG:]@SH:Z2OH4157$))8:H9,$Pr(hGT6^Q4SR_;D&4Ka(N%^-;#2#A*4WC0s/jn)nEo0F*,5&Y(=):H#/%N7B(ZtY=0Hl:SZF(->69)99VF(-%@%4,HPUl7f(Wjk3Q*,%B(]#U&F#O)EQ/,TjX&5*h5&IdR#MY,U#<H<Q(L&^6^.YdJgSmiD&Y$Z#P.OT#<LJN$<&pQEQlBY4H`O39:W57=.8%P$6EV8:(YO)Ej(7HksIUZ-WF=%,06Q9FE#V0%bM/4^K:$_-sr<9#5)=U5M8@X(9(#lZ>->E(o3m+I)rXE5%)J8-&)60@$c;?m<&fH2fmZLrZFPX#7*$(7*<M-%<tA$JD-?EO[o,[B$0=,GL,JTH$X&eq)HgC2S5jh:5T-NP8%X&##B$6MM%sSF<9H<+:SG_t^#1+0%W(=*F$K)#HfIGe%R*%i7OG(Q,E%U&($B(.HL)H2/&tYNM+9k_R%0).DS466L3D%I$=D,Id64/Qk$MCodHE&E-=$XH0(20$QIT_)JkPAQ7$Xc51(0H1%F1E$E9(FPiU*A)tq;5%JtJE?%0)4#I$V20&?hqZ.o2FnoJs0XmJ,$=X#:&<U(H,&l).Mo2?[P,2@c#0R#/%)8$)F*LG$,2S4*bUB7O(16Z2%J10$%%HE1&F&UoIu]%+S?pW-<dF<%PF@$X-N$V,%d]V9bY$db0O$KGRF#L;@#T5S#,N&%^rMd>i2-GKj]?t63(<D-&J0T#E;%bU=_0=[q,DI[;t?F6E4F&26,8.V*h2AI3SADs1ZgSe_M*#JR(N%M/&#O(+<3eUgn6DJK2flTEE=/#O#L*DZ00(jV3P?7*%P6Rm6TGF4_(/LD*^6,.*3MjW6k&J)_,SmAq10.P0844EMEFE)E)5:W/M,=+R<N>#%Ga%8.NF6$_-*%`udA7Hml<-n`PB(-V,8)G$0*9E<F(>YT([P?^<bD-?/V-0$24_6D&HE@%_t&uMMq2;fhpamdVTG#A6L4V),B<%lZUAGi%g`O<*fG<B,%NXE#,@M%FT&Eo&1d(@E=]I5YJ8*&J6,MH4.&*7$19@K`?(E>fHZ6jF,/-,>&ZFDHJ,%m*;Dt]-T<(jCb(1*X#4J:/7#<$G)`=s2<4Ue7Y%c&S-TVGD@,%FT-,B>#2(&sIQ5JFEp%ko$V%H?0$HU2$>%(UtIdAlNBM8Z@m)J.1$#c#]&#HI.&*=h$8G`EtUKQjYNFFEN-#DP.0.N%Rjh.Z;??:%r4sJ4H+,8:)97E#35#9RmhqFI6]0[`m-,)]DV(M(=.]#I#:lQNtUAU-d:nF3%$7@(P$U5*(F+>+GOY/hY%^%N*T-T1UD,GP-J,<HA#m0:YT)il+<30<_mJ$F8,G)1J4-%0&D]Ce;bq`F7Rf$F5Y5)%15H)%9@9(]X93Y2jmX]+cR$_mZ0,E#2MH&,HD=&ZSGV&Q_fJ*j&%s(=$X)9N6)A$X($?=3?;@*;Bst$UtUH%6=U5$8@X8%.$EQ12Gd]Ke,g/1s6UDDJ$R&0/,<8%TO04mWhDu4&WNp:#$*?-6FX*&(4&N/g]nC_2j?/oXHYFT8DT#<,4=,>)=YP/+SC5Ec6WI:,X,L,NFLD<E4&AU;(`%0OsI`k6J@&#A($(U)#Z-&]i(]=[C,S<o34JG5,:<=LTX4G40*g1M%R>i=j&tsdmh=%D:(-NF(5/#V(ZSQeKuI[+%R>ODD<^6I6.9_X,,#kZ:Enm?]K;=Ito6EJ5R#D_.#L70/(3rn&Sj;[C_;S]0m6(30<2%FWDE+5%6EDMp1d(I^WQ;t-$2-843#D;4EH&(W$r%qb8Q4?h3AU*.76DP-46J%?(l^&0t:@(jNH9R=)H,0NFH)1-NFE,$$j5dcOSIK%2k:`-HE(&7O:**-0E(^H2F*1$Uc]?U@>WE*9(0=4TH$5)/(cA2,1n]p_m:#Nm,&6EQ4]4L18%J#,=NrD*P(A(t^Dd-6J*DH],-#/7F(Zpj#-C`oM2@N6d0*DTEFM0.@,#G$%R;h_nEKmh_<2.<*(:IN.9&$WD%KWn)tU-jL,@61t@9,$T_#O*]>#H4)&PgZQ3;@*;GfjR,@*GP444L-*WE#t@X]GolA(^-jXQ*4+H<I(-Y,$;#&F46)QO8$%FSE-ODE5816P5F9500#KjT+IdH39q*rd/F6E08>#T6E-8.%X@Xo4:SU^32hZ%&VP6-MH8N=%*%Qh`i[>.K6:$NsB;8@)6NT#<L6%Y5$hAbUDq]g54o(-0(#H]WFN.>c,$#$s+,:EUnE1AM<4,>?(E#@%V$,(UZ%`$Ig$JoVs3d6>[BQ,08%L#6EELY&5g;T#Ub^,Fsei[H>/6FX#$(<-6FZ%GMhAX[X%V@;C4m6F%GV#c&<.*.6%:4@r*nPT<0D71Om,V642J$0G74>F#Fhrf$=od1=$0j_DEI7@$($X5210#WQ>6_081]J*qfG2.&DG8&:-2#JF&(tCdG9Q^gd6`75Q:N4=F$$(0V8L6&^5IYNh)>C9l)QJ6#)8/8c7E:$)4%6E+EmDeCoARqQnHD:(-529I7H(5/#b+VpP7,47^otM36O.%Z-$8$H@&FN*(o.,<-7O<n9Y-*J?EH,6Q.$HN9F,-(9Kj943pfdGe)Nr-JU]LD%.L]<0G(r_SGKsJnGTf$SS&TV,P0466DME<>#qD_r-Mduc<AZb-$808>=(UX6E5$(J/Q01]WD>NFc%b@#,;5Da-48K#T$Qc<h/?^hR>ZP-6GD6?D=%V0T:.,*O8CG1`H3P`bU`l6=^)5EL#L,8(bX(FQ6[rcWFA=_Fm$`0L.6.1(EI6FND$:q+&_s#Kd7qtR<*H%K#2PE&,+.$&G-XJ5ChZF&_sQf4E<D2Q:OI/T,8#?2iK63ns?*pP`)pmFG)GF6%6..*12%)CSBNTc4c0[ihU/1L#?49859T*LD)jR%R?`qjl9Y*>D-H,&:#P*O$4&J,$Ji3YYeE,Z`tm9#+*FJ+$(3/%&+#7@Oq,A^6Ir1;#]&>1HN(L#M.EY%*SjeU3Sn=IuZ6Ca/%U:<L658NT4?(%piE:$OW7RfHbq-mB]FDL<#TL,,_T&;,Gb(o[[,d>eHWE=7>6,#D4V6Z0(1E7CG`WOcAh3,gT%$1J47:,G)(>#e]R]M1@Y9?q<-6,$Y#AM$PX)<)H#6mIENeu8&be^M7#53Fa4#4]-F;(##FYcK=qd6=H4T)%0VT,PE<<F$%)@L`0-9QoM=t(X=D#0BM%NXG$,T(+2K]-SP(GeFRN4,,VY4^%_8<AFD#>)M+MJ-KZpM@9nYR$#WR#6%L?*#P&D(Z3lW1&j-Oc<2dH6)&-8(5E(*9.$I?Mo`c;odRU*1>M4TTFP-><4LX%ND?O3oJ1mT;JiE>DFLEZ($(=/P,.#X:XP#bEtJXu&@,-*HJ0&J-/$GH#SS[)?>g6t-qSjiYD#78JP-75*,<)Ksl&>X[G8$sJT/Z@5PI((5($-Q5X$1=l<Y&7o%Y,J`^H0-2MT%*&>LHGH$^&H7j/di-t%IsBj,9+4*L&R#7#;I#6mjP`n>hF3W,V%6EHP*,&J#O--8%q._7)sr@I(Y^Vq.%DT;_%_6C,#F%[NOr>2=-i6_@WXILXPU4,)I4<P=M#H]@tcjIM=^,GfXq)T04GEM00:D=#)`@=c4*2gW;@JT(T&6LBD(-TO4%B#N2Q+^K]O7U@5tH9#],MXL<MH]#4)H8[?]Y,.*Odq.G4@/J-8(5E0GZ5#n_+7sM$j]*47:D?#22<.0OJEVDG&#>,FJ%ph@oAQ/P@s=P$%F7L42%%PU(0dY0^)/[F(p_ZJL6TI904D51A4N#I:i2d@(k?Kf]r)6/&HH=5(5X0-$J*1+Sme*4HlIYLS-`:8THD:66/,=45&,i3k.p)IeYHlCEQ#=E_N$6%P_.X(#soQDorI;Rr1Z%Id),5aE*L#/a5H#)M^.Mp:S@*PE>Kl:%-2,%_%FDG(6&mb$^lf[,9b5kUZ,YF.-L%NDH.>I#r]Uk&S,Z:C$(S$U%:%U8$8=(6&>(CoZQ`Ku+)ALr1i-04.b)##bI6DE(S5E4JFcR:@DfXP#%1228)9EGG)%#c2QP-S^On[Zh;H#1.H7&($:2EF)#0b8Uf(FoX3,S<H#6RP@$XMM7%,$,Cp[fNtAj:R?;Dt)4E6NWM@R6.8#)1A42XH5NiAYhNmSH8%#@91&J9Y$#6$<u7E)NPS39_=R,<8&HN(a$M.$:U#A#rbJeF%Ve[LtpQEH.<8P$P5UD.-(c/TfX,LcR)EtJt/1<F#NPM%,VDI*K6fD+2^s=_Y1Vq07-8#*J*/&&4E8*Hn<m=3Noq`4_M-VH-8%TM@#6E0=%E4ZAR[O`ZZLlEr2DT?#F6.%TB,D&h8,R?pEefI]Ud?F<*MX#M(<M(W,%3Y-_td@<h0HrA</%=,Q)%%QIT(F*m7Qal])5s2l(F]F8<>&(/NF*$ZV4$DO0sSXHK_c0qcd)8,P91)($I9QE4$_$9@,cd*pXrC0%@UM#2<$M(XD&L@(;ZTj96q6@6K4nj5>DI>#N%T.1T6(`@GY1Ir[g,/>MF18.O4FL,6LJ6E)N$SO3CGmng;k_5]DL?%c#N%]&VR,#39eR%)4T3ijKMdcFE6H9*L#715.0%[fWS@9rJ1ceW=M,*<>U%P$>XV#G#si,W6`oZ1ho02b4#14QRROO9D)4#Y`&oXm^2%so@g]958#.QLM*OPLI%4$3>q+P]3Up%`U36dE(GD*M8M(/,*-(^3%3+Y^56J$OTdM4DQ5-6F8P14L(0P%Y1_:s*Y^SK2d%-19,.NFF4II(%%eqP7`F%7qoAXd,7Y44N$P64<9J#[W6lu+@N)=nWO9L2@4J4P5,7TEO#&i+7<+D1d2j_ep60604b&##c9D5F$Y@FM2:b,2Kr^)P0F?5VD%.<6X2F$?8gYRDJ;sgbjK(l.0*&4X_>5#*GE%0+Wp=,iG2HglfAZG,5#Q*$(O)4H,*P*6oXprfG)1e:KH(R%D*/#N&--+jGH/p*@U<P[Uu/O6,@E<-$HX,XE4%P]TrN+T7Mf6WZP&#8/14DI:$#R$j6soFM4SE0::5Q%#AaL6$8N]U)#%+Mb[tP/R_@;(p^]$5$M8*7M(8(a#([?TAj5g`oRoh$4%*+>5M8X%+&6#GhA_pJdC`@$TZMY0)#$NNN%(#I=)/pN6XK_>H5FQs/I#>B(,9I#UW%,)s;h2d<=qQ@f(9rH6bE$DR#L/#0a9%io&7cA)fUeB3id[[$#83,6FD;$#@+:4^Z:32FodU],Md.H%(2Q#LI&$.E%rZe&I;+GSp$6C0<A#):$8&)TYD$$OS^QNY_fA1>gI%:59*%b)%798&%9L<^M>,ThZ>Wk[EH#UD]-*Q)Ga,<(#fR%lZ:=-sU%_SG$$9G(>6V%-:)((EEl]+2sOKd`7Y?@0#N5M)Q8P%DU$3?Z=G).d`$</XGN54W]M-#DPa<:4(+P2d:0bOTq;kq%_I$25=,$HT8H&0);^lX%X3CSEnPdIS%058(4#55H$N+Nt?&eoN1C*UFs6T&@9#@*W$4Y$B#i3-F^=oE4K;-RF`0)%F:*N%7/%%I$ZF_jt&]1_(nD/_DG51$599(H902#*r-*tEn`MmKnd>#,>E-$LaM#H0XF#(i0GjO:RR@[cfm6&M-J%M(.GP(:%]&c6Uceo)C)A3T%P$=4H;$835T(P$@HpVt@mKANSbo`/)G-H%6$8%.E0*)r_Ajg%Z2c>IFW/=$(%_$a%%$XH*`n7YMGZMFaMA-Y#^>45:N678T_(#gr<*:lZN;?-oM,cH495I.$H.989,$MC/5(`J,]^>9m&7(X,UDL,<H<$5*Pe;I_EcX%4-(2V.0%4IP-9#FE>%G)/D64ojc@L2+E@.4I#?(U*,9DV$+UP3Msemh^Y^FqNL%%K5580+%NL%fH^;1T&5ma?H9Km]%>DHFO2.-T%_#-t<pRGD=1(YE=dS)$.-*MNN(GH%()QuR<&jCY(pdrf`-1(<M)($QX#EI(&iU)t3U]g#cP3:6VF=&<]T#Z0>6%(Y38XZYcOK;Zfp^6)1@<#P6N$TTE))7ss=tO-s4Cq)s9Q,.HYH*))/=1EF#C=5/`+OnJFOQmbo?8$)$B%V&()8U*)09o3>WJ;jJC20j&D4>V/(EBV6,#*I(n+AO37;K7mb/)JPLTE#,@LL-&)Ct5U+sI9`iKcb;#G8U40MH5<8-*#d3ud>`Id[3@6JI#.@2DN.DWE%,)%DB<Y9*4fsJQm3-0.>]658_TFFE(3Fs[LgZ]SlE1XS*m61))$J%.&()I9%MGe^[c0*6Cc?PgEX8=$.(E%X8=-(+a;+*.=p#>CF9MI<%>0,MHDU%V,)iL3nWnY:95b5%RF+5H=$($X05(3%YE.$JmKOm;e^MoD#=9$R$P&8Y(,#D=rgq/-6eKtF*$5%I1=5XH1)6((tFX5Z[j6qD>-Es-#2/LL#++LLDJ&#KWt6rj$AMP650$$^6G*%%/:_(((%QPH`3ilTZfI>d$49U5JM07@89#(02k:D,jXm9SP*fpDA,4.6`:F6DT1#5e<fW52C*cVLZc#6,GML844ML0J4%Xgrr$`J=Z=25h694=/#0PE$DZ84)HgJl]77gMYLZ@b<5T&#=QY(#B4X#,M4IbH5jX]@pi94,R.>M%NXFNG4#pjqi`C[-qgWC$i]56MHL&%%R,M86(:Dm[FNo`+Iui1f#I$4+Y%>);#0)#j/JrRJF[AC%YoDJ441=aUH94,/#?mVeTNEJs>Gf72#81@<H$$(0UTE9$McjD&3>$sdt3Jm)W-6F($(-6F@*)Zg1sjsF@&*;CY-),I$)@NV$)0I#)%K5_ko])=JE5TS5T5^9$($8b8@4(5i&<Mt5)+bHpAliE*7#YH8-=)4*/(3TT*NS,_+<U+SqZ$E*6J5(507%/((%JrNG`@7bH:21X@4,#N_N%D4T=$65)F[F/Q`Bo2nH$4G=9,cG4Y0:#(XCm2A>`P/C1F*[C?-/0Y5D%.4@IEJ(SI)s-KR(M)oM&o3>,(*M%9)N(&ET%pS2HEtnN=Dn/_#4:_E-0#DE0a67#Wgr/XF6<ujF3s&%G$EF&M(2.(0*%/`(T@,T8iTm1dOTU#<18EY#<@L*d03h*Y72,[S3iqZdM7(%JH#,-&%5R(g<pUgj/Q?/]3mED%PQ**&OQ$.,(9*I,_^01hs?AiQ(#&PLFJ$0/NL$*#bAu$FM/<G@s0X#=EY,4O:D<1X(#S0uSbTnNfFI#5Y4#=+FGN.2%[(4#R:rebCPX1`3FcfI-&/4L(M4D*J0)+N^l?,_+n(/T7Q=LDGF7(52.2LT(l;m_S;KMW1hpOXq&7E5H-MH0508**-Dt1F*80Y6t#qU>BD.#.0OJE%D.T&f?M,m3@SnmP=3r*.,/8NLL6EJD%&RdFAc`&1Drh?k`>/T>(-4D(U>DZ%X9Lb?Mqa;l.o]DmD7H<*558(W,52#dc`HG6eNsDICOZ,/6$0&9)J$8FJ#=tU$2GSFt*S5(m*H2&#2MH&#J/$&7LD6n(0Ot6<6A`#?HR*5]4(O/U*#SpW;Il(=`MI%AW$#PV%8$8&:$8$>N$0=U/qCNF2^i-?jD#M-K5580KP(,#X_Gd-/Sfc)Fb6HLJ@/%$M((FZ-O#?jF5[p&MfcTCf,T]#PL2L%NDOL$]#j>]RhP&Q9]1FmX#5P9O$%%P:Q5(#8O*OpAI+0@q:pZM<06LF(-N4FUL(%CW*,F`<;eLsWe9%Y4TDP-<4<)6)T,cU8Tt;5LhsXH%5E9(O$P*518(%re<M3&QfXtJui?Y86#U-%F@(46=)oX#IaRuUn$g_$l4A*DT0MH=,#W9#b76lrKb,GOQK0>Z@4885L4855T=&F3<Y:G^F:QANSN?H%@$8P6N5$X$.$2%nqZO>DN67QMd4*PPD<5X,LM$7#[@:U<pF]er)9cHT2,&+R#L&+JD?#T]D>@(QC/n:DCiAF&$4G5O:0:#(2%9YcN+WH/eZG_%C59T4BH#,U7<49(t]7LGQ3`I*CjGb&+%4/*R&G:#%+*Eq(r`=nH9@hmAF$2,L_FJ(-/_NDD&C)Z(cACgmtAU@HEP;I@DD*$(/,T-9+Us+%M*$@GdC`+938.<L4JM07LTD6$3s+%R(5^fMXFm@ING8#8$8$4-R.)3;D[8+tY*UY0RlJ)%N>-#DXN%%1&D-6p=E(5Ze`<Dm$DJ:W%8$>://#(_Sk,AK>ZP0X:K+?6Y&%/$%%H*%B9%1G,0:5&niA2j4_TG.,M(N%MHD.B#c67`PT4S2B.TQC*19,5H(-5H4I)&_&AI*5Q5Q]C$,M]1*.4,:G4D%Gb#CeU5ioMg0p#s,N-FD&:(X6>$5&2,%[-CY+c7UD2c_X-*X4AE2#D/X9<$&0;&]G,&j2I:?Ed/JD85J=$X078-,&-SrmOg[c)]A[[dNLL%21P%NEI&NL#ds=)5Fo+f$4SFQ]/-:7$08E$8:GH*7FhrHT1bqb5BP$FHT8.L&U4<(RD6=#nIZXGj;h65Y)_-*G5M=$4#XP80*&7Eoi$9q5CO9-kC6PEXT7D(-4B<-P$F%([nHPeU<(DZnEI,7U4DP-4<8J,)i7hSQ6)N]+G0fP^)T8=#P$T8=#b(Cb%NZD+pJQ;4`g1TM?(4E%.8#UR@#h]`1&O59XBr/#E4>/0,5(5HDEZ6#ig$aItH(6.OG`%9/5D4^8,4H:)%;Is&:Q>E^04m^d5<(M$LRO#P(U4(-Zp2$]_4F4T8PtP(L7DG#,24R#M$>?9ERSs+Woj19Z,%-HX%>-E(F<&7ZnKUTZ7SmCR(=D>%UL6(5N<(V.#1ZDdd<4Z>7MsX4M<D+Q#L)3TL8#@mUP+9H$M9`O[t(9E&,NPMF#28)$@qX4m_%cNp-=OT#(]P-H*/EP^#$#3>9ZIl@HJdMSN06F.I&($2I.6F$TO`]&?3:<b5)^(<8.)5=$X8(I6U#Kb/Nhn;ljJIMcKJ<0%-7&:J(FU,&OT-NrN<,J,3L&pW0YDT#8S;$<,<I$sFhVsl+IT]S0l6e2H$XD=5X0<$0E&sgWPRP)3,gX1(/ZTE<64&R&:4V,@#oVpth7F%IFDE.;c$4.FE$00F6#a&b6@eQp.jSs:7Xs16-FH&%%2-F8F)N7WA+RHJn>C>q;G5G8EH%.-8-:0*7DHe$_><4A,i]5i:%DQE$M(0P1#6&p)tU9o6Xq<I@[6DAV%705H5*>V1#eINFl^<7$]>O1WNd.EHTFD*/,>,-H%h`1;4DmfU$r8K$D3V5)($9@F3#(7bYJnFJP=M^_pdE*VF#N)Q%,>%/(Q=YH:gH`4)fXh%U8,/,8)9EDJ4=(E6_drC[+j:$j/,X.#5)^#](9(D>$/ENmiJn=,b&([(E$/B(N%UG*0($Ib=p_E7m;Ibp)F/F)5=D(-T8(1F*;,GQDF#L/sV&C*TX#11%))FI)<=#*Ll(2E3JYM+D<X>$.-FB$X/FH%X%ER&R[iq<OEV_pP$=#&J-<RWD0&*T(Riu60>+cDP*mg_5(#NYF899->Q%#$7K(Gk@7Zj/*Iqcd#a)57M(M8:(b$#i_=,/>gcG:T7C>S_/4L#XN>$L4Dc%S+pd^o#irnIg7Tb%A**#WL<*#&W)%jpW36N/cIfWp(,%LJP%-RG(N-O#%XC-NTRP0S]?O93Q5Z,862LD76E<7(_4iL3Ds1d`-8qh7$_$@G885-Z$a%(hqE/Kfgg9qdq3%N?(4Z<MP%NMX<7#$tEm,W%F<ec;l3S%J&L5DXM@-4P#2&93p3@H`mCEmmt[:$(Y4H6N6.5<)$(;MEe(qtY_$0]SI.$2.-5HHF&H.)7qg^,c5`6cFRqd-FPH4F0^H-6,M-%JZ=qD]AUkGEd@4Z#-YJ#M5P(,?I(#EM$oG-9c/4BO`#,@V(5@LT5(=VE#0b?p;[68rh)o4iL+*-1<$XDI(&S#h)>(cfP2`GOcK<$)E*7#7M8*4*/()6i4es9?O^-hs*rT4<B..$HFVW4<#o5,?1pj#>*K2>6G$(9_$$(a6)$0*<h^lU>-Uo#;4;,57G##WP=*#,::(oW^tiInH1?=`3&E9THH$&*0-=41([KO2H)T]D0uQNrD(&=O<(ULZ(*-#foE+4?s1/@g<W(V#X07A#T9J=$<%W7ZPS(oh4^cOJ]Y%,*28RMP7E&G#%RH%emg^PkW?[UWs8%-+<FP-V#K(6$HC^S(<dq;g<H3@&%,J-1MHI0G#%*+7r0cDNS7j+Mod4QV,LF$0ND<N9#G=/?$bog*JnO?G.J5#EJM0/(40G%%st$Qnp;7WAiYb$-9:,558H47I((P](g432LoA&S4QE%/(JX]<-&E*.(1pb9,[;$[;<F0sH0?H4TP#L=4,UJ$lUN4B;j[GX6hh7B)($U?#TB(($Y&G*UX<l(V0P99W=CDH8<Z#`*<W4--#E5L%5gOo-=`6g_m?<(5$:*7&8(UT*$pP]&pKM*(okEc:DH5/$9P5)H:0-#2W4M(mF`dWJe,nFH8.]$7*aD6--%+U5-P&=qE%uVc(Z*L*.)>LT%I%O#&n:G`IY&[=cSs&`84(YM1#DQ@)54$F7jK,h*/go@Ng=.ITE4.MH6,@,I%<KH3$goQGTUcAt&:A44Y4<94T9&*lZ)b=c)7:i,d^u9QIL%%5MPM8(%N,)+/2@M^CiWGRtaG,G-X&$))(BE0J#j>D6^f1iUWdZ>/55DPLF(-NL-48(G->J6IXn6D`3&(H%.HUP=0E%.$$,3CT,4>#sCE/F*0-Q#RLL&LIH$&J$Ag]r](qf6N*SdT52.%M*O(FF7@#qX2D*3KR85n#OEm,)8?5D:/4X:$I#c)GH@>&U:.(iF:ZF>DPHD_.,M-T.%7Fc4oD2fM.6l<(Q@?0D-U#<H0DUZ$H=?^Y%CWO<-sisIV,4$Q.NFN)8D<%M9IDn_G3(Y>iM5/%UP8D^04M=(F*Ij5<T0jGh0SbE/$ZD.%Z-B(UG@&F.#Ocl)JcC3`+<r%7U:<56HJ(-/56X4&])Kgh^2GH9>#l1;I_8<#.&J%T4^.)U7%@VI@XPim`Pe^4_241$9)H9D`6#rGS[Aq]ZU/m1<?VHI4E:<.PEV4/8,)Wl;/q`ihb5L?,Ht$6L9&EL,(:Q4%(W4UZ>Ajci@$)bL51&*]$a#&J9P#Dq]0jTYn3CF]d4T0PD.N)M(QF.LE$sh0l0M;1tpJcs=$+$,VM8M8M@F#(+b%(obP6eG_grb^M42*-1NNNFI(G7#)arS,(rs$j/me%L<I(X6M0$HM8>$-)E%jF6gS*oXd.^q`M&UD,8)9E,<(R(39L=SKdqt]*hG/-A4,,Y6>ID4TI(=3pKiAoeY3d)0t6).)7E)N%18*I%)P/K+rdV5ghIQfu4WT-&FE%.0%J@<*60`%gb>o$kJ%`im.9*%,-PEH#%7I%T1+5E60qXuD,9<&EPW,5H<R-(Z#Y*Gni>beL74&`0*Q,8?$E(*&-(X:E#9Ib*/*HY6XZ@4UN*#>%*&V%#O>(%X4_c+Dd@U,JfI=0<0HI4,1EUDU(3Ss)$p(p361ni]m0#T@)Fa-%Y=#D$?)3S?H/Ol(fB`mLL(@HE:/0U$ML#0$bHA``P5-WJ(cQ<4-E@D)1T-H8T#`l3OE#o]eX9(<2FG7#LLL#422F&s&@PQcYG>W0=Z>1<8.X5$8@E6UD)Pg$j?t*=ODp8ZoT0#-b(V$@%^I(D$f(S^51G^ZMp7m<(PG4Z(4#=7,R$$jDepQP2,AW_@:Q#$5NKG)12S6((#7srO.Y]Pj=VK7[s0X%7D2LD/4*>E$lNo%I&JoMtGE+[#+M&4._F6#R(+#0l)&=R;tZ1aR?d#%C;#a8^$4[+%#$P=nd(FO^jM3s=nm#%I*>.RGV%/)%#n`E8^qXs#O@hcFW4(5AD(-T9(5<*&J;T,e%l][=Tl()75DDN6N.,48*)p4$ugQ=-SH/W,6N4.+E&P$2(K6L%3D6J[2q<U5g/7^>+4H04K#,;D-5#+F1T[W$OSn%9&N,7H,H.&J.E,5J#U6NrtF5:36Ii],5BG<#L#T,Z7H#0H=t`HFPi/HXW.F2L.T%>DND/F%>k<rCeq;1AeG+,6$IJEX#<-0/)8%b0YR_YEl`Zf%LE4*L9FY4<16Q#7#@=Nfu9)ZcTQIAdm$=G/4R#L7D2Z((3l/JNE;3=Ur`@t0PU6#V7L4B%4>P$F[P6P7j6DPe[lh65G4$01PEI$8,:(*C7o3:,/M@:s`t/-F)40MH5#1FH*9UW64@G6:sn9s$<>DD<8P5U,,TV#+][D>1j>Tl/D(7PD>4.(E6T.L5*m0AW9rj:*rkN_-D:&E$@*W$0(:/#lL^f3pGW+@Y_6c*L/:U*##?8GR#&9M=b,1Z5TIP%DOR.E4GP&&*R-:,H%&8it0lZ;AFuQa-/F,&<0T*?DU#J,%0ZRK>Wh.tm[oXZ,%/<24DWD*F<&6@WE%F(=2odc3+6+Q%,,2LDGD#N)+e;&HfRfF(F]-5OD8;8)L(M#95;-#2?W;daC>ZEW6P0$C$405Q9H5#X+(YNKUR9CnXt,?q(0%B%G8*6%7-*V&%jT]r(1o)=s1)>>d8N,L@0MHUMDL6$=X]^1S%-HE9ssSP7-0(V#9)<%EE8*`gmHWp3h7e<V(?B)%/D8N6-D*%Y&O-]?;-ND&f<Gj0o$DP5$M_N(8P-#(q<pZGgdM;pqQ9-#.0bHH)1-^IE%#67/gNp3Xo^JsX[O$LZH(LPM#-=O#(/l@L]DSNPEO1QF]4&ILH&2M,):]#AVc9j5hd20rh(4A>H,@FE)10VE,U%m7,=`j>D)+U@/7h7#L>F87:-VN#4*EpXKc$dMr14CQ&-H(T.R)%%QG>#-$oW:&kPD)+@s:]D#)5F:W$@:/6()#b5f$3FHF?SH9WFX6(=^#L#]X(5>$0=jYe[HgsdKh&256-:T:$8?4G86(@oF*j>4JW:0oUB*:X4,7/5H:J4<5&;GtS+R+j.o*?0`16>,<2(-*G(EWDT%GMCIb5>Wcs$-7D0,6D)2PE&14FD$D(s;%O_2@h9e+JP46*5L4(76L-&AQ,`K<Ml12%Xo@HU/FM%%%N0FB0$tRc(i7lUY$YAtVE*I(L-N6NFP#-)&JG&<S,P;+@M,5_#D5%Z6M%N8>&60#rEs+<l7]E2cKQ-4Z$N46M86L%@7#3lhQ<6P0&n%Z51XL#H?$]#X2$L<$F1fCdp]+?GQ<e?DLF6ZL%N<7.N,#0J+Ep`>)>/*UT[8@(+6E*/8%+U5$i/3EXi]-GDG+]FN,)>DTM8M@,T%I#r4s346WOC[`o:Q*DGKF(M(-.32#&1bJAdIU3d0U7]-sG4>LT6&:>LT6,*Ml92nZgPZnF8N,9G)4*DV5@.#7#1*Qh<o5*=X^7O2JdH%HN)@(U$Q.$.$lI@Om]U2^7_i4sD24P1LNNDQ5D/#WHT_+;`/LelQ]W(J@J%&$N%(*.W-&%h3%F*/lH58s+f5HH*-*T%>#G(/-$IBP^/sUho?49s6J</0:#4GEZ,7%Rbh7J,<J)?9K>bM8HGL>0#DUN,25$dNF1^Y(OYEkpZI-6#U&=OZ(B(4F(3&%F21eHsMkpRd^$H1FL%R&N,F1$(=/PZpX(EXG?Rb$JEI,,,*GDD,10&chj$I&*;fg/FYV8<LL-4DPLT4=%GX0R@lXI6hpbE#FN-:D=#T04GP.%ZJNdS[SJRY@jT$5$,J<PROU,G#8(Ms6Jn+e%PCeTQ9/H87GH<$X,-::-$h/gaJhD<[h?X<P%$5EE8a(^5-08((93=(+qX;JFD3/3$LDNUALTAP.L#(mE0HmfD5FH//UJTNEL4>,LDT6L,P%^hra8jd?I#S<1#MT97HM05:AL(##@c7i>*T.f([i3<6,:%7.LD6*6G4%9*IW6Y]7jQgqM%M0T9P$P5ADM(%NSH/D=WHn&i]qfM8DX/,5N6HDB-4$<bpdTtW6HY_+PX-4H8G:(5/:-5D(,Ch0QcKqfSm_^1,<EU5=#T8@0XD#L@rdJc1/,A&1kT?(,M&*&RH#UB#F1q5^J$(7MEr_)3T18---#DHH8EA#j5e@N,E(U8Tq^54@MN,7JLNX54(@;KWA*@GH>VGd2oH4O)EM(4#M0(Q:#Hqe)F(W;%X]pD->84HU/NFB054U%Hf9]kA_tH6TbH_;+J(a(6$N%8%^$-&%ipHSZe<Io/Nl-DDGN$A&Z)P.2,##f/Cq?_+EYf*-G7V(-OT1#DALJ(=%(R(OEJXc_fK,H4W6*(_E8&:-a%$7%cRB<YdpNRbD<eQIOH*,FHP--F#/M*@Zm>E<ISh/`pc=$-M&EU#a$<0(RH(brP=N>To09=?R[?]D54AP%NU940]#%]?W>$i:EY#W07i$%&(/Y5@I*$*%(M2l#h;7+M*]g^mT5L%4BQY7#N4@#X7tmqAt<U<&eAu_$JXU%(P$$>@-&(?=3s&-)jF3Sm-3NF.0I4M8,IE.N%9Y3(*0LR`0lSYq]ZD$&:06F5&*0<&A2hcIj:r+F-QMl-&$D1W)]#AJ1#(*o@C%r])Op25M<7d/A/(L8#4M#EZI*A5eoZZEhj2l$]n?F(?FFTL<,.V*-%H^r5KPi]$3S?Y6X81DED:/,0D9=$]?PgPj;4sY7YkCZ44X0GJ%./J=54#nYh$=-T)^tE79U<0;#%T_>#%4KU#:UD[,&PSiJmhSHI-8DL,QIL,4E0)3g&aG43:Am;AI`L&;#HP$P-$4+R#T4/MtSPAO[E-<G#30=4<8U4THE+#M<m;HGgWC;M&@698<65P#L58V45)D/pXZ5i,0GZlqXH^F1,(6%ED1_0$tb0J(>0hT(sS4=QM#%`PD&2L^*%L(I;n^H_im-N0mJ/^5E-H.5M8H.E08(1B:&5N&7P@dm:bM2%%XV#<>$%FO(0X_s(?XQ/Ht0er5)$_4Y(=9]%(9(*F>&LjSqiK3R?Ml>7-5<,LDT4H8Z%j9,*+@)kSCG8H[166=I8#4-Y86F)d2q(>[U-rY9eg@,5H.V24*7D?F.5(s-ACl%50ZQeoo3l%FNDJH8--/L.%%@I%&ij6EYI]F26$^#RDFN..L&]((ID%1SHb/%af,bpTI946D)14641A#G:6W=XNTGl<I1;-WJ-(LLL#E0?J(oZ<tC]5h[0ftKD<8)&,77(5:J#*9$oi`gHE:2du=NK/4I:J=(4#U07/9#iEGkD*7^;Uj`,/m<F,W-,NFD@J,V#-g#WKFPjgZrioI5#5:7HM05:7(4(o`3Jk/TjZ593ciUHE.Q4(5LI.0=(IW>D[pWZgM5N)i[0L6V-8)9E@6ND$H->_m:Z[r^Ub7rWD87T)<PU#A4:-#&ESGZ0R=os%<Y,,^U,*T(=#G<aH#/Hf@CbG+2j1lZ$=<92L@#TMD7YT(T[`+&hsTE/L*sARTJH2)#.^H%#I/-&9)O-e30SHrcf?4m,55=.9$8IV88H#<EVg<,PXT;4,bHR8.*D:#4/#G6M&UZdieW:I&2C=rHI85,@#P$TE48-)SHl<W:DcA[miGFJ%82(L#E7$./%>Ho`=n)7P*h)5T6O4FF(-.6L:>#S+H@r@WH]&GH;/*5W5%P%N$6@:(&EOC$OGZ5qY+1T62<=0H28#4E/EUX#@8NgPRfjOC$j8R$M8Y<$9)X<9M((d&ecR0J&U627#cVZF&U46G(-:6<(2%AZp9s@q+ZVh0d/T,8?6LLL4V:E<#mtOUZ+JLliA52f9LHFN#5(L..M4)1b?NtMCpg>=[165$S-#X(=$DP+8(C^XH<Mok/0XNs=V7,<#>$X%TD4B%[A#mX36@%5V,CDZ-E(F:/%-H@/#]HDigl7Q?[f9`GZ470,P5Q9PED5:#$s9X?tqEQ7PZ/chE*#25EM08H&#/(6TX7laTp[YJ3)(6#])WP=*b#4%$c)36^hAQ[,%jDED.R#b#9)])LG.#h>0l>@(fm@Hgr,ZN4.D2<OZD/D6L%5(D-t03Fq?WU7Vq)D&G,A$XI,*2#)4oAEs1#2-P/Cn_8%JL8<LT4M,&6$N@<&8Fc&meJV$)$&U&;$8+B(*()md;0Hi]O(@UF*PT5%+2#TOB#D&+6(o.Uh&SY+_@mQet9L(6<EN.X4%M4):bGm0c=*nJ/mF`H8+BF4$8,V&;-$h?jAH3+HhX09PXR5U:0L%N%ND5?8(l:3?)CRHe&bYeb%@0,X8())5=EDU$G:)RK*Jr9;&H1oV-I(#PPM$#-I@%],YIuCj?^.1WZF(D2V8G8-:=F/#$KOV5&+>W5Zn:,b6,=(@):M8&Y$UH#9P.KiqlZB/ZK6WS0=*%$5O:((%WH$F3l/?PS@(r$)7h%0(>O%&*NZ%E$%JR)[liI=l`P^?EH=#2&PPM$J&T0$9iOZDmZ_TSY]Chl.$*M9T:?4Q(&H%GK8h^<*-Gd3HS_,H(OP%H+4#3$NM*$f(pb@`$hE$^J-]Q>L#&I>LT.)*LT%E7,`k%q6PZ3QtRDVED/B%VG2,@.#fHb)McI3sJStNm$T#4aMJ&2Oa5#<#E_nXNTdTp]QRh@E1I)%,I50I#%1I)MF6S6qTd6YLGW%-BDF=EE%.0X0.T&9MJQn</$J%l[_IlN4X$EXM@-(@5L%n;GL,JV=/MrnCaX*70:$)($)8G5*&TN1E+mla.?;5C2M<T+4.LD6#CTL(g(+50bsXElSR[^4%-G1*N%G1J(6#JE^7#Tc0j;E4c+=VEF.%))F..@V(_An*<K5fLgb+W`JBD).DH50-D%1T&,05^*PmgR)9i-?F#E*HRPM/$/(,%Fq2h@;-:*UE2TlEJ@#4$Q)8#T-/(<UKd@%`P=<YD*DX.,FI^01FD>-#2H[*/ggP93oC0;H#*1037L4JKE)&#qYd2^AhZ>W*K.o>*G85%)_%)68-*&&r0jm/5?;NYh0;Z4F1F90$H51F16#)9b+qHand+]S?[M=$-N$($PF(XP(i77db-G`&^Ib/`,J%>:@$X5W%.G#:-4Y6E,*t@<P*k/0Q0F4E6.8,FMI$;&,1CI]+lKtp9MZ,3HF4L^P4,.EK#Y6X1sOC7uKt*O0H040>2&$(JWF5D$9HaU%n)KY?qc$AT+M0($))(EM(C#/EMfgR7Tr[q.*9V+$H5E&280$(C%Kl)Oql_G,A-:?Ii6XH5-,NFD80=5%n`=+$X,W`Ydc<?b6#,$LOR#H#4_)%eDGb391q)oN;-&>GH-&##J0-Z%*QeDhcF]q+q)@n&6G5L08(5EM40:%^,$Q:$;JgiCf5Z@@(Y#,+K#<)UU$:*(ijpF(YWY+:_;-GH:L)%%Q4/-J(+c6El^J0$WQkp<l%4I)+Q#L)+19#%WhYK+YI5H[D#@:H9*-0$*&HE(71$3;@OT@U$YJ3fbP/(T(/IL,I*=#E*GNd;@QnLg<Cq=^-$X2<-(EXD?$H(D%rMF$R:$FHM*@Z<#M-M4LHP(T<&jM5P]D*)gLe(qtQ9**.ET8=,H%&7)c(18bcC?D0eJdcH%/H4IO#L29,E*%-D]ip*:M>E2<dMEH1HM#%%L0E1-(0>Zkns$r0ZfStE>%J(9(5)-&V.(^5jTqtX0]XC*1X<XV#*Ea-(&<>U#C_?RAY=p1,&ec9Q4/E(9N]L6)-H:#XanPSI$ZIF26hAmX,%K<,&JT,+F<$$S`pN9+>t$Mg3SM:%4=M(MX8#6O(Ue=`NI?n9)J$I]r(#AG>EP-X.Z)#$LATW(D5CQhc*d46NEE4/5&:H:,0P%U*K*qMn%b`Ni?fsJ<0,X4(5<EDU,&1,j4)m>*IEnQg$)86IY(=196$)(]pRjO-<Z-<QI]FS55a8#TR?#4^58(&Sd5Js$^MNjr$fR#J%EA?LTZ1(.&#/JmNc$AqH]YXI)<$1.]4$b)8]DF)(YL@SO-pJXl6_0s-H-DG<I(-Y,2D0$T7jl([WpfH?qB$4FH1$/RG*H1-6#hUtN+7dpJ_,f.KTO5=$.FL,F%X8P*J@bJ?O]+pPQ1:^-H4$1UDN.<H)8,$HpEd6N:DdT7brD0UDO.6FN2<H-#NWhlX%]cmef&%l--DPJ7E(-82O-D(rEo_iGe0[9],;[MV6$YD&M(2<)8>%6MT3f:c=Iph2^PE_4(Z-@#TE@&5]%`%I5K+M,?HNf0Al-M*0@(&*UE$OH(nk^L7ch&Qj/F3;FH.,XE:66/@ED.$&qX5(+WQY9<FZfZF%*AFX(=-V)&.%qX82^t^]$ccQH?7Q#0IL%%%N,I$L)7s?M)G:[WemiG,@LP408E5LMTE#1(5-P1ZXQOaOSZGF]$5F^06(a,.*]?SgCM,%1(1`[#_d>-8U#LPM#<8EX%F(j57^GfW0IcYH$F2C47#4:TK/%(MCQ;gbY.CmF:7WD-@7H.8*7E.5ZE(:(&52MAJd/XYY4GIDGR,0NLLFEL/2#Wu3&;4Apj>]nZVIH%.&VG$0B%J%.$(rL4hA$ge]_4pX<&($JI(-1&($Z#GhT6EI<IpbuM&#%YJ$-QI(0?)%#C=q3%SKY)4],=I6JH<V())=V,-7%2FfTemUQmXckTQ5V%0M*D6.#OH$>%>j]M4FCQjDLm3m)]$HDM8M0,$a#)P%@f(X;pQ=a%qQ*A#E/*5(G2(T)&E,=+9Z7miE%Q9Rm(.&5JU#<07(J%$;2D7,?OUqtc$ZX(0&4I)19#J$=$l)>YjSJF]eg[46NXT8D)$(14=<M%Seq9:+0st[NY5K9*(LP5(5PM#$7)br6jnm6JG%MZ@b#NEU8-QI8=0P%#N)GFQCTH3cQl8De:0GH(T(=#--J5&JcR+5F+K:i:$2j28<T5M(M8@T4E&G-Mu]t@+3)EeOh&T(X4?G(-Z:<$=#`oZqC59fD4Knf#=%.8M01PEIM8E%%o`D6uA[Nit7,AXQ;84T(TP=#=445+%3WI9FdUKshfP3#*P@5Y$@9XM$&#P=,?cT_bKtTP5/f&DP&J%R&.&R-#*iD<%Uo4H]RF2M-bPMF#%J*/&%,NP$o`$NKiNp<#3,6@>-$V*5P5(?%HX%W+/_29-Jn+I>bXJD%-G)5M8(1J(.#*h6XE;(s<C)O/#1,6BI(-Y7FD)#F$S(f-_ljD0h&]-U:$L6*7N#8?H(R?r@ZCi6L,0^i;HD/5M(<9Y#M8H2#:UA>RpT7JmKj-4#D,B,HT:?,ETG,#UA`-Fc$:]B)9ndE)8.=T(=TH6$1(i,++Z0Up<IJgZ4.8MU5$))8@P8E%o0jsKX1bUbM?AoiH)U#J7(52&<(1$fCe>[;h2(9d2J?E#a:<DP-T4`$,(;/U[G/,KO[U1;FH8=F$F(-%0V8-$7+[CibcMT3/XQ=HMH-%P$F0M0U(_5pOM^+5)MnJ,(/I&<:DE4,04W#2)m<@*RJ34u=Y7Hm#&EH/V6>F2-(*#HEHG2FK4sVs0O#94$;,E&2H4+84)YA41W9pS0htRP@V$.6]8$8^4F%@%:`EOb7U2l6Q5j1,A%.Z#%%<G%VI#3Jsc%-Ae-j:)N$W4-(FQ1%E8<*(dC5qS)*F3.9l-N%P&9--%FH8)R$%NQb]r(G4q2b<no0D:/8LMP4E:/D$-<RXoo%dQF3(]&e4LH,?EP-XJ,M4#K2IQg>p(<F91b/#_6P$@$X$P5_%#rGe[KF9IfUf9qZ4]D<15(5HY,]4#W@S0g)$I$JQ]4-6.E.$c&H.H6F(E$&p-36r4ZY_^hQL)94MP(MM84)Q#ZggIZ<YUt90c+dU-Q)HV#($<.$QI(](Y+gmTM>jJtJ&G=#@%VL<%V$T0*U[5bqSl<TbG($E054:H685.574H$]n`+@^@*U-cMt?FXET<.#DV<,@-%sBeKtWAn_UdR_:-80(8+;$E5E8&dCGl61n;EG]u%Yd54ELV585@N,84(o=T5Z70)q6^f)?5=#)6OMP:%)T8(=P1+Q7[Yk<5fI&2](@0M#P$LHU$^#hmTi@^<lIZfPf_UE#-)X8=$I(,@(nKDE-TpjD7Wt*HD=Y#.05HE%<Y0#?7*iu(h30NiJ)6%D88I=]T095-#%5C?S`+jpHs,:FmLD<6:E^087V,L#+MFN.jr:B-h,91Q<%]E(>PU%-a#V#4G4r*H]+&mjA3TLF#^>DM0T_(,N#hAi9[?(0;59+or5&HNE:$8/P.$:(e)I3S%sQZT;&bt`-I468**&756,I(`oh-WgdPqfZR&5@(4V8.NF6=6#U$`/`Phe(5Gdj>HF,E^5U#M(<8a0H#7=^PAlP^,$eX&bU#1276(56JG)<(Kr:AjUg$2l0f@Y7M9L#&:L4&*L4Q(Ei>g[HbQ@DmRl_#%Z:$0&J$8?&%#Kj&q<$^6=<U<-D=FI0N8MF-1V0#Fl^9M5C)5KiA1gbQ$356.&L#J66H+(<1P$gtM@+dsm-p>4%#J?RW2&#6T%fQr#CbP4S9cL4^140E91-4DH91H5#/Hi1Zs4lX)7/]?T-/<>$M(XVDJ@#OZo.(AjA5f&Je*,N<8>D-$H0T6UL%QE@hbbAKXS,AY&N-T84/%F:4=DP%]m*4,RH<92:?&>M.(,JDP-,G#EN(5=+0&1TuK3fqWD5N.HF(-.EN60#<c7E)_m@iN-FbFF&4LX*?M4#2.%t-qaoO$S=*.YEPLG6&DV#<.#:.R#6OXAJ5L2;k[n+3DG6T,LD<4.2D+iN)/>g05HRXp,U(#2?-F)1FXJ&#$mMW/gj`+;OA)ZL/H(GV<$X<.*-E*dr3JQi9cK*s-G1<E+,7,2MHG4J#3(PgUsQKnmlX@o=-:6-L4ZMPM@7LD8%KjpR&I=l)Qht5No4U&MDUL(M<0L(B(*Gf2fdAq0`Z7QT>MID,D=%V0D,,Q(-D`Lr4Ue&^_&lE8*,>97:YF#7-(%SWlbY&(j3&rdrI?CN#.#9&:)D%LV+lK)T%`7E*-Kbj7M$8=-$>MX%HX8$(r(sN*/0jQ5F19,Y4E%T585@#.8<)6^oKlA`Lb*oIDd+,-%H2PE/$FH#+h216T6:g`%3jMF)4VF..NFF.>6#)dC/ph+_TAM:4cW6LEG#2)I&,2P4%si(-DJJgeB%EO5ZH#0L5)9PD$,=&D:Z>@HU5>F/_6r0V4.=0LDUH6<F$OW(2s:Wi?nYRc?8T_74*($74c>4$X4sD,_TCn:]`mFGG4$VL>6VN<%8,*<h^of)ZY3g,M+gm(VRLN#6%LNL?%$2rA$-J)p`FZ`OtQ(P5T.L:OD>4P$$S6K>WT,e:d@+^QZM$/%*]4]#&F*P(],j9ZArNu9IaAdHF>*(G(-*$W..$,4ESGC2=2R(4uX$6*WTD],<<*7%(*<3qEhGP/7?p26.T*1EPLL-H)?D%2DJJ+M6-*>@XA-o9@6,45^88D4V5)P<]-C%3hB;5O;G#KDH,5F*/6H,-,+;,e)pcs-,P;pDo$;#M-U4<HP(4+(Dq+G<X.tAO,JFZ(4]M(A4T)Ma4#$Q[<OEPRP6;CT*?0(_LV0%F=N]%E$p64]YmjT;HF8MF/R(*=L4*7LT(&M&E,jL@FHXa,7+EH45NMI<$L#X,QP6(J+@PZJD7]U<s;eZP661D4P5,D96N$HEE<=D0*6>cg_r0+04*1%F)7D$K$P*/Nilc3Qq?8F2(GG,N$5(PF,2*$+FpH]WI:*/,ESH#X6Y5=5X8@9>$#-`8Y+fMb&;mSG^(?2&6*(0OJ$$7%J&F(q(2R`PdJ?O#qA&EE=@8#4UU00(*`7rjUoXfG:sOs+-MDH)26F&1-LH(=ZJ3)gOHm`[h>=#<6,<YG$0BYD4V#cf206h^EbU#rEX*I@4P4_#]6L5T-)o(_0Ns2@Fo/S[j%G.GX&$P$(B-J.*S_nMgWt*Psqf5=i,F-]-L%N%NDaD0%%aneMqgm9qQW1<-U$I88#45-)@H(;-t3>K;nK+Kbr,G,4:F:/67D,J#)d8p9em]Y/bFXZEH:+:4$84&;/-(Hb:SQO,SZ+3Yi$,JWF#-7L4J(,>2&7,a%T$h]hmt/@J)(6O#/8Q9E*L:%$qMbs7mMd0^6Mb5/W*(=-,NFDX($?*1cTDI^to1Rm7Jg,T-<-EF)1.HXD@#*?l_*F>`h8Ge#S%EMN%GP-*NN0(%PQJfEf3@8U*90*JTH%HN7&:R.$.=#g>N2RNtNY=I+cY&..T7414D94BDF%tT:fb]-G1@7GU?0@-?D$%%0TJXE$j*:B%/YlM1[)uILH<46UM@86T,M#9]@1)hdI16TELmQ$NVM#$(L@N%P)<PFm*A+pWA2QA)4",
+"h":"&&%D12&JG1#%**RP14/XbHNeA,sCEHE4=6(5V8,0-(3QX/[JGd_W)/E4D-F20$HE/F04#X7-Y[G0JUg`g6Q)DHD6.,-#Q9%6M1>ce4r#D5AGH@LD#70]D5*,LT$`C)/XIPj.FYWdHI%7D=4T04*.1$d<I9W-:M>>T`6H[4#.8EP-8E%4<+fYZ]Y$`GY$WT-t%2*P4X(=5L$G&%MnS&5E8QGe,=&$7#,I7*P$72I#4*Hp7_)lISCf*p]2/(H8EF%..8-$E*eDtQAR]0j>$9d,M6&FP6N-%:NH#f;PtUj&_Z5Jrt56-$=4FD_.,6T(H(CrJ9EQOm/B-WdH8=T:,&J4?T8-$OFC(=r$,aQ=5TOoBP%E<(($U,(NU&4KU`YF]BfpfI(s%6+DP0$HM-#;%%)r:A%brXHEnW7#U4V(Q%N)=6<(#_mD_g>rK`;1l1>-<H6%P$6.UDX%/W:3MJs%1_ug4E406/N5%6PF:F5#nUu^K;)_t79ShMN(7#@E(-X$4*M%/N+0Nn*dqFr<hT8)*J,_F,&&9=#ibm,=CT/Z9>Jm(Z42^L4&)):L]H7#EtoIhj$_RX$$>LsD7.-;$*&8KH62#T[,X7%C$E6RggK<.)V=%=#T(V@%I%SFs(F7+FaJoI$iHV4THF&2.=4<.$-E$R%pl%]pn%U^7^HH#=$X(,-^8*,E^O7TNn4bt[K?;=N.D)885$1DNV(F%,bsRe?Sj%pg=#X0?$4P%N5#XJ=$%R?seK3Zn^@q))1-G6I8-#D8-9.J(3YAc`.JnhX<&?NF*M<4L9Q4TL(/%CcS,e`N?5%c[8n#E5%-:8$85G(60(bKL$Q5nS%j#WFJO*,F(N%-F#O2&C6r_pYk^/q_AuQO548Fd#$(]3654(sR$iN>d9cfM-5M1<<FE=4T00VTD)cX(VbP4.h)7oKr#X,4*-MNNH(7D<$4C+,9(NgTJRJ+/IT$6>F:/V6%@,)=`GmY]fU-P`E0S9#X.574-#D84:H>$NAFNoTk5e8YfrF-=H-8L4E0UH0%,cX=;D]F%5)6l0%=:8L$($P45W(%er0fN1lZWeY*nL0F%=J(-W(.FM#0JW)Th1j7&7A#F6X#1LFM0ND)<5%08YDSK0jZR3$d]-D6XI5580A5.D(1n:<4$Xn1*/&WIZ-FHX<L%NT<--F(pZJ<%*R*lCQ-pqGD$.ZV#<>G%0,*H`&Uq&W[hBU/E(67D,FPLL-F,4:%K)o9:Y,5_7f`h(V%E./]DJ.(>%$>PZ0I6hFs0cDkH6%HGa#P$]-2$6%Rq.m`</qg=M,@f](,@Z$N%@WE#^#UcL@XdP)O$oU[N9D#O%8V(=6$N*,#Cm@SePkK:Z1d4*=6)M#L(9V(7#j?>nMT)b[OU+*18&H9.LD61$:E)IQlE5dtD@<=1bG(H.<=#R(M&TXD.$oA$M5W#I]O/AcK(%AVXT$@<=V)%$he<^YN=g?MW$p130:..DL4L,DF6G$%en<pdiNYU.*Q9T<8(2$H&5U<4)fIsNSDg-]<5?YOK#58LF8-N45(,+Tt92o^,[6t1qY6#K$TMTN>L@#0+#`B&c$`IdDOj>h/=%=>0H4,EUV(V(H4hnCbK<5pRU4mQP&H-$4P5#H0$R$`$Aq?$:TrAh?5%8*,1#_%DI#7$%@I%qdM3T3Gf#T7D.,](^DD.4B#_)U026jYOQ=`=850(4J%.7#E58$]fq)-q3;*X9$85DM*a#]$O048$>P-3l>(Hp[;iK]/%%T/V#<FB#%F*TsKiI6ms@:)&3ID$J4FP-6,&0,)-g=ZT8Wpms2N;FZ>D.$($H.T>/%Hg<2MuKjT,)Ne^-F*?M#))LX*/F(d`n%TnA*@tc(Cdj/6U4H*8$/5<8F*erX04T1$c#V>g<#*$&&9P#L5)**(&Y)g*Y:hl.YBg6D,/8I&N%29EJ,#u46Koi,7(TlcFL.DV8<J$0W4=.D%-(0n*D4U5d_oR%F1FDV,5H<.,F1%(]7f*PT+EQb4,Q;HH<L(8$MT,-5+W0t-jiCdIGd0:Y-(;$029#4IG$8+$_d:HR](NGO6YpX*DF1,&N%JD1.#&t;L[2)euNi0-:$,Q/.5(5HFRI#(2%IN4=^1^=-nZJ1EHU>#%%T>0-H)653U&31g`JgSPZF6,a#8)9$]E4.%[gY+bUfr/2B,JJ.86-B#TG86E.&Hb=DJ0P*O$4m0l$E*(55D`248($/(S0q`J;ClZC7^2d.Q@()&%%*)UMI%Rb^nHp<N+;E5:O@.A#L6F8-6N#TI%cXn*K>s/itPM^d9,T6)/MH*9>D4)3g),0ASt.*cDhnC47EL9-PE8Q,8:#oLR/DcTdmS@c(iO4)5-&5_6(J8(9#jV;c.@JF=Mnh$?J$#525N6H7(#0&H^nM6RU6h^HoK)-H.%.PE%F.E():bP+JQp7RiROsZF0,HP#L-ED->&(EgjYm3+2I_fbr,4_%$HQ1$(_6D#5=IG:O,A1*<X@4EE.:*$(7G.08#DS^Q/)PtRpk3J#6;E(GP-*-8;%#dnEUso%X_fR_>Y#&;4@E)1X54+*#MsJ=+`G]cHR(FEGH%Q4L$P4L).-*SC(h`X.,9R=$Jr05/57D%.4:H:H$<qYl)a$KYSk39(G,*.L<*WLD%G,*F/^]4^JeD:j-hoD(*,S499LK#&-#:m[YdsU6=cf/DdD)E4WM4L@:,(1#ZPiE>RE4D*JeSd$0NNP5%6PMNF$(sG6NGeE7$r(YPb1#<I-6F$06F0Y##0`*4U0k<&]mTX,X%L2#DO#>E<$2*p1<C,=T&ZtK5LTFTRLL?,>L4(3r]F+o3M>4Tdl9;<$RVV,(E<>N&X#U7i)6t<Z0<5$f#_@48#ILOR,)45T$Q6KXhA5D&*nS5QFM,=4B#T7THL0%b8Ghc91-U6JK%e08*D9E_.81#7E$dKSd_>^h)_slO$m1/.,8$))8EDFJ)C2e]R,[tZh9WG%L/H-4T(=4D0ER#U96rG],E5G6<2F(>DS*##O3T%-%+a6=Kq6cJ2bG#@,:E4HX*?-5,8G#eVOG:e-_UcN&9c40P-T8P5=DPE5#>3=Ci7IYtHIs9g(1)H6M$P8.$I)$SaIf3).ME+sQd5&$5?*NLL%W:((*C>MsI&5<cY<Q0.9&0HXD&N%2<-E$*o4%T4CIp)d1,es4192HE],0E7I9#jX3BSgWJ%l@Qm7-ZH/0%R(%%M&FE2$dN_h$<Y@Uj1rQj-565$A$X)886H(QKReC2nGJV:,@`)%8<G6M8.Z4$%)Cm]IX^MsXNT61T&5*0,A#TID$7(*c&qX*:10rf(g_$[-D.1%FI.D@+(1+d>%gZEbP[pb@U6F.U8,&J4=H.6%]%3+n+_5jQ^`7M*EN0%H],$FM.(&hs+T-lGb()6@0mD+04>Dc/T6D$3#-cA+Y:G`-gVOGE#I%DTM6*7N@,#.)A*8qUdd1njfqCXH@41,O4LJD9T-$`BlqE7+[+A<)5eH7$EL5,MH4P,(8*?hIG8a%D0`K-N?##VFLNN,>%#T*O*5MmU[r/TJ>^5#OD:H*/5/L*4(Yhc0&((Xq/YlE+4D>.JH(--GV.4#shFR`n=tZ@IoT?D4MP#%%LM8,T*,OWG-J5Ai$(1j]E4DY4]4<14,a#FHKRPU>#[0Vud--$E6O<$XL:.(H(M,OP/h&VJc6N2>F,T*):(5&)?D,%P3OA0=*r%H24G%I.>%<LT#VF.)%AcdU@5[enAQnh,25$/_4]F*8HG#Ah6h-Tf[ShFRHUm<60VLE(-P<F5V#Y141%q?.<gX3T,056G@,(ET-:6H$[R(YKf,dE_li_o.EMXa,#D]=M0H%Io)PM(t@<u7%KZnI1.0,$6%HDEF1)b6Qe<i]T1?qU4#;D4$H)N%1$8,4+SN-`95Ha7hJ&5N0J(&7$8**-GM%IrWCE0hAm^U)E-fJ#ET-<+[D@,(,&65QO[X2Z6>qd@K])4(-6Q9F(5#b#cUjIKt(]ThDM>$O*$$&LNN#*((O*W6C^6OYjg>&^)PLE4>@L5PTU6,P#dKap9J[:]$Y:&mH4%-&0-bIH$J(6#Qf(3X1,9^-FI]-ZP%FE%($.0%N=&A1)plK$GWAHZfq.)5U=#))T@8(I%iPfG`7MdA&;;h3TU)#&=6V(*#A@#&K+p]dl6@IO9gZD*>-U(4#=HX%/#l>@sgcQ`h%T[m-$7)<4L4T#9*H(l$AU7O?b7P5T#7J-9%M(6I07*#j$pT-E`ID@`n(O-24TG&%%2B4DG(e&W]rWBrI%eo2c.H56EV#<.860E%-=-X][rc$,%FC<T5$2M*OH&8@T#bHtg#AMK$C`4$W+*1$(&:N6&*$H)&Gi0e;st@7+GUU^@#IL54)94P,)T$M$mKdDs83(pfUEE(?TD%.<T*-0(+sFM=qbK)ceJE$=T.$+6%+H>T((OgM/,`b073BM46#MVQ,5&:HLAN(#4qT1r$fIR6hYPAjN)=##ZM@&#T(Q%@Hal^fAq3U)/4_HL4`4M#L8]:L,$$P@:Ere^i[:kWg.#J%JHM0-&.&D%=NuE1k;J^Xc?nF-(,&29I&J#E0%ZmC&oYD7<AYYg6I.#9-(b)E8)D.)$>XKWP)jKDZ7ng#%K*E#N%N%,(/+%DOXoRE6FV6F_r*(=7614D96Z($&Y>ie,OG3:&=#2:-%,2)&*P$&*IG#%mAUZ31Qgfs.;d4.5#@JP-W$4H6#7;F`dJ5[_)geN@<TDF0NF-.<TT$/?@X&H0ssYh;a9?E948D6.4541X*`>4&nY<(RJ+1Ut#.W5HH.$H.-5@J%%nR%bATtQ6NZOPZ-U9#6H505%4AH(oIUmi(b&r+[&rd@,0V10(EEAFET$r6DZI94h/o[T&3o6FIE#X)A$,016%-Dhm^qp7J,SH_]5F,NH+$(3MF,6(Z-B5aPS?9eZTJH-M&1XDL,<E)RH(6ng^%k:Hp=oVF$96#5Q5FM06P9(4%+5j>W=D1K`J[NQ%$/$3&8$J+H*(%;Cn*?>g7ZQFM.6V(&HYH(-=1$*=%;,sb-t1%`g9,KJn,06G6M$P8.:FE#D[:Ed;.AR*0t*F#-1U2,&JD?HI(#%*F@oOE>hni&/jD9&)Q(%%M)):1#f)?*Th$Cc2AT(%.84?(E8-(U:4E%/W?gnS*Ph7j%gH5OM,#X4<$DLP:(-i&P/?oKXS*jqQPTD?4(&*5T2<L$`oHF$`$EFW&o]l(6J7#1*G)427%$_MnGkWYg-Epc%:8-U.#9$8)D>H8$0TX/,A^SZVnL]8%7%-EP-H(6*6$@Jmn>YH`_/=?b,DOB-<$XDXO2D#B7HY+8@c1j=1SK#:#N+(8R7$$S%4&(>Nng:>h`HK/3hjFDM0&?#T*JM0,%3UGi_b-fKKX7,3%)9IE*%%/09))%l(sGiU6F$5^EJ,8:>,(EL,(ET67$E-nJE+JWnJQDI@$HN8.)I6M.$X$$Nd3=oEU.SYEo<,.T,E(HQ1$-H<D%nN;H[Dnb+mJ0tA%-5<L%NT4H(V)?RaRMl5LbYgIgJ..DG%A5X).2DF%JoY3lA_gcHiG$F6%NHB)3#D+Y/M%%lJsY^h2]Y=Qg_dAF:&7#H2MH/$4*:&=-QGJHhgY2MN4-_<%8GHE500-:$V#=VuH<DDb9XI$fZD@.11$]#HIIV-#dWPt([hmC%pY-gQF2#HXFN.>-$D/%h[@;r6:2b0Jgp$T=(116P5FI)U@#Q?jU3sni-QJ2m+>@HV-$%9a5)%H@.$Un=WNt_+:;QEicH,FUFNG$0R.>0F#(4S]ufR;-]n^J)i4B8U,V(=F<8U7#X=J2@J@:-i5,Aj1>LV,,U(=HD<NT%IrE5$<U67?G-JM,HHD/-6FH2,-E#c@h&,:6;^iS_ZIG5$,6L4F#802)3G,1Kf$]$GbN&<+%EP0MHM-(%[#0r+`I(knC?TbHjYF$5`#2)I&]:(0%_sCDlt0fq%r4P^lJD0<0<*WDUD-,&O37shQ@bZu+:grFX($.H8-E%(=-%2(m%h:G6OYjT#DI9%#5O:(#611#G4$a`92tt?Y9J:#8c<(($U]7$4&Ir3C-bu#G3O$6:20G(**%%&&-JE&C5,=iLtOC>4*f$(J(EV.LD>.(-&$M0lWFnA$YoHdJ(8E=M$4#PX08$$e_TmL4NgM6hRm4360@4L4TE5F;#,D%`t6mlI5_lr$LUP4L4N6L4L=P#<+$sjd=TFKK/eJ%&IT60NF5>,)*%Ib(/i0fP`5Dds%PY,D]%##_,D<Q$o2[fq`jK3&=-N62<LDO(M2LTD7%_in[ZtJW=$FDse_*M$E&G&2*2(P(&*YI-K$6qEl?;0O>M1H%B$4#X&.EQ(`P&t(7m]n9lj*DmJ%-9,G%.J4I(.&dR5[f)@H0:RoDd2,8M&]#]#R8ED&U?RFoP_s+nE6si&;8,8EL,8E45+*AY,EfjP*/3S/cMDFH,Q<&ZLI,-.#$0bGE2mg/mgs(:8#.1PTN>LEI%4$4)jQ?o]r=3H`EKT(=(-GN.J(U(=#m_=HW+0s=0WcK)90).#-&J(D%I5)/GQ<MNR=D<M6q4/M0<944YDMH:#Idq>>1Dsf1-jn&d%#B%2XP=E&V&#%JiB*&I]HG4-ftY0PED46P56,,PE$N-D:i#=U])>GR&DF1L)($QD1.#*?tShf?DRdjCcS17DW(*L#&=24J)=0r*P%A,`r*MjOY.E&%ZV#<>&%2H%2*e@b(]Wgp6_=)<O$H4D6.4,$PZ#U@o`5ko^7PU$Z4I5.>-*GXF609#S366?skY_e@URc<Z#E61&%%J9.(<&gnPm:r^KHj9T`P#U1G5#5(40JA(#oQ__d[Pa/lAZ?D%MUV#))<>P(.#:WBHT)=$odYDS(?$@*+%%+W$X*$nBR>EdRnc7hmF-Y:ED.%2$H&F.,8&?qNm6GF<W1/gRL,4=1<%VDY8DL#_Xbq=EU*uWdFoX,V2.,*GDF?F<$$YOV0^uSNeq<&qjNL#*1/LDJ)&LL%J,[WET.I,gHtPS8#1W4T)A4<J)4$g6dEUoERt^M^3fB#6.(L$P#E6%T&JRA?q,WL7q[G<7DX]#N%]<-4Z#167QjtHFP<GA,h/8#IDVL<.,)4E*4p;N@of>(I&e<,;FND05H-L.6K#-G(WT7RW,0NP%FZ.N0&(W%>*$JMF%;h0tD2Pfs(YjfLT8L8%&&&***6M4$I6Ogrprdh^SPb(M5%.*6%G%6P($o*0@@,WF(7HkQ#5P-F)%%1FP5(#,:?Dl1`$9ntCZ,,D86R76-DD<&HG0h5MtJ0ZsSo)-%M7-.LDF8R(F(mW5b1/_4`2OdKe%-M<-T6>DXLH(%c<@Ciq+TtZRT,d;.(*:FL,6&&E6+Ji5;Aj%^4VniFo)<=0J#/%F*,GUX#d[%GjY:D:6K%]RDNHH<$*&X,-M.#9hZFtaQ7cjMnU,I4T>QLLY>4,I#-Zmg7HcS)c4+PU0JTH$>J(-W%0=,&X5(Bdg_mQ0nl^Ir#%N1@-OJXEQ%%#,0I+_?g2_%GQA<RF42#B%M(V&D7,%Q_436TNfT0e(bTJ/D_#$(].D2?#rICZlC)oTAIr5UG0G8%@#T$6-J-*i$)gIl2[O6>MRoD154D8R7-44H1#F%U]2p`HKZ5O_58V2.5#4HF?65($EO8GYgh_T=0`d:1*F*H%.$/%G9&+RD$^%*1gJ*5#/K.E<5#@QY$4X,H%^m=hCuFI:/*qfUV<(@],#D]T$U<%9r_f$Qf?s$PB24-4Q0-NFHM9D8#,*SNCg?:T._dip4&U$9JL,7)@(:#1t*=.i#2:^,hE2-N,>$.NF%XFLF(9mOs&fd;;cCjqSF0/#U(*&=(DJ-%)fHCQ.E<r`gm=68I8,8&:E4-95%b-pb:liHp66U0r--6(]$6%a#5FH(M/_pO<tE6)I[mGL$6U1#DA8%P,*(a0;?U7OS#9*W>)X7N#T]<#L6B$)%eQ]JlED35fdpr6.&#/9Q#L9I*#J%t9M@mnh3+orO0ZH4M*N*4#O%O8,$61&P2_=?b=_0oH(,E]05*7H^,H#$@K^4OuRAM6t`1FW&#6&($:%#B2%3=64aSI0rOpt%0(14Y#N%<9D)E$NS$3oFG]I&ma5L5-XNM#LP>E8P#QNiSI&7M4%?l%OM$KU,U%4#>H<0+(Y0)b6*Rp>WFOS#J0%#KR#L/+#F-&+:0r&7M;?deOW0DH47E:M8/8:,-#Rdc=*t7lAW5S^r.,0<8N)Q6UDED%g4>QC%)^=DnEeSP<(VL0(EM<%UL$IV0,K>#[_oEX>g=4D7GY#<1:24T(1?Tf$>3jJ@?X4+9&80JL&L#R,G5$*3rom/Y2H7JtI>Z(=TLL6N6NL<T($H*=>T_1ggRCq3hF+F,5())5H,%3%2l@b0I,NijPh9$9FF4$b)8,.6)(,OAM^R:s#r9)hm%4.ODFN..LJ6#%RmK3pb7W$r_Oo1TX8%I4,)6==D)[lh^AdRh@(pj)+H8#?,:-$H8GT*4$o`>*?P[F8DmKt,2(&(:P5&$*EG#<P26U)5b%>0R%H-8:4H$0547E0$bU0QJpCh+EjoXGT*-#NOR%D(?,*9$WH?tcS(etEAdMLG.-9DP-4IH.R#rdj2j@M(6@*l&AOI&)HP(##M-$)2)-YdtDC>UU*hp/@=4,0B5XGE4TX$A$s+ombK5*gbRcWHF.@<<N#LVTTE.%=It#-/F9Y5YI&bD9#<06R7FU#41#ZTmfhhR^^rb(dH-EX5F6.6@-H0$f_gW(D)>maKrsmd&8J(F(9)-%-7$*>3I=aLmERd%@t?6LJ,.09IEF,O4%-;ID.Mp7O%*_X&69(E-F4)9,F0(5)e]9X5UboMF$q)F.,9*FM0%7ID.%C,FNRWJZ7_?9ehMV$9#L6N#4)@N()5n`G`$OMoZV+ZF2Q$#P4L$#PI/%6lcC9rj9(1FcA#%&YDMH6.M0<)*%f20k$%D][QE:l,H%,=P8XL<5MUH#%g7o1h]tE,iP,]T-*6H9<LT415%G(_$=I]essANi(T642$5(@PU$5(H7#clK1;ercjM[RG%(8B9G#,:Y7$$%2KS?4>hnA$<C_;5%P8)XM@$9M$6(m3o5?(2t[`MA+Ki>JD,/0MHEJ,,W%p1a<D)sn,e7BP]e-%J.JF(-.G.&F(bLFDc@W5CNYGdJM618.LNND6E9N(c19POb[4p6mt/,[h4%a@FG(-2V^$6#?M7I+5`t`eFq(j:ET8X8H$05=5=,(Zi7=2tK`c1A7seV-(4A,(ET9#E@%)@4%ih9c%&JipD(,+8AMX9$K#-#0:4*t&@>;Zi/]Z@8E%M>#TN(.8U$,FJ4GM[0mX?f1+&GU,6E#,8F<0**^QWo(JtrdRG:3FFH5=8%6U80-.%n=YU*hq%TI*er7*-*7%/MH*6*G(&had0J;L5;(>_$Tm-R$EH4)9,-(PG(]5%0JN<Xor-MJdOT(ETL%N<,(=L*@M<ku1i/D,&seTHMNT.E&2H>LN0$n%O5%BRI)mG%/p+1D_0<,$))HTD^.#7^5L/TSh_h5d<5XUEN#N%L.@@5(%i:$cXJi-trKe7E]T)-5L)Q4H(A]#S`9uNh1Sfp1nFPf**=LL8#4MLT(&&%GdT*&=>R`G<O0#a59,*G49a$D$<0`^JbF`1i(q^fVU6-E:#4/H8>@%pbiKMu_058nZS(>VE#</$6%HZ#,@%A,^H0:i4-pUZm+,5D$2+K&04H#+[JbQAMm9]Y[Us&X6%E$8^8$0(6>$ojPQ5=9I[6t.M?D(15?(P$U:H)-#P,f-@fpUt_`?9e4MV88$))85=N8#XEIu_A60h/a+o6P#R$BDL,T&P&L$N$QHs1AtMb,$X`7,K#D>NV.#,K4*Y+1cTmDff`*pVKGR%D%L&R#.#N/*?YlZD[b)$JPDmfF)I77E#,8:2)1%O%(EgIqZ]Yh17eWI#IN<,)ITL.),)O$FUg_;$rB/,SG40V*:5]48&?F5#N)=XPK,/1fgrpLmTA#(V5P5@%$TA#TJTi_0GJt_Y7cCD5G845)984-:0#Io^,G[`r]h^);$-14LPbQM4DI((;nbD%seNT9=M,^4m7D#:2W(=J7&,4*0ubSFnN&CZmfTK%#2G/LT%>LD2J&#@3q(gORoe,0hEr*,PD06+;F-LE#&ic6CqF1Q854>^%6$(<PA$XQU#$8%;n:G=T^3K;+_QiP%<%91NF9)V#N$4S_O5X9:/sDNg:@M)X4--(EH8<$Q(]Y,T*;3d/2&1=E2FHLHD91,M,-F&?OM?CnS&p#sOtJ?W-#IEU4<00)D@*Kl#4GKj=:@tGt$QK,%0G$&*0J$F,+&fYsh0Gji:sl0S4#R<7L&R4ZL&4#FJo2IFbUUoWgq)LDD=H](^,U0,L#qRfZC4K*lt_4J-T>JD885-,W>D()`@pPi6cJlKf3W-LH>42$*&H7T.M#imM<(&7GHY1g^S>16#ER#L/(4FY%$C_93p%o$DqeD(DG.)03#DK$I.2#[#YA`h-/`IFGYW)@E<,N%NFT,X$)=PC5T57i+C$S#PFI&$7.MH6*(21%E%5:bM0%M-T(p1AHP*.40LD5D%O-$F-o_2C(ceo$GjJ#,L2.PEFOD#,&:U/D`p6eq?Rm3.EDL$J%.&P,,H%)s9MiItHo_]@,8L,V>5X>FL4E#@6N6`PqB<d->KmQ(0E5.)I60H$M)N0o2sH8i&:JcT[MDPM42$P$H7LP-#p`,=*4>1FEUsi:D-L-(.PE%EPD0#igN,PEtR9VHn<^2#,885E#D`X#jIh?WU7G)S$s2?5c%0L]#]LD$_7(s=X:%F$Urfc$W2hE5,@MFM0NXE40(;*6/?c9=ub,/_&(L*#;1:%6G9+#O#:dYe<pQ^5+gm_ZK#IU)H9441$A0)#DIZAN,S*O`tR,-#19-HL6N,E8I)#*`C:h-X^lRqsFm<-4LZ$5(@O4DX#r-HcGgSqSb5+TdH48$36N6F+85,$p<&c.(pe@kJ)KXGL,DV0LD=.DL,*;dj5joA)O[;P[6FH+5Z#<7(3-6%fB-Ir&eYA4&J0(rFDQ6TT$@<4N1,%6eMaCTeQG4XJsF%Q.(JG#,2&EN)%]rO#URJ6^1f1XG4:E]T0#D=],87#S%M<nOA,l(JDeD)FPH8P5-M-%1#p0^R#UU@>W%oVj])80H4M8,E5$b#OG6TqN-P(YaCf`%-2]U#5(<aDG(%M<HmXlIYL/$`E-5#,QF8M8-NI#4(nnXZhWtHEinCMWDE($PPM$(-0<*lKFqlSpW369>2?T*E<V,%F<V,(?#7?+XK/H>[O)W-8F0%2=LTH&F-6$AOQ+ts$@=Gj3hg#MM7$G(-*8RP(#9`O4m7Ti&W,P)7%0XL$P6N$P<E$%h[+dFo6G]DmKVd8&92%0^H$F7):$[l>.m:.pXR<+U<,HF(C,.8(5EFT+-%PRCoUTbR9;,C4$F#a6(LRO#5_$,%rCcCW8s$NM6<lR](14-TP=D8D)^#mb:^:pFUcXU-qgOP#.F9(51F%LM*g6M(YNtcXHs;fMG.%H83<&ZD;-$F%HGJO*i]b.K%2a>e*R0&D)&*1#JM&&*eAre,SGKNZ1>]1J-2-L%%%NDHG0&e<H/Tl@ItnWKeH:D#5/EN.H:(,4&DL9-K*=G3PbSEH%G8H9$815-*.$p7hE/_X9=16D3D8.7,I-LD0I4J6$e)_4EYL<e:@q=)D><6%J)1&6VT.#99lM7dU]*HqTb_,IJH-$*&H0-/I#&M:bote&%AJD4[$@5T*/&J*?4X$(;r<X9eCt/(Qti(4LUH/,L%NDD2=P#nESfD/JiNG*iHMH#Y6/,]DD:>),$nHrY10q;8b-imm#M,b#J)1&]IL(#5D6sXKNdA#YCJ`.H:E5L7R408/E%*tHWd]k9--AggUCm#*&HQ/4DR1$*&#Y/g$@Mmn`hE06m2)G%VD50<%.*I&Mfr:+d;bcD#@9XmJF$U(L)Q#=(0.&3:jC2<)59_o+iG>X,8,5L4H4E<U%9r)G%n(@:&iNGT,5G/%*&F2:H<#c+tC31pb@$^j/?5&Q,PT(=LEL):(eD?eW0:`UcAt2;m%.+FG6P5.2%K%%3UcpJqE6qm9q-9)<*@E=4(5T0X$W#%Xg#qWh[r_t<M@?D:L%,&J#N4/T*>(P7Et_?*5UG`$+#U/X(]#=EB(#+dX?pO0IsEheB6%Q3*DF#:)9&,.#G+%EYGE,P$_T4pM6<.-4/,NFD:DHV#)iHGITW*8?1h5#1H,4:R77D,E)#>(kcRP[?Tjh9nZ%,)(2PE&$I#>&<T(ORj3&JDs>A2+D%EQ(P$M1(.#+OR8+-`>g-R?[P041=)6(8$5%YH9#Jq+0:J4EYZ;qdZ$&(OH1$H1M*$*(dL%i-OSrc03QV/<(9H.L(MD.5)U#i&`P42=Ep2)Jm9-#$KHL,-+(D8)C`m9.O5Z.sQg_JD)V0=%VH=%1,&Kd5iHhZ7E+Xp[g/)(;-5,NF4H8+$)n(+01eDop$`paR-4(:-U$@H8&5D(1D]4dp+]mJr4_.D4DYFN.>14,D%oEi?i^*q/dW<IJ4F(IH4,-)-6,&2%4JWT?;@_YHd5GH&>*##W%2-:(%j=FQ9W-Di&hHG-(HLM7%6RP,$E(^qb1iK>e+rjSu7QUL-#_4]%DP<P)>(-/L5@#$FTAr%C-/,%PDLMP,L$FD*$_t6p)e]FA#q7H8?5L%%%N4X:-$%.G+?q?NFMf0$*8@*,G5850J#W5$FrP-1i-=sJr7qE6,GL<H2%F/UL,J#N*0*eTP?oWdi#EH#>V4@)Y5<V%,$EErI-;A3i0Ihrc--P:#VP=%4OEH(dZ@eEY@EK+5R*:$GTF4GE(-0:,>,*rfj5F)A(EqFSOE%U&D@V#<V-#B(%S(]s,RhFmeqb1TG$>6.(E6V%0B#,eS1d[+BUq+lCY$$X,*ZM@&G<$((tiMEYZKcZI/Dl%LM5F704D526PP#F_/BJh2GH(/ZGD66HH-4]&c4D0-5%-Bf,jMWmp+13&R&%*$S6%6N+(&%*_TVEmP@;*Ib:5gH,N7H$O*05RF,$<CedAFMm9DSt7qA4V-/<$5(XDJ@6#F*1O#2hR<62oG-L(D(GR%N/*-#M#Z9hT=Wn`G+*/p,9,06GN.:FE4I#<AWIQFP;jJdq^2%)-I=(L#U0I()%Kl6hs/Y?0_rAp1$>DL<6VL,T%H)O7Z>2N`B=3g7K61%1%Z-NF@&F)F)F$<jQq`YFD,Kc/4o8%B$5)%%9(X&6$7Hfb5Ugl6[ZoY/8<H,1$HI,U4E*0b942okQgMLXFRNM54%M(M(64PP%`I7(0ZF9bJ;j$oF<TX7$^(8B=T,%&]g3;+r@bMc:fY.6.@#5<8N6U4(TE%C,b8q(5[:kT-A/4*24FR/6D&7D*4%jp3I4QCR[`dAt2-(FX06F=-%EH&Wpgs-Uk@As<?>7QN,&F=0PEU0%JL%b-pE4YBXn?S1r1DF)>@&(a$$ZU%1%]4Ab1)Kf*n=Th&SH.DA6%Ha-$6V1D%P3;NTTRFa%M5WIZ%#7IJT&B,/9*#%.]W?gS,_J,)N@[D%)<I^(^0Y#).#pF2]Ae+@,D]1`5$=2F,1&JI,FW((qJnWQ4FD*m3kSCr+&$.L885MD%(*+eqc+F[=_)rtg2#6#Y-O%M(NJ@)4%)*C],(5`-A`+@XMN,0<Q4%6LYDEL%bF2PbN60P^>s0W/%,W(*))&=J#F*j92P4fN;`5F8QNT.EH*TP=#/-H>#bT-;g]hGni61hgDI1-%E6.(FH11#0ncHDt-aY%Jl9HH#6`<P#LU]:%,$+;>0_,g^,Y0_?fG(_-D(*&-Da%-*4DNgDQJrmYl@:@-M&(L.$HN#$RH((:o3/_lK*Q>M/P#:94U$@849&L$b3QlOcT;q^$M,i<7HHT%&*>,-5Z#$tl$As)3TtbD^(00<-A%5(VIXDE$fQh`$X/?TL)atj6<H(.W,&J<J%-U#dNYIg(_D6r47ToDIBD@#%%T-T/1#d`6O5/`HeN&lF85$)G9$81*)88$N?0`pO]C>&l1AtDF#&1?PUJ)*,.#[<?H]reJT+1^;0Z<8#P-LDP$4U<&(5=EHc77Yb_6,^(%I=N844MV0)%$<)Cb=3Tce(;X4-#;=@$@LT$XU8+#5^tId?`>PU9Q@a/9$0FQ444L1F$8)-FUt7M1l^/Sk3HF(7$=Da-T(8*-%6b/P2AQ3r>U<l#(5=9,&6%J4Y8($I>^+JP0s-SmGf##N-G?%]#V2JP%#a)BN7,P6d7^mqb#?E(0*M%N(G$-X*/Fr*4+0l9pO)A0_*(U6E5N608>($&YPejm>3AF49/T[&.FL,=7ZHL,F%*YapS9XdTqY=P4eQNF,-P*P$OEH,N%3?`iHrJdJF%T/Q<*HPH4%))6,M-$&Ajr54^/HS1g,KEIF&5-LD8(2.1(p[%@d5j,eYZn7U8,P%J*8$/&NE4$@_n2Al2eMGLW9ZTGD.88855E.,B#tDE/p1:rEcB%O?KND,H:#4/E,L.+JGXqGjIX30$T1jJ%*&=L#LT(*&.&?2AndoNl.<JTH=N(%0T6>D$%MV(l]*7pqeAOXdZ:QBUH:4%L#64/=X&m0^Ns6M^/cdocf@*.(5(_4]%5(E%&JTXEMl_@l4K_#4+U1(-%F(EA(;#StnO:AD=Y;Z>N?B4.6FH$0-6F6T&nMeVp6I;sH`h_f,8=@(](^#UU8E#RKWSl4K(+R<[Cr,5F]RX4<M`,6H#0jO:[(9VeJc`HXIZ-TD<G(++-Z,<D(DdTf*DJ^f&/He0#X1]5H%.5aDA$#<)7,gs)?l[?qW%&.*J.7*7J.&G%*Kk@$l%^gWX,Nne@O$T6DX8P5=-4>#(?S2jI?WoqZCQl#.GX006FE=-J%#@Z6J5_+4N,F<)m$_$X<9#4Y<$a%(]n)NBe*Sb0q3)J6)@$D5850#X$9%*4GNp=(U(i:5QJ55X#X#<$<580&hE<5J^QSsB3dqX(A(.:#4G%U)=$_T7q4@%M@Ah/ce,)UD/>LTF2<(I#eD>CT,1.s;>_7C6(8)/&($J*9$5%CtJKY)Gq54E2,4K#N&$O*(R%,;#<TAGIkZ:0NX>t1H8$&>15HY%*8-$6O0N]O.9gS^MOMZH-:,2B#TGG4G0$Fc:R:l:(m]+cOC62#_#-0RGE(]%D&W/2(R_2,dih`D(4I7DHH*/--429#HUSbNKJtS3&jY2L/PE-<#TD0PER#=GT*>.bO3&J?Qj$E>*40_F5#W.((@<iM/P)3h*oP#H,M79:E#,879RH#(nO&P4ME>lK*Q/+D41)7-OJ8*I9,#%nZRGF0j)(`?[THDG..&E6.(JF.2#sXGrIieJTm`g(6-%#a6N8M6_$#F(?HeE/Y`O:BO3s?D/E:%X$@$6/H2#RqfnZKnY`Qo+.95#H69P^P59.$4(;?,^_rr<OP([@Ed//6,<,%FTD4FJ*_A5NpU4,YDcb7#*%>7H(-5Z%%&#s*>4+L8WP^U@-X(F%U*?(.%=E(pkNGY95hJ5b2D6%H75VV6>>682$%tgnWCn<9RdGXB<OZE5FLPDP-LM,60(+TSC,2`GSL`dPjX7D-.,6FDF04B$T]h%r0$K^SYsJdF0(+(=PU($+E-%@XV7]_eHNB=2nEF4cH04(5D-^7,%nFr7-?qkP^Ul-=1D475]L]48:,D)AmbT&7%H=u]dIsI$)4HT^@,5#)0),Sl2dKH>Uce`,?,M0_#=5X(]FMH#&Tq&SSk:[JtaH;#V:(=,<6VDT(5?%Kf0O$Pe:%QFdbqQP8.$T$P$@#H6M$g7)[n#Wg<JZA,RH=84$]#84U0M&S@cTgPH=WQF*bPQD-I</4+;DZ,I0#JE+X_s]O?%X^(sm$X%875P58:$>$(&CVG:T%Og[mUGZE.$:T&7*B4&H.(6pc1DJ%Dmt@?I%dPT$4]4R7]4#@L$?_Y;1?nh9$Z=b@XDE-%<_V#F00<$M*MTLk]@/IcO*6)*1%%2&J&%F)&)]CEX#0(;UEY)Sg-<588V$@655XD(KbM+r/lK>[?m@j)D]M5HP-5Pa,#)>,KY?;)-KI?rMeC%0G,78M85J,J$%o9)_AIrhGemjGDDXJ@VN#L>V-?-#oG7edoe(KjROu3:?5%.IH?#T2-I%6(:eQlA5CqTc$`A_&WDN8*L#7M.<**%UYBt*$>C=1VIIFGH.$)2MH&)H.-*>K]nNIC9lQrLSC5-%EW8$))8=2(F(q[k-^g^d$+P;pW,8IZ$<#T#@/9E#-Nr2CefFA(q]6P(FF%H)1$..%M$n+rFq?[9(`[;EVLDP_(##^N-L<%q7(Z0dEp)bMt/3D*P=4%O*6TP$/#CZn$JG3TP2J^iK`,*#6,aE4%#G]*n<?M`L/Z=M-O%Q7T+.%>%V%F%C4*Xu0_D.dU+Ls0_r9E#M0DA&Z1DM(,(0pJ2Z5,^@hR)PWJ,<7(*$(&5ZD,&)J`NoNX?`lo#A(<$E7/NF:2(X#$pIbqcAm3j9-_P2F2=X$UL<(@UH/%e`_%2chZ;9MjZOgZ&:#-$1OJ)H(4&*sT-3[I9OU+&Kg34..DIZ%>/1DF6#:r*re;%_4^(SIZ,CDD?*($W2,TK#@snXH?R<J?CQOS1,%S6)D&2#9N+F#pi?8PglRMKo_nf)43H4U4<8,E;#)b6GPN7$0*@G7Hd,TF0:X8=5G->D#8gP):g0onO^11Y6WE,-(:N6&EH,@*7+E4JJTi*&?H=cD(OPD5E6.80LM*$i23:6NX3FLSYH?-Q6)9L$&*P4)9N)4,>3&P^QcQ>[:&Z;$1@D%V(=%.TE)(T9YISle;jK5U$<Q52M4L4LH7PY#>e=&Rd*NSZ:tdC_f,H#RI&))2Q&,E#Tipe(4;nQ76OWiH$A6T4]4<4V)0$l$FV9[Q>XKP;*H)0..H)5(1EFF$)*RUU=`ForQm=mZDP*$E4)9,((O-#SGhNdWGI6&t[D6H]*V$@%`,5.#nN@9l0;a-29%sD%])-:)$(9G(b#%WhT:Tp[k&Cn2?:,O$8FV*?.6$PJ#4,-^/K&,Um1p(jpL(%-X0%F=E(%M#$=gWpLA5lgHY,1]488^855]DI#@9P(hX,3EfOg*]?F0:(=858U(5G-%K/Iml<$>,35^m?ZAD(G6<$X4.*-T)_+)9ZP9]2S^_FQ,=*/,-)IHD*WH#-n;+q[3tqT3N?IH#I*>K4,[%/),$&raP`FJU6sg=1<m%=D)*:N6&&1T(%-9`c9[t<Zn>N$XFF>D8NPM6-T..%`D>[Y/[%J_2fp&:$);(4ZL<7#5+)(o%4n<(2?I9k,aU%)-6*<PU#7F()%F37>HJqQFM.it<*>DI4&:,1T%W#QI/&YEHotj$&Ac:$(^VD)1<_($8&Q1OT,`uI8TnK+Ar52$E65448.(H7(fIp7Y$.T,^7ZQE%M4U6$8>8L(.(5@qfePpJ`Rl8Z0T+5,P*OE4(CD$_U=+D<F:*p8Zt94VDH06F*/6F--<%6X[b&__ASd@sMp**@,$-&J(HT$&&XZ,X6l?Ms.G+_TNA-4LPM4DXQ>#+@,FO_@1%)uXZP?FH,.5-J*/G8HF,$fI;l&bE1h<?6[XDGV#&6R7%*<.2#n^X(t2-N<nojBIL(M$QF%.N)P(M#%M%D1Farb*OlZeEH8>D.QI.T6--(X(*nb5[oDQ`0T#eE(R$76L46*P&-(E(>5_K7u$[?qhDF$E<E@)Y-X,(0%57obCQd[:&T_.rO$X.,J%.GD>$P*W,fs:C+TKm`7uh7G)V,ELNN,H<%1*=$L9646r4Pgq.`PH1%>M,4DLX%F1$lW-7C`<$l/M4<m#V(H9$c&81$=%#`:&i@4KQo4^P-#`L5$#>LT%#8P]*>^UGXY92JTOt]@J$$8XV(=>5$(0&gP2E:4X;oI)B<5%88P-6$8FP55$%qMeOb0<*QoAlN4:-)5&9):(I87#oJcGZN26[D+nNK#,]&&DFO2.#*cD#:t@<`gX3>:(He]3(%H5G(-:0$%E+P&>=tZIlgbo2HGJG.#RJ#,O&D.2&(G3/EfR#ce/A(l/4)#Z9]#]4A&#9#T;l7[HjP1&/`_8K%DN(($M.#.;$U3(&X,EF8M<Om#,RT715H9BLG##_0Y$KNkT-frf=3m^D55<H)1U480](4PDo+HV+a-Mr/J^#H(PODM0LR$-$#,dR]_lK-E^)fSD5M8=$*&X8M80#i1E`$H%[HX[[YtFUB&#E(-(#Z?0%ZkJTuT*MeB(cX-6,8P-LLLDP5E4%Y4E?8g,iZg14Z<%X(U,5H<(=$V#Ga52X(%<r8@q6%%SMT(8$=LP+%%6SjL5t0mD4[c7&ZN4&*E2%F/(&:L%Ug;N7j#Cm]i2HIQT#58<LT45(<L)/&NUrd6@^U54Q=M541>#TF94PX(Q7KZC6Js6gsQ_$Y0988#>$X%455I$*/O*/hl@`)<,_E4TP$>RW%P=4,(RGYK<Q)l/0*=Aq]Ea$.`###]J%a-(p&[ht[<r26k6X:$8-47LMP4:D8$(%PZO+4<Y_i/,C-D5U:&L#:?80D(cS5EJWI,EA*5U5@6)ELXOBM,(9V$Hf`8F)pAnXYj9*eQJ<>E4(8)9$5,XV#H:cRZ3pJAD3(lE:LNM*##OPN4/(ZS<,;2]j&RY%tDe-<6H,R%NG,5VD(tZSIWI*dr<cq&S>5,E5HN.50H4X%N4W1?A7mDc:9g56Z(8GU#<0:$=7%rb1kp$bBl^6JTHAV<D,2(N%EG,T<%gamRi&M8](4u(ED4?<DP-TT:,,(FsdoWL$Y/%pSN<B<L5*L#7PTTW#h2tNG%[q9,`Qleo/--6.06FE6FHH*=I0_+(G3<oDR_^#FH--VL%N<FH0-%H5d&sRF,*RJ;hn0-#KL%Q)N,+DH$:c1**:jpR(A3(2=%Z&T6$8>#B&V(=GUdOI^Cq]%ZJ=38-J1#JP-&D1G8$pSRL/6djP19Z@qf6.LX0(L#E=MD6%7&l3Dc:ZTJ6Lg#*+A51(E9X)+&#:-9bHlJTMe=C(-K//)254(54H&IJ*:mkQ?hl]TEhP$O]<D>FPT*?L-V.T#pjP:@C>*AlTM(0&,#FNW](^<R.%D#s#gU/GT3t%>[B:HVH6DT%>,4.=.$M?0fHPt3WYN1/D<Z.J4O:,G>W,#UZ9ScJVq]g[(]Rb#O,&04H)15D$JL*5_$StmZ1r@C7D]G(,N-6*7FPF#-*=UV,;%>EcVnJ1t%9FDF.7J..,6)%jRQqcTSqK(8e0Q0N0$<5M8X#HMF$U(4F%U3pq<qj=U$2A.#8a5$DVI&(ia4(M?S5ah-N04m*(.0F@MX-FE%$&[CV<(>tQ/pKuRdGHFVL$6%P<..-*%^/uD3&tg^%X/THTG$%(=9Y($%0B#;m^1`q&/T=7a1m>J84&3#D+:4-W%AI)%`H<GDj=)`dKEH-4.4Q9D6D0-(<d/M%Om0Qj/i$=8((1K#,K)$5U(ME6(t%`7rK>^ZAL(M6D=(U04N(M#AW%d$`hT,>(bRU(#MY,LD<Q(#=(0O;ZqWO;(ZoT<:4$`4-8E8]*84&4c/+pY@E%gI%q>Z.,9@T458<T5ID%TnJM[;Pj0Dc*Fm59%G#@(U$,*69(ep/<FPM</*K]h6U(-L9)9QD(=8%:@&d;dB2kS$PC(X?8#J,%*&F,&4U*0HjUZuU@t,KY/#7JUD$&*0<07*#67,DLfRJD9Zq?0)<UF(*&->X#I$_oF4:<Y%7sIIZoE#P:HHN.-5O$,(e%o*R9sS_n9mF15(<2PT4<LEW#5(lRuE9r-MgpJF/ZO%G8:(P$57-*N*D1gdc@Fs=qeYs3P+#16VM0$HM@6F)#=_A^o3Y&O8@$iD#DU*9$R&8)?0##[&,`iI^%,2h^J#&96)L^P#96)*#XZm0bnrfrFZ7P#]=8#=$5(X(4Ua#U4RcTd[iKAD2s6QV$$%V)A%%(@N)/D+Srfb0#KD*DK,%(aH(77:*-^$$%1-`Qr6J)-O5bHEH-<#H:BPU7/$TD(&c1^HAt;I,K3K71O%%$P%M(N$(%N*X6s&d:eZO-B,iD]#FO:L4O2%],#V$AHN7mM^f`JX+A5+#D5&:0##;X)+^N-J,cOT:6geq0<+F,.OJF,%[D$q)lCb-J?[1V,7Oe&#-<J*5(/WD(#*3[pHU*oSr*h=Q>H8,G&%%2J4-U%:QQcU)GQjRB$h98$)&@P$PU$*)8$SLbo[XKUf^Yb?[T(L%GJ%./*N#=#2=V[K-<Y[](GdE995DL4L,4891(_lA*N?_17l^8_Q05D$.6O:F%04H$](SBnJ0jt9i%N(836X(L#=5F;$$q_So-&rj>:alQXT$EDR0PEM/,(@#b>CZ1TC=7`Klb67XM#./)IJ%L@5*3Dl3(r_`GIEK7W(oJ,4U5,OJ4@8D,&dPhX%aJRiIJBNY-9$V<4M8T<%8I(jCbC9dm^(1$07s%F):(Ha-$5&1%%t9kPE.Ks=b7[M?#P%D;09I53#N$##ie9du&I/%_oCQ5/.M-$7*HPHF:(-Cl]CgV0l&HteM1#D->P%M)Q(NUF0#(_S5blbJY`[F0Uh-$FFH18E1-.%H(q[SgF7)GC+6UP-%/E^4E(-8]0H*%3GOg*l?sOSm6-Y,T6N(5+;(M6>D#$)ps4=RN%V5P+BX=$6>F#,V6%X@$4M&;+3=Mm5A2$AFJL,$0RG$HL,/%(W4MmC]2tmnWsCJ-EE6H(-5.0H0&iHsWgW:?UF_F_5TMDBLF$0NT/L@#b,=h6Ms?iI?s$</H$P@0:#4GUM$0$<K,%r[(5Omf$OTI((9-PLLE8)$-)t-U,TI<k/Tf5[K>/D.$6$8%H.DZ%4,S54IASQCs$UM4JD?<(UT2,7L(nT(Sj?7s<ThQfP%D87%*BLT&&6:-#,+7=Ln&_`,A5:7<L$V8-)I8=%PT#MqB%U]+_QB5LFE((I&62PE7%2)$$*pgIc/q[-Wg.Zb8$$:?F$0V:&(8$o#+R8U,91[^;/&-$.0ZTL<<GE%H(p=)7jm-C*i<30N>#H%)a5a$).$T%oFXI6qC:65WZW#UN7$$/#D*(8R>(6Kip6UjMb#O5^/(H*65EP-88%/$$%me>N@Q]GD[ho-H<>D2#D/TV,E(6EOKqF%Zs2R<C0F,3TDL,<DK,F$l#WqB;gQCcE6eI#LaL)##Q]M#,)5^rq:b2PA0d6],.HU<&8$Z<0EF#NTp]OD7S_@Jsid]H#7=@LTU8*,^#dp(A%Hj=4?qGj`q2Q8$,#`*D#8MI&fNEY7K7`d`]@h%Z#&#0KHO2-K$#*#&`fr456MNpbnPL1*8D]$a,4$GQ#]nR$p/c#;Jg,GOGH7(HI6.1$52-*JnEOs-PM539$ZdN?*T95D-6F048A#&F]r,$6Wu4l6nh6.V&#8.MH6$#BF%WGHf$L=5?)%_D&P(U(-NF(=(M$*$:i7*+]g$hp2s45U#0HMNN0E$<8(,P;%gnJg@%^3l6(?*(4@8U5#$W*$P6>23d&TZo;Ig#4?5U48585<8X:#q4H8KmC@([gfWQZD(@D?6)9V2T$-#9F-N;-l2*hsJgY5ITTL4]4L<<,9(Wqs.&2ZGg%:Rb6H.48:HN.575D.$lCnAi:5Q+T)=/`6H/$N*L#O%H25%7Hi>eFK/^m<+XPTLE#W%Q)>*,P<#A5^JW9(]V1`:mn8E9.%$8$(F618$+7C^4Y94G-h:##&/B5())5XG**#T*k,N:FrA6qh3W:,$Z>7#4Z>&H4&GSDc:]Tuh;l<+L;04*X%P*O$>$7D$bM-^1/RthT19*U?DJ%#>PU%#./T*Q4r[5g9dF*3P5iDF.ODE500LJ..#cn&(SCJQ35dF.Q#)(?HM&R0U*$)#Zdo2:smIImcAIi(@&9#MQQ(4)Z$$H)JpgJM>[]Lj?;YT$G.6V*?6F.*@#J&l6N5,D2-D%Du/%,20VFP->FEG#%pq+7@dp1NDTfhYTF1,:-+K8GD1>#H:DbUIm5<Bno-=4,,G#XH5M80=$,J#m9o)bF$cOR(.fPIF-(A%V)E0.Q$IX#n<S`0JYOCIDCnIT%TGV%>.B#>,)`p)_Q>^)j/gqj?rP6=4L#7*L4T8N$16H=2(brhHN;7?,#;%/T(=D*6+D#A[nJE=WHeB-rKD$T1M)QHA#0,+0>IT:=`&fj6Osh;b7F4-P*8$OE8,6*HRl^#WfNR(r4WC6T=9.<D(-TD6Y@#1$Df&Y3fD2XEI;>I#HTH6.=,$,Y%&nYCn(:2]GD:$Z#E>DRE&2P/T.(#*U:g[h&SKtFV<h(1-LV858=NDH)$GeoZ@c;edWb;Hd-Z,T.F04D-F>D<&m27sd@MPF(A$=Q$T*?U/#DBX*?#(SM[&=S1c%X*Y-fXH%8,I-MH0I4$.$Y]BS=-<qXQj.U%4OE2/#DJ/P:#%]5E*7sFH0O,<P4D,1-).OJ%IHI,#)A^i#A*5Rsg2360#P6$T*?#8N$D$4XK%5bQ1;uEe#GJMP,#DLM0/*#W+c_noM<F;>ORH5P#*/%F*&L50$bK6g.&H4WnCoEH)+@.6$8FV$+1$RjN*fu$ZXKY#FQ]HI>E#$*&(,X.1$;hW-FZ`/iXpp<:(T86X4<56=#5&%IFsVcH<toWgtH1,E4F4*7,6,HD)F]3hGjAtC/*Y-E(<)5$8(Y#-H(%Esh>Ss91b2+1*)#M8&:M(#)G)K3:`C/=*+P0t:^>)LEL$%%P,P#Y%fIG9kH_;^5_A*J$U$%A#T)%@(0&O7bNpqS+bQ[5ZHV(06&M(:F$=.$9h$r&rW&1X`-JND0P6^D%.]8NE-#/fCp-b1R_*JHgn]%ME%P%N$.P(_#=rQ14hV?91Gg+o-L)$1E*/H)(QD(f%`Jc2(E^fp%hI8$J$.M%NH%0&8$c0:<@*;+RXhY:P.5G#:85&,:HN$Aqr#[2aFs7gd8NmU:45L-LDP484?(+_<h<18-hrK[>Z0XJD6D*/4.,?E$b4$cN9MoDT(pfi#:0=B(($UWH5&#WoEM>KfRC6gRbi^LDH$@4T$0-L](t;f?n3,t@)S)b-,8.U1<*WDAH6E#s;?92ob:#@?_>gi/%HVH%&*.=.$F*g*Z]K:(EcC)r4,-DF&$MRO((2.D(bgp(+b]QP(@QJh<ZD6H(5(-5.<W#)JRhd%PE&OT%Zm#4;KD15H1,;;##s?9%4J?W0m:R-hm#4+XWD)1<B$;##3hD-hf,b^MP@Q9,E4&2(`*E&:,H#tIcSU3;(j#>.O?<=8DUD+3<04UX#;%?L:btC%WDHnJD014<5(M(5X4DI$W,pqUR<H=c$Th5H)F^6%6_0%15(A$s;oHi?5FJRJe]>7FD.5P5H.,6Z%NY3)9p(QZqf$[G_+D0#2*N%G&D-#+@tN/_1cd;pJ&<$%>82(M(E7U%%(Z9l%5b(;dWKbs<5T-FT6>,F@4X#5k@4]XAqoKaX2Z,:0>8.(E6UF5G#gn?`$=HF?7+pL+<-J00:)9GE-GX#0J_Wdn*%4Yfg_Z27HZ8M,,%FDL8=/$p(j$I]Iqj0C+)G<6:D=T(=T047V#Zk7_?Ci<p(.q)FT<$Y,<:WD<)X<#*YE+o?l_<F%n4O?908(5(9)5(5E5),R:ae=K*b;oe%H&E),U6&:>H#1(*K)HDY1h0_r7lFc2_E$66L46%0aF&]hi?Zg;1<#J,`o$/FDDG$*&02,,F*G)=[qZYfbAH>D,.DVF=$X0>.DF#06MbS$KjD0li?HT5,;L#L4K4@,$e;^<lbV>dE4:mP%#T;,+K4C##N$Q/iK(+mE8M:[FsVE(;4D&244+-@%=ce2GfEm&K<)NQH+%DO#7*L2#%3$Hl>ib/pe,J[@UZ<DLFL@8UM,N,T#PdA&M3=M3f(W@6/J,,HO$P2ED,G*)C9V]$Cm-M]k<p+.P-()GM0*)EPE%-oeZOJFZHGPV^<:N2#J-J#,G0&DO%Z9L/j-beY2G,%M,2F>TD)1<T.FG#f[Hf?oRF@*nO?/V((<PN)QNU#$=%?1fI5^8DkK5A(*4-F$?TT$@<T*0F(H7fYLQ5@=a5U,h4G))#2%F&#)1:#3Oo7sIE(QOpo7B$<%8a5$V#X7*F3SXM1SX&J<t,pJdF$XPD#O*,L=$0%O`o@ZPf0jKFW%$$:&QV(=N):&((c+.J,K%3<2doI;[3D(Q,M%NHL)-D+[Ud?YQ9b9NtQ:W5W456(.&J%568<*Qh/lE,qAC381fY07H@8,$H4U-5J$hDDotZfKrE1gZP=T>#4EN.8#T>T(c)%I^0Whs:Ts1F,LFI7$821ND,%%G/rHsCb0;Eelh0%P0&*&*&JM$F$H:@DhTTso3)6FqIH4T->$XF@4,-)SKs4Nguig3hM<h0860/:%6GJ56E$-;0N-3)P)ItS=068()F>@$XU.%)5$j60W6IR+RG`u(F,F*$(ZQA&$(/F#bJ2B[Q1foR*i0qV4#HM(^(M0$4<%I9j-qS^$S`6Hd54,=N&($RVH44(Osj1o&Tn)(7g,/6F(LMNNP#-6F*]hQgrN#sSZqIZF`E1,N>$))XNFD1(Xn+5?<lU6r@Mg-G,B(E,2)IG,(UG#/DAs=&Gd_nGb7PM&,>6&)):VF#R((/j6iX*FVC_T9N%J%OD]#&*],L*.&p$r9;3fWfMFs_,4MDH?$L#X2-L8#q`nS[Hh_%i)^@6)TU8M)Q8=@#9%Pd<Q_[D;40sCle(F$`$*H:]4/$&a*(]nr^7iChr3k3c9^dO<$H6,&J4.$XL*lDZgZ1On=;bP%D5HHEGD^0,20-5(3le[;5R6A/X&UeZ^,.%DVP=.#FF](?5q*jRbJ,X&%>E>DTE8L8M4-@,T%F3JfGRPZXNshIZ,TA%-F(-F(VAD#*1D>_=C5;@]YORL7%,08EE#6RL&;mnK6l-NbElKTSHFD,=8.*G6UH,,%+ZU0iPEd9q/9$G%&05_6_6H$*.*_n]eW4%5_6^Ib9O#G)04F5)906D$1*K;#3Lec;lPIX]U5@E<*T%>#W,X5(W?;.Mh>hRDce]))-,>(&($*UFD()h^oITWF<PQp+=94(7UL<8*54Y(_p9_nHD0EXTdX^6/#/80R#LG5E*D*f`JXor(pHeDf*J;(D0-6M8FH-#5+MF-2fqE>n>D4&1L7<,X1$HAET4R#b7<u$Kc_epXD9?:-4NTU6L4>@L6D(*=UG$sgjYIm<HWT&J,4X(=5D,&B#2&ZPnO/9lb%JT9E5&,$S+H#:08)ic4Su-Wpe6b?jl)4$H,/V_>FJ,$8#?I/R9Uj?6N/kC#(06U9-]D8A8F$$_K^1+oYIiO9*]ud*/V0%2#D&F=F*&P22ZeHr%`ZmAecD=(*Z%$(>&&U0#JKQ:Y]@hZP5(3WD8F&U#<(26-<*R+^lH4Q1t;DJp),Q$0P#&*LE$PI#fHTIRs7C)IFtc/I$2-544HH&0I*q9*MFaAP+;OJPEQ4:%ML-)IPL(67#CgOcn)TN9nh7Ro$DG-3-7JHK02#()0,+ADt%Wm@K;Q@H3,EEL866M,0HD+>^?;b6B_%il,eH?F1-JDF$0.,GH1%*h?:T*Aa7ERJjY%5VP$E],(P=6(%2Z7T=ofY+5Iqdm4@(W.4P5D>*U5#,Y3,D%b:<[F<$t6ND/6HP-5F2L6%X8l(2E8KagZpr#CZE>#H&$(2$T.@&6rBio90-b(farO8-5N40PE5L6H8$GOQKj/6ISb,)7=(*;%,5N6H#6+&$=`GMR#_uFCo.cD=E9#26F&41X0#>eN%Cg$k<)s0L?%NID0558H-,Q%%X(X6Bq-URtSH[?LUE8$=(U(8-@P#d;EoQG1lU[@i+TJ--9F-$H06IH0&TJ2H<rN]f/&-4/m0P7--%($FH8RE$Z;<gJe>Er96cOND].1DFM0.DI_,#4Z9;+3OD-O0C`p$<8_B)##Y`6U#(:`F0(^H_EisI9X1H2W#%Z&B&%<J/$$g-c7pQHGD64K;%n(,:]V-6F@_4G#$Z2o,]Tnr@+,SIi-:UDE#?8U*,0<8&J0T,#S_d6@TG3M#M%5)X/#DB$9(N(JWI)8^hm<@<$WH4a5G/*($G2:a5#>>I[U&P-pMe;_fnR%-F@$Q6N)X-F(%/[pN+(E?F<]5mhQ$H4DY(6%=14,$(QrJpJt6^JQEdD=8&R,LDL&:U0#_`mhER$(r6l-Ug@8EID5660,18U$F_^;5oKQT>^n9jm(%?$7XL<5*X*%$G-AIdr`OQIfMFC(*H>L-8EPT.$&$Gc?KH>nIT)f@eZ5P5T$LMP#@4P5(cIJm@TKmF,>JfRGFH?$8(5$X2-.*Q/>lAec_dmRar<G@&E8$A#T)8-(Z$C4%Hl@,Yf/GO6E&#)0GDb1,J$)#*Cf*t2M7?jH<2h6581-+&%%*KH95(ZJc0d<AK`jK9:ZpE8.5X0%F=5H6-(Dq=<4@M.dF1MrEL_D4--7JH8,]N#E#hZV/>WE;TN4*dDP*N(T)A#M%O-#]2A=)c>?HA5DeU$D?F*.OJ%/V2#($pfDn]b@U(:d+sXJ-<$)G&2*)XD0&fCT93[u<3r)7_r^85,M:)$(9OH48$,g5U&9#7q6j0[(D0.2-585HHGF-#_[F;rm^6Y,hW5dH9P#F9#41%L51$5ig7ps(;G;&d2//E44L_N44,HJ*P&.?U,Y^>=JW19QQ4)#^#M(](#9L)D(s<Q3t1D&Y>-.9&I#H*/$,):I%:E0>O@)NMoQ0^HM%.(?*L#W*E%N(2j2e8`sIFROFYE1$F*/.LDF*/%H)pi6(>602P?och*V%/($=5X((E*>%pXdb>)fpn>2:b-<4H$9-NF8)05T#Hn%[RCEf,`@6i$FNOL$8$PLR.%(2EH`:>bo>?pP2%QJDA$<%*&V#X1,&&N+T5?iGn^-An;#.M.0U8=HENH%#8(j?1ffU+ZDT_H,ED)+W5@*+1,H#7>mAICQpPXd]0PZOU#F,Y$@I,%<P*7_+UV>H/A3qt*%1;4,L./%FJND44+iAJ0u:Rf)s+NG7@WX#%06F$%<=Z$_2uA$6e`p9[tRqZFDH6/.(EF:.-,%/tat3,EUGMZ0H,D^JGTL<,2`0D#Lt;]1&Z^[8t1M-cQ]>4%-5H(6T_L)t;6Ctd%I$:TS*L`d,*>2)BLT&IW%G#EoURHG@$[f$Uo,4H1(X#7)M(9*<$E)rZXMojQAU`O%6@M$0#JJ%./&D$P(X*?P4_FP@jJs28#PY&7)9*BQ$4$])l(j1]b1=s=,.P0./&$X(($=$(JJ%C[%1sO(`sGXXZ>H%X>$))X>$.U%n9MT*O9[<GHoHW5I8.<LD*/LTD6-)19>Hj?XC=aS0A_0&4HDVM@.,5#J$hRcQ0Lp5F9h9e5.@T$:%6&@TE6(nMN,b%`/M0P@_9$M4W(*P$&=:L((MFP2+1JcY$AL2<D96L]D(-]L461#$>MWJ4loZKRt*A5%20E(-HE&6X)I>*,iKtN<FpJlK-&DOXQ#%%LAM2#*lb9SWtRNe4HQP3-$-$UN2#DO>(H((mjH26tF;mKe9WU<4HT%9)>,5T<(Pk-UEfpdT2,OfmDX$K,5)9H,+@-#25OZpnrCfrsk:6NDM/<,%FTDR0L%J@U*(o*BJJTMueZ#A-4G$0:DX)<&<@f$li[`AlTGZFsE6DP)/OJ*Q-4.(&r=c-pRq=B[qi=.>F%8=P<$XLU8$.%6[(<o[D$*=WM3oFG(?0-*GHU*-2%,3EsQ?35Oi/1F;jnIE-6]6#4_4F00)X?=pI9)bG&*fPg@U4(EEN.0(5<X$-T;u4GtR_*OS*l#-7*H^4]0$7J(#$l8P&<Up/MF0JmN7%Fb%##_1%6R%;ea1=FC]Tg]u,(F,5HDO&$(R2,5H#;;t9GI9&sSk[1#@NFN(M(M.NV$#ebGrMtgZo4Zr<ND%>F(&&**-V%.#FlDH6o_M(nis<%TJ0-MHH-?#V#n`=s+N@,K3%dUR8<8$bDL,])8U4$9qe2N-8(ZT5p[O,$2/5J$07HJ&H#e;D^ufC%_d_U-t5J0V&]#]#BF-7(Wg9pi_,k64`EDD,M><(#&Q)*#UTN(`nUlgTZJS_)]hTD&.:E&N%28G%2#>(C3>%*Y5UWE&=5TM,P8%6MEL@4(rN,3IWGd2;#J@H7618/-%FH:E96*F>Hp_;:aL,=55g?1ED0/%Q(M)FJ-,(o`nY;o?K:3et9/8(=HFI(-1.U(5$=2K^r4=A)ilGbs94Q#.3#DK%L94)&>M3oh,o3L4^XZ(2,AJ*##/WID&$Ho[b)D4^WY?g=5V4H,/HP-EJ,5<%UdTq>A1tbuj;omX7,,H?4T2ED4B$rF.L(c&4%MN:&h->&#Fb.4D_1%#Z%m^JG(f$-XG4Y(tQ58IJ$M4L(0/95(F`E=,G=I?q4Sj,?$I+24*$(7D&3)(HB$tsG]^I9ld5f,*ND-P*OE0L%G#$h,S*gt33o*@ST*5ID#GN.*,,9(&0Pd^T&bQoP*i[0H>TGE$00BT.E$%V])O4o<4+C#0uT148DQEM0P145D)Yj=$sDJI_c$ZAt9",
+"x":"$&%FK*%%/3%%*(]A-Pihj6-OD05NV67L#]#L4:>N%+Re%C4Nd]9TP`@#80ELD.%F.L,H5$UCt-jNQ=OE>EN^L#,HN.E#L]P%W$q3TP>FH@]QA1L>.5$,&J#8HVN#%eYJHq&V2oC(eH<H;4.LD643U,$c@lm<ZR=o?iOE[X0@,$,+K#HTE=$N,GZK*+Y8qM^5=4TW)%:(5&%AB4#]n)B*g1EUYhl;DX6-).744J%I8>$?<T#tD:c?dU:B;-J046D@$X-46D-&s(=R<GA`(Jl)^=5TD&>%V%2<4X(7lnl]-fIsJkW^1F&DJ%T5@#./#2%R<jC-Pj^I`@Q6,X>6(X8=$5V>E#+)fpUZ?4Gip_G>H%<FXEP6N-@-V#%Kjr?Ki*U$FOmd1Q,M%G,H8-E,*NH#0JW?Aqip1b:$Z8H(79E#,89*-5$Xa=92X@QK`,;(I*#7TP#L=4*#/)/KuQjAMA,q9:`XM%2#4*7#D&N@$IpYJ``f56pSXq6D7DI0&J-1424%cI&[%l?7]$E;(35%TU5PLL5@@#6(Oo05K2O@Uc0]Z>UD,IG$M(02I,<(oWL>ird:i(s4t]2TU$5-8E8(@@D&`?j734YS^1XW5=#%8&E4>PU6,(:$%1bpZ>.QOW*eESN&$0M6%6NH$(R%;[AQJZ16^pdXK)85%EN8$8M.(68$Mnu7ZGFITb6K<L&DU8=8U8=0#R#7t0,VmJeKYKS^jHF(>#FE:/0%T%-%g7*DH[Agjp(XHNE542$($H740P%Y(tT/K-bc0n%G$>2HH0$H--EW%(6eZQGD<%,$Dmj`,(:4AM(MX94&E#UK+7(0c)_5:,J2R(%],V$@F]#%M&;nES?Ru^bQNs=M:ETD0P6NE-<,8&,^M0=%K<%5TnQnd,%XG4G$0:,B$F#hYecjHJGet4K<7F<8%X]<$6U,6*%hZePp+7c+,-EQ6*0849H4,594E$&2p4oYROGq):567,L*L2LDO#OD4*d1F]:,_a=K95Sm/D)U,V%>F<(1D*O^,tS$TsYOcKQb:T0E#U*?(,H=4&MB5dP6<IR_k$Wm65N$%EQ1(%P68%JRCt>Z3AL>9M-pT4&E-]%_D0(:<#RE:$d25UE_?b0L$*G2,*GD/*&P#U83-Y>UZ1E5dXET%--9E$08IH(>#QePK&YNROs/d>L%7TY#($<A4*N#q@d)t7gN6KP[6,5(EI2NF/1(5H#o9tKSs(SmDeYj6E<$.7X#<5J%X,(Hf5[XSaAeS*F@))-<76M86ZD())Ji7(<SFWsrlSc2o04C#5H&25(T;D$d0hWEqi<;&*M0?%<4YHDP-,=9T#%oK4c6Aish%F7(+&:40<PUD54&*+d]?OeM54[l7OF0]@-6L%@$X$N4FX$Yd/g%;]h4*D&qjEH+,9D(-4I#3-(4ECWHtI9Y5g<P,X5FL6:7N,6@E#6Cog=^cA14[lM+QU$G.E(O*-H.*@(K3H-o1t^-lGONI<D.6OTH(-=L:F.#GIYU8Y0XQ<T6;K5F%P)1$H)Q$.6(K*9-Wr0$^=,_u]5F4>D&O*2T6,6(@+U,b$(Gj0E/Rh#VNR#;(5+LO>%#ZeM0NZ9+Tt(rf[,HO%&<944Y#*N2$ZArB1W5*G1EIpt6>@%0>,)ITF$VU%sH2C/=(,;[(Z4[m&5*-6E8-8F(7(*j6t-tYWlDm>E9QF*O0#M$P(DM*/%Y$Cf;&uMfR[&6K2<#(@:R7W$$TD&5]K7W(<C2oWhpaSJ-]%D)%%1#_D0&:Q(WWFhmXIGn9H>$F86(56-%X.$<iP46l_>0M(34#_U5#-$H(4@a%#hojQGe<XrdK_D.E3D<MX,D3H.#R6[Ko-o)Fu%BPr*&6<PEP-PU4%*&Yb]hR%it9$rgd^i)FO6#X]<$4N2%)X_i$/6uKtQ6[T<#/,/$<H50U#HJD*3uF/f$_m]Uds=#*T&EHN%N.-(B#&Wn=Iq]jrpJ`HF_,IF7(FP-%52.I#)Fs$=AS[er:1`9,$0ES)%%Q3H$H#sg3m63:QJBd>K;-H4<FG%.2V4,E(G3L<FU`j95%HN08$6Y*%%?9%8E$h;Cp^(.#X.T>Ge691,V(*&=FD99%Ic]Hq0>MCo$gm3,%1.0F%N%.FEF)%K9(<i>F2$;Ir_E%>..2$HGFV%.(AO-<nW%3&qp0cjL/#>)I8-)Y%DR#e&mTO:Ef0]QE7jQ#EU6)M]L(9>0(#i/an#St[rqZ)C6.-80%a$a$F5EH%e$]`q2t,UAj%YX@D2,XD%.<ED/T$H8Dq[dcJ^s2Hg6>DJ#>$X%,/T6%ObmZ7PMfV?2Hn05N405(5H5L6H$p1>,9*QcRVj<O-M.W7%8$6BJNH(*gd<od0jp`[h?K4AH6DILB$%%XO,14%?1btEHj&`C5W%e3#H6L-9IP4.$D+]@p1<TOE$_rB^sQY4%-ZHP-=G(6<)6Ms^q,b`Gf[+>QlJ4T$EE<NV,0(@4#@*_nA,Woh$`rO,,P4.)I6LEDL*_gt;rH*@F]ig(f(Y)TDE720<#A)$UGF&Y)<RMH?/rod,3%Va,4D]=%FK#U7HjP_rnG^J0%_#N,TEE$&*00@DL%OZe>CcEg</Xu:$+5TMHL,M@4(+(&`Cr3:Fp:e(%iCDX#<?.$HVZ#<-#S[lU,7K;bXCK?H%N2,5%6HDO%.$1]$sYJb$SH>L3-%ET.,aED>,(F(O%G_3K=oeO&@Q,.((7JN.7*$EF#n$sTZRf(0j&RK*,FO>(($UN2F#&2Dfh`Z.pjtE+$gN-42**$(&G7DP%Z79PAYW:g>*+b).JE0T#))<D-0G%2<T-gq-:k-o/UT(EJ5N%N60/(=#D$EA5^VdP]r1a)N$LG%TP=#.R#P%T$K0><YgZM$So1<H0>FMLL0VF-U#-9qjIT4OF]T3mko8E6E-LNND08.8$G_T/l0Il7fmXF)785#NH%.M%485*<5*/r+GhSYQ/D5#::P$%%P57&4((cO?.,=ItUpl/@@#8UU4<@8$TU$j)A^O2:L@t;2rl#(#Z/L8M8MDB&#$SQa,P;+cU@o@Db^DI(LT#<L#-1](mR5b?M^_0OGQq46HEbE#,a1056#1Z?WnPQF>P93+,=)>LDP$P-LT%Y()=m<GdJ`>H&9n(XI/H%U6L4>(.E2)cHh,EgS5qjZCe>NDA-TM5#4P@DX1#(bDsgPgg5dJsl%.).D(-)I(-D%I%@*TA`F>[)Nc()+-4NF(-N6D(+)GRI)AGjO>/)cHE.0,9P%6%N5IDE%<q<r2N_/b$UdDd.)>%(HR/$$V%I%Fcp5+6PFa)s=lK<5EF-485D0.8X#p363PRjghrFNm8,JP<5)9XL-G4$`$KH=7L0*t211f=(8-T0@5XE=D8$$^1<hcf6TMb><Y?1)2(DFL,.#E&I)^r+I3piTdm],N8$U]*VL<%`<(8$S$9d`McnmaD55OGD$EVJ0NF-?.(0#rCNf$Ej,c(Ze3C-(58EX:?-85(E(^>/liGC<eX7&gFZ#W6-(L*O#E8>*#sjq)-;+.Nt+]9H%-*14P5D)G(.$MoN4GBHm0jP1p>Z(0.,&JDF$=W%]hF)E%*,=P_jQUo,&?H=F#,V0U*J#fK=bK[pO%]L?i5.N%F,/(EJ,%NF%CelQi,oO;%3+[#I5.>$8$XF60)#)gJYjL4D_%iE?UTD<I(P$-Y,<<(-c<U9Q^=jh2rjl$H8:106FE97-$(]*eH^Q8H`K5h^m-=(.)HP4L-$I%U(<m)3eFVY*dC?5H7.X5#&&**4@E6*f`DZ1nnO+E<Pl$6XEHDM$P0,-@5%:pYcT(>(%Wtn9W5$X:1TL<D9?$8(oG*]5R:/6sq$$;A=T5)#NPM%#9@T(0V:3(<ZGXnmU^;584ILE6.P,945(`kV7s%SBZTj]h#*$@TLH%.M<T$(&F[hK1fl6RT6.mG(<28%))6EW#-*i3R/+]Y]m;pIoZGV$$.)*&I%(@.*m^hT_2r?p9t`39H#D5INMP.90#,$DaeJp&_uMdpUP99T44P$P54<49),^8OPf+q&k7u@)J*EF$Q%N)0.(/&;P@,bm40cR3kVHAE&E)M5$8P(1(2(/(c,>0<4K*4jp1HT%1V-%F@F)>,$io2/%FRZ=F0T$NT)H$6H*/5%0$A#M+7;F`4*CZ$/c60H.&9)9)J.E5%b.GIZh4YIY9cS*qJ#PG%G(-*.R$,&P91D+$6e<oOUEp<D5960$H5690T#YJeT+m^C:=$]&<-(9HF$0.5)EX#?78ir1^O+>3f@-H.T6.LD6>D.E(m81Y)cFG_0%E(6,Q#.&%%J%LI4%=@_=l$UR,/&W,V&UT<#T<<(BF#O:W/@?=nI+Y^(O$DD7-OJ82,#P*-f_Z;^cId4O$TU+F%,cD5L40]G#.%,7h%X1Z=AeP0H](-)%E*/(%I(^#ImRGNDb:(tApi8+D.-0MHEH.#;$_Y<AMAF,1TI3MlX5.5:(($57H6@$6W_@l>@hW;toI?EV04(5)9(5D=.(l:+BH3:gJNlDZTND%N&%%R%.L>#n$bSr[7?YEQ.OO4(1H8M8-E)5L*t)/]?+SmGZh`R0(E,&2V,$H<F&J,(?[q;GhT,`9r_D9,.,I6&:.IDF4)tAH=QRb&<nWnO-5#]D67Q9:.]#4(]S+N2l*JDp-KlD4EX96-5H86A-8#Z+_^4YkWKpP.]F?DB88DG6.245U/#F1i%eMsns=DXNlQLM4ED:(5/,8LP#*2+pH>/eH>sKmD008HD72,5EE-#pTk,OgH]5?2Nm9#(5XP&R=5($4)t:W*YJ7DC5+$O9D8U6/$N%H:>8-#nE:(phPjFZ2Y[MBE&%8MLL8$%2X&^qS4J<5h`1>+IGZ(L96.2$HG66Q#$jq93Ur$`^/R%cT5$DH%A(U).-#8(]15SX2^Hb/&*)#2G=#O*T0J&#))4T2I_YF`q*@hnX.6D-0(EE04F>$CsXK4_5Zdp]T=<F#7(PaM$5*,V#@hF<cY(4^i(sb?<X,5FJL,/6H<U#p9sI+J0.lIbJa,)>*J<9(5Y,&W%)_56@*d7u:l?b&3<@?.(0P]#]LE$EV*6t39]G:.ZD,b$<T-#A#08+;E$T)D(W94o-^,1UFsD7&=5TT1#DA<4X(*OE6PIY?j%oan8+,/DFE6$8.0.DJ#NU?:7^qQ0%c[T:D(6-MH8%-4?#;mEg$KSh)^72P+T14,)))I4DA#+H9-h=Aq9Pio[X:L*D@%/*G*V-#O#;(-pX$<lG9P_s$;##MFT9A,N(#4+DZ9M7rl9Phm8OZI<)X%:$8&>$Y,)Tn)a4?X(<q2,(FoF6JL=T#<TP,7.%?cEl-Qj:mFYZW9,EP477(5::L-H#K;IF;q[oZI`)AhV5$-=<(UTH(8@%J&_)/t+TP->K^e5$)1R#N%LG))8(_D8N$ic2Z@qkF2,L8.0>$XFE6MD#7,lTRCMj6]U]0Z68#-FL,F(45>&/*g>R=b(2fYFJ2$P(4VN>6#M$H&[h7FT33)b>:%[UE</JD]$a,,GZ,(s<ht%:iGRj-ud79D%N.?/$HZJN%.#YnVE$JFSiIoK^Q,)84UDU(=0<84$)W+JWr=iHlJEmI6#O%K2#D/+N*4%=&>`dIl9U2(O6M:,J$4@6V5#0G4&Fu*AQt$c95)N;?2,.41-(EH9DFD&2EI/C<2`;Pi*O>$PT24)9D?L$X%GS4?G]H[h)(19oR#)Z4N4N6L6<&)#niJ^0oN*1(TmnN@0.<#*&TDFUM%R6n`(FIs2/&e/M90,.6.LD6FFD5)WAg$s1OD;7-,W=D8:@,6FT57-T(1_EQ/6.mlDg9*Am51$.H&6%2E%H9(P%q4q&+8TcgRs?TVD,UDN.<H,<>#`7KPt)9mImQ?q#:(4JPRO-7#5&#j*/HESYK,?;HR@X,=88$($85UH<$ZVdZ5oE/FNY*9-X(7%2aE&6*=E(NBfRCpJO`/W+M@1Z-E6^E2#D/a8.H(2*&J0go]CV/m):*2002..MHFFGEE&`IgP-QD5W_@lF?_4XG#(Z*%%?&$,B$^7KX%*TcH9Jio1P.88,G#,J45EN$pObC02oKY:=(`$#E390QI5I3(#(p7Mgc6]phNpm1hdMI5$8%L#6$80Q(ZC:QnWn=gb9*X-4X/*(O*$GB5D(cm<)=t4SpbGMm3HE4@24)8$9DW5,(^Ci=Uj,A+3G0L-#H2D7/RG:2D/$#DFo`f[ID*[,X&2I(6/G^485]0J:%$q>jh%EMQdN6fK/kQT4-006P5FEE8<#mM/c3V4p$e?_MU#6*D])b,#7%<(JEljeX:nQ7n%T]*Z$$6&:%(@&`#/_mo5*2cfC6A/jq604>[5#4@[6D5%AM#i<@*X9nqg<k^#J6LD6M8.L4.&#gNt+RIEc<SE,4,H)`G6.c*1E4#=ZEfW>F2u[T=UnTH,,M?-,&JDXRHD#u[j)CTCfrARI:a0M4TFEN.0>4LH$3J&J)gcS1S*0P/G(5@H8*7-U5(-*eDlZ9j8Md9&PZ3FX(09>,(ET6I$=$3%;r?)B>Qmb&_64*-:*0%F$7G(7#/bS*KZIU$>CV?E48F+7$8*365,(Z5b`&M=Tt%pW,oF8><4XL<5TT6-%fWS#nFM1SApjsi?D)(F25H/%$1T*C>7kT<fgm13@m=-6-.G8,6F4-JF8%MknRcQtB-s8$Wd(I0..2%FGFF-)$>g_+7%_QY<4W+/88HNTF(->L.55$4pRqb?W>XD/9._-W-),*M(G#I@J(T11,EK#3Am[&>]U%)XT=(%%U@<$)%0]n[XZU=%M1GW&LL<0*($GULL#*0_rMG7eq6j<@c&5E4(799*5,8(*?5Dj`5Z9KkqW-648]0-5M8HH^45#)Qo_4@Sp[#K9Mp849J<,LDT,794$Z3l?IWfAQi$T_-),NP:%6OMF#I(jA10qs&%/HREUr=J#1($J6.&(E),&lQ;b>1%;2H<3m>F#F7N%N62%,V%`0-b>&i-CtpS3d>00#W7M8B*DEU%JYGHQD_9d/+FnhP62=T#,GN.J#<TH&X,%MD(Nl1<Y@ZSD(ODG-$H02L*-#<$;e(-,2@ctZ9T7,#BFN.V&D4B#tW%5[=GS<(S0Z2-&,G#F91%,J#J(r$I%0b@#U`]Qd0(61-4$8DH9%E$cA#p.Gft:$(jMI#O$LNN#P*,Q(XAI=,RRDkrHF^,[D-4<HZP=/U4D0#EKSfP24:C`d_mc#&?-<.$HVDX**#U1GdP->,_2+cTJ%>6(LPM#5V%.&_Gmdj/d<R:_T2HFET%N0]DM%>,0%PY]GN5b=s?0S2H0<E9%a#]$61XD$6NRRm5C,E19DP?GDZ,E6%6.H</,*>IrdDiL?P%`0h).-D,22PEGG,DH%rZL>Ht0QEM:E,`1D8,.I&2IF4-D)%aQ,tJ<UA5+Cui062<,LNNDTD7F$>I:p,1MF=D6^3-<6<(F7P52%U4V#:&oND=h%X[mN@X05@/%I#,)FZ5H$lZbW6Itp<G)+8U#I5T06O:F=40)#(7BsW$HD6gK29Z@#V$3$*&H+@%T$eb-0=sAjo%si1>=*0F.:L4G.F$W(gc+6p;4NJl4WmqST,#LKT*?,S#D<#mAb$3WHt9cQ3W984M-*$(GP845)4SZN2_8Tjc@K?=FM.%2VL<F&FN0%^2q?PP9O5+t#bI&72#F#@^X$,%D7*SlL3(6cTX6[-9m#M8K5H6.50;M(#$_9;cF4>I?rgWPd5#_,4=)Y8D]%4(e^nK37;(Q2;4<8)1<6#++4VD)9$>R4AGT,I6_2ppf#,?.B$N%XGVJ##:d2]t)mDZ2h_mX>$I4VDN.<6,)X%(5%KTmP/$l935HH%NF,TP=D,N%.$dJtKSN/R6nD$]I6<L40LD5LT4.)PR9mH]=P@:=U[/.&HT(*&=,$JF*&PY%RCq`_B/s[685=5)M%N(9X88$REHUF>;U9MPdfGU=T9L>4(5TN4AT((ce(;+]5=+@N7?JP8#IL-%FP,)4M$]0C&:ijEo0l_REH*3,FP-FD+/-(sW,-MfBrh],jPTZFL5EG+##328P,%-qFc(l7ZMe>F6)MD0)X$L#@$I-L(nLD-f5*T3-U=2-&&*F8$8-%&*J(i06GN>@n8Z:)^XF-%(/PE*$F0>$@%*4_b`1>ei^@<E%80IU$@0I5$.(]F$YiAo,D[HVafF4VT1%a$FA<6,%oEP,`>AMt1c>9bm5#XAFH8--VA$4(E6oY*DJGR9tWr`-M5564EN.8468P(f@+8&Wme<V[(E5-*$#YWM@B)#(G(F-`],Wk*._d;l$K.-T:#ONN*4?DH%^uh(sKedX@<SG%G<,0J<2*GW,GET#IKl*oH0HWFq39`(2.J)(4M8#$1GF&h[)1T>]m@KD392D2-6L)%%Q4FH/#5WJjUd^3q*b(W.FNG$5(5(0R.F%miG[EW#@sM13=W3#-N11$HIQF(D+RbNdcSc-7;_i<(%IHV=$#H^0$#X@.$ta$D7ISN*TW%>ZHD@NTDL,<LV-,$dAjYfZM&f21,ETI,6P+##S5F,A#7&<Ze_?7YaKS62UT#G-6)9F0*<<(PX)9#b4q[%Z/AiX*0,@<5XTED$?$7tVE9r+,*K*o_r-E47$J<5X,&8:,(M>2U/^s7Q<t<&Z2<]45P4L58]TD&mfTd:]hmW4a1tM?,GT<0866EU<,J#7#J2FMN/UX/dG6.05#9(P$5)4HE%ZTXJ5(bgn+O*D/709L$P4I5J2#hnskI_Y6,LDspI*G.1%4F$06#FI.*5Z^o7Dmh=j(IE8MT<,>%VFT<L8$QE=SuN0VJ*J_52)(*0%UR?(F$&$)c.LTAK:t_`oHoW@$4.E0*G-H6#X$-YM@ZgN/gU@,_-TF(;0LD5+->D(9O9$>AtJ*IQb@_GH$/F*6%/F*0-*lEY*i]0IG)p#j56<$8+]D(-]#;$X#0>_pT*4:$$jCR$%8Y>.(EV>9$%(q-IQ7HDOM79WZC1F#L:E*/8O#,F)NQWr:rA+t7&ThW*-a5D8%6-4aE(&mFJc^Zk9-sEQ:-J#G$H:%6/$0*,&SjT?bo$JbP,Z2U$],-/5HJH]#@(g,0%a%KJMpbXoPZA,NV,4%6D<NFT)&O^>s9+6brt1W4,L$G8MMP8-*PD#,UHfN07W06,_O3%I:0/,]DDJ5/)%<3tT_f0,NG+5gO-4@8P(6N6%M5U5#WnfU,efWEHAtH:164,13#DKI44F)HiUT/[QT>`0>?4-<I7(J%.&52YD(Mg,/$`_3nE(?_tSN$N#61(E9%L%P%63[d(t1g)M_*GZ*%1E]#],H)%?&_f)SeP<(?iZo-Y_.,T88-MH85=DD%]>4(?IfD]Nr%).&T8<-4DX4=#J%@HnQ:Zs(X=rPZ6D1&F:*7/%J14%^3dX<hn:h%Z_K]&,_$(&J(-&*$aF#,+JT)0_>K6+S(J(758L(M458*-&3:$A[q&X//Tdn:=P.%5HP-5(FNU(?_(/7&gn(9i+JSZD1&=X,$H<U(J1#[rH2t9c.9e&M8Y#ST.<*$(WD>L+#KQ/fc2KJ@sVc.G,*1G(<PU#-J)G#nRhYEfjnDC%p_2H)T$9VP=6)@#1$T(<&Q`5i8RK]/Qn$4GGEH],-02:#(SKRm?<mJ56X_eHMF.42<&ZD7D.N(fGHh)Kgna/q3hhR$T(6@26FW5%=#(Hp2=AQn7+D6[;#HL0-*-8E(GHM,$PERh>Tjp/3M?[64<=)./%FJ%YX4#r7,1YS2]dp]`ng0DVL18(5EQ<.D$TG6XK?3D<R(,AW,H<YL>4TN<Y,E#I6I`,XK^H/p=^oQ,P4*&JP-&*7LE#D&<P)C,fR6jIYPDI@.L-(EPDV-1#d3Xpr3G0r6>)[O:*6E)<LT#18%7&;HdBhZp;uD:k^U.L8X#17J)<5MD%<Y?GX2g_nP2(ohQ@-D<.0&JEV,DX$1+Wi1pDI9WA&Uj%.H9$X]<$81E%%l%TWd_o[_PQmd6-X,5DHN.-4H<E(1CsR?ZGY::Td](.$Y$NPM%@)H%$l6r<?O$JYf_T<470Z%%1#D)%>G5*Jtmh0nr&=E2C<24>F,^(($^H,V6#g/P4?1Un)NR6]D2AV6,#D4>VI/#:#F[-MdNX-<,K%0L#.07*7JE%LD$QPlc7i0])np=_:,H)DV%>.#1E4&G8cQ7Wg)bTh>+N*P6L#P$L4N$O%c64>n4[,HNHaSCEMF,48Q95D,N0(;$h^:*4;?XB1Y]?F$F)H8-$1%0V*-SCrJZ=pN)=rKS#,.=V,6(5F<VHF#Qg>P&12X4%t_1#-I5&O6N*:0I(#a?5^;hD$Enq/5:Q<M(DF5&:0.#MX#<STKq1S#^ij?@E524VD)1<6D70(`$9ksH-sSJ@_jS.$.SL0%FMLK%H%^k`=ZrZjAtq=Y_GFL&&TW#<B#*R,%/+W^;&PN2&T(tZ8-NP,@#TELMF8$QAYk[-ijK<NqUd=#M$&N%N%*P(T(;tCi$JYcONs2^I-=E$858$0XH0)6T]hCare(5D9bcHR$(.*558(G%$P&TsM_RfG((/BQPZ)8@.)*%%&IV5$)3(R6P^=3lHg+r]$G$M%=4T(N(0*(4uhSEJAd(`eN6D477$>)Y%8::,#`AsF9$JG-Mm64D-M,a.7#4J_ELH(7FI4E;NkQ1mFYFN,,O8>6#4V6MJD#rA$)A_0Zf*(/F=V@#6T(=4%T=V(NSSG(<Mk2C2^_r#*/-6-_F8FH*&#KU8Z0^mR+8[M4QH6M,X,)I<EL8.$RuA3&[t^P#kAJ+#DKGP*%%O-23##Im=&S?k]OE)KiIJDT?47(5:TB,,&Ei@>0g>E`1H^]*7D(G)&Z(=&*1*-#]7#=rtHUX(^iKE$V;DXD4,<-4C%(jQj7m;_-iuT(=?,E4TM@)YM@4,H#Y=^6@hI,tK3g2s2-.$8-%F8$HFH&nDj-F*I[M/Fis,^#T5:667@#]H#10j)7W0*OTS%j-7EF*-*M(G(/.8*h>2lRQmR]Z&L-h7H#B%MI(-Q(V&,$$Dn=GNU/0_Cb?p8&H5J4R7,70$:$,1>C)>EP)qh6=$X8$*VXT%><=%&8$9mU>Y`%4EK,;H^VE>,#E&2(DT.@%rNJg_R6?=j2%t$,)*bM8Ma)&I#(tD-bb1p@QY=.pVE60TZ47L#L4:<?D$;h&/tS^Z:iDo-0Y44)HJ(-/$94<)q@[g+_r%XKS9AjVDH1,$&*HD1-<%[isFRaGH:9,k(X#L9%**&&6Q#<$lQg7MI`@#jRGJEI#27%++6J&,1(h`cD4]F%WTG)>`h@%(:U0$H=8&$V$;e^_s0K(<T/s/mD+,F4G(-:,F#3#JZSerG_$q.rg%(J>$@5X$X.&$%:D^j<YM2cO$<-Z7(066(P$56F$5*9Of5PZnhAdme>+%>,@$($XET%%+5j+.S_(d:XoYN$%P:>I$0Y6O$%(+&9`L;0CXJ+/$>IXF8%#.MH%#6->$lHQs/0qMP0E,@T$&4J)17#*@T$9jhmj1Dlb@o7eD7$@,4*))7DT$8*&_OBM=s3qSlQ4,EP9H(9)-5Q-H#XfcAn->TL+:V*0QLD>.8,)I4EV.L#&c&WPi$An]b2o,ZTT,599H<<<G#l4]J`_f&alI]02#/&H6(8)9$5.$J*YAMnm?J`Y7[_o44-<DBG&2Z/TD8#@N?XdJc4Ne%:V[mU1<TF5$80>TDA(t7#scdp4t`>$spRE<5TFU(=0>4X,(=EI3WGTO6->g%l&#2)(UL<($I&#**^7GrDMds(>7$$9(9FM06)5)((Yo5(`kPcD<G6JV<,0%LMP#FET<%HmEj@tIB2gZ;3M(#X65$88>$#M(Y62^KZIQS4:GT#A$O4N6L*X)<#Y$M-;1q$E;:+Wq,(O&#0:G$#R*E#J]Tf[?1X*JqD6@5:E0*($G-87X$OZTte;f%)@Wc-U[8:.,X5*7@ED67$_nWlKt-h@Pig(jpPV-%6P4L5%F@N$1Go4COsZcW,3?E6.L<6,2LDG4VLD%2Kr&qD*PfZeMo@-E*%VL<%%/HX$Y7nIiP0snUh]`H.J4THH50-=4,G%Q[mXI]PV3s/N?Q.1=$4*O*7#XHI%[OM*)76Fn(d-PT%&-6<-5%6HX4F(*Pb2;i3bF9HPQ3(]&/.,PEDF*c#$`-gt1:Mf5)7/pQ,0&VVT$@<>%JE#?E%PC[8[DMes$g*U&&(G8-*$*B(&U8&kmY95sM[Df;#V44--MPMHH84<%sh[(]gM*To%K7HME$(JX$@-&$0P([>4n<o/@S#[CUbD&D2/-PEHJ/#2#^/:i#P<nAM1*6r<)EF$?#T*0.(Y#ZgIAcR>*3+3(l=F,7&&N%*:J,V(Uo9_>).oUiN@EbJ($7E9J:/718*($<`M7Ajq0<oO:QR#Q,/DNES#L3P.DJ#3P9ht?_qGi6^9b/D4],1PMPEI]4,#()<4lWM9Ye6eT7.XB<,LLLDTT?E%p2->Gi><AhB)=5f-Q60U#]#<H5NI(X_:D):1QO^u;^;d,AP#VH#,=%LUI#gn%M0)_-AgZP[D6IXD4R7,<-9.#P^ef%2/bL,`h<tL-.6DHM0-4FFP#i+J-:&3;+EALb>62H#M$P(,E7V%HfY1%Z1m`eI;3?)&/#]6M8_#D**)^P`iGJ)9<r)1NA&%#M9I6.9Q(#%*<d^294%1mc7jd?NF.%#JQ1&#F.N%l?@YE9h>-267;(,;%)4Ta=4#)6K#5<Y[9Y=Rem<l+HT5TLN())MN<4@#5IoUEd/EF(n,TH4+<XQ&##RAU#;#n:WS5jC2m[cCUo(-M)66T4<46%QH(4#cK[YG[WJ`C@Q(T(W(N6N%=*=#$hA]To-$pPsKSmH0].E,=5XH,H_D$:-l`<GK3e^fDNqQMH88HE50055-M(JGqg_KZnf$NQK[d<0(#G=(U0*#EU#<5Hfp5RQc&MJ41+(L#7*L#$K9#tC3jt%G`>J?D#G9V,4/#D:D<61*i5^R:4`S,^$Ui7T+E4=D(-T8,(C#SqF5RseO&]5i?$Q.L%=#T(NDN)(lAsioCuZ=VJ3)+#7M<,8ETL8*#+_UYF[U[u7$aC$H<$-HYG$0B1E(X#mJu2g=1$1+UW9H;4/804MQQ8D5E:#7rtpoK9rejJE4s>#M&66@%V56%R(#WItP%rC2ZW;&b,2DQ(7(5*M1DG#q%RrAfq7Y?Uq2((.I>4>#T6T.I%$A=?H9J#p51i]-FF,*8G(-:$G,.%i@YbQ]&=1fcdDD-E+EV#<.(3H0#ZXF6U5dtPDadU5DJD94)941,/4(^eU^gtn*IKUo)E0>#N566P%TF-(d8bD/qr4P#3hKZ$EF6_8&:^6..((>MEi_7@t;@P9t&t#@E*O6L4N*/X$#WRuE#0uO[@&i$P,$YDG=$X02<)H#3=2Ani<%)5E4G[MX%-$?8U*H(>M(qjWp+]F4t?M&J.<dH55FU%))>0680$%U&@*QoH<l@;_=F>(84DM044$U.%qb@/`%@JoiD?/&$6PFL,N5%(J*,JDT,O/^Me;fq3F9#PN(L#MN$41%5]>]V9d4c7EhYE-ULHP%N-M<H0(^VK;1U>eo1-TY,D9<$(FQ%N1%$X4)He<h4E;/c1-YjT7FIDT0$H=,,16*/UfMdpV9N+l&E6H,N,5$))8HLF,$N1pD7eH>,F`WNN#-LG(-RD(LN%)7C=H7l=*@EQ3U0,.G.X)AE.JFD$OUbD%1q-g_2G^)q%-4IM.4DN09D(%;?RKMZmA/$bWH$I$=D.MH.T(0)(`>%ncM@nKlC4WJ1.&<(L#U#JF1&G%Q>3_0SCY^%-E[#.LUT4<<PD%<+J[WQf-FBWo@Q`f?#DH*;15H9+/-##)4p6@dgLsl2ZHQ#1+,7.)I6J#K)#^dsHQIFJN)9-N*P15T69#49>4HQ$l17i:lJ$DM_=s%rH4F.:,7J4G.6,$>p&]U9QtrfTo&H*L&()F*/%)$R#&Rf?^L/U?2ml^q&*FJ4#_%4,/%&*@Z;`,%Y01UZYd.5<8X$9)@5U4H%*/KH[:i-;hKWmF-$V8>@.#DVU6=%(AStr6m[`GP3]$C6J;D$L%N#0437%dK/EV)JbY(E>0tP>M*$0&J$(OXN$cMU<G=Us)Ir<Yh26).*#5V^@6(#G%)JQDjRkJ2Qg%0M#2,-4JT*?,7DHD&i_)f_YS--i:-fK"};
+</script>
+<script src="../../shared/ads.js"></script>
+<script>
+/* Ninefold app: the grid, both ways of entering numbers (cell first or number first), notes, highlights,
+   mistakes, undo/redo, hints from the logic solver, the clock, level choice, saves and house ads. */
+(function () {
+  'use strict';
+  var LV_KEY = ['', 'e', 'n', 'h', 'x'], LV_NAME = SD.LEVEL_NAMES;
+
+  // ================= storage =================
+  var store = Goobs.store('sudoku');
+  var settings = { levels: [false, true, true, true, false], mistakes: 'now', limit: false, timer: true, pad: 'cell', same: true, adEvery: 3 };
+  (function () {
+    var s = store.get('settings', {}) || {};
+    for (var k in settings) if (k !== 'levels' && typeof s[k] === typeof settings[k]) settings[k] = s[k];
+    if (Array.isArray(s.levels) && s.levels.length === 5) settings.levels = s.levels.map(function (x, i) { return i > 0 && !!x; });
+    if (!settings.levels.some(function (x) { return x; })) settings.levels[2] = true;
+    if (settings.mistakes !== 'check') settings.mistakes = 'now';
+    if (settings.pad !== 'number') settings.pad = 'cell';
+    settings.adEvery = Math.min(10, Math.max(1, settings.adEvery | 0));
+  })();
+  function saveSettings() { store.set('settings', settings); }
+  var meta = store.get('meta', null) || {};
+  if (!meta.deck || typeof meta.deck !== 'object') meta.deck = {};
+  if (typeof meta.finished !== 'number') meta.finished = 0;
+  if (typeof meta.lastAdAt !== 'number') meta.lastAdAt = 0;
+  function saveMeta() { store.set('meta', meta); }
+  // per level: played, solved, best (ms), total (ms of solved), noHint, streak, bestStreak (shown in phase 2)
+  var stats = store.get('stats', null) || {};
+  [1, 2, 3, 4].forEach(function (l) { var o = stats[l] || (stats[l] = {}); ['played', 'solved', 'best', 'total', 'noHint', 'streak', 'bestStreak'].forEach(function (k) { if (typeof o[k] !== 'number') o[k] = 0; }); });
+  function saveStats() { store.set('stats', stats); }
+
+  // ================= helpers =================
+  function $(id) { return document.getElementById(id); }
+  function isOpen(id) { var e = $(id); return !!e && e.classList.contains('show'); }
+  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovHelp') || isOpen('ovPick') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function clock(ms) { var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60; return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + (s % 60)).slice(-2); }
+  function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
+  var toastT = 0;
+  function toast(msg, ms) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, ms || 1800); }
+  function bit(d) { return 1 << (d - 1); }
+
+  // ================= the bank =================
+  var BANK = {}, BANK_AT = {};
+  [1, 2, 3, 4].forEach(function (l) { var s = SD_BANK[LV_KEY[l]] || ''; BANK[l] = s; BANK_AT[l] = SD.bankIndex(s); });
+  // deal the next puzzle of a level: a shuffled order per level, so nothing repeats until the whole bank is used
+  function deal(lv) {
+    var n = BANK_AT[lv].length, d = meta.deck[lv];
+    if (!d || typeof d.seed !== 'number' || typeof d.i !== 'number' || d.n !== n || d.i >= n) d = meta.deck[lv] = { seed: newSeed(), i: 0, n: n, round: d && d.round ? d.round + 1 : 1 };
+    var order = []; for (var k = 0; k < n; k++) order.push(k);
+    SD.shuffle(order, SD.rng(d.seed));
+    var id = order[d.i++]; saveMeta();
+    var raw = SD.decodeAt(BANK[lv], BANK_AT[lv][id]).g;
+    var g2 = SD.transform(raw, SD.rng(newSeed())); // a fresh look: digits relabeled, grid turned or mirrored
+    return { id: id, p: g2 };
+  }
+
+  // ================= game state =================
+  // g: { lv, id, p: givens (81 digits), s: solution, v: digits now, n: note masks, b: marked wrong (0/1),
+  //      ms, hints, mistakes, undo: [[i, ov, on, ob, nv, nn, nb], ...] per action, redo, over: '' | 'won' | 'lost', moved }
+  var g = null, sel = -1, lock = 0, notesMode = false, nextLevel = 0, lastTick = performance.now(), hint = null;
+  function given(i) { return g.p[i] > 0; }
+  function chooseLevel() {
+    if (nextLevel) { var l = nextLevel; nextLevel = 0; return l; }
+    var on = [1, 2, 3, 4].filter(function (l) { return settings.levels[l]; });
+    return on[Math.floor(Math.random() * on.length)] || 2;
+  }
+  function newPuzzle(lv) {
+    lv = lv || chooseLevel();
+    var d = deal(lv), sol = SD.solve(d.p);
+    g = { lv: lv, id: d.id, p: d.p, s: sol, v: d.p.slice(), n: new Array(81).fill(0), b: new Array(81).fill(0), ms: 0, hints: 0, mistakes: 0, undo: [], redo: [], over: '', moved: false };
+    sel = -1; lock = 0; hint = null; closeHint();
+    $('board').classList.remove('won');
+    save(); renderAll();
+  }
+  function save() { if (g) store.set('game', g); }
+  function load() {
+    var r = store.get('game', null);
+    function ok81(a) { return Array.isArray(a) && a.length === 81; }
+    if (!r || !(r.lv >= 1 && r.lv <= 4) || !ok81(r.p) || !ok81(r.s) || !ok81(r.v) || !ok81(r.n) || !ok81(r.b) || typeof r.ms !== 'number') return false;
+    for (var i = 0; i < 81; i++) if (r.p[i] && r.v[i] !== r.p[i]) return false; // givens never change
+    if (!Array.isArray(r.undo)) r.undo = []; if (!Array.isArray(r.redo)) r.redo = [];
+    r.hints = r.hints | 0; r.mistakes = r.mistakes | 0; r.over = r.over || '';
+    g = r; return true;
+  }
+  function tick() {
+    var now = performance.now();
+    if (g && !g.over && !sheetOpen() && !document.hidden) g.ms += Math.min(1000, now - lastTick);
+    lastTick = now;
+  }
+  setInterval(function () { tick(); if (g) $('clock').textContent = clock(g.ms); }, 250);
+
+  // ================= changes (all undoable) =================
+  function commit(list, opts) { // list: [{ i, v, n, b }] (new values; missing ones keep the old)
+    var act = [];
+    list.forEach(function (c) {
+      var i = c.i, nv = 'v' in c ? c.v : g.v[i], nn = 'n' in c ? c.n : g.n[i], nb = 'b' in c ? c.b : g.b[i];
+      if (nv === g.v[i] && nn === g.n[i] && nb === g.b[i]) return;
+      act.push([i, g.v[i], g.n[i], g.b[i], nv, nn, nb]);
+      g.v[i] = nv; g.n[i] = nn; g.b[i] = nb;
+    });
+    if (!act.length) return false;
+    g.undo.push(act); g.redo = []; g.moved = true;
+    closeHint();
+    if (!(opts && opts.quiet)) after();
+    return true;
+  }
+  function undo() {
+    if (!g || g.over || !g.undo.length) return;
+    var act = g.undo.pop();
+    for (var k = act.length - 1; k >= 0; k--) { var a = act[k]; g.v[a[0]] = a[1]; g.n[a[0]] = a[2]; g.b[a[0]] = a[3]; }
+    g.redo.push(act); closeHint(); save(); renderAll();
+  }
+  function redo() {
+    if (!g || g.over || !g.redo.length) return;
+    var act = g.redo.pop();
+    act.forEach(function (a) { g.v[a[0]] = a[4]; g.n[a[0]] = a[5]; g.b[a[0]] = a[6]; });
+    g.undo.push(act); closeHint(); save(); renderAll();
+  }
+
+  // place d in cell i (or toggle a note in notes mode); the same number again clears it
+  function enter(i, d) {
+    if (!g || g.over || i < 0) return;
+    if (given(i)) { toast('That number is part of the puzzle'); return; }
+    if (notesMode) {
+      if (g.v[i]) { toast('Erase the number first to make notes'); return; }
+      commit([{ i: i, n: g.n[i] ^ bit(d) }]); return;
+    }
+    if (g.v[i] === d) { commit([{ i: i, v: 0, b: 0 }]); return; }
+    var wrong = d !== g.s[i], judge = settings.mistakes === 'now';
+    var list = [{ i: i, v: d, n: 0, b: judge && wrong ? 1 : 0 }];
+    SD.PEERS[i].forEach(function (x) { if (g.n[x] & bit(d)) list.push({ i: x, n: g.n[x] & ~bit(d) }); }); // notes tidy themselves
+    if (judge && wrong) g.mistakes++;
+    commit(list, { quiet: true });
+    popCell(i);
+    if (!wrong) { var cnt = 0; for (var k = 0; k < 81; k++) if (g.v[k] === d && g.s[k] === d) cnt++; if (cnt === 9) popDigit(d); }
+    if (judge && wrong && settings.limit && g.mistakes >= 3) { lose(); return; }
+    after();
+  }
+  function erase(i) {
+    if (!g || g.over || i < 0) return;
+    if (given(i)) { toast('That number is part of the puzzle'); return; }
+    if (g.v[i]) commit([{ i: i, v: 0, b: 0 }]);
+    else if (g.n[i]) commit([{ i: i, n: 0 }]);
+  }
+  function fillNotes() {
+    if (!g || g.over) return;
+    var cand = SD.candidates(g.v), list = [];
+    for (var i = 0; i < 81; i++) if (!g.v[i]) list.push({ i: i, n: cand[i] });
+    if (!commit(list)) toast('Your notes already list every option');
+    else toast('Notes filled in for every empty cell');
+  }
+  function check() {
+    if (!g || g.over) return;
+    var found = 0;
+    for (var i = 0; i < 81; i++) if (!given(i) && g.v[i] && g.v[i] !== g.s[i] && !g.b[i]) { g.b[i] = 1; found++; }
+    g.mistakes += found;
+    var bad = 0; for (var k = 0; k < 81; k++) if (g.b[k]) bad++;
+    toast(bad ? bad + ' number' + (bad > 1 ? 's are' : ' is') + ' wrong (in red)' : 'Everything so far is right');
+    save(); renderAll();
+  }
+  function after() {
+    save();
+    var full = true, right = true;
+    for (var i = 0; i < 81; i++) { if (!g.v[i]) full = false; else if (g.v[i] !== g.s[i]) right = false; }
+    if (full && right) { win(); return; }
+    if (full && !right && settings.mistakes === 'check') toast('Not quite: tap Check to find what’s wrong', 2600);
+    renderAll();
+  }
+
+  // ================= finishing =================
+  function record(solved) {
+    var o = stats[g.lv];
+    o.played++;
+    if (solved) {
+      o.solved++; o.total += g.ms; if (!o.best || g.ms < o.best) o.best = g.ms;
+      if (!g.hints) o.noHint++;
+      o.streak++; if (o.streak > o.bestStreak) o.bestStreak = o.streak;
+    } else o.streak = 0;
+    saveStats();
+  }
+  function win() {
+    tick(); g.over = 'won'; sel = -1; lock = 0; closeHint();
+    var o = stats[g.lv], prevBest = o.best;
+    record(true); meta.finished++; saveMeta(); save(); renderAll();
+    var board = $('board'), cells = board.children;
+    for (var i = 0; i < 81; i++) cells[i].style.animationDelay = ((SD.R[i] + SD.C[i]) * 0.04) + 's';
+    board.classList.add('won');
+    var best = !prevBest || g.ms < prevBest;
+    setTimeout(function () {
+      showCard('Solved!', '<span class="endstats"><div><b>' + clock(g.ms) + '</b><span>time</span></div><div><b>' + g.hints + '</b><span>hint' + (g.hints === 1 ? '' : 's') + '</span></div><div><b>' + g.mistakes + '</b><span>mistake' + (g.mistakes === 1 ? '' : 's') + '</span></div></span>' +
+        LV_NAME[g.lv] + (best ? ' · <span class="newbest">Best time!</span>' : ' · best ' + clock(stats[g.lv].best)),
+        [{ label: 'New puzzle', red: true, go: function () { between(function () { newPuzzle(); }); } }, { label: 'Look at the grid', go: function () {} }]);
+    }, 1300);
+  }
+  function lose() {
+    tick(); g.over = 'lost'; closeHint(); record(false); meta.finished++; saveMeta(); save(); renderAll();
+    showCard('Three mistakes', 'That’s the limit for this puzzle. Try it again from the start, or take a new one.', [
+      { label: 'Try again', red: true, go: function () { restart(true); } },
+      { label: 'New puzzle', go: function () { between(function () { newPuzzle(g.lv); }); } }]);
+  }
+  // clear the grid back to the givens; after a loss the clock and counts start over too
+  function restart(fresh) {
+    if (!g) return;
+    g.v = g.p.slice(); g.n = new Array(81).fill(0); g.b = new Array(81).fill(0); g.undo = []; g.redo = []; g.over = '';
+    if (fresh) { g.ms = 0; g.hints = 0; g.mistakes = 0; g.moved = false; }
+    sel = -1; lock = 0; closeHint(); $('board').classList.remove('won'); save(); renderAll();
+  }
+  function showCard(title, html, buttons) {
+    $('endTitle').textContent = title;
+    $('endText').innerHTML = html;
+    var box = $('endActions'); box.innerHTML = '';
+    buttons.forEach(function (b) {
+      var el = document.createElement('button');
+      el.className = 'btn' + (b.red ? ' red' : ''); el.textContent = b.label;
+      el.addEventListener('click', function () { $('ovEnd').classList.remove('show'); b.go(); });
+      box.appendChild(el);
+    });
+    $('ovEnd').classList.add('show');
+  }
+  function inProgress() { return g && !g.over && g.moved; }
+  function askNew(lv) {
+    function go() { between(function () { newPuzzle(lv); }); }
+    if (inProgress()) {
+      showCard('Start a new puzzle?', 'This one counts as not solved.', [
+        { label: 'New puzzle', red: true, go: function () { record(false); go(); } },
+        { label: 'Keep playing', go: function () {} }]);
+      return;
+    }
+    go();
+  }
+  function showAd(done) { GoobsAds.show({}, done); }
+  // a house ad between puzzles only (never mid-puzzle), every few finished puzzles
+  function between(next) {
+    if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) {
+      meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return;
+    }
+    next();
+  }
+
+  // ================= hints =================
+  // The next step from the solver, worked out from the numbers on the grid (not from your notes). Steps that only
+  // remove options are shown together with the number they lead to; "Do it" places that number (and tidies notes).
+  function makeHint() {
+    var i, wrong = [];
+    for (i = 0; i < 81; i++) if (!given(i) && g.v[i] && g.v[i] !== g.s[i]) wrong.push(i);
+    if (wrong.length) return { kind: 'wrong', cell: wrong[0], tech: 'Fix this first', text: SD.rc(wrong[0]).replace(/^r/, 'R') + ' isn’t right. “Do it” clears it.', hl: [], hx: [], ht: [wrong[0]] };
+    var st = SD.newState(g.v), steps = [], s = null;
+    for (var guard = 0; guard < 300; guard++) {
+      s = SD.nextStep(st);
+      if (!s) break;
+      steps.push(s);
+      if (s.place) break;
+      SD.apply(st, s);
+    }
+    if (!s || !s.place) { // can't happen with a bank puzzle; still never leave you stuck
+      for (i = 0; i < 81; i++) if (!g.v[i]) return { kind: 'reveal', place: [i, g.s[i]], tech: 'A free number', text: SD.rc(i).replace(/^r/, 'R') + ' is ' + g.s[i] + '.', hl: [], hx: [], ht: [i], elim: [] };
+      return null;
+    }
+    var placeStep = steps[steps.length - 1], elims = steps.slice(0, -1), main = placeStep;
+    elims.forEach(function (e) { if (main === placeStep || e.lvl > main.lvl) main = e; });
+    var allElim = []; elims.forEach(function (e) { allElim = allElim.concat(e.elim); });
+    var h = { kind: 'step', place: placeStep.place, elim: allElim, tech: main.tech, hl: [], hx: [], ht: [placeStep.place[0]] };
+    if (main === placeStep) {
+      h.text = placeStep.text;
+      h.hl = placeStep.unit !== undefined ? SD.UNITS[placeStep.unit].slice() : SD.PEERS[placeStep.place[0]].slice(); // a naked single: its row, column and box
+    } else {
+      var more = elims.length > 1 ? ' (Along with ' + (elims.length - 1) + ' simpler step' + (elims.length > 2 ? 's' : '') + ' that only rule out options.)' : '';
+      h.text = main.text + ' Then ' + SD.rc(placeStep.place[0]) + ' must be ' + placeStep.place[1] + '.' + more;
+      h.hl = (main.cells || []).slice();
+      h.hx = main.elim.map(function (e) { return e[0]; });
+    }
+    return h;
+  }
+  function showHint() {
+    if (!g || g.over) return;
+    hint = makeHint();
+    if (!hint) return;
+    g.hints++; save();
+    sel = hint.ht[0]; lock = 0;
+    $('hintTech').textContent = hint.tech;
+    $('hintText').textContent = ' ' + hint.text;
+    $('hintbar').classList.add('show'); $('sdtools').classList.add('hide');
+    renderAll();
+  }
+  function doHint() {
+    if (!hint || !g || g.over) { closeHint(); return; }
+    var h = hint;
+    closeHint();
+    if (h.kind === 'wrong') { commit([{ i: h.cell, v: 0, b: 0 }]); return; }
+    // remove the options the step ruled out from your notes (where you have notes), then place the number
+    var list = [];
+    (h.elim || []).forEach(function (e) { if (g.n[e[0]] & bit(e[1])) list.push({ i: e[0], n: g.n[e[0]] & ~bit(e[1]) }); });
+    if (list.length) commit(list, { quiet: true });
+    var keep = notesMode; notesMode = false;
+    enter(h.place[0], h.place[1]);
+    notesMode = keep;
+  }
+  function closeHint() {
+    hint = null;
+    var hb = $('hintbar'); if (hb) { hb.classList.remove('show'); $('sdtools').classList.remove('hide'); }
+  }
+
+  // ================= drawing =================
+  var cellEls = [];
+  function buildBoard() {
+    var b = $('board'); b.innerHTML = '';
+    for (var i = 0; i < 81; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell r' + SD.R[i] + ' c' + SD.C[i];
+      c.dataset.i = i;
+      b.appendChild(c); cellEls.push(c);
+    }
+    var pad = $('pad'); pad.innerHTML = '';
+    for (var d = 1; d <= 9; d++) {
+      var bt = document.createElement('button');
+      bt.dataset.d = d; bt.innerHTML = d + '<small></small>';
+      bt.setAttribute('aria-label', 'Number ' + d);
+      pad.appendChild(bt);
+    }
+  }
+  function renderAll() { renderInfo(); renderBoard(); renderPad(); renderTools(); }
+  function renderInfo() {
+    if (!g) return;
+    var lp = $('lvPill'); lp.textContent = LV_NAME[g.lv]; lp.className = 'lvpill l' + g.lv;
+    $('clock').textContent = clock(g.ms); $('clock').classList.toggle('hide', !settings.timer);
+    var m = $('miss');
+    m.textContent = settings.limit && settings.mistakes === 'now' ? '\u2715 ' + g.mistakes + '/3' : g.mistakes ? '\u2715 ' + g.mistakes : '';
+    m.setAttribute('aria-label', g.mistakes + ' mistakes');
+    m.classList.toggle('hide', !m.textContent); m.classList.toggle('bad', settings.limit && g.mistakes >= 2);
+    $('btnCheck').classList.toggle('hide', settings.mistakes !== 'check' || !!g.over);
+  }
+  function renderBoard() {
+    if (!g) return;
+    var focus = lock || (sel >= 0 ? g.v[sel] : 0), clash = {}, hl = {}, hx = {}, ht = {};
+    SD.conflicts(g.v).forEach(function (i) { clash[i] = 1; });
+    if (hint) { hint.hl.forEach(function (i) { hl[i] = 1; }); hint.hx.forEach(function (i) { hx[i] = 1; }); hint.ht.forEach(function (i) { ht[i] = 1; }); }
+    for (var i = 0; i < 81; i++) {
+      var el = cellEls[i], v = g.v[i], cls = 'cell r' + SD.R[i] + ' c' + SD.C[i];
+      if (given(i)) cls += ' given';
+      if (sel >= 0 && i !== sel && SD.sees(i, sel) && !lock) cls += ' peer';
+      if (settings.same && focus && v === focus) cls += ' same';
+      if (i === sel) cls += ' sel';
+      if (g.b[i]) cls += ' bad'; else if (clash[i] && !given(i)) cls += ' clash';
+      if (hl[i]) cls += ' hl'; if (hx[i]) cls += ' hx'; if (ht[i]) cls += ' ht';
+      if (el.className.indexOf(' pop') >= 0) cls += ' pop';
+      el.className = cls;
+      var key = v ? 'v' + v : g.n[i] ? 'n' + g.n[i] + ':' + (settings.same ? focus : 0) + (hint ? ':' + hintElimMask(i) : '') : '';
+      if (el._k === key) continue;
+      el._k = key;
+      if (v) el.textContent = v;
+      else if (g.n[i]) {
+        var h = '<div class="notes">', gone = hint ? hintElimMask(i) : 0;
+        for (var d = 1; d <= 9; d++) h += '<i' + ((g.n[i] & bit(d)) ? ((gone & bit(d)) ? ' class="gone"' : settings.same && focus === d ? ' class="on"' : '') + '>' + d : '>') + '</i>';
+        el.innerHTML = h + '</div>';
+      } else el.textContent = '';
+    }
+  }
+  function hintElimMask(i) { var m = 0; if (hint && hint.elim) hint.elim.forEach(function (e) { if (e[0] === i) m |= bit(e[1]); }); return m; }
+  function renderPad() {
+    if (!g) return;
+    var cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (var i = 0; i < 81; i++) if (g.v[i]) cnt[g.v[i]]++;
+    var btns = $('pad').children;
+    for (var d = 1; d <= 9; d++) {
+      var b = btns[d - 1], left = Math.max(0, 9 - cnt[d]);
+      b.querySelector('small').textContent = left ? left : '';
+      b.classList.toggle('done', !left);
+      b.classList.toggle('lock', lock === d);
+    }
+    $('pad').classList.toggle('notes', notesMode);
+  }
+  function renderTools() {
+    if (!g) return;
+    $('btnUndo').disabled = !g.undo.length || !!g.over;
+    $('btnRedo').disabled = !g.redo.length || !!g.over;
+    $('btnNotes').classList.toggle('on', notesMode);
+    $('notesOn').textContent = notesMode ? 'ON' : 'OFF';
+    $('btnHint').disabled = !!g.over; $('btnFill').disabled = !!g.over; $('btnErase').disabled = !!g.over;
+  }
+  // On tall phones the grid is limited by the width; give some of the spare height to the number pad.
+  function fitPad() {
+    var fit = document.querySelector('.ggfit'), wrap = $('boardwrap');
+    if (!fit || !wrap) return;
+    var base = Math.max(54, Math.min(76, window.innerHeight * 0.084));
+    var spare = fit.clientHeight - wrap.offsetHeight + ((parseFloat(getComputedStyle($('pad')).getPropertyValue('--padh')) || base) - base);
+    var h = Math.round(base + Math.max(0, Math.min(18, (spare - 40) * 0.25)));
+    document.documentElement.style.setProperty('--padh', h + 'px');
+  }
+  function popCell(i) { var el = cellEls[i]; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); setTimeout(function () { el.classList.remove('pop'); }, 500); }
+  function popDigit(d) { for (var i = 0; i < 81; i++) if (g.v[i] === d) (function (k, delay) { setTimeout(function () { popCell(k); }, delay); })(i, 40 * (SD.R[i] + SD.C[i]) / 2); }
+
+  // ================= input =================
+  function tapCell(i) {
+    if (!g || sheetOpen()) return;
+    if (g.over) { sel = i; renderBoard(); return; }
+    if (lock) {
+      if (given(i)) { lock = g.v[i]; sel = i; renderAll(); return; } // tapping a printed number switches to it
+      sel = i; enter(i, lock); renderAll(); return;
+    }
+    sel = sel === i && !g.v[i] ? -1 : i;
+    renderAll();
+  }
+  function tapDigit(d) {
+    if (!g || g.over) return;
+    if (settings.pad === 'number' || sel < 0 || given(sel)) { lock = lock === d ? 0 : d; renderAll(); return; }
+    enter(sel, d); renderAll();
+  }
+  function holdDigit(d) { if (!g || g.over) return; lock = lock === d ? 0 : d; renderAll(); toast(lock ? 'Number first: tap cells to put ' + d + (notesMode ? ' notes' : 's') : 'Back to cell first'); }
+  // tap vs. press-and-hold on one element
+  function holdable(el, onTap, onHold, find) {
+    var t = 0, held = false, target = null, sx = 0, sy = 0;
+    el.addEventListener('pointerdown', function (e) {
+      target = find ? find(e) : el; if (!target) return;
+      held = false; sx = e.clientX; sy = e.clientY;
+      clearTimeout(t); t = setTimeout(function () { held = true; if (navigator.vibrate) try { navigator.vibrate(12); } catch (x) { /* ignore */ } onHold(target); }, 450);
+    });
+    el.addEventListener('pointermove', function (e) { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 14) clearTimeout(t); });
+    el.addEventListener('pointerup', function (e) { clearTimeout(t); if (!held && target) onTap(target, e); target = null; });
+    el.addEventListener('pointercancel', function () { clearTimeout(t); target = null; });
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+
+  // ================= sheets =================
+  function syncSettings() {
+    Array.prototype.forEach.call(document.querySelectorAll('#lvChecks input'), function (x) { x.checked = !!settings.levels[+x.dataset.lv]; });
+    Array.prototype.forEach.call(document.querySelectorAll('#segMistakes button'), function (b) { b.classList.toggle('on', b.dataset.v === settings.mistakes); });
+    Array.prototype.forEach.call(document.querySelectorAll('#segPad button'), function (b) { b.classList.toggle('on', b.dataset.v === settings.pad); });
+    $('padNote').textContent = settings.pad === 'cell' ? 'Tap a cell, then a number. Press and hold a number to switch to number first for a while.' : 'Tap a number, then every cell it goes in. Tap the number again to let go.';
+    $('setLimit').checked = settings.limit; $('rowLimit').classList.toggle('off', settings.mistakes !== 'now');
+    $('setTimer').checked = settings.timer; $('setSame').checked = settings.same;
+    $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn());
+  }
+  function openHelp() {
+    $('helpList').innerHTML = [
+      'Fill the grid so every <b>row</b>, every <b>column</b> and every <b>3×3 box</b> has the numbers <b>1 to 9</b> once each. Every puzzle has exactly one answer and can be solved by logic alone, never guessing.',
+      '<b>Cell first:</b> tap a cell, then a number. <b>Number first:</b> press and hold a number (or pick “Number first” in Settings), then tap every cell it goes in. Tap the same number again to clear a cell.',
+      '<b>Notes</b> on: numbers go in small as pencil notes. <b>All notes</b> fills in every option for every empty cell. Placing a number removes it from the notes in its row, column and box.',
+      'Wrong numbers turn <b>red</b> (or only when you tap <b>Check</b>, if you choose that in Settings). Numbers that clash with another in the same row, column or box are red too.',
+      '<b>Hint</b> names the next logical step (“X-Wing on 7s …”), lights up the cells, and <b>Do it</b> makes the move. Hints are counted.',
+      '<b>New</b> takes a puzzle from the levels ticked in Settings. Hold <b>New</b> (or tap its arrow) to pick the level of just the next one. The number pad shows how many of each number are left.',
+      '<b>Easy</b>: singles only. <b>Normal</b>: pairs and pointing. <b>Hard</b>: triples, quads, X-Wing, Swordfish, XY-Wing. <b>Expert</b>: wings, chains, coloring, unique rectangles. The clock pauses whenever you leave.'
+    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('ovHelp').classList.add('show');
+  }
+
+  // ================= start =================
+  function init() {
+    Goobs.themePicker($('themes'));
+    Goobs.fullscreen({ menu: ['btnPick', 'btnRestart', 'btnHelp', 'btnSettings'], info: function () {
+      if (!g) return '';
+      return '<b>' + LV_NAME[g.lv] + '</b> · ' + SD.clues(g.p) + ' clues' + (g.over ? '' : ' · clock paused at ' + clock(g.ms)) + ' · hints ' + g.hints;
+    } });
+    buildBoard();
+    $('board').addEventListener('click', function (e) { var c = e.target.closest('.cell'); if (c) tapCell(+c.dataset.i); });
+    holdable($('pad'), function (b) { tapDigit(+b.dataset.d); }, function (b) { holdDigit(+b.dataset.d); }, function (e) { return e.target.closest('button'); });
+    holdable($('btnNew'), function () { askNew(0); }, function () { openPick(); });
+    $('btnNewPick').addEventListener('click', openPick);
+    function openPick() { $('ovPick').classList.add('show'); }
+    $('pickGrid').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; $('ovPick').classList.remove('show'); nextLevel = +b.dataset.lv; askNew(nextLevel); });
+    $('btnClosePick').addEventListener('click', function () { $('ovPick').classList.remove('show'); });
+    $('ovPick').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('btnPick').addEventListener('click', openPick);
+    $('btnRestart').addEventListener('click', function () {
+      if (!g) return;
+      showCard('Restart this puzzle?', 'Clears your numbers and notes. The clock keeps going.', [{ label: 'Restart', red: true, go: function () { restart(!!g.over); } }, { label: 'Keep playing', go: function () {} }]);
+    });
+    $('btnUndo').addEventListener('click', undo);
+    $('btnRedo').addEventListener('click', redo);
+    $('btnErase').addEventListener('click', function () { erase(sel); });
+    $('btnNotes').addEventListener('click', function () { notesMode = !notesMode; renderAll(); });
+    $('btnFill').addEventListener('click', fillNotes);
+    $('btnHint').addEventListener('click', showHint);
+    $('hintGo').addEventListener('click', doHint);
+    $('hintClose').addEventListener('click', function () { closeHint(); renderAll(); });
+    $('btnCheck').addEventListener('click', check);
+    $('btnHome').addEventListener('click', function () { tick(); save(); Goobs.home(); });
+    // settings
+    $('btnSettings').addEventListener('click', function () { syncSettings(); $('ovSettings').classList.add('show'); });
+    $('btnCloseSettings').addEventListener('click', function () { $('ovSettings').classList.remove('show'); renderAll(); });
+    $('ovSettings').addEventListener('click', function (e) { if (e.target === this) { this.classList.remove('show'); renderAll(); } });
+    $('lvChecks').addEventListener('change', function (e) {
+      var x = e.target, l = +x.dataset.lv;
+      settings.levels[l] = x.checked;
+      if (!settings.levels.some(function (y) { return y; })) { settings.levels[l] = true; x.checked = true; toast('Keep at least one level'); }
+      saveSettings();
+    });
+    $('segMistakes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; settings.mistakes = b.dataset.v; saveSettings(); syncSettings(); renderAll(); });
+    $('segPad').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; settings.pad = b.dataset.v; lock = 0; saveSettings(); syncSettings(); renderAll(); });
+    $('setLimit').addEventListener('change', function () { settings.limit = this.checked; saveSettings(); renderAll(); });
+    $('setTimer').addEventListener('change', function () { settings.timer = this.checked; saveSettings(); renderAll(); });
+    $('setSame').addEventListener('change', function () { settings.same = this.checked; saveSettings(); renderAll(); });
+    $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncSettings(); });
+    $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncSettings(); });
+    $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncSettings(); });
+    $('btnHelp').addEventListener('click', openHelp);
+    $('btnCloseHelp').addEventListener('click', function () { $('ovHelp').classList.remove('show'); });
+    $('ovHelp').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    // keys (iPad keyboard, desktop): 1-9, arrows, Backspace, N for notes, Z undo
+    document.addEventListener('keydown', function (e) {
+      if (!g || sheetOpen()) return;
+      var k = e.key;
+      if (k >= '1' && k <= '9') { if (sel >= 0) enter(sel, +k); else tapDigit(+k); renderAll(); e.preventDefault(); return; }
+      if (k === 'Backspace' || k === 'Delete' || k === '0') { erase(sel); return; }
+      if (k === 'n' || k === 'N') { notesMode = !notesMode; renderAll(); return; }
+      if ((k === 'z' || k === 'Z') && (e.metaKey || e.ctrlKey)) { if (e.shiftKey) redo(); else undo(); e.preventDefault(); return; }
+      var mv = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 }[k];
+      if (mv) { if (sel < 0) sel = 40; else { var r = SD.R[sel], c = SD.C[sel]; if (mv === -9) r = (r + 8) % 9; if (mv === 9) r = (r + 1) % 9; if (mv === -1) c = (c + 8) % 9; if (mv === 1) c = (c + 1) % 9; sel = r * 9 + c; } renderAll(); e.preventDefault(); }
+    });
+    var fq = 0, refit = function () { if (fq) return; fq = requestAnimationFrame(function () { fq = 0; fitPad(); }); };
+    window.addEventListener('resize', refit); setTimeout(refit, 50);
+    document.addEventListener('visibilitychange', function () { tick(); if (document.hidden) save(); });
+    window.addEventListener('pagehide', function () { tick(); save(); });
+    try { if (!load()) newPuzzle(); else renderAll(); }
+    catch (e) { store.del('game'); g = null; newPuzzle(); } // a bad save never keeps the game from opening
+    if (g && g.over === 'won') $('board').classList.add('won');
+    if (!meta.seen) { meta.seen = true; saveMeta(); setTimeout(function () { toast('Tap a cell, then a number. Menu → How to play has the rest.', 3200); }, 600); }
+    lastTick = performance.now();
+    Goobs.markPlayed('sudoku');
+    Goobs.initUpdates({ beforeReload: function () { tick(); save(); }, onVersions: function (v) { $('version').textContent = 'Ninefold ' + (v.sudoku || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    window.__sdReady = true;
+  }
+  init();
+
+  // test hook
+  window.__sd = { get g() { return g; }, get sel() { return sel; }, get lock() { return lock; }, get hint() { return hint; }, tapCell: tapCell, tapDigit: tapDigit, enter: enter,
+    newPuzzle: newPuzzle, showHint: showHint, doHint: doHint, undo: undo, redo: redo, fillNotes: fillNotes, check: check, settings: settings, stats: stats, meta: meta,
+    setNotes: function (on) { notesMode = !!on; renderAll(); }, solveAllBut: function (k) { var left = []; for (var i = 0; i < 81; i++) if (!g.v[i]) left.push(i); left.slice(k || 0).forEach(function (i) { g.v[i] = g.s[i]; }); save(); renderAll(); } };
+})();
+</script>
+</body>
+</html>
