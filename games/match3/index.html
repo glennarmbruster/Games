@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#5a54f0">
+<meta name="theme-color" content="#193c32">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -88,7 +88,7 @@ html.gg-fs .stage { border-radius: 18px; }
   html.gg-fs .boosters .tool .cnt { font-size: 12px; }
 }
 </style>
-</head>
+<link rel="stylesheet" href="garden.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="gs-logo" viewBox="0 0 100 100"><defs><linearGradient id="gsbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9be38f"/><stop offset="1" stop-color="#34b36a"/></linearGradient></defs>
@@ -128,10 +128,10 @@ html.gg-fs .stage { border-radius: 18px; }
     </div>
   </div>
 
-  <div class="info" id="info"></div>
+  <div class="journey-nav"><button id="modeJourney">Garden Journey</button><button id="modeClassic">Classic</button><select id="gardenLevel" aria-label="Choose garden level"></select></div><div class="chapter" id="chapter"></div><div class="info" id="info"></div>
   <div class="goals" id="goals"></div>
 
-  <div class="stage" id="stage">
+  <div class="bloom-tools" id="bloomTools"><div class="bloom-status"><b id="bloomCount">Bloom 0/24</b><progress id="bloomMeter" max="24" value="0" aria-label="Bloom energy"></progress><small id="bloomStatus">0 pts</small></div><button id="bloomPrune">Prune <small>12</small></button><button id="bloomRain">Rain <small>24</small></button><button id="bloomMix">Mix <small>18</small></button></div><div class="stage" id="stage">
     <canvas id="cv"></canvas>
     <div class="banner" id="banner"></div>
     <div class="boosthint" id="boostHint"><span id="boostText"></span> <button id="boostCancel">Cancel</button></div>
@@ -153,7 +153,7 @@ html.gg-fs .stage { border-radius: 18px; }
     <h2 id="startTitle">Level 1</h2>
     <div class="kindtag" id="startKind"></div>
     <div class="goals big" id="startGoals"></div>
-    <div class="preboost" id="preBoost"></div>
+    <p class="level-brief" id="levelBrief"></p><div class="preboost" id="preBoost"></div>
     <div class="actions"><button class="btn red" id="btnPlay">Play</button></div>
   </div>
 </div>
@@ -167,6 +167,7 @@ html.gg-fs .stage { border-radius: 18px; }
       <div class="themes" id="themes"></div>
       <label class="row"><div>Sound<small>Pops, whooshes and chimes.</small></div>
         <span class="switch"><input type="checkbox" id="setSound"><span></span></span></label>
+      <label class="row"><div>Automatic hints<small>Suggest a swap after seven quiet seconds.</small></div><span class="switch"><input type="checkbox" id="setHints"><span></span></span></label>
       <label class="row"><div>Old-time ads<small>Joke ads between levels. This switch is shared by all Goobs-Games.</small></div>
         <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
       <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
@@ -190,8 +191,7 @@ html.gg-fs .stage { border-radius: 18px; }
 <!-- How to play -->
 <div class="overlay" id="ovHelp">
   <div class="sheet" role="dialog" aria-label="How to play">
-    <h2>How to play</h2>
-    <div class="sheetbody">
+    <h2>How to play</h2><div class="sheetbody"><p>Garden Journey: match pieces to earn Bloom. Prune costs 12, Rain clears a row for 24, and Mix costs 18. These abilities cost no moves or coins. Three stars: finish with 15% of moves left and no inventory boosters or continues. Earned Bloom is always allowed. The orb goal means create power-ups. Prune clears one tile or damages one obstacle layer; Rain clears a row or damages its obstacles; Mix rearranges movable pieces. Earn one Bloom per matched ordinary piece and six per special-piece fusion, up to 24.</p>
       <ol class="helplist">
         <li><b>Swipe</b> a piece into its neighbor (or tap one, then the other) to line up <b>3 or more</b> of a kind.</li>
         <li>Finish the level&rsquo;s <b>goals</b> before the <b>moves</b> run out.</li>
@@ -199,7 +199,7 @@ html.gg-fs .stage { border-radius: 18px; }
         <li><b>Tap</b> a power-up to set it off, or swipe it. Swipe two power-ups together for a <b>combo</b>. Swipe a Light Ball into a piece to clear every piece of that kind.</li>
         <li><b>Boxes</b> and <b>stones</b> break when you match next to them; <b>grass</b> clears when you match on it; <b>ice</b> breaks when the piece inside is matched; <b>acorns</b> are collected at the bottom.</li>
         <li><b>Boosters</b> don&rsquo;t use a move: Hammer (one tile), Arrow (a row), Cannon (a column), Shuffle. Before a level you can start with a Rocket, TNT or Light Ball. Coins buy more.</li>
-        <li>Every level won gives a <b>star</b> and coins. Every 5th level is <b>hard</b>, every 10th <b>super hard</b>.</li>
+        <li>In <b>Classic</b>, every win gives one star and coins. Every 5th level is hard; every 10th is super hard. <b>Garden Journey</b> has 24 named gardens with up to three stars each.</li>
       </ol>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
@@ -258,7 +258,7 @@ var GS = (function () {
   function matchable(p) { return p && !p.sp && !p.acorn && p.c >= 0; }
   function clone(st) {
     return { w: st.w, h: st.h, colors: st.colors, nextId: st.nextId, seed: st.seed, rs: st.rs, moves: st.moves, used: st.used,
-      goals: st.goals, got: Object.assign({}, st.got), acornsSpawned: st.acornsSpawned,
+      level:st.level, kind:st.kind, garden:st.garden, bloom:st.bloom||0, score:st.score||0, comboCount:st.comboCount||0, chapter:st.chapter, name:st.name, initialMoves:st.initialMoves, goals: st.goals, got: Object.assign({}, st.got), acornsSpawned: st.acornsSpawned,
       cells: st.cells.map(function (x) { return { hole: x.hole, grass: x.grass, block: x.block ? { t: x.block.t, hp: x.block.hp } : null, p: x.p ? Object.assign({}, x.p) : null }; }) };
   }
   function R(st) { var f = rng(st.rs); var v = f(); st.rs = f.state(); return v; }
@@ -360,7 +360,7 @@ var GS = (function () {
     }
     var p = x.p;
     if (!p) { if (!fromMatch && x.grass) { /* effects only clear grass together with a piece */ } return; }
-    if (p.acorn) return;
+    if (p.acorn) return;if(st.garden){st.score=(st.score||0)+(p.sp?30:10);if(fromMatch&&!p.sp)st.bloom=Math.min(24,(st.bloom||0)+1);}
     if (p.ice) { p.ice = 0; count(st, 'ice'); ctx.fx.push({ t: 'ice', i: i }); }
     if (p.sp) { x.p = null; ctx.gone.push(p.id); ctx.queue.push({ i: i, sp: p.sp, id: p.id }); }
     else { x.p = null; ctx.gone.push(p.id); count(st, COLORS[p.c]); }
@@ -369,7 +369,7 @@ var GS = (function () {
   function damageBlock(ctx, i) {
     var st = ctx.st, x = st.cells[i];
     if (!x.block) return;
-    x.block.hp--;
+    x.block.hp--;if(st.garden)st.score=(st.score||0)+20;
     ctx.fx.push({ t: 'block', i: i, kind: x.block.t, hp: x.block.hp });
     if (x.block.hp <= 0) { count(ctx.st, x.block.t); x.block = null; }
   }
@@ -448,7 +448,7 @@ var GS = (function () {
   function isRocket(sp) { return sp === SP.RH || sp === SP.RV; }
   // two power-ups swapped together (a combo), at cell i (where the moved one lands)
   function combo(ctx, i, a, b) {
-    var st = ctx.st, p = rc(st, i), set = {};
+    var st = ctx.st, p = rc(st, i), set = {};if(st.garden){st.comboCount=(st.comboCount||0)+1;st.bloom=Math.min(24,(st.bloom||0)+6);st.score=(st.score||0)+150;}count(st,'combos');
     function has(x) { return a === x || b === x || (x === 'rocket' && (isRocket(a) || isRocket(b))); }
     if (has(SP.LIGHT) && (a === SP.LIGHT && b === SP.LIGHT)) {
       ctx.fx.push({ t: 'light', i: i, all: true });
@@ -548,7 +548,7 @@ var GS = (function () {
       if (!p || p.c !== -2) continue;
       var ok = [];
       for (var k = 0; k < st.colors; k++) if (!makesMatch(st, i, k)) ok.push(k);
-      p.c = ok.length && R(st) < 0.8 ? ok[Math.floor(R(st) * ok.length)] : randomColor(st);
+      p.c = ok.length && R(st) < (st.garden?0.35:0.8) ? ok[Math.floor(R(st) * ok.length)] : randomColor(st);
     }
   }
   // acorns that reach the bottom of their column are collected
@@ -567,7 +567,7 @@ var GS = (function () {
   function play(st, mv) {
     var phases = [], ctx = new Ctx(st), fromSwap = null;
     if (mv.tap != null) {
-      var tp = st.cells[mv.tap].p;
+      var tp = st.cells[mv.tap]&&st.cells[mv.tap].p;
       if (!tp || !tp.sp || tp.ice) return { ok: false, phases: [] };
       st.cells[mv.tap].p = null; ctx.gone.push(tp.id);
       fire(ctx, mv.tap, tp.sp); drain(ctx);
@@ -611,7 +611,7 @@ var GS = (function () {
       g.cells.forEach(function (i) { hit(ctx, i, true); });
       splash(ctx, g.cells);
       if (g.make && at >= 0 && !st.cells[at].p && !st.cells[at].block) {
-        var np = newPiece(st, -1, g.make); st.cells[at].p = np; ctx.made.push(np.id);
+        var np = newPiece(st, -1, g.make); st.cells[at].p = np; ctx.made.push(np.id);count(st,'power');
       }
     });
   }
@@ -641,6 +641,7 @@ var GS = (function () {
   // booster effects (no move used): hammer = one tile or one layer; arrow = a row; cannon = a column; jester = shuffle
   function booster(st, kind, i) {
     var phases = [], ctx = new Ctx(st), p = i != null ? rc(st, i) : null;
+    if(kind!=='jester'&&(!st.cells[i]||st.cells[i].hole))return {ok:false,phases:[]};
     if (kind === 'hammer') { if (st.cells[i].block) damageBlock(ctx, i); else hit(ctx, i, false); ctx.fx.push({ t: 'hammer', i: i }); }
     else if (kind === 'arrow') { ctx.fx.push({ t: 'rocket', i: i, dir: 'h' }); rowCells(st, p[0]).forEach(function (j) { if (st.cells[j].block) damageBlock(ctx, j); else hit(ctx, j, false); }); }
     else if (kind === 'cannon') { ctx.fx.push({ t: 'rocket', i: i, dir: 'v' }); colCells(st, p[1]).forEach(function (j) { if (st.cells[j].block) damageBlock(ctx, j); else hit(ctx, j, false); }); }
@@ -804,6 +805,7 @@ var GSRender = (function () {
     function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
     function shine(x, s) { var g = x.createRadialGradient(s * 0.36, s * 0.3, 1, s * 0.36, s * 0.3, s * 0.35); g.addColorStop(0, 'rgba(255,255,255,.75)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(s * 0.36, s * 0.3, s * 0.35, 0, 7); x.fill(); }
     function drawPiece(x, s, key) {
+      if(window.GardenArt&&GardenArt.piece(x,s,key))return;
       var m = s / 2, k = s / 100;
       x.save(); x.lineJoin = 'round'; x.lineCap = 'round';
       x.shadowColor = 'rgba(0,0,0,.22)'; x.shadowBlur = 3 * k; x.shadowOffsetY = 2.5 * k;
@@ -894,7 +896,7 @@ var GSRender = (function () {
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       if (cur) layout(); kick();
     }
-    function layout() { cs = Math.floor(Math.min(W / bw, H / bh)); ox = Math.floor((W - cs * bw) / 2); oy = Math.floor((H - cs * bh) / 2); sprites = {}; }
+    function layout() { cs = Math.floor(Math.min((W-18) / bw, (H-24) / bh)); ox = Math.floor((W - cs * bw) / 2); oy = Math.floor((H - cs * bh) / 2); sprites = {}; }
     function xy(i) { return [ox + (i % bw) * cs, oy + Math.floor(i / bw) * cs]; }
     function cellAt(px, py) { var c = Math.floor((px - ox) / cs), r = Math.floor((py - oy) / cs); if (c < 0 || r < 0 || c >= bw || r >= bh) return -1; var i = r * bw + c; return cur && cur[i] && !cur[i].hole ? i : -1; }
 
@@ -903,7 +905,7 @@ var GSRender = (function () {
       for (var i = 0; i < cells.length; i++) {
         var x = cells[i]; if (x.hole) continue;
         var p = xy(i), r = Math.floor(i / bw), c = i % bw;
-        ctx.fillStyle = (r + c) % 2 ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.78)'; ctx.fillRect(p[0], p[1], cs, cs);
+        ctx.fillStyle = (r + c) % 2 ? '#30574ee8' : '#3e6559eb'; ctx.fillRect(p[0], p[1], cs, cs);
         if (x.grass) {
           ctx.fillStyle = '#7fd67a'; ctx.fillRect(p[0] + 1, p[1] + 1, cs - 2, cs - 2);
           ctx.strokeStyle = '#52b24e'; ctx.lineWidth = Math.max(1, cs * 0.04); ctx.beginPath();
@@ -912,7 +914,7 @@ var GSRender = (function () {
         }
       }
       // a soft frame around the playable area
-      ctx.strokeStyle = 'rgba(40,70,40,.25)'; ctx.lineWidth = 2;
+      ctx.strokeStyle = '#d0bd86'; ctx.lineWidth = 2;
       for (var j = 0; j < cells.length; j++) {
         if (cells[j].hole) continue;
         var q = xy(j), rr2 = Math.floor(j / bw), cc = j % bw;
@@ -940,7 +942,7 @@ var GSRender = (function () {
     }
     function frame() {
       raf = 0;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);if(window.GardenArt)GardenArt.back(ctx,W,H);
       if (!cur) return;
       var now = performance.now(), busy = false;
       var a = anim, cells = cur, pos = {};
@@ -1078,7 +1080,7 @@ var GSRender = (function () {
     resize();
     return {
       set: function (cells, w, h) { cur = cells; bw = w; bh = h; anim = null; fx = []; layout(); kick(); },
-      play: play, nope: nope, cellAt: cellAt, busy: function () { return !!anim; }, redraw: kick,
+      play: play, nope: nope, cellAt: cellAt, busy: function () { return !!anim; }, redraw: kick, refreshArt:function(){sprites={};kick();},
       select: function (i) { sel = i; kick(); }, hint: function (h) { hint = h; kick(); },
       cellCenter: function (i) { var p = xy(i); return [p[0] + cs / 2, p[1] + cs / 2]; }, cellSize: function () { return cs; },
       onIdle: function (cb) { onIdle = cb; }, sprite: function (key, size) { var s = cs; cs = size; var c = sprite(key); cs = s; return c; }
@@ -1142,7 +1144,7 @@ var GSSound = (function () {
   };
 })();
 </script>
-<script src="../../shared/ads.js"></script>
+<script src="journey-bank.js"></script><script src="journey.js"></script><script src="garden-art.js"></script><script src="../../shared/ads.js"></script>
 <script>
 /* Garden Swap app: levels, touch, boosters, coins, stars, saves, stats and house ads. */
 (function () {
@@ -1162,7 +1164,7 @@ var GSSound = (function () {
 
   // ================= storage =================
   var store = Goobs.store('match3');
-  var settings = { sound: false, adEvery: 3 };
+  var settings = { sound: false, adEvery: 3, autoHint:false };
   (function () {
     var s = store.get('settings', {}) || {};
     for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
@@ -1173,6 +1175,7 @@ var GSSound = (function () {
   var MD = { level: 1, coins: 0, stars: 0, boost: { hammer: 0, rocket: 0, arrow: 0, tnt: 0, cannon: 0, light: 0, jester: 0 }, gifted: {}, finished: 0, lastAdAt: 0, seenHelp: false };
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
   for (var bk in MD.boost) if (typeof meta.boost[bk] !== 'number') meta.boost[bk] = 0;
+  if(!meta.mode)meta.mode=store.get('game',null)?'classic':'journey';if(!meta.journeyLevel)meta.journeyLevel=1;if(!meta.journeyBest)meta.journeyBest={};
   function saveMeta() { store.set('meta', meta); }
   var stats = store.get('stats', null) || {};
   var SD = { wins: 0, fails: 0, moves: 0, powerups: 0, combos: 0, boxes: 0, grass: 0, stone: 0, ice: 0, acorn: 0 };
@@ -1190,18 +1193,20 @@ var GSSound = (function () {
   // ================= the game =================
   // game: { level, moves: [{a,b}|{tap}|{boost, i}], pre: [kinds], extra, done }
   var game = null, st = null, busy = false, armed = null, touch = null, idleT = 0;
-  function saveGame() { if (game && !game.done) store.set('game', game); }
+  function gameKey(){return meta.mode==='journey'?'journey.game':'game';}
+  function saveGame() { if (game && !game.done) store.set(gameKey(), game); }
   function build() {
-    st = GS.newLevel(game.level);
+    st = game.journey?GardenJourney.create(game.level):GS.newLevel(game.level);
     (game.pre || []).forEach(function (k) { GS.placeBooster(st, k); });
-    game.moves.forEach(function (m) { if (m.boost) GS.booster(st, m.boost, m.i); else GS.play(st, m); });
     st.moves += game.extra * CONTINUE_MOVES;
+    game.moves.forEach(function (m) { if(m.bloom)GardenJourney.use(st,m.bloom,m.i);else if (m.boost) GS.booster(st, m.boost, m.i); else GS.play(st, m); });
   }
   function start(L, fresh) {
+    busy=false;touch=null;clearTimeout(idleT);
     $('ovEnd').classList.remove('show'); disarm(); picked = -1;
-    var saved = !fresh && store.get('game', null);
+    var saved = !fresh && store.get(gameKey(), null);
     if (saved && saved.level === L && !saved.done && saved.scheme === GS.LEVEL_SCHEME) { game = saved; build(); show(); return; }
-    game = { level: L, scheme: GS.LEVEL_SCHEME, moves: [], pre: [], extra: 0, done: false };
+    game = { journey:meta.mode==='journey',level: meta.mode==='journey'?Math.max(1,Math.min(GardenJourney.count,L)):L, scheme: GS.LEVEL_SCHEME, moves: [], pre: [], extra: 0, done: false };
     build(); show();
     preLevel();
   }
@@ -1212,7 +1217,7 @@ var GSSound = (function () {
     saveGame();
     afterMove(true);
   }
-  function startCounts() { var s = GS.newLevel(game.level); return s; }
+  function startCounts() { var s = game.journey?GardenJourney.create(game.level):GS.newLevel(game.level); return s; }
 
   // ================= before a level: goals and pre-level boosters =================
   var chosen = {};
@@ -1220,10 +1225,11 @@ var GSSound = (function () {
     unlockGifts();
     chosen = {};
     var kind = st.kind;
-    $('startTitle').textContent = 'Level ' + game.level;
+    $('startTitle').textContent = game.journey?st.name:'Level '+game.level;
     $('startKind').className = 'kindtag ' + kind; $('startKind').textContent = kind === 'super' ? 'Super hard' : kind === 'hard' ? 'Hard' : '';
     $('startGoals').innerHTML = goalChips(true);
     paintGoalIcons($('startGoals'));
+    $('levelBrief').textContent=game.journey?GardenJourney.brief(game.level)+' Finish in '+st.initialMoves+' moves. Match pieces to earn Bloom for free tools.':'Clear every goal before your moves run out.';
     renderPre();
     $('ovStart').classList.add('show');
   }
@@ -1243,12 +1249,12 @@ var GSSound = (function () {
   }
 
   // ================= goals =================
-  var GOAL_ORDER = ['berry', 'drop', 'leaf', 'sun', 'bloom', 'carrot', 'box', 'stone', 'grass', 'ice', 'acorn'];
-  var GOAL_SPRITE = { berry: 'c0', drop: 'c1', leaf: 'c2', sun: 'c3', bloom: 'c4', carrot: 'c5', box: 'box1', stone: 'stone2', grass: 'grass', ice: 'ice', acorn: 'acorn' };
+  var GOAL_ORDER = ['power','berry', 'drop', 'leaf', 'sun', 'bloom', 'carrot', 'box', 'stone', 'grass', 'ice', 'acorn'];
+  var GOAL_SPRITE = { power:'light',berry: 'c0', drop: 'c1', leaf: 'c2', sun: 'c3', bloom: 'c4', carrot: 'c5', box: 'box1', stone: 'stone2', grass: 'grass', ice: 'ice', acorn: 'acorn' };
   function goalChips(full) {
     return GOAL_ORDER.filter(function (k) { return st.goals[k]; }).map(function (k) {
       var left = full ? st.goals[k] : GS.goalLeft(st, k);
-      return '<div class="goal' + (!full && !left ? ' done' : '') + '"><canvas width="52" height="52" data-g="' + k + '"></canvas>' + (!full && !left ? '✓' : left) + '</div>';
+      return '<div title="'+({power:'Create power-ups',berry:'Collect strawberries',drop:'Collect water drops',leaf:'Collect leaves',sun:'Collect suns',bloom:'Collect flowers',carrot:'Collect carrots',box:'Break crates',stone:'Break stones',grass:'Clear grass',ice:'Break ice',acorn:'Drop acorns to the bottom'}[k]||k)+'" class="goal' + (!full && !left ? ' done' : '') + '"><canvas width="52" height="52" data-g="' + k + '"></canvas>' + (!full && !left ? '✓' : left) + '</div>';
     }).join('');
   }
   function paintGoalIcons(box) {
@@ -1283,7 +1289,7 @@ var GSSound = (function () {
     if (!touch || e.pointerId !== touch.id) return;
     var t = touch; touch = null;
     if (t.moved || t.i < 0 || busy) return;
-    if (armed) { useBooster(armed, t.i); return; }
+    if (armed) { if(armed.indexOf('bloom-')===0)useBloom(armed.slice(6),t.i);else useBooster(armed, t.i); return; }
     var x = st.cells[t.i];
     if (picked >= 0 && picked !== t.i && GS.adjacent(st, picked, t.i)) { var a = picked; picked = -1; R2.select(-1); trySwap(a, t.i); return; }
     if (x.p && x.p.sp && !x.p.ice && picked === t.i) { picked = -1; R2.select(-1); doMove({ tap: t.i }); return; }
@@ -1296,10 +1302,11 @@ var GSSound = (function () {
     doMove({ a: a, b: b });
   }
   function doMove(m) {
-    if (busy || game.done || st.moves <= 0) return;
-    var c = GS.clone(st), res = GS.play(c, m);
+    if (busy || !game || game.done || st.moves <= 0 || locked()) return;
+    if(m.a!=null&&(!GS.swappable(st,m.a)||!GS.swappable(st,m.b)))return;
+    var c = GS.clone(st), combos=st.comboCount||0,res = GS.play(c, m);
     if (!res.ok) { if (m.a != null) { busy = true; S.nope(); R2.nope(m.a, m.b, function () { busy = false; }); } return; }
-    st = c; game.moves.push(m); stats.moves++;
+    st = c; game.moves.push(m); stats.moves++;if((st.comboCount||0)>combos){stats.combos++;banner('Power-up fusion!');}else{var chain=res.phases.filter(function(p){return p.kind==='clear';}).length;if(chain>=3)banner(chain+'× cascade!');}
     if (m.a != null) S.swap();
     runPhases(res.phases);
   }
@@ -1338,7 +1345,7 @@ var GSSound = (function () {
   }
   // a hint after a few quiet seconds
   function poke() {
-    R2.hint(null); clearTimeout(idleT);
+    R2.hint(null); clearTimeout(idleT);if(!settings.autoHint)return;
     idleT = setTimeout(function () {
       if (busy || locked() || !st || game.done) return;
       var mv = GS.validMoves(st).filter(function (m) { return m.a != null; });
@@ -1348,7 +1355,7 @@ var GSSound = (function () {
 
   // ================= boosters =================
   function onBooster(k) {
-    if (busy || !game || game.done) return;
+    if (busy || locked() || !game || game.done || st.moves<=0) return;
     var b = BOOSTERS[k];
     if (meta.level < b.at && game.level < b.at) { card('Not yet', b.name + ' opens at level ' + b.at + '.', [{ label: 'OK', red: true, go: function () {} }]); return; }
     if (armed === k) { disarm(); return; }
@@ -1362,6 +1369,7 @@ var GSSound = (function () {
     disarm();
     if (BOOSTERS[k].cell && (i == null || i < 0)) return;
     var c = GS.clone(st), res = GS.booster(c, k, i);
+    if(!res.ok)return;
     st = c; meta.boost[k]--; saveMeta();
     game.moves.push({ boost: k, i: i });
     renderBoosters(); runPhases(res.phases);
@@ -1389,7 +1397,8 @@ var GSSound = (function () {
   }
   function banner(t) { var b = $('banner'); b.textContent = t; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); }
   function levelWon() {
-    game.done = true; store.del('game');
+    if(game.journey){journeyWon();return;}
+    game.done = true; store.del(gameKey());
     var L = game.level, left = st.moves, bonus = Math.min(10, left) * 2, coins = WIN_COINS + bonus;
     S.win(); banner('Well done!');
     meta.coins += coins; meta.stars++; meta.finished++;
@@ -1416,13 +1425,13 @@ var GSSound = (function () {
     if (!game || game.done || st.moves > 0 || GS.done(st) || isOpen('ovEnd')) return;
     S.over();
     var left = GOAL_ORDER.filter(function (k) { return GS.goalLeft(st, k); }).map(function (k) { return GS.goalLeft(st, k) + ' ' + ({ box: 'boxes', grass: 'grass', ice: 'ice', stone: 'stones', acorn: 'acorns', berry: 'berries', leaf: 'leaves' }[k] || k + 's'); });
-    var total = GS.movesFor(game.level) + game.extra * CONTINUE_MOVES;
+    var total = (game.journey?st.initialMoves:GS.movesFor(game.level)) + game.extra * CONTINUE_MOVES;
     card('Out of moves', 'You\u2019ve used all ' + total + ' moves (the counter at the top shows how many are left). Still to do: ' + left.join(', ') + '.', [
       { label: Goobs.adsOn() ? '+' + CONTINUE_MOVES + ' moves (quick ad)' : '+' + CONTINUE_MOVES + ' moves', red: true, go: function () {
         var go = function () { game.extra++; st.moves += CONTINUE_MOVES; saveGame(); renderInfo(); poke(); };
         if (Goobs.adsOn()) showAd(go); else go();
       } },
-      { label: 'Try again', go: function () { stats.fails++; saveStats(); game.done = true; store.del('game'); meta.finished++; saveMeta(); between(function () { start(game.level, true); }); } }
+      { label: 'Try again', go: function () { stats.fails++; saveStats(); game.done = true; store.del(gameKey()); meta.finished++; saveMeta(); between(function () { start(game.level, true); }); } }
     ]);
   }
   function showAd(done) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done); }
@@ -1437,6 +1446,7 @@ var GSSound = (function () {
 
   // ================= UI =================
   function renderInfo() {
+    renderJourney();
     var kind = st.kind, ml = st.moves;
     $('info').innerHTML = '<div><div class="lbl">Level</div><div class="ttl">' + game.level + '<span class="kindtag ' + kind + '">' + (kind === 'super' ? 'Super hard' : kind === 'hard' ? 'Hard' : '') + '</span></div></div>' +
       '<div class="moves' + (ml <= 3 ? ' low' : '') + '"><div class="lbl">Moves</div><b>' + ml + '</b></div>' +
@@ -1457,7 +1467,7 @@ var GSSound = (function () {
       '<div class="tile"><b>' + fmt(meta.coins) + '</b><span>Coins</span></div></div>' +
       '<div class="tiles"><div class="tile"><b>' + fmt(stats.powerups) + '</b><span>Power-ups made</span></div><div class="tile"><b>' + fmt(stats.moves) + '</b><span>Moves</span></div>' +
       '<div class="tile"><b>' + stats.fails + '</b><span>Tries that ran out</span></div></div>' +
-      '<p class="version">Stars will build up a garden in a later update.</p>';
+      '<p class="version">Garden Journey: '+Object.keys(meta.journeyBest).length+' / 24 gardens completed. Replay unlocked gardens to improve your stars.</p>';
   }
 
   // ================= wiring =================
@@ -1471,6 +1481,12 @@ var GSSound = (function () {
     $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
     $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
   }
+  function switchGarden(mode){if(busy||locked()||game.done)return;saveGame();meta.mode=mode;saveMeta();start(mode==='journey'?meta.journeyLevel:meta.level);}
+  function renderJourney(){var j=!!game.journey;$('bloomTools').hidden=!j;$('gardenLevel').hidden=!j;$('modeJourney').classList.toggle('active',j);$('modeClassic').classList.toggle('active',!j);$('chapter').textContent=j?GardenJourney.chapters[st.chapter]+' · '+st.name:'Classic · Original progress';document.body.dataset.garden=j?st.chapter:0;if(j){$('bloomCount').textContent='Bloom '+st.bloom+'/24';$('bloomStatus').textContent=fmt(st.score)+' pts';$('bloomMeter').value=st.bloom;$('bloomPrune').disabled=st.bloom<12;$('bloomRain').disabled=st.bloom<24;$('bloomMix').disabled=st.bloom<18;$('gardenLevel').innerHTML=GardenJourney.names.map(function(n,i){var b=meta.journeyBest[i+1];return '<option value="'+(i+1)+'"'+(i+1>meta.journeyLevel?' disabled':'')+'>'+ (i+1)+'. '+n+(b?' '+('★★★'.slice(0,b.stars)):'')+'</option>';}).join('');$('gardenLevel').value=game.level;}}
+  function armBloom(kind){if(busy||locked()||!game.journey||game.done)return;if(kind==='mix'){useBloom(kind,0);return;}armed='bloom-'+kind;$('boostHint').classList.add('show');$('boostText').textContent=kind==='prune'?'Tap one tile to prune (12 Bloom)':'Tap a row for rain (24 Bloom)';}
+  function useBloom(kind,i){if(busy||locked()||game.done)return;var res=GardenJourney.use(st,kind,i);if(!res.ok){S.nope();return;}game.moves.push({bloom:kind,i:i});disarm();runPhases(res.phases);}
+  function journeyWon(){var g0=game;game.done=true;store.del(gameKey());var help=game.extra||game.pre.length||game.moves.some(function(m){return !!m.boost;}),stars=help?1:st.moves>=Math.ceil(st.initialMoves*.15)?3:2,old=meta.journeyBest[game.level];meta.journeyBest[game.level]={stars:Math.max(stars,old?old.stars:0),score:Math.max(st.score||0,old?old.score:0)};meta.journeyLevel=Math.min(GardenJourney.count,Math.max(meta.journeyLevel,game.level+1));meta.coins+=WIN_COINS;meta.finished++;stats.wins++;if(!old)meta.stars+=stars;else meta.stars+=Math.max(0,stars-old.stars);saveMeta();saveStats();S.win();banner('Garden restored!');renderAll();var last=game.level===GardenJourney.count;card(st.name+' complete!', '<div class="garden-medals">'+('★★★'.slice(0,stars))+'</div>'+st.score+' points · '+st.moves+' moves left<br>+50 coins<br>'+ (last?'All 24 gardens restored. Replay for better stars.':'Bloom abilities never lower your stars.'),[{label:last?'Replay this garden':'Next garden',red:true,go:function(){start(last?g0.level:g0.level+1,true);}},{label:'Return to Classic',go:function(){meta.mode='classic';saveMeta();start(meta.level);}}]);}
+  function wireJourney(){$('modeJourney').onclick=function(){switchGarden('journey');};$('modeClassic').onclick=function(){switchGarden('classic');};$('gardenLevel').onchange=function(){if(busy||locked()){this.value=game.level;return;}var n=+this.value;if(n<=meta.journeyLevel)start(n,true);};$('bloomPrune').onclick=function(){armBloom('prune');};$('bloomRain').onclick=function(){armBloom('rain');};$('bloomMix').onclick=function(){armBloom('mix');};}
   // the Menu sheet's info line
   function menuInfo() {
     if (!game) return '';
@@ -1480,8 +1496,9 @@ var GSSound = (function () {
     // full screen: How to, Stats and Settings move into the Menu sheet (before the canvas is measured, so it sizes to the
     // new layout); the boosters stay under the board
     Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'], info: menuInfo });
-    Goobs.themePicker($('themes'));
+    Goobs.themePicker($('themes'));wireJourney();
     R2 = GSRender.create($('cv'));
+    GardenArt.onReady(function(){R2.refreshArt();if(st){renderGoals();paintGoalIcons($('startGoals'));renderPre();}});
     var cv = $('cv');
     cv.addEventListener('pointerdown', onDown);
     cv.addEventListener('pointermove', onMove);
@@ -1516,7 +1533,7 @@ var GSSound = (function () {
     $('btnRestart').addEventListener('click', function () {
       $('ovSettings').classList.remove('show');
       if (!game || game.done) return;
-      stats.fails++; saveStats(); store.del('game'); start(game.level, true);
+      stats.fails++; saveStats(); store.del(gameKey()); start(game.level, true);
     });
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
@@ -1524,21 +1541,23 @@ var GSSound = (function () {
     $('btnCloseHelp').addEventListener('click', function () { if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); } poke(); });
     $('btnSound').addEventListener('click', function () { settings.sound = !settings.sound; saveSettings(); syncSound(); S.ding(); });
     $('setSound').addEventListener('change', function () { settings.sound = this.checked; saveSettings(); syncSound(); S.ding(); });
+    $('setHints').checked=settings.autoHint;
+    $('setHints').addEventListener('change',function(){settings.autoHint=this.checked;saveSettings();poke();});
     $('setAds').addEventListener('change', function () { Goobs.setAds(this.checked); syncAds(); });
     $('adLess').addEventListener('click', function () { settings.adEvery = Math.max(1, settings.adEvery - 1); saveSettings(); syncAds(); });
     $('adMore').addEventListener('click', function () { settings.adEvery = Math.min(10, settings.adEvery + 1); saveSettings(); syncAds(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) saveGame(); });
     window.addEventListener('pagehide', saveGame);
     syncSound(); syncAds();
-    var sv = store.get('game', null);
-    start(sv && !sv.done && sv.level <= meta.level ? sv.level : meta.level);
+    var sv = store.get(gameKey(), null);
+    start(sv&&!sv.done?sv.level:meta.mode==='journey'?meta.journeyLevel:meta.level);
     Goobs.markPlayed('match3');
     Goobs.initUpdates({ beforeReload: saveGame, onVersions: function (v) { $('version').textContent = 'Garden Swap ' + (v.match3 || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
 
   // hook for automated tests
   window.__gs = { get st() { return st; }, get game() { return game; }, get busy() { return busy; }, meta: function () { return meta; }, start: start, move: doMove,
-    center: function (i) { return R2.cellCenter(i); }, GS: GS };
+    center: function (i) { return R2.cellCenter(i); }, GS: GS,useBloom:useBloom };
   init();
 })();
 </script>

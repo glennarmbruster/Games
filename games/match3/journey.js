@@ -1,0 +1,12 @@
+/* Garden Journey: deterministic layouts, earned tools, separate campaign progress. */
+var GardenJourney=(function(){'use strict';
+var names=['First Harvest','Rose Walk','Meadow Beds','The Potting Shed','Mossy Steps','Spring Festival','Orchard Gate','Falling Acorns','Kitchen Garden','Frosted Leaves','Ivy Courtyard','Harvest Fair','Glasshouse Door','Fern Canopy','Water Garden','Stone Terrace','Butterfly Beds','Conservatory','Moonlit Path','Silver Orchard','Midnight Blooms','Secret Fountain','Grand Parterre','The Living Garden'];
+var chapters=['Rose & Meadow','Orchard & Harvest','The Glasshouse','Moonlight Garden'];
+var recipes=[['box'],['grass'],['box','grass'],['ice'],['stone','box'],['grass','ice'],['acorn','box'],['acorn','grass'],['box','grass'],['ice','box'],['stone','grass'],['acorn','ice'],['stone','box'],['ice','grass'],['acorn','grass'],['stone','ice'],['box','grass','ice'],['stone','grass'],['ice','box'],['acorn','stone'],['grass','ice'],['box','stone','grass'],['stone','ice','acorn'],['box','grass','ice']];
+function create(n){n=Math.max(1,Math.min(24,n));var chapter=Math.floor((n-1)/6),entry=GardenJourneyBank[n-1]||{},spec={level:6+chapter*14,shown:n,w:8,h:8,colors:chapter===3?6:5,shape:[0,1,2,0,4,1][(n-1)%6],obstacles:recipes[n-1],colorGoal:false,seed:entry.seed||GS.mix32(n*1597334677+5431),scale:.65+chapter*.07,kind:'normal'};var st=GS.build(spec);st.garden=true;st.bloom=0;st.score=0;st.comboCount=0;st.level=n;st.name=names[n-1];st.chapter=chapter;st.kind=n%6===0?'hard':'normal';st.moves=entry.moves||35;st.initialMoves=st.moves;
+if(n<=2)st.goals[GS.COLORS[n-1]]=12+n*3;
+if(n>=4&&n%3===1)st.goals.power=chapter+2;
+return st;}
+function use(st,kind,i){var costs={prune:12,rain:24,mix:18},cost=costs[kind];if(!st.garden||!cost||st.bloom<cost||st.moves<=0||GS.done(st))return {ok:false,phases:[]};var cell=st.cells[i];if(kind!=='mix'&&(!cell||cell.hole||kind==='prune'&&!cell.block&&(!cell.p||cell.p.acorn)))return {ok:false,phases:[]};st.bloom-=cost;return GS.booster(st,kind==='prune'?'hammer':kind==='rain'?'arrow':'jester',i);}
+function brief(n){var labels={box:'Break the wooden crates',grass:'Clear the overgrown beds',ice:'Break the frost',stone:'Crack the stones with two hits',acorn:'Bring acorns to the bottom'};var text=recipes[n-1].map(function(k){return labels[k];}).join(' · ');if(n<=2)text+=' · Collect '+(n===1?'strawberries':'water drops');if(n>=4&&n%3===1)text+=' · Create power-ups';return text+'.';}
+return {brief:brief,count:24,names:names,chapters:chapters,create:create,use:use};})();
