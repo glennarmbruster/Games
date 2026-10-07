@@ -54,7 +54,7 @@ const VERSIONS = {
   deck: '0.3.1',
   wordboard: '0.1.2',
   nonogram: '0.1.0',
-  getout2: '1.4.0',
+  getout2: '1.4.1',
   huddle: '0.1.0',
   wickway: '1.0.0',
   pegs: '0.3.0',
