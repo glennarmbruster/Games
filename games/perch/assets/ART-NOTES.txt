@@ -1,0 +1,9 @@
+Perch Pals wildlife edition. Artwork generated with the built-in image-generation tool.
+
+Prompt set: photorealistic wildlife sprite atlases on transparent backgrounds, natural anatomy and detailed feathers, consistent right-facing perched and wings-raised flight poses. Species: goldfinch, bluebird, robin, chickadee, house finch, nuthatch, waxwing, red-winged blackbird, mourning dove, oriole, woodpecker, mallard, cardinal, blue jay, bald eagle, sparrow and starling; neutral tucked-head bird conceals sleeping identities.
+
+Three portrait habitat photographs: sunlit green woodland and meadow; tranquil mountain lake with pine forest; warm autumn grove at golden hour. Open centers for game pieces, natural light, no text or baked-in birds.
+
+Perch asset: isolated horizontal oak branch with detailed natural bark and lichen, transparent background.
+
+Generated atlases extracted into individual transparent WebP sprites. Habitat photos converted to 900x1350 WebP. All assets are included for offline play.

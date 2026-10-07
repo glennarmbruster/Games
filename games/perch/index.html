@@ -114,6 +114,7 @@ html.gg-fs-over .toolbar .tool:disabled { opacity: .55; }
     <div class="stage" id="stage">
       <canvas id="bg"></canvas>
       <canvas id="cv"></canvas>
+      <div class="habitat" id="habitat" aria-live="polite"></div>
       <div class="toast" id="toast"></div>
     </div>
   </div>
@@ -144,7 +145,7 @@ html.gg-fs-over .toolbar .tool:disabled { opacity: .55; }
         <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
       <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
         <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
-      <div class="version" id="version">Perch Pals 0.1.0</div>
+      <div class="version" id="version">Perch Pals 1.0.0</div>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
   </div>
@@ -845,6 +846,8 @@ var PA = (function () {
     bird: bird, symbol: symbol, trunk: trunk, branch: branch, leafCover: leafCover, cage: cage, scene: scene, fxInit: fxInit, fxDraw: fxDraw, shadeHex: shadeHex };
 })();
 </script>
+<script src="wildlife.js"></script>
+<link rel="stylesheet" href="wildlife.css">
 <script>
 /* Perch Pals sounds: all synthesized with Web Audio (no audio files). Off by default.
    Each colour of bird has its own chirp (pitch, shape and number of notes); wing flutters are filtered noise; a set
@@ -1117,7 +1120,7 @@ var PPSound = (function () {
     var tw = Math.max(18, Math.min(40, W * 0.07)), gapHalf = 10;
     var avail = W / 2 - tw * 0.6 - gapHalf;
     // birds sit a little closer on branches that hold 5 or 6, so they can stay bigger
-    var pack = cap <= 4 ? 0.92 : cap === 5 ? 0.84 : 0.78;
+    var pack = cap <= 4 ? 1.02 : cap === 5 ? 0.98 : 0.94;
     var s = Math.min(FR.h / rows * 0.6, avail / (cap * pack + 0.55), 70), sp = s * pack, bl = sp * cap + s * 0.55;
     var rowH = Math.min(FR.h / rows, s * 2.15), y0 = FR.y + (FR.h - rowH * rows) / 2;
     var tl = Math.max(tw * 0.25, W / 2 - Math.max(gapHalf, s * 0.5) - bl - tw / 2), tr = W - tl;
@@ -1139,7 +1142,7 @@ var PPSound = (function () {
     return i < g.br.length ? i : -1;
   }
   var sceneNo = 0;
-  function newScene() { sceneNo = (levelNo - 1) % PA.SCENES.length; layout(); drawBg(); PA.fxInit(sceneNo, W, H, Goobs.skin()); }
+  function newScene() { PA.setLevel(levelNo, g.nc); sceneNo = Math.floor((levelNo - 1) / 3) % PA.SCENES.length; layout(); drawBg(); PA.fxInit(sceneNo, W, H, Goobs.skin()); }
   // the still layer: scene, trunks, branches
   function drawBg() {
     if (!bx) return;
@@ -1291,8 +1294,8 @@ var PPSound = (function () {
   }
   // ---- twist tips: one line the first time each twist shows up ----
   var TIPS = {
-    sleepy: ['Sleepy birds', 'Birds in nightcaps are fast asleep: you can’t see their colour or move them. They wake up when they reach the end of their branch.'],
-    big: ['Bigger branches', 'These branches hold more birds, and each colour has that many birds. A full branch of one colour flies away.'],
+    sleepy: ['Sleepy birds', 'Birds with tucked heads are fast asleep: their species is hidden and they can’t move yet. They wake up when they reach the end of their branch.'],
+    big: ['Bigger branches', 'These branches hold more birds, and each species has that many birds. A full branch of one species flies away.'],
     cage: ['Caged birds', 'A caged bird can’t move and nobody can land on it. The number counts the moves until the cage opens (birds above it move as usual).'],
     leaves: ['Leafy branch', 'A branch hidden in leaves can’t be used until the number of sets on it have flown away. Then the leaves blow off.']
   };
@@ -1319,13 +1322,13 @@ var PPSound = (function () {
   }
   function openHelp() {
     $('helpList').innerHTML = [
-      '<b>Tap a branch</b> to pick up the birds at its free end (all the same colour in a row). <b>Tap another branch</b> and they fly over.',
-      'Birds only land on an <b>empty branch</b> or next to a bird of the <b>same colour</b>, and only as many as there is room for.',
-      'When a branch is <b>full of one colour</b>, that little flock sings and <b>flies away</b>, and the branch is free again. Clear every bird to finish the level.',
+      '<b>Tap a branch</b> to pick up the birds at its free end (all the same species in a row). <b>Tap another branch</b> and they fly over.',
+      'Birds only land on an <b>empty branch</b> or next to a bird of the <b>same species</b>, and only as many as there is room for.',
+      'When a branch is <b>full of one species</b>, that little flock sings and <b>flies away</b>, and the branch is free again. Clear every bird to finish the level.',
       'Each level has a <b>move limit</b> (top: moves left). It is a little more than our solver needed, so it can always be done. An <b>Undo</b> gives its move back. Out of moves? <b>Continue</b> with extra moves after a short ad (twice per try), or <b>Restart</b>.',
       'Helpers on every level: <b>Undo</b> (5), <b>Branch</b> (one extra branch), <b>Shuffle</b> (mixes the birds again into a mix that can still be solved), and <b>Restart</b>. Every level is checked to be solvable.',
-      'Later on: <b>sleepy birds</b> (nightcaps, colour hidden until they reach the end), <b>bigger branches</b> (5 or 6), <b>caged birds</b> (open after a few moves) and <b>leafy branches</b> (open when sets fly away).',
-      'Settings: <b>Colour symbols</b> put a small shape on each bird. Every colour also has its own look: crest, spots, curl, stripes, mask, streamers and more.',
+      'Later on: <b>sleepy birds</b> (tucked heads, species hidden until they reach the end), <b>bigger branches</b> (5 or 6), <b>caged birds</b> (open after a few moves) and <b>leafy branches</b> (open when sets fly away).',
+      'Settings: <b>Colour symbols</b> put a small matching shape on each species. Each species has its own feather pattern and shape. Cardinals and blue jays visit occasionally; bald eagles are rare.',
       '500 levels are built in, then new ones are made on the phone, without end.'
     ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
@@ -1389,8 +1392,9 @@ var PPSound = (function () {
     if (!meta.seen) openHelp();
     requestAnimationFrame(frame);
     window.__ppReady = true;
+    PA.ready.then(function(){ fit(); }).catch(function(){});
     Goobs.markPlayed('perch');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Perch Pals ' + (v.perch || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Perch Pals ' + (v.perch || '1.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests
   window.__perch = { get g() { return g; }, tap: tap, hit: hit, slotPos: slotPos, startLevel: startLevel, undo: undo, addBranch: addBranch, shuffle: shuffle, restart: restart, outOfMoves: outOfMoves,
