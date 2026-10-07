@@ -42,7 +42,7 @@ const VERSIONS = {
   golf: '0.5.1',
   shelf: '2.0.1',
   castle: '2.2.0',
-  bridge: '1.0.0',
+  bridge: '1.1.0',
   outpost: '2.1.0',
   getout: '0.22.0',
   stranded: '1.0.0',
