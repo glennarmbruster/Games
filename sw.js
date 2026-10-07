@@ -31,7 +31,7 @@ const VERSIONS = {
   barrage: '1.6.0',
   siege: '1.3.0',
   hoops: '1.3.1',
-  beacon: '0.5.0',
+  beacon: '0.5.1',
   sort: '2.1.0',
   triple: '2.0.0',
   pinball: '2.1.0',

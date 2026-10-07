@@ -53,3 +53,35 @@ button:focus-visible, .btn:focus-visible { outline: 3px solid #ffcf68; outline-o
 .rotate .phone { border-color: #183e46; }
 @media (max-height:360px) { .hcell { padding: 3px 6px; } .hcell b { font-size: 17px; } }
 @media (prefers-reduced-motion:reduce) { .intro.show, .hud.hurry #hTime, .rotate .phone { animation: none; } .dp { transition: none; } }
+
+/* 0.5.1 — expedition-style level library */
+#scMap { background: radial-gradient(ellipse at 85% 0%,#21434d 0%,transparent 55%),linear-gradient(145deg,#122832,#09191f); color:#f0f5f3; padding-top:calc(env(safe-area-inset-top,0px) + 16px); padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px); }
+#scMap .mapbg, #scMap .trailpim, #scMap .path { display:none; }
+#scMap .mtop { padding-bottom:12px; border-bottom:1px solid #ffffff1f; }
+#scMap .brand h1 { color:#edf5f2; font-size:22px; font-weight:650; letter-spacing:-.6px; }
+#scMap .homebtn .chev { color:#b9ccc9; }
+#scMap .brand svg { border-radius:0; box-shadow:none; }
+#scMap .mworld { background:transparent; border:0; border-radius:0; box-shadow:none; padding:0; }
+#scMap .mworld b { color:#eef5f2; font-size:16px; font-weight:600; }
+#scMap .mworld span { color:#a8beba; font-size:12px; font-weight:500; }
+#scMap .mworld .warr, #scMap .iconbtn { background:#ffffff0d; border:1px solid #ffffff29; color:#edf5f2; box-shadow:none; border-radius:10px; }
+#scMap .trail { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-content:center; gap:14px; width:100%; max-width:1120px; margin:0 auto; padding:18px 12px; box-sizing:border-box; }
+#scMap .stop { position:relative; left:auto!important; top:auto!important; transform:none; width:100%; min-height:142px; padding:18px 12px; align-items:flex-start; gap:9px; border:1px solid #ffffff29; border-radius:12px; background:linear-gradient(145deg,#263f47,#1a3039); box-shadow:0 8px 22px #0000001f; text-align:left; }
+#scMap .stop .n { color:#edf5f2; font-size:27px; font-weight:600; letter-spacing:-1px; }
+#scMap .stop .t { color:#e3ece9; font-size:13px; font-weight:600; white-space:normal; line-height:1.25; }
+#scMap .stop .s { color:#afc3be; font-size:11px; font-weight:500; }
+#scMap .stop.cur { background:linear-gradient(145deg,#294c50,#1c373e); border-color:#d9ba7c; box-shadow:inset 0 3px 0 #d9ba7c,0 8px 22px #00000026; }
+#scMap .stop.cur .n { color:#f0d49b; }
+#scMap .stop.lock { background:#ffffff04; border-color:#ffffff14; box-shadow:none; }
+#scMap .stop.lock .n { color:#90a5a4; }
+#scMap .stop.lock .t, #scMap .stop.lock .s { color:#9db0ad; }
+#scMap .stop.done .n::after { color:#9ed8be; }
+#scMap .stop.boss .t::before { content:none; }
+#scMap .stop .lan { gap:5px; margin-top:auto; }
+#scMap .stop .lan i { width:14px; height:3px; border-radius:2px; background:#ffffff26; box-shadow:none; }
+#scMap .stop .lan i.on { background:#e3c68c; box-shadow:none; }
+#scMap .mfoot { border-top:1px solid #ffffff1f; padding-top:12px; justify-content:flex-end; }
+#scMap .mfoot .btn { min-height:44px; min-width:144px; border-radius:10px; box-shadow:none; font-size:14px; background:#ffffff0a; color:#dbe9e4; border:1px solid #ffffff29; }
+#scMap #btnPlay { background:#e1c48a; color:#202e2e; border-color:#e1c48a; }
+@media (max-height:420px) { #scMap { padding-top:calc(env(safe-area-inset-top,0px) + 8px); padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px); } #scMap .mtop { padding-bottom:6px; } #scMap .trail { gap:10px; padding:10px 6px; } #scMap .stop { min-height:120px; padding:12px; gap:6px; } #scMap .mfoot { padding-top:6px; } }
+@media (max-width:680px) { #scMap .brand h1 { font-size:17px; } #scMap .mworld b { font-size:13px; } #scMap .mworld span { font-size:10px; } #scMap .stop { padding:10px 8px; } #scMap .stop .t { font-size:12px; } }
