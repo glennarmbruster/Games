@@ -1,0 +1,26 @@
+/* Hex Slide — deterministic, offline rules. Arrays run bottom to top. */
+(function(root){'use strict';
+const COLORS=['Lagoon','Coral','Lime','Violet','Honey','Sky'];
+const DIRS=[[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+const CELLS=[];for(let r=-2;r<=2;r++)for(let q=-2;q<=2;q++)if(Math.abs(q+r)<=2)CELLS.push({q,r});
+const NEIGHBORS=CELLS.map(c=>DIRS.map(([q,r])=>CELLS.findIndex(n=>n.q===c.q+q&&n.r===c.r+r)).filter(i=>i>=0));
+const RING=CELLS.map((c,i)=>({i,a:Math.atan2(c.r*.866,c.q+c.r*.5),d:Math.max(Math.abs(c.q),Math.abs(c.r),Math.abs(c.q+c.r))})).filter(c=>c.d===2).sort((a,b)=>a.a-b.a).map(c=>c.i);
+const clone=x=>JSON.parse(JSON.stringify(x));
+function random(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
+function top(a){return a[a.length-1];}function run(a){if(!a.length)return 0;let n=1;while(n<a.length&&a[a.length-n-1]===top(a))n++;return n;}
+function config(level,endless=false){return {colors:Math.min(6,3+Math.floor((level-1)/4)),goal:endless?Infinity:level===1?100:150+Math.floor((level-2)/3)*50,step:25,maxRuns:level<3?2:level<9?3:4,endless};}
+function locks(level){const a=CELLS.map(()=>0);RING.forEach((i,k)=>a[i]=(k+1)*25);return a;}
+function open(s,i){return s.score>=s.locks[i];}
+function makeStack(s){const C=config(s.level,s.endless),groups=1+Math.floor(random(s)*C.maxRuns);let prev=-1,a=[];for(let g=0;g<groups;g++){let col=Math.floor(random(s)*C.colors);if(col===prev)col=(col+1)%C.colors;const n=2+Math.floor(random(s)*3);for(let j=0;j<n;j++)a.push(col);prev=col;}return a;}
+function create(level=1,seed=Date.now(),endless=false){const s={version:1,level,endless,rng:seed>>>0,board:CELLS.map(()=>[]),locks:locks(level),tray:[],score:0,moves:0,clears:0,bestChain:0,tools:{hammer:3,shuffle:3},status:'playing'};const center=CELLS.findIndex(c=>c.q===0&&c.r===0);s.board[center]=Array(5).fill(0);s.tray=[Array(5).fill(0),[1,1,1,2,2,2],Array(4).fill(1)];if(level>1)s.tray=[makeStack(s),makeStack(s),makeStack(s)];return s;}
+function empty(s){return s.board.map((a,i)=>!a.length&&open(s,i)?i:-1).filter(i=>i>=0);}
+function resolve(s,preferred){const events=[];let chain=0,limit=0;const emit=e=>events.push({...e,board:clone(s.board),score:s.score});while(limit++<1000){let cleared=false;for(let i=0;i<s.board.length;i++){const n=run(s.board[i]);if(n>=10){const color=top(s.board[i]);s.board[i].splice(-n);s.score+=n;s.clears++;chain++;emit({type:'clear',i,color,count:n});cleared=true;break;}}if(cleared)continue;
+let pair=null,best=-Infinity;for(let i=0;i<s.board.length;i++){if(!s.board[i].length)continue;for(const j of NEIGHBORS[i]){if(j<=i||!s.board[j].length||top(s.board[i])!==top(s.board[j]))continue;const rank=k=>(k===preferred?10000:0)+run(s.board[k])*100+s.board[k].length+k/100;const to=rank(i)>rank(j)?i:j,from=to===i?j:i,priority=rank(to);if(priority>best){best=priority;pair={from,to};}}}if(!pair)break;const {from,to}=pair,n=run(s.board[from]),color=top(s.board[from]);s.board[from].splice(-n);s.board[to].push(...Array(n).fill(color));emit({type:'slide',from,to,color,count:n});}
+if(limit>=1000)throw Error('Resolution did not terminate');s.bestChain=Math.max(s.bestChain,chain);return {events,chain};}
+function finish(s){s.status=!s.endless&&s.score>=config(s.level).goal?'won':empty(s).length?'playing':'blocked';}
+function place(original,slot,i){if(original.status==='won')return {error:'This board is complete.'};if(!Number.isInteger(slot)||slot<0||slot>2||!Number.isInteger(i)||i<0||i>=19)return {error:'Choose a stack and a space.'};if(!open(original,i))return {error:'Clear '+original.locks[i]+' tiles to unlock this space.'};if(original.board[i].length)return {error:'Place stacks on empty spaces.'};const s=clone(original),stack=s.tray[slot].slice();s.board[i]=stack;s.moves++;const first={type:'place',i,slot,stack,board:clone(s.board),score:s.score};const resolved=resolve(s,i);s.tray[slot]=makeStack(s);finish(s);return {state:s,events:[first,...resolved.events],chain:resolved.chain};}
+function hammer(original,i){if(!original.tools.hammer||!original.board[i]?.length)return {error:'Choose an occupied space.'};const s=clone(original),a=s.board[i].slice();s.board[i]=[];s.tools.hammer--;const events=[{type:'hammer',i,color:top(a),count:a.length,board:clone(s.board),score:s.score}];const r=resolve(s,i);finish(s);return {state:s,events:events.concat(r.events),chain:r.chain};}
+function shuffle(original){if(!original.tools.shuffle)return {error:'No shuffles left on this board.'};const s=clone(original);s.tools.shuffle--;s.tray=s.tray.map(()=>makeStack(s));return {state:s,events:[],chain:0};}
+function hint(s){let best=null,score=-Infinity;for(let slot=0;slot<3;slot++)for(const i of empty(s)){const r=place(s,slot,i),next=r.state;let matching=0;for(const j of NEIGHBORS[i])if(next.board[j].length&&top(next.board[j])===top(next.board[i]))matching++;const value=(next.score-s.score)*100+empty(next).length*15-next.board.reduce((n,a)=>n+(a.length?1:0),0)*2+matching; if(value>score){score=value;best={slot,i,clear:next.score-s.score};}}return best;}
+const api={COLORS,CELLS,NEIGHBORS,RING,clone,config,create,top,run,open,empty,resolve,place,hammer,shuffle,hint};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HEX=api;
+})(typeof window!=='undefined'?window:globalThis);
