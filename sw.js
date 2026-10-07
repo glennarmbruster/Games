@@ -2,7 +2,7 @@
    Each part has its own version and its own cache. To publish an update, bump ONLY the
    version of the part that changed; unchanged parts are not downloaded again. */
 const VERSIONS = {
-  shell: '2.94.0',     // menu, manifest, icons, /shared (ads, themes, storage)
+  shell: '2.95.0',     // menu, manifest, icons, /shared (ads, themes, storage)
   zoodoku: '1.9.0',
   woodpile: '1.2.0',
   patchwork: '2.2.0',
@@ -44,6 +44,7 @@ const VERSIONS = {
   castle: '1.7.0',
   outpost: '0.6.1',
   getout: '0.19.0',
+  stranded: '1.0.0',
   sudoku: '0.1.0',
   wordwheel: '0.3.0',
   trivia: '0.3.0',
@@ -68,6 +69,7 @@ const VERSIONS = {
   cannon: '0.20.0'   // shared 3D physics library (cannon-es) for Number Nook's Chain Cube
 };
 const GROUPS = {
+  stranded: ['games/stranded/', 'games/stranded/index.html', 'games/stranded/engine.js', 'games/stranded/game.js'],
   shell: [
     './', 'index.html', 'manifest.json',
     'icons/games/aliens-v1.webp', 'icons/games/barrage-v1.webp', 'icons/games/beacon-v1.webp', 'icons/games/blocks-v1.webp', 'icons/games/board-v1.webp', 'icons/games/bowling-v1.webp', 'icons/games/bricks-v1.webp', 'icons/games/bubbles-v1.webp', 'icons/games/buzz-v1.webp', 'icons/games/cases-v1.webp', 'icons/games/casino-v1.webp', 'icons/games/castle-v1.webp', 'icons/games/cubecorral-v1.webp', 'icons/games/daily-v1.webp', 'icons/games/deck-v1.webp', 'icons/games/dice-v1.webp', 'icons/games/digger-v1.webp', 'icons/games/getout-v1.webp', 'icons/games/getout2-v1.webp', 'icons/games/golf-v1.webp', 'icons/games/hidden-v1.webp', 'icons/games/homerun-v1.webp', 'icons/games/hoops-v1.webp', 'icons/games/huddle-v1.webp', 'icons/games/knotty-v1.webp', 'icons/games/links-v1.webp', 'icons/games/mahjong-v1.webp', 'icons/games/match3-v1.webp', 'icons/games/maze-v1.webp', 'icons/games/meanbirds-v1.webp', 'icons/games/merge-v1.webp', 'icons/games/mines-v1.webp', 'icons/games/minigolf-v1.webp', 'icons/games/nonogram-v1.webp', 'icons/games/outpost-v1.webp', 'icons/games/parking-v1.webp', 'icons/games/patchwork-v1.webp', 'icons/games/pegs-v1.webp', 'icons/games/perch-v1.webp', 'icons/games/pinball-v1.webp', 'icons/games/pinball-v2.webp', 'icons/games/screwball-v1.webp', 'icons/games/shelf-v1.webp', 'icons/games/siege-v1.webp', 'icons/games/skeehop-v1.webp', 'icons/games/snake-v1.webp', 'icons/games/solitaire-v1.webp', 'icons/games/sort-v1.webp', 'icons/games/spin-v1.webp', 'icons/games/spotdiff-v1.webp', 'icons/games/sudoku-v1.webp', 'icons/games/tapaway-v1.webp', 'icons/games/topple-v1.webp', 'icons/games/triple-v1.webp', 'icons/games/trivia-v1.webp', 'icons/games/wickway-v1.webp', 'icons/games/woodpile-v1.webp', 'icons/games/wordboard-v1.webp', 'icons/games/worddice-v1.webp', 'icons/games/wordwheel-v1.webp', 'icons/games/zoodoku-v1.webp',
