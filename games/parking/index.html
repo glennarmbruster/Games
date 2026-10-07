@@ -25,7 +25,7 @@
       d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eef4f0;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
       d.innerHTML = '<b style="font-size:21px">Lot Escape didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
       function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
-      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('parking.game'); } catch (e) { /* ignore */ } location.reload(); });
+      btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('parking.game'); localStorage.removeItem('parking.challengeGame'); } catch (e) { /* ignore */ } location.reload(); });
       btn('All games', '#6b7080', function () { location.href = '../../'; });
       document.body.appendChild(d);
     }
@@ -59,6 +59,8 @@ html.gg-fs .top .brand { flex: none; }
 .ttpills .ggpill small { font-size: 13px; font-weight: 700; color: var(--muted); }
 html.gg-fs .stagewrap { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); }
 html.gg-fs .stage { margin: 0; border-radius: 0; }
+
+.lot-modes{display:flex;gap:6px;align-items:center;padding:5px 0 9px;flex:none}.lot-modes button,.lot-modes select{min-height:44px;border:1px solid #647b79;border-radius:12px;background:#223e43;color:#f9f4df;font:700 13px system-ui;padding:8px 10px}.lot-modes button.active{background:#e9b65d;color:#202e32;border-color:#e9b65d}.lot-modes select{min-width:0;flex:1}.stage{background:#233f43!important}.tool.red{background:#b94135}.toast{z-index:3}
 </style>
 </head>
 <body>
@@ -100,6 +102,7 @@ html.gg-fs .stage { margin: 0; border-radius: 0; }
     </div>
   </div>
 
+  <nav class="lot-modes" aria-label="Game mode"><button id="modeChallenge">Harbor Exit</button><button id="modeClassic">Classic</button><select id="lotSelect" aria-label="Choose challenge lot"></select></nav>
   <div class="stagewrap" id="stagewrap">
     <div class="stage" id="stage">
       <canvas id="cv"></canvas>
@@ -352,6 +355,10 @@ var LESound = (function () {
 <script>
 /* Lot Escape app: the lot, cars that slide and drive away, swipes and taps, bumps and honks, undo, hint, restart,
    level flow, saves, stats and house ads. */
+</script><script src="challenge-bank.js"></script>
+<script src="challenge.js"></script>
+<script src="lot-look.js"></script>
+<script>
 (function () {
   'use strict';
   var S = LESound;
@@ -364,6 +371,8 @@ var LESound = (function () {
   var meta = store.get('meta', null) || {};
   var MD = { level: 1, seen: false, finished: 0, lastAdAt: 0 };
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
+  if(!meta.mode)meta.mode=store.get('game',null)?'classic':'challenge';
+  if(!meta.challengeLevel)meta.challengeLevel=1;if(!meta.best)meta.best={};
   function saveMeta() { store.set('meta', meta); }
   var stats = store.get('stats', null) || {};
   ['cleared', 'moves', 'bumps', 'cars', 'hints', 'undos'].forEach(function (k) { if (typeof stats[k] !== 'number') stats[k] = 0; });
@@ -377,20 +386,20 @@ var LESound = (function () {
   // ================= game =================
   var g = null, view = {}, parts = [], signs = [], hintId = -1, hintT = 0, ending = false;
   function startLevel(n) {
-    g = PJ.create(n); meta.level = n; saveMeta(); ending = false; parts = []; signs = []; hintId = -1;
+    g = meta.mode==='challenge'?LotChallenge.create(n):PJ.create(n); if(g.challenge)meta.challengeLevel=g.n;else meta.level=n; saveMeta(); ending = false; parts = []; signs = []; hintId = -1;
     view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: 0, shake: 0 }; });
     save(); layout(); renderInfo();
   }
-  function save() { if (g && !g.won) store.set('game', g); else store.del('game'); }
+  function save() { if (g && !g.won) store.set(g.challenge?'challengeGame':'game', g); else if(g)store.del(g.challenge?'challengeGame':'game'); }
   function load() {
-    var r = store.get('game', null);
-    if (!r || r.n !== meta.level || !Array.isArray(r.cars) || r.won) return false;
-    g = r; view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: c.gone ? 99 : 0, shake: 0 }; }); layout(); renderInfo(); return true;
+    var r = store.get(meta.mode==='challenge'?'challengeGame':'game', null);
+    if (!r || r.n !== (meta.mode==='challenge'?meta.challengeLevel:meta.level) || !Array.isArray(r.cars) || r.won) return false;
+    g = r; hintId = -1; parts = []; signs = []; view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: c.gone ? 99 : 0, shake: 0 }; }); layout(); renderInfo(); return true;
   }
-  function moveCar(id, sign) {
+  function moveCar(id, sign, dist) {
     if (!g || g.won || ending || sheetOpen()) return;
     S.unlock();
-    var c = g.cars[id], r = PJ.move(g, id, sign); if (!r) return;
+    var c = g.cars[id], r = g.challenge?LotChallenge.move(g,id,sign,dist):PJ.move(g, id, sign); if (!r) return;
     hintId = -1;
     if (r.bump) {
       S.bump(); S.honk(); stats.bumps++; saveStats();
@@ -401,25 +410,25 @@ var LESound = (function () {
     var v = view[id]; v.sign = r.sign;
     if (r.exit) { v.exiting = true; v.out = 0; S.vroom(true); stats.cars++; } else S.vroom(false);
     stats.moves++; saveStats(); save(); renderInfo();
-    if (r.won) setTimeout(win, 900);
+    if (r.won) { var completedGame=g; setTimeout(function(){if(g===completedGame && g.won)win();}, 900); }
   }
   function win() {
     if (ending) return; ending = true;
-    stats.cleared++; saveStats(); meta.finished++; meta.level = g.n + 1; saveMeta(); store.del('game');
+    stats.cleared++; saveStats(); meta.finished++; if(g.challenge){meta.challengeLevel=Math.min(LotChallengeBank.length,g.n+1);var medal=g.hinted?1:g.moves<=g.par?3:g.moves<=g.par+3?2:1;var old=meta.best[g.n];meta.best[g.n]={moves:old?Math.min(old.moves,g.moves):g.moves,stars:old?Math.max(old.stars||0,medal):medal};}else meta.level=g.n+1;saveMeta();store.del(g.challenge?'challengeGame':'game');
     S.win(); for (var i = 0; i < 80; i++) parts.push({ x: Math.random() * W, y: -10 - Math.random() * H * 0.5, vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, t: 0, life: 170, c: ['#ffd21e', '#ff5a5a', '#3a8cff', '#5ad15a', '#ff7ac8'][i % 5], r: 3 + Math.random() * 3, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
     setTimeout(function () {
-      showCard('Lot cleared!', 'Level ' + g.n + ' in <b>' + g.moves + '</b> moves' + (g.bumps ? ' (' + g.bumps + ' bump' + (g.bumps === 1 ? '' : 's') + ')' : '') + '.', [
-        { label: 'Next level', red: true, go: function () { between(function () { startLevel(g.n + 1); }); } }]);
+      showCard(g.challenge?'Getaway complete!':'Lot cleared!', (g.challenge?'Harbor Exit · par '+g.par+' · '+('★★★'.slice(0,meta.best[g.n].stars))+'<br>':'')+'Level ' + g.n + ' in <b>' + g.moves + '</b> moves' + (g.bumps ? ' (' + g.bumps + ' bump' + (g.bumps === 1 ? '' : 's') + ')' : '') + '.', [
+        { label: g.challenge&&g.n===LotChallengeBank.length?'Replay this lot':'Next level', red: true, go: function () { between(function () { startLevel(g.n + 1); }); } }]);
     }, 900);
   }
   function undo() {
     if (!g || ending || sheetOpen()) return;
-    var id = PJ.undo(g); if (id == null) { toast('Nothing to undo'); return; }
+    var id = g.challenge?LotChallenge.undo(g):PJ.undo(g); if (id == null) { toast('Nothing to undo'); return; }
     var c = g.cars[id]; view[id] = { x: c.x, y: c.y, out: 0, shake: 0 }; stats.undos++; saveStats(); S.undo(); save(); renderInfo();
   }
   function hint() {
     if (!g || ending || sheetOpen()) return;
-    var h = PJ.hint(g); if (!h) return; hintId = h.id; hintT = performance.now(); stats.hints++; saveStats(); S.hint();
+    var path=g.challenge?LotChallenge.solve(g.cars):null;var h=g.challenge?(path&&path[0]):PJ.hint(g); if (!h){toast('No hint available. Try Undo.');return;}if(g.challenge){g.hinted=true;save();toast('Car '+(h.id+1)+': '+(g.cars[h.id].dir==='h'?(h.sign>0?'right':'left'):(h.sign>0?'down':'up'))+(h.exit?' through EXIT':' '+h.dist+' space'+(h.dist===1?'':'s')));} hintId = h.id; hintT = performance.now(); stats.hints++; saveStats(); S.hint();
   }
   function restart() { if (g) startLevel(g.n); }
 
@@ -444,7 +453,7 @@ var LESound = (function () {
     if (!down) return; var d = down; down = null; if (d.id < 0) return;
     var r = cv.getBoundingClientRect(), dx = e.clientX - r.left - d.x, dy = e.clientY - r.top - d.y, c = g.cars[d.id];
     var along = c.dir === 'h' ? dx : dy;
-    if (Math.abs(along) > 14) moveCar(d.id, along > 0 ? 1 : -1);
+    if (Math.abs(along) > 14) moveCar(d.id, along > 0 ? 1 : -1,Math.max(1,Math.round(Math.abs(along)/cs)));
     else if (Math.hypot(dx, dy) < 14) moveCar(d.id, 0);   // a tap: the way the car faces
     else moveCar(d.id, (c.dir === 'h' ? dx : dy) >= 0 ? 1 : -1);
   }
@@ -461,18 +470,7 @@ var LESound = (function () {
     cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
     if (!g) return;
     var lw = g.w * cs, lh = g.h * cs, rd = cs * 0.8;
-    // grass details
-    for (var i = 0; i < 30; i++) { var gx = (i * 71 % 100) / 100 * W, gy = (i * 37 % 100) / 100 * H; cx.fillStyle = 'rgba(40,110,40,.25)'; cx.beginPath(); cx.arc(gx, gy, 3 + i % 4, 0, 7); cx.fill(); }
-    // road around the lot
-    rr(ox - rd, oy - rd, lw + rd * 2, lh + rd * 2, rd); cx.fillStyle = '#4a4f5c'; cx.fill();
-    cx.setLineDash([cs * 0.3, cs * 0.3]); cx.strokeStyle = 'rgba(255,230,120,.8)'; cx.lineWidth = Math.max(1.5, cs * 0.05);
-    rr(ox - rd / 2, oy - rd / 2, lw + rd, lh + rd, rd / 2); cx.stroke(); cx.setLineDash([]);
-    // the lot
-    rr(ox, oy, lw, lh, cs * 0.12); cx.fillStyle = '#6a7080'; cx.fill();
-    cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = Math.max(1, cs * 0.03);
-    for (var x = 1; x < g.w; x++) { cx.beginPath(); cx.moveTo(ox + x * cs, oy + cs * 0.12); cx.lineTo(ox + x * cs, oy + lh - cs * 0.12); cx.stroke(); }
-    for (var y = 1; y < g.h; y++) { cx.setLineDash([cs * 0.12, cs * 0.12]); cx.beginPath(); cx.moveTo(ox + cs * 0.12, oy + y * cs); cx.lineTo(ox + lw - cs * 0.12, oy + y * cs); cx.stroke(); cx.setLineDash([]); }
-    rr(ox, oy, lw, lh, cs * 0.12); cx.lineWidth = Math.max(2, cs * 0.07); cx.strokeStyle = '#f4f4f0'; cx.stroke();
+    LotLook.draw(cx,W,H,g,cs,ox,oy);
     // trees and cones
     (g.rocks || []).forEach(function (p, i) { cx.save(); cx.translate(ox + (p[0] + 0.5) * cs, oy + (p[1] + 0.5) * cs); if (i % 2) LArt.cone(cx, cs); else LArt.tree(cx, cs, i); cx.restore(); });
     // cars
@@ -497,7 +495,7 @@ var LESound = (function () {
       var ang = c.dir === 'v' ? (c.face > 0 ? Math.PI : 0) : (c.face > 0 ? Math.PI / 2 : -Math.PI / 2);
       cx.save(); cx.translate(px + w2 / 2 + sx, py + h2 / 2 + sy); cx.rotate(ang);
       if (c.id === hintId && Math.floor((now - hintT) / 250) % 2 === 0) { cx.shadowColor = 'rgba(255,240,120,1)'; cx.shadowBlur = cs * 0.5; }
-      cx.drawImage(sp.c, -sp.w / 2, -sp.h / 2, sp.w, sp.h); cx.restore();
+      cx.drawImage(sp.c, -sp.w / 2, -sp.h / 2, sp.w, sp.h);if(g.challenge&&c.id===0){cx.fillStyle='#fff7de';cx.fillRect(-cs*.11,-cs*.18,cs*.065,cs*.6);cx.fillRect(cs*.045,-cs*.18,cs*.065,cs*.6);}cx.restore();if(g.challenge){cx.fillStyle='#101f29d9';cx.beginPath();cx.arc(px+w2/2,py+h2/2,cs*.13,0,7);cx.fill();cx.font='800 '+Math.max(9,cs*.18)+'px system-ui';cx.textAlign='center';cx.fillStyle='#fff';cx.fillText(c.id+1,px+w2/2,py+h2/2+cs*.065);}
     });
     // "!" over a car that got bumped
     signs = signs.filter(function (s) { s.t += dt; return s.t < 1; });
@@ -518,7 +516,7 @@ var LESound = (function () {
     if (w > el.clientWidth + 6) el.classList.add('tight');
   }
   // full screen: two pills in the top row instead of the old LEVEL / CARS LEFT row (frees ~50px)
-  function renderInfo() { if (!g) return; $('info').innerHTML = '<span class="ggpill"><small>Lv</small> ' + g.n + '</span><span class="ggpill">' + PJ.left(g) + ' <small>cars</small> · ' + g.moves + ' <small>moves</small></span>'; fitPills(); }
+  function renderInfo() { if (!g) return; $('info').innerHTML = '<span class="ggpill"><small>Lot</small> ' + g.n + '</span><span class="ggpill">' + (g.challenge?'Par '+g.par:PJ.left(g)+' cars') + ' · ' + g.moves + ' <small>moves</small></span>'; fitPills();$('modeChallenge').classList.toggle('active',!!g.challenge);$('modeClassic').classList.toggle('active',!g.challenge);$('lotSelect').hidden=!g.challenge;$('lotSelect').value=g.n; Array.prototype.forEach.call($('lotSelect').options,function(o){var b=meta.best[o.value];o.textContent='Lot '+o.value+' · par '+LotChallengeBank[o.value-1].par+(b?' · '+('★★★'.slice(0,b.stars)):'');}); }
   var toastT = 0;
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2000); }
   function showCard(title, html, buttons) {
@@ -531,13 +529,13 @@ var LESound = (function () {
   function showAd(done2) { GoobsAds.show({ onShow: function () { S.ding(); }, onStep: function () { S.sign(); } }, done2); }
   function between(next) { if (Goobs.adsOn() && meta.finished > 0 && meta.finished % settings.adEvery === 0 && meta.lastAdAt !== meta.finished) { meta.lastAdAt = meta.finished; saveMeta(); next(); showAd(function () {}); return; } next(); }
   function openHelp() {
-    $('helpList').innerHTML = [
+    $('helpList').innerHTML = (g&&g.challenge?['<b>Free the striped red car</b> through the glowing exit on the right. Other cars stay inside the lot.','<b>Swipe along a car</b> to move it the number of spaces you drag. A tap moves it one space toward its headlights. Cars cannot turn.','Move blockers aside, including backward, to create space. Once the red car reaches the right edge, swipe right again to exit.','One swipe is one move, regardless of distance. Match the <b>par</b> for three stars without hints; within three extra moves earns two. Hints limit the result to one star.','Undo is free. Choose any lot from the selector; later lots require more moves. Classic keeps your original progress.']:[
       '<b>Swipe a car</b> forward or backward to drive it. <b>Tap</b> a car to drive it the way it faces.',
       'Cars only move along their own line. A car keeps going until it touches something, or reaches the road and <b>drives away</b>.',
       'Driving straight into something is a <b>bump</b> (and a honk). Trees and cones never move.',
       '<b>Empty the lot</b> to win. Every level can be cleared by driving cars out one after another.',
       '<b>Undo</b> and <b>Hint</b> are free and unlimited. <b>Restart</b> puts the lot back how it started.'
-    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    ]).map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
   }
   function renderStats() {
@@ -564,7 +562,7 @@ var LESound = (function () {
     $('btnHelp').addEventListener('click', openHelp);
     // full screen (kit): How to, Stats and Settings live in the Menu; Restart / Undo / Hint stay on screen
     Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'],
-      info: function () { return g ? 'Level <b>' + g.n + '</b> · <b>' + PJ.left(g) + '</b> cars left · <b>' + g.moves + '</b> moves' : ''; } });
+      info: function () { return g ? 'Lot <b>' + g.n + '</b> · ' + (g.challenge?'Par <b>'+g.par+'</b>':'<b>'+PJ.left(g)+'</b> cars left') + ' · <b>' + g.moves + '</b> moves' : ''; } });
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
     function closeHelp() { $('ovHelp').classList.remove('show'); if (!meta.seen) { meta.seen = true; saveMeta(); } }
@@ -579,8 +577,11 @@ var LESound = (function () {
     window.addEventListener('resize', fit);
     document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
     window.addEventListener('pagehide', save);
+    $('lotSelect').innerHTML=LotChallengeBank.map(function(b,i){return '<option value="'+(i+1)+'">Lot '+(i+1)+' · par '+b.par+'</option>';}).join('');
+    function switchMode(mode){if(ending||sheetOpen())return;save();meta.mode=mode;saveMeta();if(!load())startLevel(mode==='challenge'?meta.challengeLevel:meta.level);renderInfo();}
+    $('modeChallenge').onclick=function(){switchMode('challenge');};$('modeClassic').onclick=function(){switchMode('classic');};$('lotSelect').onchange=function(){if(ending||sheetOpen()){this.value=g.n;return;}startLevel(Number(this.value));};
     syncSound(); syncAds(); fit();
-    if (!load()) startLevel(meta.level);
+    if (!load()) startLevel(meta.mode==='challenge'?meta.challengeLevel:meta.level);
     fit();
     if (!meta.seen) openHelp();
     requestAnimationFrame(frame);
