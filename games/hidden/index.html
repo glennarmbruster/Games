@@ -33,7 +33,7 @@
     if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
   }
   window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
-  setTimeout(function () { if (!window.__hoReady) fail('It took too long to start.'); }, 8000);
+  setTimeout(function () { if (!window.__hoReady) fail('It took too long to start.'); }, 30000);
 })();
 </script>
 <title>Lost &amp; Found</title>
@@ -151,6 +151,13 @@ html[data-theme="dark"] .shelf div b { color: #f4e2c4; }
 html[data-theme="blue"] .tray { background:var(--surface); border-top-color:var(--line); }
 html[data-theme="blue"] .slot { background:var(--surface-2); color:var(--ink); border-color:var(--line); }
 .top .ggpill { font-weight:750; letter-spacing:-.02em; }
+
+/* Warm field-journal finishes complement the photographic scenes. */
+.stage, html[data-theme="dark"] .stage { background:#201b16; }
+html:not([data-theme="dark"]) .tray { background:linear-gradient(#f3ede1,#e5d9c3); }
+html:not([data-theme="dark"]) .tool.red { background:#65543a;color:#fff; }
+.scenename { background:rgba(28,23,17,.8);border-radius:4px;letter-spacing:.12em; }
+.slot { border-radius:6px; }
 </style>
 </head>
 <body>
@@ -217,9 +224,9 @@ html[data-theme="blue"] .slot { background:var(--surface-2); color:var(--ink); b
     <div class="sheetbody">
       <div class="themelabel">Theme (all games)</div>
       <div class="themes" id="themes"></div>
-      <div class="row"><div>Difficulty<small id="diffNote">Normal: busy scenes, longer lists, things hidden well.</small></div></div>
+      <div class="row"><div>Difficulty<small id="diffNote">Normal: 12 small objects, word clues and rich photographic clutter.</small></div></div>
       <div class="modes" id="diffModes"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="hard">Hard</button><button data-v="expert">Expert</button></div>
-      <div class="row"><div>The list shows<small>By level: pictures first, then words, shapes (silhouettes) and a mix.</small></div></div>
+      <div class="row"><div>The list shows<small>By level: pictures on Relaxed, words on Normal, Hard and Expert.</small></div></div>
       <div class="modes" id="listModes"><button data-v="level">By level</button><button data-v="pic">Pictures</button><button data-v="word">Words</button></div>
       <label class="row"><div>Show the timer<small>A clock at the top. While it's hidden, time never costs a star.</small></div>
         <span class="switch"><input type="checkbox" id="setTimer"><span></span></span></label>
@@ -233,7 +240,7 @@ html[data-theme="blue"] .slot { background:var(--surface-2); color:var(--ink); b
         <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
       <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
         <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
-      <div class="version" id="version">Lost &amp; Found 0.2.0</div>
+      <div class="version" id="version">Lost &amp; Found 1.0.0</div>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
   </div>
@@ -4140,6 +4147,7 @@ var HS = (function () {
   };
 })();
 </script>
+<script src="photo-hunt.js"></script>
 <script src="../../shared/ads.js"></script>
 <script>
 /* Lost & Found app: layout (the scene fills the screen above the list tray; the top row floats on it), drawing (a
@@ -4657,15 +4665,15 @@ var HS = (function () {
     $('helpList').innerHTML = [
       'Wren looks after the ship’s <b>Lost &amp; Found</b>, and at every stop things go missing. Find everything on the <b>list</b> at the bottom.',
       '<b>Tap a thing</b> when you spot it: it lifts out of the picture and flies to its place on the list.',
-      'The list shows <b>pictures</b>, <b>words</b> or <b>shapes</b> (silhouettes). <b>×3</b> means three of the same thing are hidden: find all three. (Settings can keep it to pictures or words.)',
+      'Find the precise objects named on the list. Relaxed uses pictures; the other difficulties use words. Settings can always switch between pictures and words.',
       'The picture is bigger than the screen: <b>drag</b> to look around, <b>pinch</b> to zoom. <b>Double-tap</b> zooms in there, double-tap again to come back; <b>Zoom out</b> shows the whole picture.',
-      'Things hide: behind other things, in piles, on crowded shelves, turned on their side, and some are tinted to blend in. A good part of each one always shows, and zoomed in you can always tell it’s the one.',
-      '<b>Look-alikes:</b> when the list says a colour (<b>“red sock”</b>), there’s another one in a different colour somewhere. Only the one on the list counts.',
+      'Search carefully among the photographic clutter. The lost objects are small, with different positions each time you return to a place. Zoom in to inspect details.',
+      '<b>Be specific:</b> a purple feather, a green marble, a blue thimble. Ordinary objects in the photograph are scenery; only the listed lost items count.',
       'A wrong tap shows a small red <b>×</b>. Three quick misses and the picture takes a 5-second breather (Settings can switch that off).',
       '<b>Hint:</b> a magnifying glass shows one thing you haven’t found. 3 per level (Hard 2, Expert 1), plus a bonus hint saved every 5 levels. Each costs a star.',
       '<b>Bonus</b> (the gold slot with a star): one more lost thing, not needed to finish. Find it and it goes on <b>Wren’s shelf</b> (in Stats).',
       '<b>Stars:</b> 3, minus one for a hint (two for more), one for more than 4 misses, and one for going over the par time (only while the timer is shown). <b>Hard</b> and <b>Expert</b> have a target time that always counts (it’s on the clock) and allow fewer misses (3 and 2).',
-      '<b>Difficulty</b> (Settings): Relaxed, Normal, Hard or Expert. Twelve places, an easy one every 7th level, and the levels never run out.'
+      '<b>Difficulty</b> (Settings): Relaxed, Normal, Hard or Expert. Ten photographic places cycle in order, with new object placements on every return. Normal starts with 12 objects; Hard has 14 and Expert has 15–16. The levels never run out.'
     ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
   }
@@ -4689,8 +4697,8 @@ var HS = (function () {
   // ================= wiring =================
   function syncSound() { $('btnSound').innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound-' + (settings.sound ? 'on' : 'off') + '"/></svg>'; $('btnSound').classList.toggle('on', settings.sound); $('setSound').checked = settings.sound; S.setEnabled(settings.sound); }
   function syncAds() { $('setAds').checked = Goobs.adsOn(); $('adEvery').textContent = settings.adEvery; $('rowAdEvery').classList.toggle('off', !Goobs.adsOn()); }
-  var DIFF_NOTE = { relaxed: 'Relaxed: the gentle 0.1.0 game. Fewer things, bigger and easier to see.', normal: 'Normal: busy scenes, longer lists, things hidden well.',
-    hard: 'Hard: hidden deeper, 2 hints a level, and a target time for the third star.', expert: 'Expert: the toughest search, 1 hint a level, a tight target time.' };
+  var DIFF_NOTE = { relaxed: 'Relaxed: 9 larger objects, picture clues and 3 hints.', normal: 'Normal: 12 small objects, word clues and rich photographic clutter.',
+    hard: 'Hard: 14 smaller objects, 2 hints and a target time for the third star.', expert: 'Expert: the toughest search, 1 hint a level, a tight target time.' };
   function syncModes() {
     Array.prototype.forEach.call($('listModes').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === settings.list); });
     Array.prototype.forEach.call($('diffModes').querySelectorAll('button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === settings.diff); });
@@ -4768,7 +4776,7 @@ var HS = (function () {
     requestAnimationFrame(frame);
     window.__hoReady = true;
     Goobs.markPlayed('hidden');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Lost & Found ' + (v.hidden || '0.3.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Lost & Found ' + (v.hidden || '1.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests
   function client(x, y) { var r = $('stage').getBoundingClientRect(), t = xf(); return { x: r.left + t.ox + x * t.s, y: r.top + t.oy + y * t.s }; }
@@ -4794,7 +4802,7 @@ var HS = (function () {
     startLevel: startLevel, hint: hint, setDiff: setDiff, meta: function () { return meta; }, stats: function () { return stats; }, settings: function () { return settings; },
     crispReady: function () { return crispKey === vkey(); }, busy: function () { return !!vAnim || !!gesture || flies.length > 0; }
   };
-  init();
+  PhotoHunt.ready.then(init).catch(function(e){console.error(e);window.dispatchEvent(new ErrorEvent('error',{message:'Scene images could not load. Please reload.'}));});
 })();
 </script>
 </body>

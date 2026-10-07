@@ -677,12 +677,12 @@ var SSSound = (function () {
     cx.restore();
   }
   function roundRect(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
-  function drawCap(capT) { // a cork pops on a finished tube
-    var tw = L.tw, age = (performance.now() - capT) / 1000, s = capT === 1 ? 1 : Math.min(1, age * 4) * (1 + Math.max(0, 0.25 - Math.abs(age - 0.25)) * 1.2);
-    cx.save(); cx.translate(0, -tw * 0.1); cx.scale(s, s);
-    var g2 = cx.createLinearGradient(0, -tw * 0.4, 0, tw * 0.1); g2.addColorStop(0, '#e2a868'); g2.addColorStop(1, '#9a6230');
-    cx.fillStyle = g2; roundRect(-tw * 0.4, -tw * 0.42, tw * 0.8, tw * 0.5, tw * 0.12); cx.fill(); cx.strokeStyle = 'rgba(80,40,10,.5)'; cx.lineWidth = 1.2; cx.stroke();
-    cx.fillStyle = 'rgba(80,40,10,.35)'; [-0.18, 0.05, 0.2].forEach(function (d, i) { cx.beginPath(); cx.arc(tw * d, -tw * (0.28 - i * 0.05), tw * 0.035, 0, Math.PI * 2); cx.fill(); });
+  var corkImage = new Image(); corkImage.src = 'assets/cork.png';
+  function drawCap(capT) {
+    if (!corkImage.complete || !corkImage.naturalWidth) return;
+    var tw=L.tw, age=(performance.now()-capT)/1000, s=capT===1?1:Math.min(1,age*4)*(1+Math.max(0,.25-Math.abs(age-.25))*1.2);
+    cx.save(); cx.translate(0,-tw*.1); cx.scale(s,s);
+    cx.drawImage(corkImage,-tw*.51,-tw*.48,tw*1.02,tw*.65);
     cx.restore();
   }
   var marbleCache = {};
@@ -911,7 +911,7 @@ var SSSound = (function () {
     requestAnimationFrame(frame);
     window.__ssReady = true;
     Goobs.markPlayed('sort');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Splash Sort ' + (v.sort || '2.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Splash Sort ' + (v.sort || '2.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests
   window.__ss = { get g() { return g; }, tap: tap, outOfMoves: outOfMoves, restart: restart, get FR() { return FR; }, startLevel: startLevel, switchMode: switchMode, undo: undo, addTube: addTube, get anims() { return anims; }, meta: function () { return meta; }, SS: SS, get L() { return L; } };
