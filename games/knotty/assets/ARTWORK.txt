@@ -1,0 +1,11 @@
+Knotty Workshop artwork
+Generated using the built-in image generation tool; no external runtime art service is used.
+
+Final prompt set:
+workshop-0.webp: Photographic portrait of a sailmaker's workshop on a sunny coast, looking down at a large empty weathered worktable, marina and masts at the distant top, natural hemp coils and a brass needle in the outer bottom corners. Warm natural side light; clear central area for the puzzle board; no board, colored ropes, people or text.
+workshop-1.webp: Photographic portrait looking down over an aged craft workbench in an alpine lodge, walnut table, pine forest and mountain lake beyond the window, soft green daylight, cream cord and brass scissors at bottom corners. Clear middle; no puzzle board, holes, people or text.
+workshop-2.webp: Photographic portrait of a honey oak craft table in a seaside lantern room at dusk. Rainy blue harbor window and warm lantern above, cord coil and leather tool roll in the bottom corners; clear middle for the puzzle board. No board, pegs, colored ropes, text or people.
+maple.webp: Orthographic overhead material photograph of fine light honey maple, continuous fine grain and subtle pores, matte waxed finish and uniform diffuse illumination. Full-bleed wood surface; no frame, holes, objects, rope, nails or text.
+cotton-rope.png: Extreme macro photograph of one perfectly straight horizontal length of ivory three-strand cotton rope, edge to edge without cut ends, on transparent background. Authentic twisted bundles of tiny matte fibers, subtle fuzz and soft top lighting. No knots, fittings, colored stripes, plastic or illustration.
+
+The cotton photograph is cropped and dyed at runtime in 12 colors. Its texture follows the live rope paths. Board edges, brass fittings and grip hardware are drawn in canvas. Textures and grips are cached for responsiveness. All assets are included in the offline cache.

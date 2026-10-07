@@ -32,7 +32,7 @@
     if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
   }
   window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
-  setTimeout(function () { if (!window.__knReady) fail('It took too long to start.'); }, 8000);
+  setTimeout(function () { if (!window.__knReady) fail('It took too long to start.'); }, 30000);
 })();
 </script>
 <title>Knotty</title>
@@ -81,6 +81,11 @@ html.gg-fs-over .toolbar .tool:disabled { opacity: .55; }
 .helplist canvas { display: block; margin: 6px 0 2px; border-radius: 12px; }
 .statsnote { color: var(--muted); text-align: center; margin: 4px 0 0; }
 html[data-theme="dark"] .tippic { background: linear-gradient(#1d2a4a, #33456e); }
+
+.stage, html.gg-fs-over, html.gg-fs-over body { background:#29261f; }
+html.gg-fs-over .toolbar .tool:not(.red) { background:rgba(244,235,214,.96);color:#393429;border:1px solid #d3c09b; }
+html.gg-fs-over .toolbar .tool.red { background:#506652;border:1px solid #708571;color:#fff9e9; }
+.tippic { background:#d9c6a6!important; }
 </style>
 </head>
 <body>
@@ -152,7 +157,7 @@ html[data-theme="dark"] .tippic { background: linear-gradient(#1d2a4a, #33456e);
         <span class="switch"><input type="checkbox" id="setAds"><span></span></span></label>
       <div class="row" id="rowAdEvery"><div>Show an ad every<small>Counted in finished levels.</small></div>
         <div class="stepper"><button id="adLess" aria-label="Fewer">&minus;</button><b id="adEvery">3</b><button id="adMore" aria-label="More">+</button></div></div>
-      <div class="version" id="version">Knotty 0.1.0</div>
+      <div class="version" id="version">Knotty 1.0.0</div>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseSettings">Done</button></div>
   </div>
@@ -890,6 +895,7 @@ var KS = (function () {
   };
 })();
 </script>
+<script src="workshop.js"></script>
 <script src="../../shared/ads.js"></script>
 <script>
 /* Knotty app: layout (the peg board in the free box between the top row and the helper buttons), drawing (scene, panels
@@ -1415,8 +1421,8 @@ var KS = (function () {
   }
   function openHelp() {
     $('helpList').innerHTML = [
-      '<b>Drag a knob</b> (the ball at the end of a rope) to an <b>empty peg</b>. The rope stretches after your finger and the knob snaps onto the nearest free peg. You can also <b>tap a knob</b>, then tap a peg.',
-      '<b>Untangle every rope:</b> no two ropes may cross. A rope that crosses nothing <b>relaxes and glows</b>; a crossed rope is pulled tight.',
+      '<b>Drag a knob</b> (the round grip at the end of a rope) to an <b>empty peg</b>. The rope stretches after your finger and the knob snaps onto the nearest free peg. You can also <b>tap a knob</b>, then tap a peg.',
+      '<b>Untangle every rope:</b> no two ropes may cross. A rope that crosses nothing <b>relaxes and briefly glows</b>; a crossed rope is pulled tight.',
       'A rope also counts as crossed when it <b>touches another rope’s knob</b> (it runs over that peg). Ropes may pass over empty pegs.',
       'Fewer moves, more stars: <b>3 stars</b> for the best number of moves (shown at the top), 2 for close to it. Every level can be done in its best.',
       'Helpers: <b>Undo</b> (as often as you like, gives the move back), <b>Hint</b> (moves one knob along a shortest way; 3 per level, each costs a star), <b>Restart</b>.',
@@ -1492,7 +1498,7 @@ var KS = (function () {
     requestAnimationFrame(frame);
     window.__knReady = true;
     Goobs.markPlayed('knotty');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Knotty ' + (v.knotty || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Knotty ' + (v.knotty || '1.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests
   window.__knotty = { get g() { return g; }, get L() { return L; }, get FR() { return FR; }, get sag() { return sag; }, get free() { return free; }, KN: KN,
@@ -1507,7 +1513,7 @@ var KS = (function () {
       for (var i = 0; i <= sol.length; i++) { if (st.pos.join(',') === g.pos.join(',')) return sol.slice(i); if (i < sol.length) st.pos[sol[i][0]] = sol[i][1]; }
       var ex = KN.solveState(g.spec, g.pos, g.lim, g.pins, { maxNodes: 2000000, maxDepth: 30 }); return ex ? ex.moves : null;
     } };
-  init();
+  KnottyWorkshop.ready.then(init).catch(function(e){window.dispatchEvent(new ErrorEvent("error",{message:e.message}));});
 })();
 </script>
 </body>
