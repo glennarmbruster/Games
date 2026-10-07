@@ -1,0 +1,55 @@
+/* Beacon Bound 0.5.0 — presentation only; touch geometry stays in index.html. */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.hud { text-shadow: 0 1px 2px #102b36; }
+.hcell { background: rgba(12,37,47,.88); border-radius: 10px; box-shadow: 0 2px 8px #102b3626, inset 0 1px 0 #ffffff29; padding: 5px 7px; box-sizing: border-box; }
+.hcell .hl { color: #d0e6e8; font-weight: 650; letter-spacing: .8px; font-size: 10px; opacity: 1; }
+.hcell b { font-weight: 750; letter-spacing: 0; font-size: 19px; }
+.hbtn { background: #f4faf8; color: #163d43; border: 1px solid #ffffffb3; box-shadow: 0 3px 10px #102b3633; }
+.dp, .abtn { background: rgba(13,43,52,.65); border-color: #ffffffa6; color: #fff; box-shadow: inset 0 1px 0 #ffffff26, 0 4px 12px #102b3633; font-weight: 700; letter-spacing: .7px; }
+.abtn.a { background: rgba(160,56,32,.82); }
+.abtn.b { background: rgba(18,74,101,.82); }
+.abtn.b.spark { background: rgba(13,98,109,.88); }
+.dp.on, .abtn.on { background: #ffe099; color: #493419; border-color: #fff8e5; box-shadow: inset 0 2px 6px #61401d40, 0 0 16px #ffd24a66; }
+.stick { background: #102b3670; border-color: #ffffffa6; }
+.stick .knob { background: linear-gradient(145deg,#fff,#bfe2dd); border: 1px solid #fff; }
+.intro { background: radial-gradient(ellipse at 50% 40%,#204d57,#0b202b 75%); }
+.intro .iw { font-weight: 750; letter-spacing: 1px; }
+.intro .it { color: #ffe09c; font-weight: 650; }
+.intro .isub { color: #bed9dd; font-weight: 600; }
+.bbcard { border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 18px 60px #071f3440; }
+.bbcard h2 { font-weight: 750; letter-spacing: -.5px; }
+.bbcard p, .keys { line-height: 1.5; }
+.bbcard .btn, .seg button { font-weight: 650; }
+.seg { border: 1px solid var(--line); }
+.seg button.on { box-shadow: 0 2px 5px #102b3626; }
+.endstats div { border: 1px solid var(--line); }
+.endstats b { font-weight: 750; }
+.endstats span { font-weight: 600; letter-spacing: .4px; }
+.bossbar { background: #102b36eb; color: #ffe1ad; box-shadow: 0 3px 12px #071f3433; font-weight: 650; letter-spacing: .8px; }
+.bossbar .pips i { background: #ffb364; box-shadow: 0 0 5px #ffb36466; }
+.screen { background: linear-gradient(#8dc6da,#c2e1e6 55%,#e5eee1); }
+.mtop .brand h1 { color: #153e47; font-weight: 750; letter-spacing: -.6px; }
+.mworld { background: #f5faf4ed; border: 1px solid #ffffffbd; border-radius: 15px; box-shadow: 0 3px 12px #153e471a; }
+.mworld b { color: #163e46; font-weight: 750; letter-spacing: -.3px; }
+.mworld span { color: #426068; font-weight: 600; }
+.mworld .warr { color: #176b70; background: #fff; box-shadow: 0 2px 6px #153e4726; font-weight: 600; }
+.stop { background: #f9fcf5f5; border: 1px solid #ffffffd9; box-shadow: 0 3px 0 #254e4533, 0 6px 14px #153e4726; border-radius: 15px; }
+.stop .n { font-weight: 750; color: #183e46; }
+.stop .t { color: #38565e; font-weight: 650; }
+.stop .s { color: #536971; font-weight: 600; }
+.stop.cur { background: linear-gradient(145deg,#18777a,#12535e); border-color: #9ee5d7; box-shadow: 0 3px 0 #123d47, 0 0 0 3px #dff9dc80, 0 7px 20px #123d4740; }
+.stop.cur .n { color: #fff; }
+.stop.cur .t, .stop.cur .s { color: #e1f5ef; }
+.stop.lock { background: #e5ebe8eb; border-color: #d7e2df; box-shadow: 0 2px 0 #254e4526; }
+.stop.lock .n, .stop.lock .t, .stop.lock .s { color: #586b70; }
+.stop.done .n::after { color: #187653; }
+.stop.cur.done .n::after { color: #b8ffcf; }
+.stop .lan i { background: #a9b9b8; }
+.stop .lan i.on { background: #f9bd38; box-shadow: inset 0 1px 0 #fff0b0, 0 0 5px #ffc83a80; }
+.mfoot .btn { font-weight: 650; border-radius: 14px; }
+button:focus-visible, .btn:focus-visible { outline: 3px solid #ffcf68; outline-offset: 3px; }
+.rotate { background: radial-gradient(ellipse at top,#e4f5ee,#adcfd6); color: #183e46; }
+.rotate span { color: #38565e; }
+.rotate .phone { border-color: #183e46; }
+@media (max-height:360px) { .hcell { padding: 3px 6px; } .hcell b { font-size: 17px; } }
+@media (prefers-reduced-motion:reduce) { .intro.show, .hud.hurry #hTime, .rotate .phone { animation: none; } .dp { transition: none; } }
