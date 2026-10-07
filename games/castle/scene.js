@@ -109,7 +109,7 @@ var CCScene = (function () {
       var hx=sx/2-bevel, hy=sy/2-bevel;
       shape.moveTo(-hx,-hy);shape.lineTo(hx,-hy);shape.lineTo(hx,hy);shape.lineTo(-hx,hy);shape.closePath();
       var g=new T.ExtrudeGeometry(shape,{depth:sz-2*bevel,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:1,steps:1,curveSegments:1});
-      g.translate(0,0,-sz/2+bevel);return g;
+      g.translate(0,0,-sz/2+bevel);var uv=g.attributes.uv,pos=g.attributes.position,n=g.attributes.normal;for(var i=0;i<uv.count;i++){var ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i)),az=Math.abs(n.getZ(i));if(az>=ax&&az>=ay)uv.setXY(i,pos.getX(i)/sx+.5,pos.getY(i)/sy+.5);else if(ax>=ay)uv.setXY(i,pos.getZ(i)/sz+.5,pos.getY(i)/sy+.5);else uv.setXY(i,pos.getX(i)/sx+.5,pos.getZ(i)/sz+.5);}return g;
     }
 
     var roofM = std({ color: 0x3a4f5c, roughness: 0.7, flatShading: true });
@@ -195,9 +195,31 @@ var CCScene = (function () {
         decoration(new T.BoxGeometry(.045,.64,.03),std({color:0xe0c28a}),g,.28,.45,.445);
         scene.add(g);details.push({mesh:g,idx:idx});
       });
+      if(level.guards)level.pieces.forEach(function(p,i){
+        var g=new T.Group();
+        if(p[0]==='door'&&p[4]>2){
+          var stone=std({color:0xaba693,roughness:.94}),metal=std({color:0x4c5659,roughness:.45,metalness:.55});
+          decoration(new T.BoxGeometry(p[4]+.08,.10,.82),stone,g,0,.12,0);
+          [-1,1].forEach(function(sign){decoration(new T.BoxGeometry(.18,.40,.78),metal,g,sign*(p[4]/2-.25),-.12,0);decoration(new T.SphereGeometry(.04,7,5),std({color:0xd6bb80,metalness:.6}),g,sign*(p[4]/2-.25),-.1,.41);});
+          // Arched masonry fascia moves with the floor it supports.
+          if(p[4]<5){var half=p[4]/2-.2,arch=new T.Shape();arch.moveTo(-half,-.10);arch.lineTo(half,-.10);arch.lineTo(half,-.90);arch.quadraticCurveTo(half*.8,-.90,half*.6,-.55);arch.quadraticCurveTo(0,.03,-half*.6,-.55);arch.quadraticCurveTo(-half*.8,-.90,-half,-.90);arch.closePath();decoration(new T.ExtrudeGeometry(arch,{depth:.16,bevelEnabled:true,bevelThickness:.015,bevelSize:.015,bevelSegments:1}),stone.clone(),g,0,0,.12);for(var ai=-3;ai<=3;ai++){decoration(new T.BoxGeometry(.02,.17,.02),std({color:0x75786b,roughness:1}),g,ai*half/3,-.19,.30);}}
+          // Carved shallow corbels follow the actual floor as it collapses.
+          [-1,1].forEach(function(sign){var corbel=new T.Shape();corbel.moveTo(0,0);corbel.lineTo(sign*.60,0);corbel.quadraticCurveTo(sign*.12,-.12,0,-.55);corbel.closePath();var mesh=decoration(new T.ExtrudeGeometry(corbel,{depth:.11,bevelEnabled:false}),stone.clone(),g,-sign*(p[4]/2-.14),-.14,.30);});
+        }else if(p[0]==='m'&&i%2===0){
+          decoration(new T.BoxGeometry(p[4]+.06,.09,.76),std({color:0xc0b9a3,roughness:1}),g,0,p[5]/2,0);
+        }else if(p[0]==='b1'&&p[2]>.8&&p[2]<1.2){
+          var shield=new T.Shape();shield.moveTo(-.23,.30);shield.lineTo(.23,.30);shield.lineTo(.23,-.04);shield.quadraticCurveTo(.15,-.24,0,-.35);shield.quadraticCurveTo(-.15,-.24,-.23,-.04);shield.closePath();
+          decoration(new T.ExtrudeGeometry(shield,{depth:.035,bevelEnabled:true,bevelSize:.015,bevelThickness:.015,bevelSegments:1}),std({color:colors[level.theme%5],roughness:.7}),g,0,0,.38);
+          decoration(new T.BoxGeometry(.06,.48,.035),std({color:0xe4c68a,metalness:.5}),g,0,.02,.43);
+        }
+        if(g.children.length){scene.add(g);details.push({mesh:g,idx:i});}
+      });
       level.pieces.forEach(function(p,i){if(p[0]!=='guard')return;var g=new T.Group(),armor=std({color:0x54646c,metalness:.55,roughness:.5}),helm=std({color:0xd0cec0,metalness:.65,roughness:.4}),cape=std({color:0x8f3f33,roughness:1});
         decoration(new T.BoxGeometry(.46,.55,.34),armor,g,0,-.05,0);decoration(new T.SphereGeometry(.22,10,8),helm,g,0,.4,0);decoration(new T.BoxGeometry(.31,.05,.1),std({color:0x17282d}),g,0,.4,.19);
         decoration(new T.BoxGeometry(.12,.3,.15),armor.clone(),g,-.13,-.43,0);decoration(new T.BoxGeometry(.12,.3,.15),armor.clone(),g,.13,-.43,0);decoration(new T.BoxGeometry(.52,.58,.045),cape,g,0,-.02,-.2);
+        decoration(new T.BoxGeometry(.12,.38,.15),armor.clone(),g,-.31,-.06,0);decoration(new T.BoxGeometry(.12,.38,.15),armor.clone(),g,.31,-.06,0);
+        var shield=decoration(new T.SphereGeometry(.24,12,8),std({color:0x754638,roughness:.6,metalness:.2}),g,-.33,-.03,.22);shield.scale.set(1,1.2,.22);
+        decoration(new T.CylinderGeometry(.018,.018,.95,6),std({color:0xa0865b}),g,.35,.12,.08);decoration(new T.ConeGeometry(.065,.18,6),helm.clone(),g,.35,.66,.08);
         scene.add(g);guardActors.push({mesh:g,idx:i});
       });
     }

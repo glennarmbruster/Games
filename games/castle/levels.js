@@ -6,9 +6,10 @@ var SiegeLevels = (function () {
   function make(n) {
     n=Math.max(1,Math.min(9999999,n|0));
     var kind=(n-1)%8, chapter=Math.floor((n-1)/8), theme=chapter%5, R=CC.rng(n*7919+31), cells=new Map(), extras=[], banners=[];
-    var h=6+Math.min(3,Math.floor(chapter/2)), U=.65;
+    var h=6+Math.min(3,Math.floor(chapter/2)), U=.52;
     function put(x,y,z,type){cells.set(x+','+y+','+z,{x:x,y:y,z:z,t:type||'stone'});}
     function wall(x0,x1,z,ymax,gate) {
+      x0=Math.round(x0*1.25);x1=Math.round(x1*1.25);z=Math.round(z*1.25);ymax=Math.round(ymax*1.25);
       for(var y=0;y<ymax;y++)for(var x=x0;x<=x1;x++){
         if(gate&&Math.abs(x)<2&&y<3)continue;
         if(y>=3&&y<=4&&Math.abs(x)%4===2)continue;
@@ -16,9 +17,9 @@ var SiegeLevels = (function () {
       }
       for(var x=x0;x<=x1;x+=2)put(x,ymax,z);
     }
-    function side(x,z0,z1,ymax){for(var z=z0;z<=z1;z++)for(var y=0;y<ymax;y++)if(!(y===3&&(z-z0)%4===2))put(x,y,z);for(var z=z0;z<=z1;z+=2)put(x,ymax,z);}
+    function side(x,z0,z1,ymax){x=Math.round(x*1.25);z0=Math.round(z0*1.25);z1=Math.round(z1*1.25);ymax=Math.round(ymax*1.25);for(var z=z0;z<=z1;z++)for(var y=0;y<ymax;y++)if(!(y===3&&(z-z0)%4===2))put(x,y,z);for(var z=z0;z<=z1;z+=2)put(x,ymax,z);}
     function tower(cx,cz,height,width,roof){
-      var r=width||2;
+      cx=Math.round(cx*1.25);cz=Math.round(cz*1.25);height=Math.round(height*1.25);var r=Math.round((width||2)*1.25);
       for(var y=0;y<height;y++)for(var x=-r;x<=r;x++)for(var z=-r;z<=r;z++){
         if(Math.abs(x)!==r&&Math.abs(z)!==r)continue;
         if(y>=3&&y<=4&&((x===0&&Math.abs(z)===r)||(z===0&&Math.abs(x)===r)))continue;
@@ -33,7 +34,7 @@ var SiegeLevels = (function () {
     if(kind===0){tower(-5,0,h+2,2,false);tower(5,0,h+2,2,false);wall(-2,2,0,h-1,true);}
     if(kind===1){tower(-4,0,h+4,2,true);tower(4,0,h+3,2,false);wall(-1,1,0,h-1,false);}
     if(kind===2){tower(0,-3,h+5,3,true);wall(-8,8,3,h-2,true);side(-8,-3,3,h-2);side(8,-3,3,h-2);}
-    if(kind===3){tower(-8,0,h+2,2,false);tower(8,0,h+2,2,false);for(var x=-5;x<=5;x++)for(var y=0;y<h;y++)if(y>=h-2||x%4===0)put(x,y,0);for(var x=-5;x<=5;x+=2)put(x,h,0);}
+    if(kind===3){tower(-8,0,h+2,2,false);tower(8,0,h+2,2,false);var hh=Math.round(h*1.25);for(var x=-7;x<=7;x++)for(var y=0;y<hh;y++)if(y>=hh-2||x%5===0)put(x,y,0);for(var x=-7;x<=7;x+=2)put(x,hh,0);}
     if(kind===4){tower(-5,3,h+2,2,false);tower(5,3,h+2,2,false);tower(0,-4,h+5,2,true);wall(-2,2,3,h-1,true);side(-5,-3,0,h-2);side(5,-3,0,h-2);}
     if(kind===5){tower(0,0,h+7,3,false);tower(-7,1,h,2,true);tower(7,1,h,2,true);wall(-4,4,4,h-2,true);}
     if(kind===6){tower(-5,-4,h+2,2,true);tower(5,-4,h+2,2,true);wall(-7,7,3,h-1,true);side(-7,-2,3,h-1);side(7,-2,3,h-1);}
