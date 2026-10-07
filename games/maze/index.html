@@ -59,6 +59,7 @@ html.gg-fs .top #btnPause:disabled { opacity: .4; }
 html.gg-fs .stagewrap { width: calc(100% + 16px); margin: 0 -8px; }
 @media (min-height: 780px) { html.gg-fs .joy { width: 176px; height: 176px; } }
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -693,8 +694,10 @@ var CCSound = (function () {
       for (var qy = 0; qy < TH - 1; qy++) for (var qx = 0; qx < TW - 1; qx++)
         if (isWall(qx, qy) && isWall(qx + 1, qy) && isWall(qx, qy + 1) && isWall(qx + 1, qy + 1)) x.fillRect(qx * c + c / 2 - 0.5, qy * c + c / 2 - 0.5, c + 1, c + 1);
     }
+    x.save();x.translate(0,c*.1);pass(c*.88,'rgba(0,0,0,.45)');x.restore();
     pass(c * 0.78, white ? '#ffffff' : pal[1]);
-    pass(c * 0.5, white ? '#dfe4ff' : pal[0]);
+    var enamel=x.createLinearGradient(0,0,TW*c,TH*c);enamel.addColorStop(0,white?'#f4f7ff':pal[0]);enamel.addColorStop(1,white?'#dfe4ff':shade(pal[0],-.2));pass(c*.5,enamel);
+    x.save();x.globalAlpha=.18;x.translate(-c*.045,-c*.045);pass(c*.16,'#fff8dd');x.restore();
     // the cat basket: a woven floor and its door
     var hx = 11 * c, hy = 12 * c;
     x.fillStyle = 'rgba(255,200,120,.08)'; x.fillRect(hx, hy, 6 * c, 3 * c);
@@ -705,7 +708,7 @@ var CCSound = (function () {
   function draw() {
     if (!cx || !s) return;
     var now = performance.now(), W = TW * c, H = (TH + 2) * c;
-    cx.fillStyle = '#17121f'; cx.fillRect(0, 0, W, H);
+    var floor=cx.createLinearGradient(0,0,W,H);floor.addColorStop(0,'#192a3b');floor.addColorStop(1,'#0c1521');cx.fillStyle=floor;cx.fillRect(0,0,W,H);
     var pal = WALLS[(s.level - 1) % WALLS.length], flash = s.phase === 'clear' && s.phaseT > 60 && Math.floor((s.phaseT - 60) / 14) % 2 === 0;
     var key = pal[0] + flash + c + dpr;
     if (!wallsImg || wallsKey !== key) { wallsImg = buildWalls(pal, flash); wallsKey = key; }
@@ -743,7 +746,7 @@ var CCSound = (function () {
   }
   function cheese(x, y, size) { // a wedge of cheese with holes
     cx.save(); cx.translate(x, y);
-    cx.fillStyle = '#ffc53d'; cx.beginPath(); cx.moveTo(-size * 0.5, size * 0.35); cx.lineTo(size * 0.5, size * 0.35); cx.lineTo(size * 0.5, -size * 0.1); cx.lineTo(-size * 0.5, -size * 0.35); cx.closePath(); cx.fill();
+    var cheddar=cx.createLinearGradient(0,-size*.35,0,size*.35);cheddar.addColorStop(0,'#ffe493');cheddar.addColorStop(1,'#dfa630');cx.fillStyle=cheddar; cx.beginPath(); cx.moveTo(-size * 0.5, size * 0.35); cx.lineTo(size * 0.5, size * 0.35); cx.lineTo(size * 0.5, -size * 0.1); cx.lineTo(-size * 0.5, -size * 0.35); cx.closePath(); cx.fill();
     cx.fillStyle = '#ffe28a'; cx.beginPath(); cx.moveTo(-size * 0.5, -size * 0.35); cx.lineTo(size * 0.5, -size * 0.1); cx.lineTo(size * 0.5, -size * 0.02); cx.lineTo(-size * 0.5, -size * 0.25); cx.closePath(); cx.fill();
     cx.fillStyle = '#d99a14'; [[-0.2, 0.12, 0.09], [0.18, 0.15, 0.07], [0.3, 0.02, 0.05]].forEach(function (h) { cx.beginPath(); cx.arc(h[0] * size, h[1] * size, h[2] * size, 0, Math.PI * 2); cx.fill(); });
     cx.restore();
@@ -784,7 +787,7 @@ var CCSound = (function () {
     cx.strokeStyle = '#f3a5b8'; cx.lineWidth = Math.max(1.2, r * 0.12); cx.lineCap = 'round';
     cx.beginPath(); cx.moveTo(-r * 0.9, 0); cx.quadraticCurveTo(-r * 1.5, -r * 0.2 + wig * r * 0.3, -r * 1.65, r * 0.25 + wig * r * 0.2); cx.stroke();
     if (legs) { cx.fillStyle = '#f3a5b8'; var f = Math.sin(step * 0.6) * r * 0.25; [[-0.35, 1], [0.35, -1]].forEach(function (l) { cx.beginPath(); cx.ellipse(l[0] * r + f * l[1], r * 0.62, r * 0.18, r * 0.1, 0, 0, Math.PI * 2); cx.fill(); cx.beginPath(); cx.ellipse(l[0] * r - f * l[1], -r * 0.62, r * 0.18, r * 0.1, 0, 0, Math.PI * 2); cx.fill(); }); }
-    cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.ellipse(-r * 0.15, 0, r * 0.85, r * 0.62, 0, 0, Math.PI * 2); cx.fill();
+    var fur=cx.createRadialGradient(-r*.3,-r*.2,r*.08,0,0,r);fur.addColorStop(0,'#e7ebf2');fur.addColorStop(1,'#8c9aae');cx.fillStyle=fur; cx.beginPath(); cx.ellipse(-r * 0.15, 0, r * 0.85, r * 0.62, 0, 0, Math.PI * 2); cx.fill();
     cx.fillStyle = '#d7dcea'; cx.beginPath(); cx.ellipse(-r * 0.25, r * 0.1, r * 0.5, r * 0.34, 0, 0, Math.PI * 2); cx.fill();
     cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.moveTo(r * 0.35, -r * 0.45); cx.quadraticCurveTo(r * 1.25, -r * 0.1, r * 1.05, 0); cx.quadraticCurveTo(r * 1.25, r * 0.1, r * 0.35, r * 0.45); cx.closePath(); cx.fill();
     [[-1, 0.45], [1, 0.45]].forEach(function (e) { cx.fillStyle = '#b9c0d4'; cx.beginPath(); cx.arc(r * 0.3, e[0] * r * 0.5, r * 0.34, 0, Math.PI * 2); cx.fill(); cx.fillStyle = '#f3a5b8'; cx.beginPath(); cx.arc(r * 0.3, e[0] * r * 0.5, r * 0.2, 0, Math.PI * 2); cx.fill(); });
@@ -816,7 +819,7 @@ var CCSound = (function () {
     cx.fillStyle = scared ? 'rgba(255,255,255,.35)' : '#ffb3c7';
     [[-1], [1]].forEach(function (e) { var sx = e[0]; cx.beginPath(); cx.moveTo(sx * r * 0.62, -r * 0.3); cx.lineTo(sx * r * 0.6, -r * 0.78); cx.lineTo(sx * r * 0.3, -r * 0.55); cx.closePath(); cx.fill(); });
     // head
-    cx.fillStyle = col; cx.beginPath(); cx.ellipse(0, 0, r * 0.82, r * 0.72, 0, 0, Math.PI * 2); cx.fill();
+    var coat=cx.createLinearGradient(0,-r,0,r);coat.addColorStop(0,col);coat.addColorStop(1,dark);cx.fillStyle=coat; cx.beginPath(); cx.ellipse(0, 0, r * 0.82, r * 0.72, 0, 0, Math.PI * 2); cx.fill();
     if (!scared && ct.i === 0) { cx.fillStyle = dark; [[-0.15, -0.62], [0.15, -0.62], [0, -0.68]].forEach(function (st) { cx.fillRect(st[0] * r - r * 0.05, st[1] * r, r * 0.1, r * 0.22); }); }
     if (!scared && ct.i === 3) { cx.fillStyle = '#fff5e6'; cx.beginPath(); cx.ellipse(0, r * 0.3, r * 0.45, r * 0.3, 0, 0, Math.PI * 2); cx.fill(); }
     if (scared) {
