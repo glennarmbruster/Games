@@ -765,14 +765,14 @@
       }
     },
     {
-      id: 'castle', name: 'Castle Crumble', blurb: 'Blast the castle down', path: 'games/castle/',
+      id: 'castle', name: 'Castle Havoc', blurb: 'Cannon siege & trebuchet campaigns', path: 'games/castle/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="ccT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff9a2e"/></linearGradient></defs><rect width="100" height="100" fill="url(#ccT)"/>' +
         '<g fill="#3b3fd6"><rect x="16" y="46" width="16" height="54"/><rect x="68" y="46" width="16" height="54"/><rect x="30" y="58" width="40" height="42"/><rect x="40" y="30" width="20" height="40"/><path d="M14 46l10-16 10 16z"/><path d="M66 46l10-16 10 16z"/><path d="M38 30l12-18 12 18z"/></g>' +
         '<rect x="45" y="80" width="10" height="20" rx="5" fill="#1d1f7a"/><circle cx="70" cy="30" r="9" fill="#fff4b0"/><circle cx="70" cy="30" r="5" fill="#fff"/></svg>',
       status: function () {
-        var m = readLS('castle.meta'); if (!m || !(m.open > 1)) return 'Blast the castle down';
-        var st = 0; for (var k in (m.stars || {})) st += m.stars[k];
-        return (m.open - 1) + ' castles down \u00b7 ' + st + ' stars';
+        var c = readLS('castle.siege2'), s = readLS('castle.sling2');
+        if (!c && !s) return 'Two ways to bring it down';
+        return 'Crumble ' + (c && c.level || 1) + ' · Sling ' + (s && s.level || 1);
       }
     },
     {
