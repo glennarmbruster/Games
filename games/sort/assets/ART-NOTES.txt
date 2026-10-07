@@ -1,0 +1,7 @@
+Splash Sort studio edition. Backgrounds generated with the built-in image-generation tool.
+
+Liquid studio prompt: portrait photorealistic botanical glass studio, deep teal softly blurred wall, soft window light, walnut workbench, subtle distant glassware and greenery at edges. Empty central play area, no text or game pieces.
+
+Marble studio prompt: portrait photorealistic artisan workshop, muted charcoal brown wall, walnut shelving at edges, pale travertine workbench, warm window light, empty central play area, no text or game pieces.
+
+Both converted to 900x1350 WebP. Dynamic glass, liquid bands, menisci, streams, marble shading and reflections are canvas-rendered to preserve accurate gameplay and animation.

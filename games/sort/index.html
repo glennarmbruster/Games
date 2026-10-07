@@ -74,6 +74,7 @@ html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.92); co
 .lvbig { font-size: 30px; }
 .card .btn small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
 </style>
+<link rel="stylesheet" href="studio.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -122,6 +123,7 @@ html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.92); co
   <div class="stagewrap" id="stagewrap">
     <div class="stage" id="stage">
       <canvas id="cv"></canvas>
+      <div class="studio-title"><span>Splash Sort</span><small id="studioMode">LIQUID STUDIO</small></div>
       <div class="toast" id="toast"></div>
     </div>
   </div>
@@ -550,7 +552,7 @@ var SSSound = (function () {
     var st = $('stage'), r = st.getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1);
     W = Math.max(100, r.width); H = Math.max(100, r.height);
     var tp = document.querySelector('.top').getBoundingClientRect(), tb = document.querySelector('.toolbar').getBoundingClientRect();
-    var y0 = Math.max(0, tp.bottom - r.top) + 6, y1 = (tb.height ? tb.top - r.top : H) - 6, x0 = Math.max(4, tb.left - r.left - 6), x1 = Math.min(W - 4, tb.right - r.left + 6);
+    var y0 = Math.max(H<600?90:124, tp.bottom - r.top + 6), y1 = (tb.height ? tb.top - r.top : H) - 6, x0 = Math.max(4, tb.left - r.left - 6), x1 = Math.min(W - 4, tb.right - r.left + 6);
     if (!(x1 - x0 > 100)) { x0 = 4; x1 = W - 4; }
     FR = { x: x0, y: y0, w: x1 - x0, h: Math.max(100, y1 - y0) };
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); layout();
@@ -645,7 +647,7 @@ var SSSound = (function () {
     var tw = L.tw, th = L.th, u = L.u, hr = L.hr, iw = tw - 6;
     cx.save(); cx.translate(mx, my); cx.rotate(ang);
     if (glow) { cx.shadowColor = 'rgba(255,255,255,.9)'; cx.shadowBlur = 16; }
-    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(255,255,255,.22)'; cx.fill(); cx.shadowBlur = 0;
+    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(181,214,207,.07)'; cx.fill(); cx.shadowBlur = 0;
     cx.restore();
     // liquid: clip to the tipped tube, fill level bands in world space
     var total = rs.reduce(function (s, r) { return s + r.amt; }, 0);
@@ -658,20 +660,19 @@ var SSSound = (function () {
       var vol = 0, prev = levelFor(corners, 0), unitA = iw * u;
       rs.forEach(function (r) {
         vol += r.amt; var h = levelFor(corners, vol * unitA);
-        var grad = cx.createLinearGradient(mx - tw, 0, mx + tw, 0);
-        grad.addColorStop(0, COLORS[r.c]); grad.addColorStop(0.55, COLORS[r.c]); grad.addColorStop(0.8, LIGHT[r.c]); grad.addColorStop(1, COLORS[r.c]);
+        var grad = cx.createLinearGradient(mx - tw*.5, 0, mx + tw*.5, 0);
+        grad.addColorStop(0, shade(COLORS[r.c])); grad.addColorStop(.14, COLORS[r.c]); grad.addColorStop(.36, LIGHT[r.c]); grad.addColorStop(.56, COLORS[r.c]); grad.addColorStop(.85, COLORS[r.c]); grad.addColorStop(1, shade(COLORS[r.c]));
         cx.fillStyle = grad; cx.fillRect(mx - th - 10, h, (th + 10) * 2, prev - h + 0.6);
         if (settings.symbols && Math.abs(ang) < 0.05 && r.amt > 0.55) { for (var k = 0; k < Math.floor(r.amt + 0.001); k++) drawSymbol(r.c, mx, prev - (k + 0.5) * u, u * 0.62); }
+        if(Math.abs(ang)<.05){cx.beginPath();cx.ellipse(mx,h+1,iw*.5,Math.max(1.5,tw*.045),0,0,Math.PI*2);cx.fillStyle=LIGHT[r.c];cx.globalAlpha=.48;cx.fill();cx.globalAlpha=1;cx.strokeStyle='rgba(255,255,255,.22)';cx.lineWidth=.8;cx.stroke();}
         prev = h;
       });
-      cx.fillStyle = 'rgba(255,255,255,.45)'; cx.fillRect(mx - th - 10, prev, (th + 10) * 2, Math.max(1.5, u * 0.07));
+      cx.fillStyle = 'rgba(255,255,255,.24)'; cx.fillRect(mx - th - 10, prev, (th + 10) * 2, Math.max(1.5, u * 0.07));
       cx.restore();
     }
     // glass
     cx.save(); cx.translate(mx, my); cx.rotate(ang);
-    tubePath(cx, tw, th, 0); cx.lineWidth = Math.max(2, tw * 0.06); cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.stroke();
-    cx.beginPath(); cx.moveTo(-tw * 0.26, hr * 0.8); cx.lineTo(-tw * 0.26, th - tw * 0.6); cx.lineWidth = tw * 0.08; cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineCap = 'round'; cx.stroke();
-    cx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(-tw / 2 - tw * 0.1, -tw * 0.02, tw * 1.2, tw * 0.16, tw * 0.07); cx.fill();
+    glassShell(tw,th,glow);
     if (capT) drawCap(capT);
     cx.restore();
   }
@@ -684,13 +685,12 @@ var SSSound = (function () {
     cx.fillStyle = 'rgba(80,40,10,.35)'; [-0.18, 0.05, 0.2].forEach(function (d, i) { cx.beginPath(); cx.arc(tw * d, -tw * (0.28 - i * 0.05), tw * 0.035, 0, Math.PI * 2); cx.fill(); });
     cx.restore();
   }
-  function drawBall(c, x, y, r) {
-    var g2 = cx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
-    g2.addColorStop(0, LIGHT[c]); g2.addColorStop(0.45, COLORS[c]); g2.addColorStop(1, shade(COLORS[c]));
-    cx.fillStyle = g2; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
-    cx.lineWidth = 1; cx.strokeStyle = 'rgba(0,0,0,.18)'; cx.stroke();
-    cx.fillStyle = 'rgba(255,255,255,.8)'; cx.beginPath(); cx.ellipse(x - r * 0.32, y - r * 0.42, r * 0.28, r * 0.17, -0.5, 0, Math.PI * 2); cx.fill();
-    if (settings.symbols) drawSymbol(c, x, y + r * 0.08, r * 1.2);
+  var marbleCache = {};
+  function drawBall(c,x,y,r){
+    var key=c+':'+r.toFixed(3)+':'+DPR,im=marbleCache[key],pad=r*1.2;
+    if(!im){if(Object.keys(marbleCache).length>96)marbleCache={};im=document.createElement('canvas');im.width=im.height=Math.ceil(pad*2*DPR);var old=cx;cx=im.getContext('2d');cx.setTransform(DPR,0,0,DPR,0,0);studioBall(c,pad,pad,r);cx=old;marbleCache[key]=im;}
+    cx.drawImage(im,x-pad,y-pad,im.width/DPR,im.height/DPR);
+    if(settings.symbols)drawSymbol(c,x,y+r*.08,r*1.2);
   }
   function shade(hex) { var n = parseInt(hex.slice(1), 16), r = (n >> 16) * 0.62, g2 = ((n >> 8) & 255) * 0.62, b = (n & 255) * 0.62; return 'rgb(' + (r | 0) + ',' + (g2 | 0) + ',' + (b | 0) + ')'; }
   function ballR() { return Math.min(L.tw * 0.42, L.u * 0.47); }
@@ -699,21 +699,48 @@ var SSSound = (function () {
     var tw = L.tw, th = L.th;
     cx.save(); cx.translate(x, y);
     if (glow) { cx.shadowColor = 'rgba(255,255,255,.9)'; cx.shadowBlur = 16; }
-    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(255,255,255,.22)'; cx.fill(); cx.shadowBlur = 0;
+    tubePath(cx, tw, th, 0); cx.fillStyle = 'rgba(181,214,207,.07)'; cx.fill(); cx.shadowBlur = 0;
     cx.restore();
     var r = ballR();
     for (var k = 0; k < contents.length - (hideTop || 0); k++) drawBall(contents[k], x, y + th - 3 - r - k * L.u, r);
     cx.save(); cx.translate(x, y);
-    tubePath(cx, tw, th, 0); cx.lineWidth = Math.max(2, tw * 0.06); cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.stroke();
-    cx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(-tw / 2 - tw * 0.1, -tw * 0.02, tw * 1.2, tw * 0.16, tw * 0.07); cx.fill();
+    glassShell(tw,th,glow);
     if (capT) drawCap(capT);
     cx.restore();
   }
+  // Physically inspired glass: edge refraction, window reflections and a rolled lip.
+  function glassShell(tw, th, glow) {
+    cx.save();
+    tubePath(cx, tw, th, 0);
+    var edge=cx.createLinearGradient(-tw/2,0,tw/2,0);
+    edge.addColorStop(0,'rgba(13,32,34,.7)');edge.addColorStop(.035,'rgba(222,246,242,.92)');edge.addColorStop(.085,'rgba(150,201,194,.25)');edge.addColorStop(.18,'rgba(245,255,249,.04)');edge.addColorStop(.72,'rgba(255,255,255,.01)');edge.addColorStop(.9,'rgba(129,175,170,.2)');edge.addColorStop(.97,'rgba(225,250,242,.85)');edge.addColorStop(1,'rgba(17,40,39,.65)');
+    cx.fillStyle=edge;cx.fill();
+    cx.strokeStyle=glow?'rgba(255,231,159,.95)':'rgba(201,234,225,.68)';cx.lineWidth=Math.max(1,tw*.025);cx.stroke();
+    tubePath(cx,tw,th,2);cx.clip();
+    var shine=cx.createLinearGradient(-tw*.4,0,-tw*.1,0);shine.addColorStop(0,'rgba(255,255,255,0)');shine.addColorStop(.4,'rgba(255,255,255,.45)');shine.addColorStop(.62,'rgba(255,255,255,.12)');shine.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=shine;cx.fillRect(-tw*.4,tw*.25,tw*.3,th-tw*.48);
+    cx.fillStyle='rgba(244,255,250,.12)';cx.fillRect(tw*.25,tw*.3,tw*.04,th-tw*.6);
+    cx.restore();
+    cx.save();cx.beginPath();cx.ellipse(0,tw*.055,tw*.54,tw*.09,0,0,Math.PI*2);var lip=cx.createLinearGradient(0,-tw*.06,0,tw*.16);lip.addColorStop(0,'#e7f3e9');lip.addColorStop(.35,'rgba(167,197,191,.5)');lip.addColorStop(.55,'rgba(28,55,52,.7)');lip.addColorStop(1,'#c3dfd6');cx.strokeStyle=lip;cx.lineWidth=Math.max(2,tw*.06);cx.stroke();cx.restore();
+  }
+  function studioBall(c, x, y, r) {
+    cx.save();cx.translate(x,y);
+    cx.shadowColor='rgba(5,13,16,.6)';cx.shadowBlur=r*.15;cx.shadowOffsetY=r*.09;
+    var body=cx.createRadialGradient(-r*.32,-r*.4,r*.025,r*.12,r*.22,r*1.22);
+    body.addColorStop(0,LIGHT[c]);body.addColorStop(.24,COLORS[c]);body.addColorStop(.66,COLORS[c]);body.addColorStop(.87,shade(COLORS[c]));body.addColorStop(1,'#172025');
+    cx.beginPath();cx.arc(0,0,r,0,Math.PI*2);cx.fillStyle=body;cx.fill();cx.shadowBlur=0;cx.shadowOffsetY=0;cx.clip();
+    // Quiet mineral ribbons under the glossy surface.
+    for(var q=0;q<3;q++){cx.beginPath();cx.moveTo(-r*1.2,r*(.6-q*.3));cx.bezierCurveTo(-r*.5,-r*(.8-q*.2),r*.3,r*(1-q*.4),r*1.15,-r*(.5-q*.2));cx.strokeStyle=q%2?'rgba(255,255,255,.045)':'rgba(20,36,45,.07)';cx.lineWidth=r*(.12+q*.04);cx.stroke();}
+    var refl=cx.createRadialGradient(-r*.38,-r*.44,0,-r*.38,-r*.44,r*.6);refl.addColorStop(0,'rgba(255,255,255,.8)');refl.addColorStop(.2,'rgba(255,255,255,.5)');refl.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=refl;cx.fillRect(-r,-r,r*2,r*2);
+    cx.save();cx.rotate(-.36);cx.fillStyle='rgba(255,255,250,.82)';roundRect(-r*.48,-r*.72,r*.5,r*.2,r*.045);cx.fill();cx.fillStyle='rgba(255,255,250,.26)';roundRect(-r*.48,-r*.45,r*.5,r*.08,r*.025);cx.fill();cx.restore();
+    cx.beginPath();cx.arc(0,0,r*.91,.15,1.3);cx.lineWidth=r*.045;cx.strokeStyle='rgba(212,242,241,.34)';cx.stroke();cx.restore();
+  }
+
   function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
   function draw(now) {
     cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
     if (!g) return;
     var n = g.tubes.length, tw = L.tw;
+    L.pos.forEach(function(p){var sh=cx.createRadialGradient(p.x,p.y+L.th+4,0,p.x,p.y+L.th+4,tw*.9);sh.addColorStop(0,'rgba(9,22,20,.38)');sh.addColorStop(1,'rgba(9,22,20,0)');cx.save();cx.translate(p.x,p.y+L.th+4);cx.scale(1,.22);cx.translate(-p.x,-p.y-L.th-4);cx.fillStyle=sh;cx.fillRect(p.x-tw,p.y+L.th+4-tw,tw*2,tw*2);cx.restore();});
     // display contents per tube, adjusted by moves still animating
     var disp = g.tubes.map(function (t) { return runs(t); }), hold = {}, moving = [];
     anims.forEach(function (a) {
@@ -748,7 +775,7 @@ var SSSound = (function () {
       if (t >= 0.3 && t < 0.72) { // the stream
         var ly = Q.y + L.th - 3 - disp[a.b].reduce(function (s2, r2) { return s2 + r2.amt; }, 0) * L.u;
         cx.fillStyle = COLORS[a.c]; var sw = tw * 0.14 * Math.min(1, (0.72 - t) * 10, (t - 0.3) * 12);
-        cx.fillRect(Q.x - sw / 2, my - 2, sw, ly - my + 3);
+        var stream=cx.createLinearGradient(Q.x-sw/2,0,Q.x+sw/2,0);stream.addColorStop(0,COLORS[a.c]);stream.addColorStop(.38,LIGHT[a.c]);stream.addColorStop(.6,LIGHT[a.c]);stream.addColorStop(1,COLORS[a.c]);cx.fillStyle=stream;cx.fillRect(Q.x - sw / 2, my - 2, sw, ly - my + 3);
       }
       drawWaterTube(x, y, ang, disp[i], false, 0);
     });
@@ -798,7 +825,7 @@ var SSSound = (function () {
     $('undoCnt').textContent = g.undos; $('tubeCnt').textContent = g.extra;
     $('btnUndo').disabled = g.undos <= 0; $('btnTube').disabled = g.extra <= 0;
   }
-  function syncModes() { Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); }); }
+  function syncModes() { document.documentElement.dataset.sortMode=meta.mode; $('studioMode').textContent=meta.mode==='balls'?'MARBLE STUDIO':'LIQUID STUDIO'; Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === meta.mode); }); }
   var toastT = 0;
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2200); }
   function showCard(title, html, buttons) {
@@ -884,7 +911,7 @@ var SSSound = (function () {
     requestAnimationFrame(frame);
     window.__ssReady = true;
     Goobs.markPlayed('sort');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Splash Sort ' + (v.sort || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Splash Sort ' + (v.sort || '2.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests
   window.__ss = { get g() { return g; }, tap: tap, outOfMoves: outOfMoves, restart: restart, get FR() { return FR; }, startLevel: startLevel, switchMode: switchMode, undo: undo, addTube: addTube, get anims() { return anims; }, meta: function () { return meta; }, SS: SS, get L() { return L; } };
