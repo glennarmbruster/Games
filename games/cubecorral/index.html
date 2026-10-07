@@ -112,6 +112,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
   html.gg-fs .lane .queue i { width: 23px; height: 23px; }
 }
 </style>
+<link rel="stylesheet" href="details.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -136,7 +137,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
     </button>
     <div class="ggpill cubepill" id="info"></div>
     <div class="topbtns">
-      <button class="iconbtn" id="btnView" aria-label="Front view"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg></button>
+      <button class="detail-entry" id="btnStudio">Gallery</button><button class="iconbtn" id="btnView" aria-label="Front view"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg></button>
       <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
       <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
       <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
@@ -145,7 +146,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
 
   <div class="modes" id="modes">
     <button data-mode="level" id="modeLevel">Levels</button>
-    <button data-mode="daily">Daily<i class="dot"></i></button>
+    <button data-mode="studio">Sculpture gallery</button><button data-mode="daily">Daily<i class="dot"></i></button>
   </div>
 
   <div class="stage" id="stage">
@@ -155,7 +156,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
     <div class="building" id="building">Building&hellip;</div>
   </div>
 
-  <div class="slots" id="slots"></div>
+  <div class="tactical" id="tactical"></div><div class="slots" id="slots"></div>
   <div class="lanes" id="lanes"></div>
 
   <div class="toolbar">
@@ -206,7 +207,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
   <div class="sheet" role="dialog" aria-label="How to play">
     <h2>How to play</h2>
     <div class="sheetbody">
-      <ol class="helplist">
+      <p><b>Sculpture gallery:</b> six detailed scenes are available from Gallery at the top. Each lane shows its color and currently exposed cubes; the next three blasters show their shot counts. Exposed counts change as cubes are removed, so compare them with the blaster’s ammo before committing a slot.</p><ol class="helplist">
         <li><b>Tap</b> the front blaster in any of the 3 lines. It moves up into a <b>slot</b>.</li>
         <li>Blasters shoot cubes of <b>their own color</b> that are <b>showing</b>: if you can see a cube from any side, it can be hit. One shot knocks off one cube.</li>
         <li>The number is how many shots it has left. When it runs out, it leaves and the slot opens up.</li>
@@ -653,6 +654,7 @@ var CCModels = (function () {
 })();
 if (typeof module !== 'undefined') module.exports = CCModels;
 </script>
+<script src="sculptures.js"></script>
 <script>
 /* Cube Corral game logic (no DOM).
    A sculpture of colored cubes. Blasters wait in 3 lines; tap the front one of a line and it moves into
@@ -924,7 +926,7 @@ var CC = (function () {
   // careless player loses most often (up to spec.careless). Every step is seeded, so every phone gets the same level.
   function build(spec) {
     var s = Object.assign({}, spec), d = null, best = null, bestRate = 2, goal = spec.careless == null ? 1 : spec.careless;
-    for (var k = 0; k < 8; k++) {
+    for (var k = 0; k < (spec.attempts || 8); k++) {
       if (k === 5) { s.decoy *= 0.7; s.design = Math.max(2, s.design - 1); }
       s.seed = k ? mix32(spec.seed + Math.imul(k, 0x632BE5AB)) : spec.seed;
       d = design(s);
@@ -972,6 +974,8 @@ var CC = (function () {
 })();
 if (typeof module !== 'undefined') module.exports = CC;
 </script>
+<script src="details.js"></script>
+<script src="gallery-levels.js"></script>
 <script>
 /* Cube Pop renderer: the cube sculpture drawn with three.js (shared/three.module.min.js).
    All cubes are one instanced mesh, so thousands of small cubes stay smooth on a phone.
@@ -997,13 +1001,13 @@ var CCRender = (function () {
       x.fillStyle = '#ffffff'; x.fillRect(0, 0, 64, 64);
       var g = x.createLinearGradient(0, 0, 0, 64); g.addColorStop(0, 'rgba(255,255,255,.0)'); g.addColorStop(1, 'rgba(0,0,0,.06)');
       x.fillStyle = g; x.fillRect(0, 0, 64, 64);
-      x.strokeStyle = 'rgba(0,0,0,.28)'; x.lineWidth = 5; x.strokeRect(2.5, 2.5, 59, 59);
+      x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 3; x.strokeRect(2.5, 2.5, 59, 59);
       x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 2; x.beginPath(); x.moveTo(6, 7); x.lineTo(58, 7); x.stroke();
       var t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
       return t;
     })();
     var cubeGeo = new THREE.BoxGeometry(1, 1, 1);
-    var cubeMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.55, metalness: 0 });
+    var cubeMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.38, metalness: 0.04 });
     var mesh = null, instOf = null, shown = null;
     var M4 = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 
@@ -1292,16 +1296,16 @@ var CCSound = (function () {
   function prevDay(day) { var d = new Date(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100 - 1); return dayNum(d); }
   function isOpen(id) { return $(id).classList.contains('show'); }
   function icon(id) { return '<svg viewBox="0 0 100 100"><use href="#' + id + '"/></svg>'; }
-  function paused() { return FS.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovLevels') || GoobsAds.isOpen() || document.hidden; }
+  function paused() { return buildingNow || FS.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovLevels') || GoobsAds.isOpen() || document.hidden; }
 
   // Full screen (3.3.0): the kit floats back, the cubes-left pill, Front view, Sound and Menu over the sculpture. How to,
   // Stats, Settings and Restart move into the Menu sheet with the Level / Daily tabs; the blasters wait while it's open.
   var FS = Goobs.fullscreen({
     overlay: true,
-    menu: ['btnHelp', 'btnStats', 'btnSettings', 'btnNew'],
+    menu: ['btnHelp', 'btnSound', 'btnStats', 'btnSettings', 'btnNew'],
     info: function () {
       if (!game || !st) return '';
-      return (game.mode === 'daily' ? 'Daily · ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (game.mode === 'replay' ? 'Replay · ' : '') + 'Level ' + game.level) +
+      return (game.mode === 'studio' ? 'Studio · '+game.level : game.mode === 'daily' ? 'Daily · ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (game.mode === 'replay' ? 'Replay · ' : '') + 'Level ' + game.level) +
         ' · <b>' + st.name + '</b> · ' + fmt(st.total) + ' cubes left';
     }
   });
@@ -1315,7 +1319,8 @@ var CCSound = (function () {
   var buildingNow = false;
   function saveGame() { if (game && st && !game.done && !buildingNow) { game.p = CC.pack(st); store.set(keyFor(game.mode), game); } dirty = false; }
   function clearSaved(mode) { store.del(keyFor(mode)); }
-  function specFor(g) { return g.mode === 'daily' ? CC.dailySpec(g.day) : CC.levelSpec(g.level); }
+  function startStudio(n,restart,tries){saveGame();n=(Math.max(1,n)-1)%6+1;var old=!restart&&store.get(keyFor('studio'),null);game=old&&old.level===n&&!old.done?old:{mode:'studio',level:n,scheme:CC.LEVEL_SCHEME,done:false,tries:tries||1,popped:0,used:0};meta.studio=n;if(game.p){st=CC.unpack(game.p);begin();}else building(function(){st=CC.newGame(CC.studioSpec(n));begin();});}
+  function specFor(g) { if(g.mode==='studio')return CC.studioSpec(g.level);return g.mode === 'daily' ? CC.dailySpec(g.day) : CC.levelSpec(g.level); }
   function startLevel(L, restart, tries) {
     var mode = L < meta.level ? 'replay' : 'level', saved = !restart && store.get(keyFor(mode), null);
     if (saved && saved.level === L && saved.scheme === CC.LEVEL_SCHEME && !saved.done && saved.p) { game = saved; st = CC.unpack(saved.p); }
@@ -1391,16 +1396,17 @@ var CCSound = (function () {
       var L = st.lanes[k], el = box.children[k], front = el.querySelector('.front'), q = el.querySelector('.queue');
       if (!L.length) { front.className = 'front none'; front.innerHTML = ''; q.innerHTML = ''; continue; }
       front.className = 'front';
-      front.innerHTML = blasterHTML(L[0]);
+      var visible=CC.openCount(st,L[0].c);front.innerHTML=blasterHTML(L[0])+'<span class="lane-read '+(!visible?'buried':visible<L[0].n?'partial':'ready')+'">'+COLORS[L[0].c].name+' · '+visible+' exposed</span>';el.title=L[0].n+' shots · '+visible+' cubes exposed now';
       var h = '';
-      for (var i = 1; i < Math.min(4, L.length); i++) h += '<i style="background:' + COLORS[L[i].c].hex + '"></i>';
+      for (var i = 1; i < Math.min(4, L.length); i++) h += '<i title="'+COLORS[L[i].c].name+'" style="background:' + COLORS[L[i].c].hex + ';color:'+(LIGHT[L[i].c]?'#233047':'#fff')+'">'+L[i].n+'</i>';
       if (L.length > 4) h += '<small>+' + (L.length - 4) + '</small>';
       q.innerHTML = h;
     }
   }
   function renderInfo() {
+    $('tactical').textContent=st.name+' · '+st.slots.filter(function(b){return !b;}).length+' slots free · '+st.slots.filter(function(b){return b&&CC.openCount(st,b.c)===0;}).length+' waiting';
     // the pill in the top row: level (or Daily), cubes left and a progress bar; the sculpture's name is in the Menu sheet
-    var lbl = game.mode === 'daily' ? 'Daily' : (game.mode === 'replay' ? 'Replay ' : 'Level ') + game.level;
+    var lbl = game.mode==='studio'?'Gallery '+game.level:game.mode === 'daily' ? 'Daily' : (game.mode === 'replay' ? 'Replay ' : 'Level ') + game.level;
     $('info').innerHTML = '<small>' + lbl + '</small><b>' + fmt(st.total) + ' left</b>' +
       '<div class="bar"><i style="width:' + Math.round(100 * (1 - st.total / st.startTotal)) + '%"></i></div>';
   }
@@ -1445,7 +1451,7 @@ var CCSound = (function () {
       });
       game.popped += ev.length; stats.cubes += ev.length;
       setTimeout(S.pop, 280);
-      renderSlots(fired); renderInfo();
+      renderSlots(fired); renderLanes(); renderInfo();
       dirty = true;
       if (Date.now() - lastSave > 1500) { lastSave = Date.now(); saveGame(); saveStats(); }
       return;
@@ -1491,7 +1497,7 @@ var CCSound = (function () {
     }
     b.push({ label: 'Try again', red: !b.length, go: function () {
       var g = game; finishRound();
-      between(function () { if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
+      between(function () { if(g.mode==='studio')startStudio(g.level,true,g.tries+1);else if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
     } });
     showCard('cc-logo', 'Jammed!', 'All ' + st.slots.length + ' slots are full and none of them can hit anything.' +
       (st.extra < CC.MAX_EXTRA ? ' An extra slot might get things moving.' : ''), b);
@@ -1502,7 +1508,8 @@ var CCSound = (function () {
     S.win();
     var c = $('cheer'); c.textContent = 'Cleared!'; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
     var extra = '';
-    if (g.mode === 'level' || g.mode === 'replay') {
+    if(g.mode==='studio'){meta.studioBest=meta.studioBest||{};meta.studioBest[g.level]=Math.min(meta.studioBest[g.level]||999,g.tries);}
+    else if (g.mode === 'level' || g.mode === 'replay') {
       if (!meta.levelTries[g.level] || g.tries < meta.levelTries[g.level]) meta.levelTries[g.level] = g.tries;
       if (g.mode === 'level' && meta.level === g.level) meta.level = g.level + 1;
     } else if (!meta.daily[g.day]) {
@@ -1515,11 +1522,13 @@ var CCSound = (function () {
     finishRound();
     renderModes();
     setTimeout(function () {
+      if (game !== g) return;
       var btns = [];
-      if (g.mode === 'level') btns.push({ label: 'Next level: ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level, true); }); } });
+      if(g.mode==='studio')btns.push({label:'Next '+'sculpture',red:true,go:function(){startStudio(g.level+1,true);}});
+      else if (g.mode === 'level') btns.push({ label: 'Next level: ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level, true); }); } });
       else btns.push({ label: g.mode === 'daily' ? 'Play levels' : 'Back to level ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level); }); } });
-      btns.push({ label: 'Play it again', go: function () { between(function () { if (g.mode === 'daily') startDaily(true); else startLevel(g.level, true); }); } });
-      showCard('cc-logo', g.mode === 'daily' ? 'Daily done!' : 'Level ' + g.level + ' done!', 'You knocked off <b>' + fmt(st.startTotal) + ' cubes</b> with ' + st.blasters + ' blasters' +
+      btns.push({ label: 'Play it again', go: function () { between(function () { if(g.mode==='studio')startStudio(g.level,true);else if (g.mode === 'daily') startDaily(true); else startLevel(g.level, true); }); } });
+      showCard('cc-logo', g.mode==='studio'?st.name+' complete!':g.mode === 'daily' ? 'Daily done!' : 'Level ' + g.level + ' done!', 'You knocked off <b>' + fmt(st.startTotal) + ' cubes</b> with ' + st.blasters + ' blasters' +
         (g.tries > 1 ? ' (try ' + g.tries + ')' : '') + '.' + extra, btns);
     }, 1300);
   }
@@ -1600,10 +1609,17 @@ var CCSound = (function () {
     });
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
     $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
+    $('btnStudio').addEventListener('click',function(){if(paused())return;saveGame();
+      var names=['Seaside villa','Midnight express','Treasure galleon','Retro arcade','Starwatch observatory','Botanical glasshouse'];
+      var buttons=names.map(function(name,i){return {label:name,red:false,go:function(){startStudio(i+1);}};});
+      buttons.push({label:'Keep playing',red:true,go:function(){}});
+      showCard('cc-logo','Sculpture gallery','Choose a detailed sculpture. Your regular level progress is kept separately.',buttons);
+    });
     $('btnView').addEventListener('click', function () { R3.reset(); });
     $('btnNew').addEventListener('click', function () {
+      if(game.done&&game.mode==='studio'){startStudio(game.level+1,true);return;}
       if (game.done && game.mode !== 'daily') { between(function () { startLevel(meta.level); }); return; }
-      var go = function () { var t = game.tries + 1; if (game.mode === 'daily') startDaily(true, t); else startLevel(game.level, true, t); };
+      var go = function () { var t = game.tries + 1; if(game.mode==='studio')startStudio(game.level,true,t);else if (game.mode === 'daily') startDaily(true, t); else startLevel(game.level, true, t); };
       if (!game.used || game.done) { go(); return; }
       showCard('cc-logo', 'Start over?', 'The sculpture and blasters go back to how this level starts.', [
         { label: 'Start over', red: true, go: go }, { label: 'Keep playing', go: function () {} }]);
@@ -1613,6 +1629,7 @@ var CCSound = (function () {
       if (!bt) return;
       FS.close();
       saveGame();
+      if(bt.dataset.mode==='studio'){startStudio(1);return;}
       if (bt.dataset.mode === 'level') { levelsPage = 0; renderLevels(); $('ovLevels').classList.add('show'); }
       else if (meta.daily[dayNum()] && !(store.get(keyFor('daily'), null) || {}).used) {
         startDaily();
@@ -1640,7 +1657,7 @@ var CCSound = (function () {
       if (fitRq) return;
       fitRq = requestAnimationFrame(function () {
         fitRq = 0;
-        var cr = $('cv').getBoundingClientRect(), tr = $('info').getBoundingClientRect(), sr = $('slots').getBoundingClientRect();
+        var cr = $('cv').getBoundingClientRect(), tr = $('info').getBoundingClientRect(), sr = $('tactical').getBoundingClientRect();
         R3.margins({ top: Math.max(56, tr.bottom - cr.top + 12), bottom: Math.max(0, cr.bottom - sr.top + 4), side: 8 });
       });
     };
@@ -1651,7 +1668,8 @@ var CCSound = (function () {
     syncSound(); syncAds();
 
     var replay = store.get(keyFor('replay'), null);
-    if (meta.mode === 'daily') startDaily();
+    if(meta.mode==='studio')startStudio(meta.studio||1);
+    else if (meta.mode === 'daily') startDaily();
     else startLevel(meta.replay && replay && replay.level === meta.replay && !replay.done ? meta.replay : meta.level);
     R3.resize(); refit();
     setInterval(tick, TICK);
@@ -1665,7 +1683,7 @@ var CCSound = (function () {
 
   // hook for automated tests
   window.__cc = { get game() { return game; }, get st() { return st; }, tap: tapLane, meta: function () { return meta; }, stats: function () { return stats; },
-    startLevel: startLevel, startDaily: startDaily };
+    startStudio:startStudio,startLevel: startLevel, startDaily: startDaily };
 
   // started by the module script once three.js has loaded from /shared
   window.CCApp = { start: function (T) { if (THREE) return; THREE = T; init(); }, started: function () { return !!THREE; } };

@@ -1,0 +1,34 @@
+/* Detailed, destructible voxel dioramas. Every detail is made of playable cubes. */
+(function(){'use strict';var M=CCModels.MODELS,C=CCModels.C;
+function kit(size){var ops=[];return {ops:ops,size:size,box:function(x,y,z,w,h,d,c){ops.push(['box',x,y,z,x+w,y+h,z+d,c]);},ell:function(x,y,z,a,b,c,col){ops.push(['ell',x,y,z,a,b,c,col]);},cyl:function(x,z,r,a,b,c){ops.push(['cyl',x,z,r,a,b,c]);},roof:function(x,y,w,h,z,d,c){ops.push(['gable',x,y,w,h,z,z+d,c]);}};}
+M.villa={name:'Seaside villa',make:function(){var m=kit([18,15,14]);m.box(0,0,0,18,1,14,C.tan);m.box(1,1,1,11,1,10,C.gray);m.box(2,2,2,9,6,8,C.white);m.box(3,3,3,7,4,6,0);m.roof(6.5,8,5.6,3.5,1.4,9.2,C.red);m.box(10,1,2,6,1,9,C.tan);m.box(11,2,3,4,1,7,C.blue);for(var y=0;y<3;y++)m.box(5,1+y*.5,11-y*.8,3,.5,1,C.gray);m.box(5,2,9.5,2.4,4.5,.6,C.brown);for(var x=0;x<2;x++){m.box(2.7+x*5.3,4,9.4,1.8,2,.7,C.blue);m.box(2.5+x*5.3,3.5,10,2.2,.5,.5,C.yellow);}m.box(8.5,8,3,1.2,5,1.2,C.brown);m.box(8.3,13,2.8,1.6,.5,1.6,C.gray);m.cyl(15,11,.45,1,8,C.brown);for(var a=0;a<4;a++){var an=a*Math.PI/2;m.ell(15+Math.cos(an)*1.25,8,11+Math.sin(an)*1.2,1.8,.7,1.35,C.green);}m.box(3,2.5,3,3,.6,2,C.purple);m.box(7,3.2,5,2,.5,2,C.yellow);return m;}};
+M.steam={name:'Midnight express',make:function(){var m=kit([21,13,11]);m.box(0,0,0,21,.8,11,C.tan);for(var i=0;i<10;i++)m.box(i*2,.8,2,1,.5,7,C.brown);m.box(0,1.3,3,21,.5,.6,C.gray);m.box(0,1.3,7.4,21,.5,.6,C.gray);m.box(1,3,2.3,19,1.2,6.5,C.black);for(i=0;i<4;i++){var x=3+i*4.4;for(var z of [2,9])m.ops.push(['cylz',x,3,1.55,z-.45,z+.45,C.black]);for(var z of [1.7,9.4])m.ops.push(['cylz',x,3,.65,z-.1,z+.1,C.red]);}m.ops.push(['cylx',6,5.5,2,3,12.5,C.blue]);m.box(12,4,2.4,6,5.4,6.2,C.red);m.box(12.8,5.5,2.2,4.3,2.6,.4,C.blue);m.box(12.8,5.5,8.4,4.3,2.6,.4,C.blue);m.box(11.4,9.4,2,7.3,.7,7,C.black);m.cyl(4.7,5.5,.8,7,10,C.black);m.cyl(4.7,5.5,1.2,9.5,10.2,C.gray);m.ell(4.6,11.1,5.5,1.1,1,1.1,C.white);m.ell(6.8,12,5.5,1.2,.8,1.1,C.gray);m.box(1,4.5,4.5,.7,2,2,C.yellow);m.box(4,2.8,1.4,12,.5,.5,C.gray);return m;}};
+M.galleon={name:'Treasure galleon',make:function(){var m=kit([20,20,13]);m.box(0,0,0,20,1,13,C.blue);m.ell(10,2.3,6.5,9,2,4.8,C.brown);m.box(1,3,2,18,1,9,C.tan);m.box(1,4,2,18,.65,.7,C.brown);m.box(1,4,10.3,18,.65,.7,C.brown);m.box(2,4,3,4,3,7,C.red);m.box(1.5,7,2.5,5,.5,8,C.tan);for(var x of [7,14]){m.cyl(x,6.5,.45,4,17,C.brown);m.box(x-.3,10,2,.6,6,9,C.white);m.box(x-.5,15.8,1.7,1,.4,9.6,C.brown);m.box(x-.5,9.7,1.7,1,.4,9.6,C.brown);m.box(x,17,6,3,1.3,.6,C.black);}for(var x=5;x<18;x+=3){m.box(x,3.8,1.5,1,.8,1.4,C.black);m.box(x,3.8,10,1,.8,1.4,C.black);}m.box(9,4,5,2,1.5,2,C.yellow);m.box(9,4.5,4.9,2,.4,2.2,C.black);m.ell(18,1,6.5,1,.5,4,C.white);return m;}};
+M.arcade={name:'Retro arcade',make:function(){var m=kit([16,17,12]);m.box(0,0,0,16,.8,12,C.gray);m.box(2,1,2,12,14,8,C.purple);m.box(3,6,1.5,10,7,1.5,C.black);m.box(4,7,1.2,8,5,.5,C.blue);m.box(5,8,.9,1,1,.5,C.yellow);m.box(9,9,.9,1,1,.5,C.pink);m.box(6,10,.9,1,1,.5,C.green);m.box(2,14,1.2,12,2,9,C.red);for(var i=0;i<5;i++)m.box(3.2+i*2,14.5,.9,1,1,.4,C.yellow);m.box(2,5,0,12,1.2,4,C.black);m.cyl(5,1.5,.4,6,7.5,C.gray);m.ell(5,7.5,1.5,.7,.7,.7,C.red);for(var x=8;x<13;x+=2)m.cyl(x,1.5,.65,6,6.5,x===8?C.yellow:C.green);m.box(6,2,1.6,4,1.5,.4,C.gray);m.box(7,2.7,1.4,2,.3,.3,C.black);return m;}};
+M.observatory={name:'Starwatch observatory',make:function(){var m=kit([18,19,18]);m.cyl(9,9,8,0,1,C.gray);m.cyl(9,9,6,1,9,C.white);m.cyl(9,9,5,1.5,8.5,0);m.ell(9,9,9,6.3,6.3,6.3,C.blue);m.box(0,0,0,18,9,18,0);m.cyl(9,9,8,0,1,C.gray);m.cyl(9,9,6,1,9,C.white);m.cyl(9,9,5,1.5,8.5,0);m.box(8,10,8,2,7,9,0);m.box(7.3,1,14,3.4,5,1.2,C.brown);for(var x of [3.5,12])m.box(x,4,13.2,2.4,2.7,1.2,C.yellow);m.box(7,1,15,4,.5,2,C.tan);m.box(6.5,.8,16,5,.4,2,C.tan);m.box(8,7,8,2,1,3,C.gray);m.ops.push(['cylz',9,10,1.2,10,17,C.white]);m.ops.push(['cylz',9,10,1.45,16,17,C.black]);m.ops.push(['cylz',9,10,.95,17,17.4,C.blue]);m.cyl(9,9,.6,1,9,C.gray);return m;}};
+M.botanical={name:'Botanical glasshouse',make:function(){var m=kit([18,16,14]);m.box(0,0,0,18,1,14,C.tan);for(var x of [1,8,15])for(var z of [1,6,11]){m.box(x,1,z,.7,9,.7,C.white);}for(var y of [1,5,10]){m.box(1,y,1,15,.6,.6,C.green);m.box(1,y,11,15,.6,.6,C.green);m.box(1,y,1,.6,.6,11,C.green);m.box(15,y,1,.6,.6,11,C.green);}m.roof(8.5,10,7.9,4.5,1,10.7,C.blue);m.roof(8.5,10,6.8,3.3,1.7,9.3,0);for(var x of [4,8,12])for(var z of [4,8]){m.cyl(x,z,1.1,1,2.5,C.brown);m.cyl(x,z,.25,2.5,5,C.green);m.ell(x,5,z,1.5,1.7,1.4,C.green);m.ell(x,6.3,z,.8,.7,.8,(x+z)%3?C.pink:C.yellow);}m.box(2,1,12,13,.4,1,C.gray);return m;}};
+CCModels.DETAIL=['villa','steam','galleon','arcade','observatory','botanical'];
+})();
+// Keep small accents at least one voxel thick at the mobile puzzle budget.
+(function(){
+function extend(id,extra,mirror){var old=CCModels.MODELS[id].make;CCModels.MODELS[id].make=function(R){var m=old(R);extra(m);if(mirror){var z=m.size[2];m.ops=m.ops.map(function(a){a=a.slice();var t;if(a[0]==='box'){t=a[3];a[3]=z-a[6];a[6]=z-t;}else if(a[0]==='ell')a[3]=z-a[3];else if(a[0]==='cyl')a[2]=z-a[2];else if(a[0]==='cylx')a[2]=z-a[2];else if(a[0]==='cylz'){t=a[4];a[4]=z-a[5];a[5]=z-t;}else if(a[0]==='gable'){t=a[5];a[5]=z-a[6];a[6]=z-t;}return a;});}return m;};}
+var C=CCModels.C;
+extend('villa',function(m){
+ m.box(5,2,9,2.4,4.5,1.3,C.brown);m.box(6.7,3.7,10,.6,.6,.7,C.yellow);
+ for(var x of [2.6,8]){m.box(x,4,9,2,2.6,1.3,C.blue);m.box(x+.8,4,9.7,.45,2.6,.7,C.white);m.box(x,5,9.7,2,.45,.7,C.white);m.box(x-.1,3.2,10,2.3,.7,1,C.green);m.box(x+.4,3.5,10.1,.8,.7,.8,C.pink);}
+ for(var z of [3,6.5])m.box(1.6,4,z,1,2,1.6,C.blue);
+ m.box(11,2,9.5,.65,1.5,1.5,C.white);m.box(13.6,2,9.5,.65,1.5,1.5,C.white);
+},true);
+extend('steam',function(m){
+ for(var z of [1.8,8.2]){m.box(13,5.5,z,3.6,2.5,1,C.blue);m.box(14.5,5.5,z-.1,.6,2.5,1.2,C.yellow);}
+ for(var x of [5.7,9.3]){m.ops.push(['cylx',6,5.5,2.08,x,x+.65,C.gray]);m.ops.push(['cylx',6,5.5,1.7,x-.1,x+.8,C.blue]);}
+ for(var z of [1.2,9])m.box(3.2,2.7,z,13,.7,.8,C.gray);
+},false);
+extend('galleon',function(m){for(var z of [2.5,9])for(var x of [2.5,4.4])m.box(x,4.8,z,1,1.3,1.1,C.yellow);m.box(9,4.3,4.6,2,1,2.7,C.yellow);m.box(9.6,4.3,4.5,.7,1.1,2.9,C.black);},false);
+extend('arcade',function(m){
+ for(var i=0;i<5;i++)m.box(3.1+i*2,14.5,.6,1.15,1,1.4,C.yellow);
+ for(var p of [[5,8,C.yellow],[9,9,C.pink],[6,10,C.green]]){m.box(p[0],p[1],.65,1.5,1,1.3,p[2]);m.box(p[0]+.4,p[1]+1,.65,.7,.6,1.3,p[2]);}
+ m.cyl(5,.5,.4,6,6.7,C.gray);m.ell(5,6.8,.5,.65,.6,.6,C.red);for(var x of [9,11.5])m.cyl(x,.5,.65,6,6.7,x===9?C.yellow:C.green);m.box(6,2,1,4,1.5,1,C.gray);m.box(7,2.7,.65,2,.5,1,C.black);
+},false);
+extend('observatory',function(m){m.box(7.3,1,13.5,3.4,5,2,C.brown);for(var x of [3.5,12])m.box(x,4,12.7,2.4,2.7,2,C.yellow);m.box(7.6,10,8,2.8,7,10,0);m.ops.push(['cylz',9,10,1.2,10,17,C.white]);m.ops.push(['cylz',9,10,1.4,16,17.3,C.black]);m.ops.push(['cylz',9,10,.95,17,18,C.blue]);},true);
+})();

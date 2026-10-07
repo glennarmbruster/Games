@@ -129,6 +129,7 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
   html.gg-fs .spot .head { width: 29px; height: 29px; }
 }
 </style>
+<link rel="stylesheet" href="details.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -154,7 +155,7 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
     </button>
     <div class="ggpill screwpill" id="info"></div>
     <div class="topbtns">
-      <button class="iconbtn" id="btnView" aria-label="Front view"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg></button>
+      <button class="detail-entry" id="btnStudio">House</button><button class="iconbtn" id="btnView" aria-label="Front view"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg></button>
       <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
       <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
       <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
@@ -163,15 +164,15 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
 
   <div class="modes" id="modes">
     <button data-mode="level" id="modeLevel">Levels</button>
-    <button data-mode="daily">Daily<i class="dot"></i></button>
+    <button data-mode="studio">Furnished house</button><button data-mode="daily">Daily<i class="dot"></i></button>
   </div>
 
   <div class="boxes" id="boxes"></div>
-  <div class="traywrap"><span class="traylbl">Tray</span><div class="tray" id="tray"></div></div>
+  <div class="upnext" id="upNext"></div><div class="traywrap"><span class="traylbl">Tray</span><div class="tray" id="tray"></div></div>
 
   <div class="stage" id="stage">
     <canvas id="cv"></canvas>
-    <div class="building" id="building">Building&hellip;</div>
+    <div class="partnote" id="partNote" aria-live="polite"></div><div class="building" id="building">Building&hellip;</div>
     <div class="turnhint" id="turnHint"><svg viewBox="0 0 24 24"><use href="#i-turn"/></svg> Drag to turn it</div>
     <div class="cheer" id="cheer"></div>
   </div>
@@ -226,7 +227,7 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
   <div class="sheet" role="dialog" aria-label="How to play">
     <h2>How to play</h2>
     <div class="sheetbody">
-      <ol class="helplist">
+      <p><b>Furnished house:</b> tap House at the top to dismantle a complete loft home. Stairs, lamps, cushions, paintings, books and kitchen fittings each have real screws. Watch the next three box colors above the tray.</p><ol class="helplist">
         <li><b>Tap a screw</b> to take it out. It flies into the <b>box of its color</b> at the top.</li>
         <li>Only screws with <b>nothing in the way</b> straight out from the head come out. If a piece covers a screw, take that piece off first.</li>
         <li>A piece <b>falls off</b> when its last screw is out. The level is done when <b>every piece</b> is off.</li>
@@ -691,6 +692,7 @@ var SBObjects = (function () {
 })();
 if (typeof module !== 'undefined') module.exports = SBObjects;
 </script>
+<script src="atelier.js"></script>
 <script>
 /* Screwball 2 game logic (no DOM, no three.js).
    An object (a house, a robot, a car...) is built from real 3D pieces: boxes, rounded blocks, cylinders, balls,
@@ -1214,8 +1216,9 @@ var SB = (function () {
         if (k >= 3) { s2.blur = Math.floor(s2.blur / 2); s2.shuffle = Math.floor(s2.shuffle / 2); }
         if (k === 5) { s2.blur = 0; s2.shuffle = 0; }
         var cz = colorize(o.parts.length, order, s2, R);
-        if (k === 5 || playtest(o, cz.queue, cz.colors)) found = cz;
+        if ((k === 5 && spec.object !== 'furnished') || playtest(o, cz.queue, cz.colors)) found = cz;
       }
+      if (!found) continue;
       var rate = goal >= 1 ? 0 : carelessRate(o, found.queue, found.colors, spec.seed ^ tries, 10);
       if (rate < bestRate) { best = { o: o, queue: found.queue, colors: found.colors, order: order, careless: rate }; bestRate = rate; }
       if (rate <= goal) break;
@@ -1249,6 +1252,7 @@ var SB = (function () {
 })();
 if (typeof module !== 'undefined') module.exports = SB;
 </script>
+<script src="details.js"></script>
 <script>
 /* Screwball 2 renderer: the object's real pieces drawn with three.js (shared/three.module.min.js).
    Drag to turn it all the way around, pinch to zoom, tap a screw. Pieces fall away when their last screw is out. */
@@ -1309,6 +1313,27 @@ var SBRender = (function () {
       geoCache[key] = g;
       return g;
     }
+    // Tiny procedural maps add material detail without downloaded image assets.
+    var surfaceMaps = {};
+    function surfaceMap(kind) {
+      if(surfaceMaps[kind]) return surfaceMaps[kind];
+      var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
+      x.fillStyle='#ffffff';x.fillRect(0,0,128,128);
+      if(kind==='wood'){
+        for(var i=0;i<22;i++){x.strokeStyle='rgba(70,38,10,'+(.035+(i%4)*.014)+')';x.lineWidth=1+(i%2);x.beginPath();x.moveTo(0,i*6);x.bezierCurveTo(38,i*6-4,85,i*6+5,128,i*6-1);x.stroke();}
+        x.strokeStyle='rgba(50,25,10,.15)';x.strokeRect(0,0,128,128);
+      }else if(kind==='fabric'){
+        x.strokeStyle='rgba(40,35,30,.08)';x.lineWidth=1;for(var i=0;i<128;i+=4){x.beginPath();x.moveTo(i,0);x.lineTo(i,128);x.moveTo(0,i);x.lineTo(128,i);x.stroke();}
+      }else if(kind==='roof'||kind==='brick'){
+        x.strokeStyle='rgba(20,25,35,.22)';x.lineWidth=2;for(var y=0;y<128;y+=32){x.beginPath();x.moveTo(0,y);x.lineTo(128,y);x.stroke();for(var i=(y%64?16:0);i<128;i+=32){x.beginPath();x.moveTo(i,y);x.lineTo(i,y+32);x.stroke();}}
+      }else if(kind==='art'){
+        x.fillStyle='#92c9cc';x.fillRect(0,0,128,128);x.fillStyle='#fff0b3';x.beginPath();x.arc(93,29,13,0,Math.PI*2);x.fill();
+        x.fillStyle='#417a73';x.beginPath();x.moveTo(0,95);x.lineTo(43,38);x.lineTo(95,105);x.lineTo(128,67);x.lineTo(128,128);x.lineTo(0,128);x.fill();x.fillStyle='#a8c28b';x.beginPath();x.moveTo(0,107);x.quadraticCurveTo(64,80,128,110);x.lineTo(128,128);x.lineTo(0,128);x.fill();
+      }else if(kind==='clock'){
+        x.fillStyle='#fff6df';x.fillRect(0,0,128,128);x.strokeStyle='#37404a';x.lineWidth=4;x.beginPath();x.arc(64,64,55,0,Math.PI*2);x.stroke();for(var i=0;i<12;i++){var a=i*Math.PI/6;x.beginPath();x.moveTo(64+43*Math.sin(a),64-43*Math.cos(a));x.lineTo(64+49*Math.sin(a),64-49*Math.cos(a));x.stroke();}x.lineWidth=6;x.beginPath();x.moveTo(41,51);x.lineTo(64,64);x.lineTo(82,34);x.stroke();
+      }else{for(var i=0;i<220;i++){x.fillStyle='rgba(35,35,35,.06)';x.fillRect((i*47)%128,(i*71)%128,2,2);}}
+      var t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;surfaceMaps[kind]=t;return t;
+    }
     function material(p) {
       var o = { color: new THREE.Color(p.color), roughness: 0.55, metalness: 0 };
       switch (p.mat) {
@@ -1320,6 +1345,7 @@ var SBRender = (function () {
         case 'leaf': o.roughness = 0.9; break;
         case 'glow': o.roughness = 0.4; o.emissive = new THREE.Color(p.color); o.emissiveIntensity = 0.55; break;
       }
+      if(['wood','fabric','roof','brick','art','clock','stone'].indexOf(p.mat)>=0){o.map=surfaceMap(p.mat);if(p.mat==='art'||p.mat==='clock')o.color=new THREE.Color('#ffffff');}
       var mt = new THREE.MeshStandardMaterial(o);
       mt.userData = { base: o.emissive ? o.emissive.getHex() : 0, glow: o.emissiveIntensity || 0 };
       return mt;
@@ -1680,7 +1706,7 @@ var SBSound = (function () {
   function prevDay(day) { var d = new Date(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100 - 1); return dayNum(d); }
   function isOpen(id) { return $(id).classList.contains('show'); }
   function icon(id) { return '<svg viewBox="0 0 100 100"><use href="#' + id + '"/></svg>'; }
-  function paused() { return FS.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovLevels') || GoobsAds.isOpen(); }
+  function paused() { return buildingNow || moving || FS.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovLevels') || GoobsAds.isOpen(); }
   // a screw head with its color's mark (2.3.0)
   function mark(c) { var k = COLORS[c]; return '<svg viewBox="0 0 24 24" class="mark' + (k.dark ? ' dark' : '') + '"><path fill-rule="evenodd" d="' + k.sym + '"/></svg>'; }
   function head(c, cls) { return '<div class="head marked' + (cls ? ' ' + cls : '') + '" style="background:' + COLORS[c].hex + '">' + mark(c) + '</div>'; }
@@ -1691,45 +1717,48 @@ var SBSound = (function () {
   // Stats, Settings and Restart move into the Menu sheet with the Level / Daily tabs.
   var FS = Goobs.fullscreen({
     overlay: true,
-    menu: ['btnHelp', 'btnStats', 'btnSettings', 'btnNew'],
+    menu: ['btnHelp', 'btnSound', 'btnStats', 'btnSettings', 'btnNew'],
     info: function () {
       if (!game || !st) return '';
-      return (game.mode === 'daily' ? 'Daily · ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (game.mode === 'replay' ? 'Replay · ' : '') + 'Level ' + game.level) +
+      return (game.mode === 'studio' ? 'Studio · '+game.level : game.mode === 'daily' ? 'Daily · ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (game.mode === 'replay' ? 'Replay · ' : '') + 'Level ' + game.level) +
         ' · <b>' + st.name + '</b> · ' + st.total + (st.total === 1 ? ' screw left' : ' screws left');
     }
   });
   FS.list.parentNode.insertBefore(document.getElementById('modes'), FS.list);
   var game = null, st = null, R3 = null;
   function keyFor(mode) { return 'game.' + mode; }
-  function specFor(g) { return g.mode === 'daily' ? SB.dailySpec(g.day) : SB.levelSpec(g.level); }
+  function startStudio(n,restart,tries){saveGame();n=Math.max(1,n);var old=!restart&&store.get(keyFor('studio'),null);game=old&&old.level===n&&!old.done?old:{mode:'studio',level:n,scheme:SB.LEVEL_SCHEME,moves:[],done:false,tries:tries||1};meta.studio=n;begin();}
+  function specFor(g){if(g.mode==='studio')return SB.studioSpec(g.level);var legacy=g.scheme===4;return g.mode==='daily'?(legacy?SB.legacyDailySpec(g.day):SB.dailySpec(g.day)):(legacy?SB.legacyLevelSpec(g.level):SB.levelSpec(g.level));}
   function saveGame() { if (game && !game.done) store.set(keyFor(game.mode), game); }
   function clearSaved(mode) { store.del(keyFor(mode)); }
   function startLevel(L, restart, tries) {
     var mode = L < meta.level ? 'replay' : 'level', saved = !restart && store.get(keyFor(mode), null);
-    if (saved && saved.level === L && saved.scheme === SB.LEVEL_SCHEME && !saved.done) game = saved;
+    if (saved && saved.level === L && (saved.scheme === SB.LEVEL_SCHEME||saved.scheme===4) && !saved.done) game = saved;
     else game = { mode: mode, level: L, scheme: SB.LEVEL_SCHEME, moves: [], done: false, tries: tries || 1 };
     if (mode === 'replay') meta.replay = L;
     begin();
   }
   function startDaily(restart, tries) {
     var day = dayNum(), saved = !restart && store.get(keyFor('daily'), null);
-    if (saved && saved.day === day && saved.scheme === SB.LEVEL_SCHEME && !saved.done) game = saved;
+    if (saved && saved.day === day && (saved.scheme === SB.LEVEL_SCHEME||saved.scheme===4) && !saved.done) game = saved;
     else game = { mode: 'daily', day: day, scheme: SB.LEVEL_SCHEME, moves: [], done: false, tries: tries || 1 };
     begin();
   }
+  var buildingNow=false,moving=false,roundToken=0;
   function begin() {
+    roundToken++;moving=false;buildingNow=true;
     // building a big level takes a moment: show a note first, then build
     $('building').classList.add('show');
     setTimeout(build2, 30);
   }
   function build2() {
     st = SB.replay(specFor(game), game.moves);
-    $('building').classList.remove('show');
+    $('building').classList.remove('show');buildingNow=false;
     meta.mode = game.mode === 'replay' ? 'level' : game.mode;
     saveMeta();
     jamShown = false; arriving = {};
     R3.setState(st); R3.reset();
-    renderAll();
+    renderAll();$('partNote').textContent=st.name+' · '+st.parts.length+' removable pieces';
     saveGame();
     if (!game.done && SB.stuck(st)) setTimeout(jam, 300);
   }
@@ -1745,6 +1774,7 @@ var SBSound = (function () {
       h += '</div>';
     });
     if (st.boxes.length < SB.MAX_BOXES && !game.done) h += '<button class="addbox" id="btnAddBox">+ Box' + (Goobs.adsOn() ? '<small>AD</small>' : '') + '</button>';
+    $('upNext').innerHTML='<span>Next boxes</span>'+st.queue.slice(st.qi,st.qi+3).map(function(c){return '<i style="background:'+COLORS[c].hex+'" title="'+COLORS[c].name+'">'+mark(c)+'</i>';}).join('')+'<small>'+Math.max(0,st.queue.length-st.qi)+' left</small>';
     $('boxes').innerHTML = h;
     $('boxes').classList.toggle('many', st.boxes.length >= 4);
     arriving = {};
@@ -1757,7 +1787,7 @@ var SBSound = (function () {
   }
   function renderInfo() {
     // the pill in the top row: level (or Daily), screws left and a progress bar; the object's name is in the Menu sheet
-    var lbl = game.mode === 'daily' ? 'Daily' : (game.mode === 'replay' ? 'Replay ' : 'Level ') + game.level;
+    var lbl = game.mode==='studio'?'House '+game.level:game.mode === 'daily' ? 'Daily' : (game.mode === 'replay' ? 'Replay ' : 'Level ') + game.level;
     $('info').innerHTML = '<small>' + lbl + '</small><b>' + st.total + ' left</b>' +
       '<div class="bar"><i style="width:' + Math.round(100 * (1 - st.total / st.startTotal)) + '%"></i></div>';
   }
@@ -1804,7 +1834,8 @@ var SBSound = (function () {
   }
   function tapScrew(s) {
     if (!game || game.done || paused()) return;
-    if (!SB.isFree(st, s)) { R3.wobble(s, SB.blocker(st, s)); S.nope(); return; }
+    if (!SB.isFree(st, s)) {var blocked=SB.blocker(st,s),part=st.parts[blocked-1];$('partNote').textContent='Remove '+(part&&part.name||'the covering piece')+' first.'; R3.wobble(s, SB.blocker(st, s)); S.nope(); return; }
+    var piece=st.parts[s.plate-1];$('partNote').textContent=(piece.name||'Piece '+s.plate)+' · '+st.left[s.plate]+' screw'+(st.left[s.plate]===1?'':'s')+' remaining';
     var k = SB.boxFor(st, s.c), destEl;
     if (k >= 0) destEl = document.querySelectorAll('.box[data-box="' + k + '"] .hole')[st.boxes[k].n];
     else if (st.tray.length < st.trayCap) destEl = $('tray').children[st.tray.length];
@@ -1812,13 +1843,15 @@ var SBSound = (function () {
     var p = R3.screenOf(s), cr = $('cv').getBoundingClientRect();
     var r = SB.pick(st, s);
     if (!r) return;
-    game.moves.push(s.id); stats.screws++;
+    game.moves.push(s.id); stats.screws++;$('partNote').textContent=(piece.name||'Piece '+s.plate)+(r.fell.length?' released':' · '+st.left[s.plate]+' screw'+(st.left[s.plate]===1?'':'s')+' left');
+    var token=roundToken;moving=true;
     S.unscrew();
     R3.unscrew(s);
-    r.fell.forEach(function (pid) { var pc = st.plates[pid - 1]; setTimeout(function () { R3.fall(pc); }, 180); stats.boards++; setTimeout(S.thud, 260); });
+    r.fell.forEach(function (pid) { var pc = st.plates[pid - 1]; setTimeout(function () { if(token===roundToken)R3.fall(pc); }, 180); stats.boards++; setTimeout(S.thud, 260); });
     renderInfo();
     saveGame();
     fly(p[0] + cr.left, p[1] + cr.top, destEl, s.c, function () {
+      if(token!==roundToken)return;moving=false;
       var pops = {}, doneAny = false;
       if (r.dest === 'box') pops[r.index] = 1;
       r.events.forEach(function (e) {
@@ -1851,7 +1884,7 @@ var SBSound = (function () {
     else if (st.boxes.length < SB.MAX_BOXES) b.push({ label: Goobs.adsOn() ? '+ Box (quick ad)' : '+ Box', red: true, go: addBox });
     b.push({ label: 'Try again', red: !b.length, go: function () {
       var g = game; finishRound();
-      between(function () { if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
+      between(function () { if(g.mode==='studio')startStudio(g.level,true,g.tries+1);else if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
     } });
     showCard('sb-logo', 'No room left!', 'That ' + COLORS[s.c].name.toLowerCase() + ' screw has no box, and all ' + st.trayCap + ' tray spots are full.' +
       (st.trayCap < SB.MAX_TRAY ? ' Continue to get one more tray spot.' : ''), b);
@@ -1905,7 +1938,7 @@ var SBSound = (function () {
     } });
     b.push({ label: 'Try again', red: !b.length, go: function () {
       var g = game; finishRound();
-      between(function () { if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
+      between(function () { if(g.mode==='studio')startStudio(g.level,true,g.tries+1);else if (g.mode === 'daily') startDaily(true, g.tries + 1); else startLevel(g.level, true, g.tries + 1); });
     } });
     showCard('sb-logo', 'The tray’s full!', 'None of the free screws fit a box.' + (st.boxes.length < SB.MAX_BOXES ? ' Another box might do it.' : ''), b);
   }
@@ -1915,7 +1948,8 @@ var SBSound = (function () {
     S.win();
     var c = $('cheer'); c.textContent = 'Unscrewed!'; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
     var extra = '';
-    if (g.mode === 'level' || g.mode === 'replay') {
+    if(g.mode==='studio'){meta.studioBest=meta.studioBest||{};meta.studioBest[g.level]=Math.min(meta.studioBest[g.level]||999,g.tries);}
+    else if (g.mode === 'level' || g.mode === 'replay') {
       if (!meta.levelTries[g.level] || g.tries < meta.levelTries[g.level]) meta.levelTries[g.level] = g.tries;
       if (g.mode === 'level' && meta.level === g.level) meta.level = g.level + 1;
     } else if (!meta.daily[g.day]) {
@@ -1931,11 +1965,12 @@ var SBSound = (function () {
     setTimeout(function () {
       if (game !== g) return; // moved on already
       var btns = [];
-      if (g.mode === 'level') btns.push({ label: 'Next level: ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level, true); }); } });
+      if(g.mode==='studio')btns.push({label:'Next '+'house',red:true,go:function(){startStudio(g.level+1,true);}});
+      else if (g.mode === 'level') btns.push({ label: 'Next level: ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level, true); }); } });
       else btns.push({ label: g.mode === 'daily' ? 'Play levels' : 'Back to level ' + meta.level, red: true, go: function () { between(function () { startLevel(meta.level); }); } });
-      btns.push({ label: 'Play it again', go: function () { between(function () { if (g.mode === 'daily') startDaily(true); else startLevel(g.level, true); }); } });
+      btns.push({ label: 'Play it again', go: function () { between(function () { if(g.mode==='studio')startStudio(g.level,true);else if (g.mode === 'daily') startDaily(true); else startLevel(g.level, true); }); } });
       var boards = stNow.plates.length;
-      showCard('sb-logo', g.mode === 'daily' ? 'Daily done!' : 'Level ' + g.level + ' done!', 'You took out <b>' + stNow.startTotal + ' screws</b> and all ' + boards + ' pieces came off' +
+      showCard('sb-logo', g.mode==='studio'?st.name+' complete!':g.mode === 'daily' ? 'Daily done!' : 'Level ' + g.level + ' done!', 'You took out <b>' + stNow.startTotal + ' screws</b> and all ' + boards + ' pieces came off' +
         (g.tries > 1 ? ' (try ' + g.tries + ')' : '') + '.' + extra, btns);
     }, 1300);
   }
@@ -2011,10 +2046,12 @@ var SBSound = (function () {
     $('boxes').addEventListener('click', function (e) { if (e.target.closest('#btnAddBox')) addBox(); });
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
     $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
+    $('btnStudio').addEventListener('click',function(){if(paused())return;saveGame();startStudio(meta.studio||1);});
     $('btnView').addEventListener('click', function () { R3.reset(); });
     $('btnNew').addEventListener('click', function () {
+      if(game.done&&game.mode==='studio'){startStudio(game.level+1,true);return;}
       if (game.done && game.mode !== 'daily') { between(function () { startLevel(meta.level); }); return; }
-      var go = function () { var t = game.tries + 1; if (game.mode === 'daily') startDaily(true, t); else startLevel(game.level, true, t); };
+      var go = function () { var t = game.tries + 1; if(game.mode==='studio')startStudio(game.level,true,t);else if (game.mode === 'daily') startDaily(true, t); else startLevel(game.level, true, t); };
       if (!game.moves.length || game.done) { go(); return; }
       showCard('sb-logo', 'Start over?', 'All the screws and pieces go back where they started.', [
         { label: 'Start over', red: true, go: go }, { label: 'Keep playing', go: function () {} }]);
@@ -2024,6 +2061,7 @@ var SBSound = (function () {
       if (!bt) return;
       FS.close();
       saveGame();
+      if(bt.dataset.mode==='studio'){startStudio(1);return;}
       if (bt.dataset.mode === 'level') { levelsPage = 0; renderLevels(); $('ovLevels').classList.add('show'); }
       else if (meta.daily[dayNum()] && !((store.get(keyFor('daily'), null) || {}).moves || []).length) {
         startDaily();
@@ -2052,7 +2090,7 @@ var SBSound = (function () {
       fitRq = requestAnimationFrame(function () {
         fitRq = 0;
         var cr = $('cv').getBoundingClientRect(), tr = document.querySelector('.traywrap').getBoundingClientRect(), sb = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 8;
-        R3.margins({ top: Math.max(100, tr.bottom - cr.top + 10), bottom: sb + 6, side: 8 });
+        R3.margins({ top: Math.max(100, tr.bottom - cr.top + 10), bottom: sb + 42, side: 8 });
       });
     };
     window.addEventListener('resize', refit);
@@ -2062,7 +2100,8 @@ var SBSound = (function () {
     syncSound(); syncAds();
 
     var replay = store.get(keyFor('replay'), null);
-    if (meta.mode === 'daily') startDaily();
+    if(meta.mode==='studio')startStudio(meta.studio||1);
+    else if (meta.mode === 'daily') startDaily();
     else startLevel(meta.replay && replay && replay.level === meta.replay && !replay.done ? meta.replay : meta.level);
     R3.resize(); refit();
     if (!meta.seenHelp) $('ovHelp').classList.add('show');
@@ -2075,7 +2114,7 @@ var SBSound = (function () {
 
   // hook for automated tests
   window.__sb = { get game() { return game; }, get st() { return st; }, tap: tap, addBox: addBox, meta: function () { return meta; }, stats: function () { return stats; },
-    startLevel: startLevel, startDaily: startDaily, screen: function (s) { return R3.screenOf(s); }, tapScrew: function (s) { tapScrew(s); }, near: function (x, y) { return R3.screwNear(x, y); }, visible: function (s) { return R3.visible(s); } };
+    startStudio:startStudio,startLevel: startLevel, startDaily: startDaily, screen: function (s) { return R3.screenOf(s); }, tapScrew: function (s) { tapScrew(s); }, near: function (x, y) { return R3.screwNear(x, y); }, visible: function (s) { return R3.visible(s); } };
 
   // started by the module script once three.js has loaded from /shared
   window.SBApp = { start: function (T) { if (THREE) return; THREE = T; init(); }, started: function () { return !!THREE; } };

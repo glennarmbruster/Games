@@ -1,0 +1,13 @@
+/* Screwball 3 — warm workshop, next-box planning, named removable parts. */
+:root{--sb-stage:radial-gradient(ellipse at 50% 52%,#fff9e9,#e5dfcf 55%,#b5c6c7)}
+:root[data-theme="dark"]{--sb-stage:radial-gradient(ellipse at 50% 50%,#465057,#202b35 75%)}
+:root[data-theme="blue"]{--sb-stage:radial-gradient(ellipse at 50% 50%,#426d80,#193647 75%)}
+.detail-entry{height:44px;padding:0 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-family:inherit;font-weight:800;font-size:12px;box-shadow:var(--shadow-sm);cursor:pointer;flex:none}
+.upnext{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:7px;align-self:center;padding:4px 11px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--muted);font-size:10px;font-weight:800;min-height:23px;pointer-events:none}
+.upnext .head{width:17px;height:17px;flex:none}.upnext small{font-size:10px}
+.partnote{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 13px);transform:translateX(-50%);max-width:90%;width:max-content;box-sizing:border-box;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);border:1px solid var(--line);padding:8px 13px;border-radius:12px;font-size:12px;font-weight:800;text-align:center;pointer-events:none}
+html.gg-fs-over .turnhint{bottom:calc(env(safe-area-inset-bottom,0px) + 59px)}
+.box{border:1px solid #0002}.tray{background:color-mix(in srgb,var(--surface) 90%,transparent)}
+@media(max-height:650px){html.gg-fs-over .app{gap:5px}.box,.addbox{height:47px}.partnote{font-size:11px;padding:6px 10px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.upnext i{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;border:1px solid #0003;box-shadow:inset 0 2px #fff4;flex:none}.upnext .mark{width:16px;height:16px;fill:#fff;stroke:#263044;stroke-width:1.5;paint-order:stroke}.upnext .mark.dark{fill:#263044;stroke:#fff}

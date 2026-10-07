@@ -1,0 +1,14 @@
+/* Cube Pop 4 — a compact sculpture studio with readable planning information. */
+:root{--cc-stage:radial-gradient(ellipse at 50% 36%,#fcf6e8 0%,#c8e4ec 48%,#829eaf 100%)}
+:root[data-theme="dark"]{--cc-stage:radial-gradient(ellipse at 50% 35%,#3c5269,#172537 72%)}
+:root[data-theme="blue"]{--cc-stage:radial-gradient(ellipse at 50% 35%,#387c94,#122c49 75%)}
+.detail-entry{height:44px;padding:0 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-family:inherit;font-weight:800;font-size:12px;box-shadow:var(--shadow-sm);cursor:pointer;flex:none}
+.tactical{position:relative;z-index:1;align-self:center;max-width:100%;box-sizing:border-box;padding:7px 12px;border-radius:12px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:800;text-align:center;box-shadow:var(--shadow-sm);margin-bottom:3px;pointer-events:none}
+.lanes{padding-top:16px;gap:8px}.lane .front{width:100%;max-width:120px;height:83px;position:relative;padding:0 14px 25px;box-sizing:border-box}
+.lane .front.none{height:58px;margin-bottom:25px}
+.lane-read{position:absolute;bottom:0;left:0;right:0;border-radius:7px;padding:3px 0;font-size:10px;font-weight:800;white-space:nowrap;color:#164b43;background:#e0f3e8;line-height:16px}
+.lane-read.partial{color:#62410c;background:#fff0ce}.lane-read.buried{color:#f9e7f4;background:#634564}
+.lane .queue{height:24px;gap:3px}.lane .queue i{display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:900;width:24px;height:22px;box-sizing:border-box;text-shadow:0 1px 1px #0003}.lane .queue i:nth-child(n){opacity:1}.lane .queue small{font-size:10px}
+.slots{padding-top:12px}.slot{background:color-mix(in srgb,var(--surface) 85%,transparent);box-shadow:inset 0 2px 8px #0001}
+@media(max-height:650px){.slot{height:45px}.lane .front{height:70px}.tactical{padding:4px 8px}.lanes{padding-top:12px}.lane .queue{height:20px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
