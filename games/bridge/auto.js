@@ -1,0 +1,7 @@
+/* Automatic joint placement. Each gesture is an atomic, undoable edit. */
+(function(root){
+const B=root.BW||(typeof require==='function'?require('./core.js'):null);
+function path(d,a,b,type){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);if(len<.3)return [a,b];const step=type==='cable'?B.MAT.cable.max:2;const count=Math.max(1,Math.ceil(len/B.MAT[type].max),Math.ceil((type==='cable'?len:Math.max(Math.abs(dx),Math.abs(dy)))/step));const ts=[0,1];for(let i=1;i<count;i++)ts.push(i/count);for(const n of d.nodes){const t=((n.x-a.x)*dx+(n.y-a.y)*dy)/(len*len);if(t>.001&&t<.999&&Math.hypot(n.x-a.x-t*dx,n.y-a.y-t*dy)<.06)ts.push(t);}ts.sort((a,b)=>a-b);return ts.filter((t,i)=>!i||(t-ts[i-1])*len>.12).map(t=>({x:a.x+t*dx,y:a.y+t*dy}));}
+function add(d,a,b,type,L,free=false){const next=B.clone(d),points=path(d,a,b,type);let added=0;for(let i=1;i<points.length;i++){const p=points[i-1],q=points[i],na=B.at(next,p.x,p.y),nb=B.at(next,q.x,q.y);const existing=na&&nb&&next.beams.find(e=>(e.a===na.id&&e.b===nb.id)||(e.a===nb.id&&e.b===na.id));if(existing&&existing.type===type)continue;const error=B.add(next,p,q,type,L,free);if(error)return {error};added++;}return added?{design:next,added,points}:{error:'Those pieces are already built.'};}
+const api={path,add};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BW_AUTO=api;
+})(typeof window!=='undefined'?window:globalThis);

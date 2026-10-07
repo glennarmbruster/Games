@@ -55,7 +55,7 @@ function fit(){if(!level)return;const mobile=width<=600,short=height<=480,left=m
 function resize(w,h){width=w;height=h;renderer.setSize(w,h,false);fit();}
 function project(x,y,z=.96){const p=new T.Vector3(x,y,z).project(camera);return [(p.x+1)*width/2,(1-p.y)*height/2];}
 const ray=new T.Raycaster();function unproject(x,y){ray.setFromCamera(new T.Vector2(x/width*2-1,1-y/height*2),camera);const r=ray.ray,k=(.96-r.origin.z)/r.direction.z;return {x:r.origin.x+r.direction.x*k,y:r.origin.y+r.direction.y*k};}
-function setZoom(z){zoom=Math.min(3.5,Math.max(.7,z));fit();return zoom;}function move(dx,dy){pan.x-=dx*scale;pan.y+=dy*scale;pan.x=Math.max(-level.span/2,Math.min(level.span/2,pan.x));pan.y=Math.max(-5,Math.min(5,pan.y));fit();}
+function setZoom(z,x,y){const anchor=Number.isFinite(x)&&Number.isFinite(y)?unproject(x,y):null;zoom=Math.min(3.5,Math.max(.7,z));fit();if(anchor){const after=unproject(x,y);pan.x+=anchor.x-after.x;pan.y+=anchor.y-after.y;fit();}return zoom;}function move(dx,dy){pan.x-=dx*scale;pan.y+=dy*scale;fit();}
 function render(dt){time+=dt;world.children.forEach(m=>{if(m.userData.water)m.material.uniforms.time.value=time;});for(let i=sparks.length-1;i>=0;i--){const p=sparks[i];p.life-=dt;p.vy-=9.8*dt;p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.rotation.z+=dt*4;if(p.life<=0){particles.remove(p.m);sparks.splice(i,1);}}renderer.render(scene,camera);}
 return {setLevel,setDesign,sync,resize,project,unproject,setZoom,move,fit,burst,render,resetView(){zoom=1;pan={x:0,y:0};fit();},clearCars(){clear(traffic);cars=[];},get zoom(){return zoom},get scale(){return scale},scene,camera,renderer,themes:THEMES};
 }
