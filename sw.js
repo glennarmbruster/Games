@@ -40,7 +40,7 @@ const VERSIONS = {
   board: '1.1.1',
   buzz: '2.2.0',
   golf: '0.5.1',
-  shelf: '2.0.0',
+  shelf: '2.0.1',
   castle: '1.7.0',
   outpost: '0.6.1',
   getout: '0.19.0',
