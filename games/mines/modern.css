@@ -1,0 +1,34 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Mine Meadow: jade turf, slate controls and legible excavated cells. */
+:root{--accent:#267665;--accent-2:#205c51;--polish-bg:#edf3ee}
+:root[data-theme="dark"]{--accent:#98d4bd;--accent-2:#65b199;--polish-bg:#142320}
+:root[data-theme="blue"]{--accent:#9bdbd6;--accent-2:#66b5bd;--polish-bg:#102a37}
+.stage{border-radius:14px;background:#c2d7c8;box-shadow:0 14px 30px -15px rgba(16,48,33,.45),0 0 0 4px var(--surface),0 0 0 5px var(--polish-line)}
+.tool.red{background:linear-gradient(135deg,#32806b,#205c51);color:#fff}.tool.mode.flag{background:linear-gradient(135deg,#cf6358,#a94443);color:#fff;border-color:transparent}
+.zoomhint{background:rgba(17,47,39,.86);border:1px solid rgba(255,255,255,.2)}
+
+/* Keep text on pale theme accents readable. */
+:root[data-theme="dark"],:root[data-theme="blue"]{--accent-ink:#13293c}
+:root[data-theme="blue"]{--accent-2:var(--accent)}
+.lv.cur,.notes i.on,.stool.on .onoff{color:var(--accent-ink)}

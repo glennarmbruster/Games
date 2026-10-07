@@ -1,0 +1,37 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Woodpile: warm maple blocks in a finely edged walnut tray. */
+:root{--accent:#92633a;--accent-2:#714d31;--polish-bg:#f2eee7;--wp-frame:#79583f;--wp-cell:#eee5d7;--wp-cell-alt:#e1d5c2;--wp-line:rgba(91,64,40,.23);--wp-wood-a:#e7b67a;--wp-wood-b:#bc7d43;--wp-edge:#9b6333;--wp-ghost:rgba(228,174,94,.38)}
+:root[data-theme="dark"]{--accent:#e1b77e;--accent-2:#c59760;--polish-bg:#1d1c1b;--wp-frame:#64503b;--wp-cell:#25231f;--wp-cell-alt:#302c26;--wp-line:rgba(255,241,218,.5);--wp-ghost:rgba(250,215,157,.32)}
+:root[data-theme="blue"]{--accent:#e6bf89;--accent-2:#c79a60;--polish-bg:#12243a;--wp-frame:#68543e;--wp-cell:#172c43;--wp-cell-alt:#20364e;--wp-line:rgba(225,239,255,.5);--wp-ghost:rgba(218,234,255,.32)}
+.board{border-radius:16px;border:5px solid var(--wp-frame);box-shadow:0 12px 28px -15px rgba(38,23,12,.45),0 0 0 1px rgba(37,26,17,.32),inset 0 1px 4px rgba(39,25,13,.35)}
+.cell{box-shadow:inset 1px 1px 3px rgba(64,42,20,.05)}
+.blk{border-radius:16%;background:repeating-linear-gradient(96deg,transparent 0 7px,rgba(110,59,22,.11) 7px 8px,transparent 8px 15px),repeating-linear-gradient(87deg,transparent 0 21px,rgba(255,236,199,.14) 21px 23px,transparent 23px 37px),linear-gradient(140deg,var(--wp-wood-a),#d49a60 48%,var(--wp-wood-b));box-shadow:inset 0 2px 1px rgba(255,239,203,.72),inset 2px 0 1px rgba(255,224,171,.22),inset 0 -3px 1px rgba(109,56,21,.3),0 2px 3px rgba(49,29,14,.24)}
+.slot{background:linear-gradient(145deg,var(--polish-glint),transparent),var(--surface);border-color:var(--polish-line);box-shadow:inset 0 2px 8px rgba(53,34,17,.05),0 3px 9px rgba(31,26,19,.04);border-radius:14px}
+.tool.red{background:linear-gradient(135deg,#94663e,#714d31);color:#fff}.float{text-shadow:0 2px 0 #65442b,0 2px 14px rgba(31,21,13,.4)}
+.goal .bar i{background:linear-gradient(90deg,#b18343,#739576)}
+
+/* Keep text on pale theme accents readable. */
+:root[data-theme="dark"],:root[data-theme="blue"]{--accent-ink:#13293c}
+:root[data-theme="blue"]{--accent-2:var(--accent)}
+.lv.cur,.notes i.on,.stool.on .onoff{color:var(--accent-ink)}

@@ -59,6 +59,7 @@
    board keeps its 42px squares. How to, Stats and Settings live in the Menu sheet. */
 html.gg-fs .stagewrap { width: calc(100% + 12px); margin: 0 -6px; }
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -508,25 +509,34 @@ var MMSound = (function () {
   function loop() { draw(); if (performance.now() < animUntil) requestAnimationFrame(loop); }
   function draw() {
     if (!cx || !g) return;
-    var now = performance.now(), c = cell, pad = Math.max(1, c * 0.06), r = c * 0.18;
+    var now = performance.now(), c = cell, pad = Math.max(.75, c * .025), r = c * .11;
+    var theme = document.documentElement.dataset.theme || 'light';
+    var night = theme === 'dark' || theme === 'blue';
+    var pal = theme === 'blue' ? {base:'#183747',a:'#396b73',b:'#305b65',top:'#538994',soil:'#203548',soil2:'#243e52',edge:'#355164'} : night ? {base:'#1b342e',a:'#426f5a',b:'#385f4e',top:'#608b70',soil:'#263730',soil2:'#2d4037',edge:'#415a4e'} : {base:'#bfd0bc',a:'#79a985',b:'#699978',top:'#9cc39d',soil:'#f4efdf',soil2:'#eae6d5',edge:'#c6cdb8'};
+    var numberColors = night ? ['', '#9ec5ff','#94e0ae','#ffa6a0','#c5b8ff','#f1b98f','#89dcd7','#e9f3ec','#cad2d2'] : ['', '#275a9c','#276b45','#a43f38','#5a4388','#894626','#256c71','#263d37','#55635c'];
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cx.fillStyle = '#cfe9b8'; cx.fillRect(0, 0, VW, VH);
+    cx.fillStyle = pal.base; cx.fillRect(0, 0, VW, VH);
     cx.setTransform(dpr * view.s, 0, 0, dpr * view.s, dpr * view.x, dpr * view.y);
     // which mines the ending shows so far
     var shownMines = {};
     if (ending && ending.lose) { var k = Math.floor((now - ending.t) / 25); ending.shown.slice(0, k).forEach(function (m) { shownMines[m] = 1; }); shownMines[g.boom] = 1; }
-    cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.font = '900 ' + Math.round(c * 0.6) + 'px -apple-system, system-ui, sans-serif';
+    cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.font = '700 ' + Math.round(c * 0.57) + 'px -apple-system, system-ui, sans-serif';
     for (var y = 0; y < g.h; y++) for (var x = 0; x < g.w; x++) {
       var i = y * g.w + x, st = g.state[i], px = x * c, py = y * c;
       if (st === 1) { // dug: sand, and the number
-        cx.fillStyle = (x + y) % 2 ? '#f1e2c4' : '#ecdbb8'; cx.fillRect(px, py, c, c);
-        var n = g.num[i]; if (n > 0) { cx.fillStyle = NUMC[n]; cx.fillText(n, px + c / 2, py + c * 0.54); }
+        cx.fillStyle = (x + y) % 2 ? pal.soil : pal.soil2; cx.fillRect(px, py, c, c);
+        cx.strokeStyle = pal.edge; cx.lineWidth = .6; cx.strokeRect(px+.3,py+.3,c-.6,c-.6);
+        var n = g.num[i]; if (n > 0) { cx.fillStyle = numberColors[n]; cx.fillText(n, px + c / 2, py + c * 0.54); }
         continue;
       }
       // grass
-      cx.fillStyle = (x + y) % 2 ? '#7ccf5a' : '#72c451'; cx.fillRect(px, py, c, c);
-      cx.fillStyle = 'rgba(255,255,255,.18)'; cx.fillRect(px, py, c, Math.max(1, c * 0.1));
-      cx.fillStyle = 'rgba(0,0,0,.08)'; cx.fillRect(px, py + c - Math.max(1, c * 0.08), c, Math.max(1, c * 0.08));
+      var turf = cx.createLinearGradient(px, py, px + c*.3, py + c);
+      turf.addColorStop(0, pal.top); turf.addColorStop(.16, (x+y)%2 ? pal.a : pal.b); turf.addColorStop(1, pal.b);
+      cx.fillStyle = 'rgba(15,42,29,.2)'; rr(px+pad,py+pad+1,c-pad*2,c-pad*2,r);cx.fill();
+      cx.fillStyle = turf; rr(px+pad,py+pad,c-pad*2,c-pad*2-1,r);cx.fill();
+      cx.strokeStyle = 'rgba(237,255,235,.24)';cx.lineWidth=.75;cx.beginPath();cx.moveTo(px+c*.18,py+pad+1);cx.lineTo(px+c*.82,py+pad+1);cx.stroke();
+      // Tiny embossed blades are deterministic, quiet, and omitted on dense boards.
+      if(c>=28 && !g.over && st!==2){var tx=px+c*(.22+((x*7+y*3)%5)*.12),ty=py+c*.76;cx.strokeStyle='rgba(20,62,39,.15)';cx.lineWidth=1;cx.beginPath();cx.moveTo(tx-2,ty-3);cx.lineTo(tx,ty);cx.lineTo(tx+2,ty-5);cx.stroke();}
       var isMine = g.mine && g.mine[i];
       if (g.over && isMine && (shownMines[i] || !ending || !ending.lose || (now - ending.t) > 2500)) {
         if (g.won || st === 2) { flagAt(px, py, c); continue; }
@@ -540,7 +550,7 @@ var MMSound = (function () {
       }
     }
     // a thin grid line where grass meets sand
-    cx.strokeStyle = 'rgba(80,110,40,.25)'; cx.lineWidth = 1 / view.s;
+    cx.strokeStyle = pal.edge; cx.lineWidth = 1 / view.s;
     cx.beginPath();
     for (var yy = 0; yy < g.h; yy++) for (var xx = 0; xx < g.w; xx++) {
       var a = g.state[yy * g.w + xx] === 1;
@@ -554,17 +564,19 @@ var MMSound = (function () {
     }
   }
   function flagAt(px, py, c) {
-    cx.strokeStyle = '#6b3f16'; cx.lineWidth = Math.max(1.5, c * 0.08); cx.lineCap = 'round';
-    cx.beginPath(); cx.moveTo(px + c * 0.36, py + c * 0.2); cx.lineTo(px + c * 0.36, py + c * 0.8); cx.stroke();
-    cx.fillStyle = '#e8354a'; cx.beginPath(); cx.moveTo(px + c * 0.38, py + c * 0.2); cx.lineTo(px + c * 0.78, py + c * 0.36); cx.lineTo(px + c * 0.38, py + c * 0.52); cx.closePath(); cx.fill();
-    cx.fillStyle = 'rgba(0,0,0,.15)'; cx.beginPath(); cx.ellipse(px + c * 0.4, py + c * 0.8, c * 0.2, c * 0.06, 0, 0, Math.PI * 2); cx.fill();
+    cx.save();
+    cx.fillStyle='rgba(10,33,26,.22)';cx.beginPath();cx.ellipse(px+c*.45,py+c*.82,c*.22,c*.07,0,0,Math.PI*2);cx.fill();
+    cx.strokeStyle='#edf0dc';cx.lineWidth=Math.max(1.5,c*.055);cx.lineCap='round';cx.beginPath();cx.moveTo(px+c*.36,py+c*.19);cx.lineTo(px+c*.36,py+c*.8);cx.stroke();
+    var cloth=cx.createLinearGradient(px+c*.36,py,px+c*.8,py+c*.5);cloth.addColorStop(0,'#ed8672');cloth.addColorStop(.5,'#cb514c');cloth.addColorStop(1,'#a9393d');
+    cx.fillStyle=cloth;cx.beginPath();cx.moveTo(px+c*.39,py+c*.19);cx.bezierCurveTo(px+c*.55,py+c*.15,px+c*.61,py+c*.31,px+c*.81,py+c*.27);cx.lineTo(px+c*.77,py+c*.54);cx.bezierCurveTo(px+c*.6,py+c*.58,px+c*.53,py+c*.42,px+c*.39,py+c*.46);cx.closePath();cx.fill();
+    cx.strokeStyle='rgba(255,227,198,.6)';cx.lineWidth=.8;cx.beginPath();cx.moveTo(px+c*.4,py+c*.21);cx.quadraticCurveTo(px+c*.56,py+c*.2,px+c*.73,py+c*.3);cx.stroke();cx.restore();
   }
   function mineAt(px, py, c) {
-    var mx = px + c / 2, my = py + c / 2, rad = c * 0.24;
-    cx.strokeStyle = '#1b1f33'; cx.lineWidth = Math.max(1.5, c * 0.08); cx.lineCap = 'round';
-    cx.beginPath(); for (var a = 0; a < 4; a++) { var an = a * Math.PI / 4; cx.moveTo(mx + Math.cos(an) * rad * 1.5, my + Math.sin(an) * rad * 1.5); cx.lineTo(mx - Math.cos(an) * rad * 1.5, my - Math.sin(an) * rad * 1.5); } cx.stroke();
-    cx.fillStyle = '#1b1f33'; cx.beginPath(); cx.arc(mx, my, rad, 0, Math.PI * 2); cx.fill();
-    cx.fillStyle = 'rgba(255,255,255,.7)'; cx.beginPath(); cx.arc(mx - rad * 0.35, my - rad * 0.35, rad * 0.25, 0, Math.PI * 2); cx.fill();
+    cx.save();var mx=px+c/2,my=py+c/2,rad=c*.23;
+    cx.strokeStyle='#233a3d';cx.lineWidth=Math.max(1.5,c*.065);cx.lineCap='round';cx.beginPath();
+    for(var a=0;a<4;a++){var an=a*Math.PI/4;cx.moveTo(mx+Math.cos(an)*rad*1.48,my+Math.sin(an)*rad*1.48);cx.lineTo(mx-Math.cos(an)*rad*1.48,my-Math.sin(an)*rad*1.48);}cx.stroke();
+    var metal=cx.createRadialGradient(mx-rad*.4,my-rad*.45,rad*.08,mx,my,rad);metal.addColorStop(0,'#95a6a3');metal.addColorStop(.38,'#445c5d');metal.addColorStop(1,'#172c31');cx.fillStyle=metal;cx.beginPath();cx.arc(mx,my,rad,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#dae6db';cx.beginPath();cx.arc(mx-rad*.32,my-rad*.36,rad*.17,0,Math.PI*2);cx.fill();cx.restore();
   }
 
   // ================= touch: tap, hold to flag, drag to look around, pinch to zoom =================
@@ -685,6 +697,7 @@ var MMSound = (function () {
   function inGame() { return g && g.started && !g.over; }
   function init() {
     Goobs.themePicker($('themes'));
+    Goobs.onTheme(function(){requestAnimationFrame(draw);});
     // full screen: How to, Stats and Settings move into the Menu sheet; Dig/Flag and New game stay under the meadow
     Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'], info: function () {
       if (!g) return '';

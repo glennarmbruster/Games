@@ -1,0 +1,41 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Ninefold: precise ink, a porcelain board and clear solving states. */
+:root{--accent:#435ca4;--accent-2:#334782;--polish-bg:#eef1f8;--sd-thin:#d5dce8;--sd-thick:#75839c;--sd-peer:#f0f3fb;--sd-same:#dbe5fb;--sd-sel:#c6d7f7;--sd-user:#2e55aa}
+:root[data-theme="dark"]{--accent:#a6beff;--accent-2:#8aa4ef;--sd-thin:#3a4559;--sd-thick:#93a4c1;--sd-peer:#242f43;--sd-same:#344666;--sd-sel:#435b87;--sd-user:#b2caff;--polish-bg:#151d2c}
+:root[data-theme="blue"]{--accent:#b2d8ff;--sd-thin:#354e71;--sd-thick:#90b0d7;--sd-peer:#203957;--sd-same:#2c4d75;--sd-sel:#396291;--sd-user:#b8dcff;--polish-bg:#10243b}
+.board{border-width:2px;border-radius:12px;box-shadow:0 12px 34px -18px rgba(16,36,64,.42),0 0 0 5px var(--surface),0 0 0 6px var(--polish-line)}
+.cell{font-weight:500;font-variant-numeric:tabular-nums}.cell.given{font-weight:700}
+.cell.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.cell.bad,.cell.clash{font-weight:750}.cell.bad::after{content:"";position:absolute;bottom:8%;width:18%;height:2px;background:var(--bad);border-radius:2px}
+.cell.ht{box-shadow:inset 0 0 0 3px var(--gold)}
+.pad button{border-radius:11px;font-weight:550;background:linear-gradient(155deg,var(--polish-glint),transparent),var(--surface);border-color:var(--polish-line)}
+.stool{background:var(--surface);border:1px solid var(--polish-line);border-radius:10px;padding:5px 0 3px}.stool span{font-weight:600}.stool.on{border-color:var(--accent);background:var(--sd-peer)}
+.lvpill{border-radius:9px;font-size:13px;letter-spacing:.15px;font-weight:700}.sdinfo{gap:5px}.sdinfo .ggpill{font-weight:650}
+.newmain,.newpick{background:#435ca4;color:#fff}.chk{box-shadow:none}
+.notes i{font-weight:600}.hintbar{border-radius:12px}
+
+/* Keep text on pale theme accents readable. */
+:root[data-theme="dark"],:root[data-theme="blue"]{--accent-ink:#13293c}
+:root[data-theme="blue"]{--accent-2:var(--accent)}
+.lv.cur,.notes i.on,.stool.on .onoff{color:var(--accent-ink)}

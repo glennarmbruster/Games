@@ -1,0 +1,41 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Huddle: substantial word cards, editorial type, quiet teal details. */
+:root{--accent:#236a79;--accent-2:#194e68;--tile:#fffefa;--tile-ink:#253544;--tile-edge:#d3dcdf;--tile-sel:#234f63;--tile-sel-ink:#fff;--t1:#a5dccb;--t1-ink:#163f35;--t2:#efca8c;--t2-ink:#483619;--t3:#e9b0a4;--t3-ink:#502b25;--t4:#50618e;--t4-ink:#fff;--sea-a:.14;--polish-bg:#edf3f3}
+:root[data-theme="dark"]{--accent:#8ac5cd;--accent-2:#60a9ba;--tile:#283543;--tile-ink:#f2f5f6;--tile-edge:#15202e;--tile-sel:#b6dce0;--tile-sel-ink:#132d39;--polish-bg:#141e29}
+:root[data-theme="blue"]{--accent:#9bcadf;--tile:#203c59;--tile-ink:#eff6ff;--tile-edge:#0d2339;--tile-sel:#c1e0f0;--tile-sel-ink:#152f46;--polish-bg:#10243b}
+.wt .face{border-radius:12px;border:1px solid var(--polish-line);background:linear-gradient(155deg,var(--polish-glint),transparent 80%),var(--tile);box-shadow:0 3px 0 var(--tile-edge),0 6px 14px -6px rgba(16,35,54,.2);font-weight:720;letter-spacing:.2px}
+.wt.sel .face{background:var(--tile-sel);color:var(--tile-sel-ink);border-color:var(--tile-sel);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 3px 9px rgba(12,39,59,.16);transform:scale(.96)}
+.wt.pinned .face{box-shadow:0 3px 0 var(--tile-edge),inset 0 0 0 3px var(--pinc,var(--t1))}
+.wt.pinned.sel .face{box-shadow:inset 0 0 0 3px var(--pinc,var(--t1))}
+.bar{border:1px solid rgba(20,40,55,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 12px -7px rgba(12,35,49,.25)}
+.bar b{font-weight:750;letter-spacing:.65px}.bar span{font-weight:550;opacity:1}
+.prompt{font-weight:500;letter-spacing:.1px}.lives i{width:10px;height:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.cbtn{border-radius:13px}.cbtn.submit{background:linear-gradient(135deg,#2b7281,#234f63);font-weight:700;box-shadow:0 5px 14px -8px #173747}
+.cbtn.submit:disabled{background:var(--surface-2)}
+.hdhud .ggpill{font-weight:650}.seabg{opacity:.15}
+
+/* Keep text on pale theme accents readable. */
+:root[data-theme="dark"],:root[data-theme="blue"]{--accent-ink:#13293c}
+:root[data-theme="blue"]{--accent-2:var(--accent)}
+.lv.cur,.notes i.on,.stool.on .onoff{color:var(--accent-ink)}
