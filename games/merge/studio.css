@@ -1,0 +1,50 @@
+/* Number Nook — a quiet, tactile tabletop collection. */
+:root { --accent:#356860;--accent-ink:#fffaf0;--nn-board:#3e4947;--nn-cell:#283431;--tr-board:#465451;--tr-cell:#30413d; }
+html,html.gg-fs,html.gg-fs body { background:#292824 url('assets/nook-studio.webp') center/cover fixed; }
+body::before { content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(19,23,21,.48),rgba(19,23,21,.08) 45%,rgba(19,23,21,.38)); }
+html.gg-fs .app { position:relative;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 12px);gap:12px; }
+html.gg-fs .top { max-width:1000px;width:100%;margin:0 auto; }
+html.gg-fs .top .brand h1 { font-family:Georgia,'Times New Roman',serif;font-size:25px;font-weight:400;letter-spacing:-.6px;color:#f5ead4; }
+.top .homebtn { color:#f5ead4; }
+.top .iconbtn { color:#f5ead4;background:rgba(29,36,32,.7);border:1px solid rgba(234,214,174,.22);box-shadow:0 3px 8px #0002; }
+#modes { max-width:600px;width:100%;margin:0 auto;gap:4px;padding:5px;background:rgba(22,28,25,.8);border:1px solid #d9c99a33;border-radius:14px; }
+#modes button { border:0;box-shadow:none;background:transparent;color:#d3cfbf;border-radius:9px;font-weight:650;font-size:13px;min-height:39px; }
+#modes button.on { color:#2b3932;background:linear-gradient(#f4ead4,#daccac);box-shadow:0 2px 6px #0004; }
+.sizes { gap:8px; }
+.sizes button { height:29px;border-radius:6px;color:#e1d7c2;background:#202b27b8;border-color:#dacaad44;font-size:12px;font-weight:600; }
+.sizes button.on { background:#d8c6a1;color:#2e382f;border-color:#eddfbc; }
+#info { width:100%;max-width:600px;margin:0 auto;padding:11px 18px;border:1px solid #e4d2a52b;border-radius:12px;background:rgba(21,31,27,.83);color:#fbf2dc;box-shadow:0 5px 16px #0002; }
+#info .lbl { color:#b7c0b4;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:650; }
+#info .big,#info .mid { font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.7px; }
+html.gg-fs .boardwrap { width:min(calc(100cqw - 12px),calc(100cqh - 20px),650px); }
+.board,.board.trios { background:repeating-linear-gradient(94deg,#ffffff02 0px,#ffffff02 1px,transparent 1px,transparent 4px),linear-gradient(145deg,#59615b,#35443e);border-radius:18px;box-shadow:0 9px 0 #372e24,0 11px 0 #957858,0 20px 38px #0007,inset 0 0 0 2px #c3aa7b,inset 0 0 0 5px #695d47; }
+.bg i,.board.trios .bg i { background:#1c2a26b3;border-radius:8%;box-shadow:inset 0 2px 4px #0005,0 1px 0 #f3e5ba26; }
+.tl,.board.trios .tl { background:linear-gradient(145deg,#ffffff25,transparent 55%,#0000000d),var(--tile,#ede5d3);color:var(--ink,#fffaf0);border-radius:9%;font-weight:650;letter-spacing:-1px;text-shadow:0 1px 0 #ffffff15;box-shadow:inset 0 1px 0 #fff7,inset 0 0 0 1px #00000012,0 3px 0 #0004,0 5px 7px #0002!important; }
+.tl span { position:relative;z-index:1; }
+.tl::after { content:"";position:absolute;inset:5%;border:1px solid #ffffff12;border-radius:8%;pointer-events:none; }
+.c2,:root[data-theme="dark"] .c2,:root[data-theme="blue"] .c2 { --tile:#eee6d4;--ink:#39453e;background:linear-gradient(145deg,#ffffff25,transparent 55%,#0000000d),var(--tile); }
+.c4 { --tile:#d9cdb4;--ink:#34453c; }
+.c8 { --tile:#cfaa6c;--ink:#302c22; }
+.c16 { --ink:#fffaf0;--tile:#ae6c49; }.c32 { --ink:#fffaf0;--tile:#a34e3f; }.c64 { --ink:#fffaf0;--tile:#813b42; }
+.c128 { --ink:#fffaf0;--tile:#6d5279; }.c256 { --ink:#fffaf0;--tile:#514f79; }.c512 { --ink:#fffaf0;--tile:#356575; }.c1024 { --ink:#fffaf0;--tile:#28665f; }
+.c2048 { --tile:#d9ba6f;--ink:#2b392d; }.cbig { --tile:#273d35;--ink:#f4d995; }
+.t1 { --tile:#447890;--ink:#fff8e9;background:linear-gradient(145deg,#ffffff20,transparent),var(--tile); }
+.t2 { --tile:#b65d62;--ink:#fff8e9;background:linear-gradient(145deg,#ffffff20,transparent),var(--tile); }
+.t3 { --tile:#eee6d4;--ink:#354940;background:linear-gradient(145deg,#ffffff20,transparent),var(--tile); }
+.t3.hi { --ink:#835136;color:var(--ink); }
+.nextcard,.nextcube { border-radius:6px;box-shadow:inset 0 1px 0 #fff8,0 3px 0 #0003!important;font-weight:700; }
+.nextcard.t1,.nextcard.t2,.nextcard.t3 { color:var(--ink); }
+.nextcard.t3:not(.bonus) { color:transparent; }
+html.gg-fs .toolbar { max-width:600px;width:100%;margin:0 auto; }
+html.gg-fs .toolbar .tool { background:#f1e7d1;color:#35473e;border:1px solid #bcad8e;box-shadow:0 3px 0 #0003;border-radius:12px; }
+html.gg-fs .toolbar .tool.red { background:#35685d;color:#fff7df;border-color:#708d75; }
+.float { color:#f2dba0;text-shadow:0 2px 5px #0009; }
+.chainwrap,:root[data-theme="dark"] .chainwrap,:root[data-theme="blue"] .chainwrap { background:radial-gradient(ellipse at 50% 42%,#435246b0,#15251fd9);border:1px solid #d0b58255;box-shadow:inset 0 0 30px #0005,0 9px 26px #0005;border-radius:18px; }
+html.gg-fs .chainwrap { max-width:900px;margin:auto; }
+.chainmsg { color:#f3e7cb; }
+:root[data-theme="dark"] .board,:root[data-theme="blue"] .board { filter:brightness(.92); }
+@media(max-width:380px){html.gg-fs .app{padding-left:10px;padding-right:10px;gap:8px}html.gg-fs .top .brand h1{font-size:22px}#modes button{font-size:11px;min-height:35px}#info{padding:8px 13px}}
+@media(max-height:650px){html.gg-fs .app{gap:5px;padding-top:5px;padding-bottom:5px}#info{padding:5px 12px}#modes button{min-height:30px}}
+@media(prefers-reduced-motion:reduce){.tl,.tl.pop,.tl.pop span,.tl.appear,.float{animation:none;transition:none}}
+
+.chain-guide { position:absolute;top:16px;left:0;right:0;text-align:center;color:#d5d9c7;font-size:12px;letter-spacing:.3px;z-index:1;pointer-events:none;text-shadow:0 1px 3px #0008; }.chain-guide span{padding:0 6px;color:#c7af7b}

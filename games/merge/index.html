@@ -124,6 +124,7 @@ html.gg-fs .chainwrap { position: absolute; inset: 0; min-height: 0; width: auto
 html.gg-fs .spacer { display: none; }
 html.gg-fs .app.chainmode .toolbar { display: none; }
 </style>
+<link rel="stylesheet" href="studio.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -173,7 +174,7 @@ html.gg-fs .app.chainmode .toolbar { display: none; }
     <div class="board" id="board"><div class="bg" id="bg"></div><div class="layer" id="layer"></div></div>
     <div class="floats" id="floats"></div>
   </div>
-  <div class="chainwrap" id="chainwrap"><div class="chainmsg" id="chainMsg">Loading&hellip;</div><div class="floats" id="cfloats"></div></div>
+  <div class="chainwrap" id="chainwrap"><div class="chain-guide">Drag to aim <span>·</span> Release to merge</div><div class="chainmsg" id="chainMsg">Loading&hellip;</div><div class="floats" id="cfloats"></div></div>
   </div>
 
   <div class="spacer"></div>
@@ -468,8 +469,7 @@ var NNChain = (function () {
   var T = null, C = null;                       // THREE, CANNON
   var W = 5, LEN = 12, LINE = 2.3, START_Z = 0.9, SIZE = 1, SPEED = 20, GRAV = -30;
   var SPAWN = [[2, 30], [4, 25], [8, 19], [16, 13], [32, 8], [64, 5]];
-  var COLORS = { 2: '#eef1ff', 4: '#dbe2ff', 8: '#ffc46b', 16: '#ffa24d', 32: '#ff7a59', 64: '#ff4f6a', 128: '#c77dff', 256: '#9a6bff',
-    512: '#5a7cff', 1024: '#25b5f0', 2048: '#16cf97' };
+  var COLORS = {2:'#eee6d4',4:'#d9cdb4',8:'#cfaa6c',16:'#ae6c49',32:'#a34e3f',64:'#813b42',128:'#6d5279',256:'#514f79',512:'#356575',1024:'#28665f',2048:'#d9ba6f'};
   var BIG = ['#1b1f3a', '#2d1b3a', '#3a1b1f', '#1b3a2d', '#3a2d1b'];
 
   var host = null, canvas = null, renderer = null, scene = null, camera = null, world = null, mats = {}, geo = null;
@@ -485,46 +485,50 @@ var NNChain = (function () {
     return String(v);
   }
   function colorOf(v) { return COLORS[v] || BIG[Math.round(Math.log(v) / Math.LN2) % BIG.length]; }
-  function inkOf(v) { return v <= 4 ? '#3b3f73' : v >= 4096 ? '#ffd66b' : '#ffffff'; }
+  function inkOf(v) { return v <= 8 || v === 2048 ? '#303d35' : v >= 4096 ? '#f0d59c' : '#fff7e8'; }
   function material(v) {
     if (mats[v]) return mats[v];
     var c = document.createElement('canvas'); c.width = c.height = 256;
     var x = c.getContext('2d');
     x.fillStyle = colorOf(v); x.fillRect(0, 0, 256, 256);
-    x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 18; x.strokeRect(9, 9, 238, 238);
-    x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(18, 18, 220, 40);
+    x.strokeStyle = 'rgba(255,244,217,.28)'; x.lineWidth = 2; x.strokeRect(15,15,226,226);
+    var glaze=x.createLinearGradient(0,0,256,256);glaze.addColorStop(0,'rgba(255,255,255,.14)');glaze.addColorStop(1,'rgba(0,0,0,.08)');x.fillStyle=glaze;x.fillRect(0,0,256,256);
     var t = label(v), fs = t.length <= 1 ? 150 : t.length === 2 ? 130 : t.length === 3 ? 104 : t.length === 4 ? 82 : 68;
-    x.font = '900 ' + fs + 'px -apple-system,system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.lineWidth = fs * 0.08; x.strokeStyle = 'rgba(0,0,0,.25)'; x.strokeText(t, 128, 136);
+    x.font = '600 ' + fs + 'px -apple-system,system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.shadowColor='rgba(0,0,0,.12)';x.shadowOffsetY=1;
     x.fillStyle = inkOf(v); x.fillText(t, 128, 136);
     var tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
-    mats[v] = new T.MeshLambertMaterial({ map: tex });
+    mats[v] = new T.MeshStandardMaterial({ map: tex, roughness:.42, metalness:.04 });
     return mats[v];
   }
 
+  function surfaceTexture(wood){var c=document.createElement('canvas');c.width=c.height=256;var x=c.getContext('2d'),seed=719;function r(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}x.fillStyle=wood?'#d5b18a':'#c4c9bf';x.fillRect(0,0,256,256);for(var i=0;i<(wood?220:10000);i++){x.strokeStyle='rgba(40,26,12,'+(wood?.04+r()*.09:.045)+')';x.fillStyle=i%2?'#ffffff12':'#0000000b';if(wood){x.lineWidth=.3+r();x.beginPath();var yy=r()*256;x.moveTo(0,yy);x.bezierCurveTo(80,yy+Math.sin(i)*6,170,yy-Math.cos(i)*5,256,yy);x.stroke()}else{x.fillRect(r()*256,r()*256,1,1)}}var t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(wood?1:2,wood?1:5);t.anisotropy=4;return t;}
   // ---------------- scene ----------------
   function build() {
     renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
     scene = new T.Scene();
     camera = new T.PerspectiveCamera(50, 1, 0.1, 100);
-    scene.add(new T.HemisphereLight(0xffffff, 0x8890b0, 1.6));
-    var sun = new T.DirectionalLight(0xffffff, 1.4); sun.position.set(-4, 10, -3); scene.add(sun);
+    scene.add(new T.HemisphereLight(0xffffff, 0x333c30, 2.0));
+    var sun = new T.DirectionalLight(0xfff1d5, 2.3); sun.position.set(-4, 10, 3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-8;sun.shadow.camera.right=8;sun.shadow.camera.top=14;sun.shadow.camera.bottom=-10;sun.shadow.normalBias=.025;scene.add(sun);
     // the tray: floor, low side walls, a back wall
-    var floor = new T.Mesh(new T.BoxGeometry(W, 0.4, LEN), new T.MeshLambertMaterial({ color: 0xd9ddef }));
-    floor.position.set(0, -0.2, LEN / 2 - 0.2); floor.scale.z = (LEN + 0.4) / LEN; scene.add(floor);
-    var stripes = new T.MeshLambertMaterial({ color: 0xcfd4ea });
+    var floor = new T.Mesh(new T.BoxGeometry(W, 0.4, LEN), new T.MeshStandardMaterial({ color: 0x53645a, roughness:.96, map:surfaceTexture(false) }));
+    floor.position.set(0, -0.2, LEN / 2 - 0.2); floor.scale.z = (LEN + 0.4) / LEN;floor.receiveShadow=true; scene.add(floor);
+    var stripes = new T.MeshStandardMaterial({ color:0xb5aa86,roughness:.8 });
     for (var i = 1; i < 5; i++) { var s = new T.Mesh(new T.BoxGeometry(0.03, 0.01, LEN), stripes); s.position.set(-W / 2 + i, 0.005, LEN / 2); scene.add(s); }
-    var wallM = new T.MeshLambertMaterial({ color: 0x5a54f0 });
+    var wallM = new T.MeshStandardMaterial({color:0x755a43,map:surfaceTexture(true),roughness:.5});
     [-1, 1].forEach(function (k) { var w = new T.Mesh(new T.BoxGeometry(0.3, 0.7, LEN), wallM); w.position.set(k * (W / 2 + 0.15), 0.15, LEN / 2); scene.add(w); });
     var back = new T.Mesh(new T.BoxGeometry(W + 0.6, 1.2, 0.3), wallM); back.position.set(0, 0.4, LEN + 0.15); scene.add(back);
     var near = new T.Mesh(new T.BoxGeometry(W + 0.6, 0.35, 0.3), wallM); near.position.set(0, -0.02, -0.2); scene.add(near);
     lineMesh = new T.Mesh(new T.BoxGeometry(W, 0.02, 0.08), new T.MeshBasicMaterial({ color: 0xff3b4f })); lineMesh.position.set(0, 0.012, LINE); scene.add(lineMesh);
     guide = new T.Mesh(new T.BoxGeometry(0.06, 0.01, LEN - START_Z - 0.6), new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
     guide.position.set(0, 0.012, START_Z + (LEN - START_Z) / 2); scene.add(guide);
-    geo = new T.BoxGeometry(SIZE, SIZE, SIZE);
+    geo = new T.BoxGeometry(SIZE,SIZE,SIZE,10,10,10);
+    var pos=geo.attributes.position,rad=.08,inside=SIZE/2-rad;
+    for(var vi=0;vi<pos.count;vi++){var v=new T.Vector3().fromBufferAttribute(pos,vi),q=new T.Vector3(Math.max(-inside,Math.min(inside,v.x)),Math.max(-inside,Math.min(inside,v.y)),Math.max(-inside,Math.min(inside,v.z))),n=v.clone().sub(q).normalize().multiplyScalar(rad);q.add(n);pos.setXYZ(vi,q.x,q.y,q.z)}geo.computeVertexNormals();
     // turn the top face's number around so it reads the right way up from behind the tray
-    var uv = geo.attributes.uv; for (var k = 8; k < 12; k++) uv.setXY(k, 1 - uv.getX(k), 1 - uv.getY(k)); uv.needsUpdate = true;
+    var uv = geo.attributes.uv; for (var k = 242; k < 363; k++) uv.setXY(k, 1 - uv.getX(k), 1 - uv.getY(k)); uv.needsUpdate = true;
 
     world = new C.World({ gravity: new C.Vec3(0, GRAV, 0) });
     world.allowSleep = true;
@@ -544,9 +548,9 @@ var NNChain = (function () {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // fit the tray's width at the near end; taller screens see further down the tray
-    camera.fov = w / h < 0.62 ? 62 : 54;
-    camera.position.set(0, 7.2, -3.6);
-    camera.lookAt(0, 0, 5.2);
+    camera.fov = 38;
+    camera.position.set(0, 14, -5);
+    camera.lookAt(0, 0, 6);
     camera.updateProjectionMatrix();
     // Full screen (1.2.0): on a tall full-screen phone the fixed fov cut off the near end's side walls, so widen it
     // until the whole tray (near corners with the walls, far end) is on screen
@@ -564,7 +568,7 @@ var NNChain = (function () {
     var b = new C.Body({ mass: 1, material: cubeMat, shape: new C.Box(new C.Vec3(SIZE / 2, SIZE / 2, SIZE / 2)), linearDamping: 0.05, angularDamping: 0.35, allowSleep: true, sleepSpeedLimit: 0.15, sleepTimeLimit: 0.4 });
     b.position.set(x, y, z);
     var m = new T.Mesh(geo, material(v));
-    scene.add(m);
+    m.castShadow=true;m.receiveShadow=true;scene.add(m);
     var cube = { v: v, b: b, m: m, born: performance.now(), alive: true, shot: false };
     b.cube = cube;
     b.addEventListener('collide', function (e) {
@@ -1245,7 +1249,7 @@ var NNChain = (function () {
     Goobs.markPlayed('merge');
     Goobs.initUpdates({
       beforeReload: saveGame,
-      onVersions: function (v) { $('version').textContent = 'Number Nook ' + (v.merge || '?') + ' · Goobs-Games ' + (v.shell || '?'); }
+      onVersions: function (v) { $('version').textContent = 'Number Nook ' + (v.merge || '2.0.0') + ' · Goobs-Games ' + (v.shell || '?'); }
     });
   }
 
