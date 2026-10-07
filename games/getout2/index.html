@@ -18279,6 +18279,7 @@ var GOSound = (function () {
 })();
 </script>
 <script src="crunch-art.js"></script>
+<script src="continuation-art.js"></script>
 <script src="../../shared/ads.js"></script>
 <script>
 /* Get Out 2! app (built on Get Out!'s): the scene list, the scene screen (a full-screen canvas: walls, close-ups,
@@ -18293,7 +18294,7 @@ var GOSound = (function () {
 (function () {
   'use strict';
   var E = GOEngine, A = GOArt, S = GOSound;
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   // scenes: every rooms/room<n>.js built in defines GORoom<n> with its own STORY (name, desc, scene number, music, sign-off)
   var ROOMS = {}, LEVELS = [];
   for (var rn0 = 1; rn0 <= 30; rn0++) if (window['GORoom' + rn0]) { ROOMS[rn0] = window['GORoom' + rn0]; LEVELS.push(rn0); }
