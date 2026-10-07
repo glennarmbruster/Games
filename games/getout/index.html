@@ -17,6 +17,7 @@
 <script src="materials.js"></script>
 <script src="study-art.js"></script>
 <script src="levels23-art.js"></script>
+<script src="levels45-art.js"></script>
 <title>Get Out!</title>
 <style>
 /* Get Out! styles (themes, sheets, cards and ad cards come from /shared/goobs.css).
@@ -14491,7 +14492,14 @@ var GOArt4 = (function () {
   }
 
   // ================= public =================
-  function draw(c, view, X) { if (V[view]) V[view](c, X); }
+  var photoX;
+  var plainBox=box;
+  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOLevels!=="undefined")GOLevels.skin(c,4,x,y,w,h,r,fill);};
+  var plainClock=clockFace;
+  clockFace=function(c,x,y,r,h,m){if(photoX&&photoX._photoClocks)photoX._photoClocks.push([x,y,r,h,m,c.getTransform()]);plainClock(c,x,y,r,h,m);};
+  function drawOriginal(c,view,X){var before=photoX;photoX=X;try{if(V[view])V[view](c,X)}finally{photoX=before}}
+  function draw(c,view,X){if(typeof GOPhoto45!=="undefined"&&GOPhoto45.render(c,4,view,X,drawOriginal))return;drawOriginal(c,view,X);}
+
   function animated(view, X) {
     var st = X.st;
     if (view === 'door' || view === 'regz') return X.diff === 'e' || !!st.f['f:ticking'];
@@ -15226,7 +15234,12 @@ var GOArt5 = (function () {
   }
 
   // ================= public =================
-  function draw(c, view, X) { if (V[view]) V[view](c, X); }
+  var photoX;
+  var plainBox=box;
+  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOLevels!=="undefined")GOLevels.skin(c,5,x,y,w,h,r,fill);};
+  function drawOriginal(c,view,X){var before=photoX;photoX=X;try{if(V[view])V[view](c,X)}finally{photoX=before}}
+  function draw(c,view,X){if(typeof GOPhoto45!=="undefined"&&GOPhoto45.render(c,5,view,X,drawOriginal))return;drawOriginal(c,view,X);}
+
   function animated(view, X) {
     if (view === 'door' || view === 'fountain' || view === 'potting' || view === 'panes') return true;   // butterflies flutter round the glass house
     if (view === 'fountainz') return !!X.st.f['f:water'];
