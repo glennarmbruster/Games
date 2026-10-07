@@ -32,7 +32,7 @@
     if (document.body) put(); else document.addEventListener('DOMContentLoaded', put);
   }
   window.addEventListener('error', function (e) { fail((e.message || 'Something went wrong') + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
-  setTimeout(function () { if (!window.__slReady) fail('It took too long to start.'); }, 6000);
+  setTimeout(function () { if (!window.__slReady) fail('It took too long to start.'); }, 30000);
 })();
 </script>
 <title>Shelf Life</title>
@@ -69,6 +69,18 @@ html.gg-fs .top .brand { flex: none; }
 .ttpills .ggpill small { font-size: 13px; font-weight: 700; color: var(--muted); }
 html.gg-fs .stagewrap { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); }
 html.gg-fs .stage { margin: 0; border-radius: 0; }
+
+html.gg-fs,html.gg-fs body { background:#263e34; }
+html.gg-fs .top { padding-bottom:4px; }
+.top .iconbtn,.top .homebtn { background:#f2e8d5;color:#344e41;box-shadow:0 2px 5px #0002; }
+.ttpills .ggpill { background:#efe7d5;color:#344638;border:1px solid #b9ab8b;border-radius:10px;box-shadow:0 2px 3px #0002; }
+.ttpills .ggpill small { color:#676e5e; }
+html.gg-fs .toolbar .tool { background:#f0e5cc;color:#3f4e3b;border:1px solid #b5a585;border-radius:10px;box-shadow:0 3px 0 #0003; }
+html.gg-fs .toolbar .tool.red { background:#466c55;color:#fff6dd;border-color:#72977b; }
+.stage { background:#73826c!important; }
+
+html.gg-fs .top .homebtn { width:40px;height:40px;min-width:40px;padding:0;border-radius:50%;display:grid;place-items:center; }
+html.gg-fs .top .homebtn .chev { color:#344e41; }
 </style>
 </head>
 <body>
@@ -1041,6 +1053,7 @@ var SLSound = (function () {
   };
 })();
 </script>
+<script src="store-studio.js"></script>
 <script src="../../shared/ads.js"></script>
 <script>
 /* Shelf Life app: drawing the store (cubbies on shelves, the row behind showing through, locked glass doors),
@@ -1212,7 +1225,7 @@ var SLSound = (function () {
     var key = k + '@' + Math.round(u * 1000) + (dark ? 'd' : ''); if (cache[key]) return cache[key];
     var c = document.createElement('canvas'), wu = 100, hu = 116; c.width = Math.ceil(wu * u * DPR); c.height = Math.ceil(hu * u * DPR);
     var x = c.getContext('2d'); x.scale(DPR * u, DPR * u); x.translate(50, 106); SArt.item(x, k);
-    if (dark) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(36,40,72,.5)'; x.fillRect(0, 0, c.width, c.height); }
+    if (dark) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(36,30,20,.38)'; x.fillRect(0, 0, c.width, c.height); }
     c.ax = 50 * u; c.ay = 106 * u; cache[key] = c; return c;
   }
   // sq squashes the item on its base (a landing bounce): wider and shorter for sq > 0
@@ -1243,51 +1256,7 @@ var SLSound = (function () {
   }
   function rowFrame(row) { var sd = Math.min(SW * 0.22, row.x0 - 2); return { X: row.x0 - sd, X1: row.x1 + sd, Y: Math.max(1, row.y - SW * 0.23), Yb: row.floor + SW * 0.22 }; }
   function buildStore() {
-    themeK = themeKey(); var dark = themeK === 'dark' || themeK === 'blue';
-    bgC = mkLayer(); fgC = mkLayer();
-    var c = bgC.getContext('2d');
-    // the wall: soft colour, a light wallpaper lattice, a glow from the ceiling lights
-    c.fillStyle = grad(c, 0, 0, 0, H, dark ? [[0, '#2c3a5c'], [1, '#1a2440']] : [[0, '#e4f4ff'], [0.6, '#cfe6fb'], [1, '#bcd6f6']]); c.fillRect(0, 0, W, H);
-    var st = Math.max(16, SW * 0.8); c.lineWidth = 1; c.strokeStyle = dark ? 'rgba(255,255,255,.045)' : 'rgba(255,255,255,.5)';
-    c.beginPath(); for (var d = -H; d < W + H; d += st) { c.moveTo(d, 0); c.lineTo(d + H * 0.7, H); c.moveTo(d, 0); c.lineTo(d - H * 0.7, H); } c.stroke();
-    c.fillStyle = dark ? 'rgba(255,255,255,.05)' : 'rgba(120,160,220,.16)'; for (var gy = st * 0.5; gy < H; gy += st / 0.7 * 0.7) for (var gx = 0; gx < W; gx += st) { c.beginPath(); c.arc(gx + ((gy / st | 0) % 2 ? st / 2 : 0), gy, 1.3, 0, 7); c.fill(); }
-    var glow = c.createRadialGradient(W / 2, -H * 0.1, 10, W / 2, -H * 0.1, H * 0.9); glow.addColorStop(0, dark ? 'rgba(255,230,180,.1)' : 'rgba(255,255,255,.55)'); glow.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = glow; c.fillRect(0, 0, W, H);
-    if (!rowsI.length) return;
-    // a sign when the wall above the shelves has room (the small early levels), a floor when there's room below
-    var top = rowFrame(rowsI[0]).Y, last = rowFrame(rowsI[rowsI.length - 1]).Yb;
-    if (H - last > SW * 0.8) { var fh = Math.min((H - last) * 0.55, SW * 1.3), fy = H - fh;
-      c.fillStyle = grad(c, 0, fy, 0, H, dark ? [[0, '#3a3450'], [1, '#262236']] : [[0, '#f0dcc0'], [1, '#dcc09a']]); c.fillRect(0, fy, W, fh);
-      c.strokeStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(150,110,60,.18)'; c.lineWidth = 1; c.beginPath(); for (var tx = -fh; tx < W + fh; tx += SW * 1.1) { c.moveTo(tx, fy); c.lineTo(tx + (tx - W / 2) * 0.35, H); } c.stroke();
-      c.fillStyle = dark ? '#4a4466' : '#ffffff'; c.fillRect(0, fy - SW * 0.12, W, SW * 0.12); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(0, fy, W, 2); }
-    if (top > SW * 1.1) { var sh = Math.min(top * 0.5, SW * 0.95), sw2 = Math.min(W * 0.62, sh * 4.6), sx = (W - sw2) / 2, sy = (top - sh) / 2 + sh * 0.12;
-      c.strokeStyle = dark ? '#8a90a8' : '#8a7a6a'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(sx + sw2 * 0.18, 0); c.lineTo(sx + sw2 * 0.18, sy); c.moveTo(sx + sw2 * 0.82, 0); c.lineTo(sx + sw2 * 0.82, sy); c.stroke();
-      c.save(); c.shadowColor = 'rgba(30,30,70,.25)'; c.shadowBlur = sh * 0.3; c.shadowOffsetY = sh * 0.1; rr(c, sx, sy, sw2, sh, sh * 0.3); c.fillStyle = grad(c, 0, sy, 0, sy + sh, [[0, '#ff7a6a'], [1, '#e8403a']]); c.fill(); c.restore();
-      rr(c, sx + 3, sy + 3, sw2 - 6, sh - 6, sh * 0.24); c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.7)'; c.setLineDash([4, 3]); c.stroke(); c.setLineDash([]);
-      c.fillStyle = '#fff'; c.font = '900 ' + Math.round(sh * 0.46) + 'px "Arial Rounded MT Bold", -apple-system, system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SHELF LIFE', W / 2, sy + sh * 0.53);
-      c.fillStyle = 'rgba(255,255,255,.25)'; rr(c, sx + sh * 0.2, sy + sh * 0.1, sw2 - sh * 0.4, sh * 0.2, sh * 0.1); c.fill(); }
-    // the shelf units: one wooden cabinet per shelf with a cubby cut into it for each box
-    rowsI.forEach(function (row, ri) {
-      var f = rowFrame(row), wood = grad(c, 0, f.Y, 0, f.Yb, [[0, '#f0c282'], [0.5, '#dca062'], [1, '#c0823f']]);
-      c.save(); c.shadowColor = 'rgba(30,30,70,.3)'; c.shadowBlur = SW * 0.35; c.shadowOffsetY = SW * 0.1; rr(c, f.X, f.Y, f.X1 - f.X, f.Yb - f.Y, SW * 0.1); c.fillStyle = wood; c.fill(); c.restore();
-      grain(c, f.X, f.Y, f.X1 - f.X, f.Yb - f.Y, 101 + ri * 7);
-      rr(c, f.X, f.Y, f.X1 - f.X, f.Yb - f.Y, SW * 0.1); c.lineWidth = 1.2; c.strokeStyle = '#8a5424'; c.stroke();
-      c.fillStyle = 'rgba(255,240,210,.55)'; c.fillRect(f.X + SW * 0.1, f.Y + 1, f.X1 - f.X - SW * 0.2, 1.5);
-      row.idx.forEach(function (i) { cubby(c, boxes[i]); });
-    });
-    // the front lips of the shelves (drawn over the items' feet, so the goods stand on the shelf, not in front of it)
-    var g2 = fgC.getContext('2d');
-    rowsI.forEach(function (row, ri) {
-      var f = rowFrame(row), X = f.X - 1, w = f.X1 - f.X + 2, y = row.floor - SW * 0.03, h = SW * 0.25;
-      g2.save(); g2.shadowColor = 'rgba(50,25,0,.35)'; g2.shadowBlur = SW * 0.16; g2.shadowOffsetY = SW * 0.06;
-      rr(g2, X, y, w, h, SW * 0.06); g2.fillStyle = grad(g2, 0, y, 0, y + h, [[0, '#f8d096'], [0.25, '#e8ac6a'], [1, '#b8783a']]); g2.fill(); g2.restore();
-      grain(g2, X, y + h * 0.25, w, h * 0.75, 211 + ri * 13, 0.9);
-      g2.fillStyle = 'rgba(255,248,225,.75)'; g2.fillRect(X + 2, y + 1, w - 4, Math.max(1.5, SW * 0.035));
-      rr(g2, X, y, w, h, SW * 0.06); g2.lineWidth = 1.2; g2.strokeStyle = '#8a5424'; g2.stroke();
-      // a little price tag under each cubby (a store touch)
-      row.idx.forEach(function (i) { var B = boxes[i], tw = SW * 0.5, th = h * 0.46, tx2 = B.x + B.w / 2 - tw / 2, ty = y + h * 0.34;
-        rr(g2, tx2, ty, tw, th, 2); g2.fillStyle = '#fffdf6'; g2.fill(); g2.lineWidth = 0.8; g2.strokeStyle = 'rgba(120,80,40,.5)'; g2.stroke();
-        g2.fillStyle = ['#ff6a5a', '#3a8cf0', '#4fb52e'][i % 3]; g2.fillRect(tx2 + tw * 0.14, ty + th * 0.3, tw * 0.5, Math.max(1, th * 0.18)); g2.fillStyle = 'rgba(80,80,90,.45)'; g2.fillRect(tx2 + tw * 0.14, ty + th * 0.6, tw * 0.7, Math.max(1, th * 0.12)); });
-    });
+    themeK=themeKey();bgC=mkLayer();fgC=mkLayer();ShelfStudio.paint(bgC.getContext('2d'),fgC.getContext('2d'),W,H,SW,rowsI,boxes,rowFrame,themeK==='dark'||themeK==='blue');
   }
   // one cubby: back panel, side walls and floor in a little perspective, shaded from the board above
   function cubby(c, B) {
@@ -1339,7 +1308,7 @@ var SLSound = (function () {
     if (!(locked || (u0 && lift < 1))) return;
     var oh = B.floor - B.y + SW * 0.05, yy = B.y - oh * ease(lift);
     cx.save(); rr(cx, B.x, B.y, B.w, oh, SW * 0.08); cx.clip();
-    cx.fillStyle = grad(cx, B.x, yy, B.x + B.w, yy + oh, [[0, 'rgba(220,240,255,.8)'], [0.5, 'rgba(180,215,245,.72)'], [1, 'rgba(160,200,240,.8)']]); cx.fillRect(B.x, yy, B.w, oh);
+    cx.fillStyle = grad(cx, B.x, yy, B.x + B.w, yy + oh, [[0, 'rgba(214,222,212,.74)'], [0.5, 'rgba(175,190,180,.65)'], [1, 'rgba(161,180,168,.74)']]); cx.fillRect(B.x, yy, B.w, oh);
     cx.fillStyle = 'rgba(255,255,255,.5)'; P(cx, [B.x + B.w * 0.1, yy + oh, B.x + B.w * 0.34, yy, B.x + B.w * 0.46, yy, B.x + B.w * 0.22, yy + oh]); cx.fill();
     cx.fillStyle = 'rgba(255,255,255,.3)'; P(cx, [B.x + B.w * 0.52, yy + oh, B.x + B.w * 0.72, yy, B.x + B.w * 0.77, yy, B.x + B.w * 0.57, yy + oh]); cx.fill();
     var fw = Math.max(2, SW * 0.07); rr(cx, B.x + fw / 2, yy + fw / 2, B.w - fw, oh - fw, SW * 0.06); cx.lineWidth = fw; cx.strokeStyle = grad(cx, 0, yy, 0, yy + oh, [[0, '#e8eef6'], [0.5, '#a8b4c8'], [1, '#7a869c']]); cx.stroke();
@@ -1348,8 +1317,8 @@ var SLSound = (function () {
       cx.lineCap = 'round'; cx.lineWidth = SW * 0.12; cx.strokeStyle = '#4a5468'; cx.beginPath(); cx.arc(lx, ly - r0 * 0.4, r0 * 0.62, Math.PI, 0); cx.stroke();
       cx.lineWidth = SW * 0.06; cx.strokeStyle = '#c8d2e2'; cx.beginPath(); cx.arc(lx, ly - r0 * 0.4, r0 * 0.62, Math.PI * 1.1, Math.PI * 1.45); cx.stroke();
       cx.save(); cx.shadowColor = 'rgba(40,30,0,.35)'; cx.shadowBlur = SW * 0.12; cx.shadowOffsetY = SW * 0.04;
-      rr(cx, lx - r0, ly - r0 * 0.4, r0 * 2, r0 * 1.6, r0 * 0.32); cx.fillStyle = grad(cx, lx - r0, 0, lx + r0, 0, [[0, '#e0a818'], [0.3, '#ffe27a'], [0.55, '#ffc93c'], [1, '#c8900a']]); cx.fill(); cx.restore();
-      rr(cx, lx - r0, ly - r0 * 0.4, r0 * 2, r0 * 1.6, r0 * 0.32); cx.lineWidth = 1.5; cx.strokeStyle = '#8a6a10'; cx.stroke();
+      rr(cx, lx - r0, ly - r0 * 0.4, r0 * 2, r0 * 1.6, r0 * 0.14); cx.fillStyle = grad(cx, lx - r0, 0, lx + r0, 0, [[0, '#967b43'], [0.3, '#decb94'], [0.55, '#bda168'], [1, '#8b713f']]); cx.fill(); cx.restore();
+      rr(cx, lx - r0, ly - r0 * 0.4, r0 * 2, r0 * 1.6, r0 * 0.14); cx.lineWidth = 1.5; cx.strokeStyle = '#8a6a10'; cx.stroke();
       cx.fillStyle = 'rgba(255,255,255,.45)'; cx.fillRect(lx - r0 * 0.8, ly - r0 * 0.3, r0 * 1.6, Math.max(1, r0 * 0.1));
       cx.fillStyle = '#3a2a00'; cx.font = '900 ' + Math.round(SW * 0.42) + 'px -apple-system, system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
       cx.fillText(String(Math.max(0, bx.need - g.matches)), lx, ly + r0 * 0.42);
@@ -1542,13 +1511,13 @@ var SLSound = (function () {
     requestAnimationFrame(frame);
     window.__slReady = true;
     Goobs.markPlayed('shelf');
-    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Shelf Life ' + (v.shelf || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Shelf Life ' + (v.shelf || '2.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   window.__sl = { get g() { return g; }, startLevel: startLevel, useUndo: useUndo, useShuffle: useShuffle, useHint: useHint, SH: SH, meta: function () { return meta; }, slotPos: slotPos, get boxes() { return boxes; }, get SW() { return SW; },
     move: function (fb, fs, tb, ts) { var q = slotPos(fb, fs); return doMove(fb, fs, tb, ts, q.x, q.y, 1, 60); }, get busy() { return busy(); }, get hintM() { return hintM; },
     // timing checks: frames = redraw the store n times; cold = rebuild the store picture and every item bitmap first
     bench: function (n, cold) { var t0 = performance.now(); if (cold) { cache = {}; bgC = null; } draw(t0); var t1 = performance.now(); for (var i = 0; i < n; i++) draw(t1 + i * 16); return { first: t1 - t0, frame: (performance.now() - t1) / n }; }, amap: function () { return amap; } };
-  init();
+  ShelfStudio.ready.then(init).catch(function(e){window.dispatchEvent(new ErrorEvent("error",{message:e.message}));});
 })();
 </script>
 </body>
