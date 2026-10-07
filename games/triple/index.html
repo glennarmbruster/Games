@@ -70,7 +70,7 @@ html.gg-fs .top .brand { flex: none; }
 html.gg-fs .stagewrap { width: auto; align-self: stretch; margin: 0 calc(-8px - env(safe-area-inset-right, 0px)) 0 calc(-8px - env(safe-area-inset-left, 0px)); }
 html.gg-fs .stage { margin: 0; border-radius: 0; }
 </style>
-</head>
+<link rel="stylesheet" href="patisserie.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="tt-logo" viewBox="0 0 100 100"><defs><linearGradient id="ttbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb35a"/><stop offset="1" stop-color="#ff6a8a"/></linearGradient></defs>
@@ -108,7 +108,7 @@ html.gg-fs .stage { margin: 0; border-radius: 0; }
     </div>
   </div>
 
-  <div class="stagewrap" id="stagewrap">
+  <div id="planStatus" class="plan-status"></div><div class="stagewrap" id="stagewrap">
     <div class="stage" id="stage">
       <canvas id="cv"></canvas>
       <div class="toast" id="toast"></div>
@@ -217,7 +217,7 @@ var TT = (function () {
     var tiles = n <= 1 ? 18 : n <= 3 ? 27 : n <= 6 ? 36 : n <= 10 ? 45 : n <= 20 ? 54 + (n % 3) * 6 : n <= 40 ? 66 + (n % 4) * 6 : n <= 80 ? 78 + (n % 5) * 6 : n <= 150 ? 90 + (n % 6) * 6 : 102 + (n % 7) * 6;
     var kinds = Math.min(FACES, n <= 1 ? 3 : n <= 3 ? 5 : n <= 6 ? 7 : n <= 10 ? 8 : n <= 20 ? 10 : n <= 40 ? 12 : n <= 80 ? 14 : n <= 150 ? 17 : 20);
     var layers = n <= 2 ? 2 : n <= 8 ? 3 : n <= 30 ? 4 : n <= 100 ? 5 : 6;
-    var mix = n <= 3 ? 1 : n <= 10 ? 2 : n <= 60 ? 3 : 4;   // how many kinds may be "open" at once along the hidden order
+    var mix = n <= 2 ? 1 : n <= 5 ? 2 : n <= 12 ? 3 : 4;   // how many kinds may be "open" at once along the hidden order
     if (n % 10 === 0 && n > 10) { tiles = Math.max(45, tiles - 30); mix = 2; } // a breather every tenth level
     return { tiles: tiles, kinds: kinds, layers: layers, mix: mix };
   }
@@ -301,7 +301,7 @@ var TT = (function () {
   // ---------------- play ----------------
   function create(n) {
     var L = buildLevel(n); if (!L) return null;
-    return { n: n, w: L.w, h: L.h, tiles: L.tiles.map(function (t) { return { id: t.id, x: t.x, y: t.y, z: t.z, k: t.k, gone: false }; }), tray: [], hist: [], cleared: 0, total: L.tiles.length, lost: false, won: false, putBack: 1, ms: 0, combo: 0 };
+    return { n: n, w: L.w, h: L.h, tiles: L.tiles.map(function (t) { return { id: t.id, x: t.x, y: t.y, z: t.z, k: t.k, gone: false }; }), tray: [], hist: [], cleared: 0, total: L.tiles.length, lost: false, won: false, putBack: 1, ms: 0, combo: 0, assists: 0, peak: 0, recoveries: 0 };
   }
   function isFree(g, t) { if (t.gone) return false; for (var i = 0; i < g.tiles.length; i++) { var o = g.tiles[i]; if (!o.gone && o.z > t.z && overlaps(o, t)) return false; } return true; }
   function freeTiles(g) { return g.tiles.filter(function (t) { return isFree(g, t); }); }
@@ -317,7 +317,7 @@ var TT = (function () {
     if (same.length >= 3) { matched = same.slice(0, 3).map(function (s) { return s.id; }); g.tray = g.tray.filter(function (s) { return matched.indexOf(s.id) < 0; }); g.cleared += 3; g.hist = g.hist.filter(function (h) { return matched.indexOf(h) < 0; }); }
     else g.hist.push(t.id);
     if (g.cleared === g.total) g.won = true;
-    else if (g.tray.length >= TRAY) g.lost = true;
+    else if (g.tray.length >= TRAY) g.lost = true;g.peak=Math.max(g.peak||0,g.tray.length);
     return { slot: at, matched: matched, lost: g.lost, won: g.won, k: t.k };
   }
   // boosters
@@ -327,20 +327,27 @@ var TT = (function () {
   }
   function putBack(g) { // out of room: the last three tray tiles go back to the board (once per level)
     if (g.putBack <= 0 || !g.tray.length) return null;
-    g.putBack--; var back = [];
+    g.putBack--;g.recoveries=(g.recoveries||0)+1; var back = [];
     for (var i = 0; i < 3 && g.hist.length; i++) { var id = g.hist.pop(); g.tray = g.tray.filter(function (s) { return s.id !== id; }); g.tiles[id].gone = false; back.push(id); }
     g.lost = false; return back;
   }
-  function shuffleBoard(g, seed) { // the kinds still on the board swap places
-    var left = g.tiles.filter(function (t) { return !t.gone; }), ks = shuffle(left.map(function (t) { return t.k; }), rng(seed));
-    left.forEach(function (t, i) { t.k = ks[i]; }); return left.length;
+  function shuffleBoard(g, seed) {
+    // Re-deal along a legal removal order, closing existing tray groups first.
+    // Counts, tray contents and covered/free geometry are preserved.
+    var left=g.tiles.filter(function(t){return !t.gone;}),r=rng(seed),order=removalOrder(left,r);
+    if(!order)return 0;
+    var count={},held={};left.forEach(function(t){count[t.k]=(count[t.k]||0)+1;});g.tray.forEach(function(t){held[t.k]=(held[t.k]||0)+1;});
+    var sequence=[],keys=Object.keys(held).sort(function(a,b){return held[b]-held[a];});
+    for(var k of keys){var need=3-held[k];if((count[k]||0)<need)return 0;for(var j=0;j<need;j++)sequence.push(+k);count[k]-=need;}
+    var sets=[];for(k of Object.keys(count)){if(count[k]%3)return 0;for(j=0;j<count[k]/3;j++)sets.push(+k);}shuffle(sets,r).forEach(function(k){sequence.push(k,k,k);});
+    if(sequence.length!==order.length)return 0;order.forEach(function(id,i){g.tiles[id].k=sequence[i];});g.assists=(g.assists||0)+1;return left.length;
   }
   function hint(g) { // clears one set of three: the kind with the most in the tray (else the one most exposed)
     var count = {}; g.tray.forEach(function (s) { count[s.k] = (count[s.k] || 0) + 1; });
     var best = -1, bestN = -1;
     Object.keys(count).forEach(function (k) { if (count[k] > bestN) { bestN = count[k]; best = +k; } });
     if (best < 0) { var free = freeTiles(g); if (!free.length) return null; var fc = {}; free.forEach(function (t) { fc[t.k] = (fc[t.k] || 0) + 1; }); Object.keys(fc).forEach(function (k) { if (fc[k] > bestN) { bestN = fc[k]; best = +k; } }); }
-    var ids = g.tray.filter(function (s) { return s.k === best; }).map(function (s) { return s.id; });
+    g.assists=(g.assists||0)+1;var ids = g.tray.filter(function (s) { return s.k === best; }).map(function (s) { return s.id; });
     // then from the board, top layers first
     var cand = g.tiles.filter(function (t) { return !t.gone && t.k === best; }).sort(function (a, b) { return (isFree(g, b) ? 1 : 0) - (isFree(g, a) ? 1 : 0) || b.z - a.z; });
     while (ids.length < 3 && cand.length) { var t = cand.shift(); t.gone = true; ids.push(t.id); }
@@ -349,8 +356,8 @@ var TT = (function () {
     g.cleared += 3; if (g.cleared === g.total) g.won = true; g.lost = false;
     return { ids: ids, k: best };
   }
-  function stars(g) { var s = g.ms / 1000, par = g.total * 1.25; return s <= par ? 3 : s <= par * 1.7 ? 2 : 1; }
-  return { TRAY: TRAY, FACES: FACES, rng: rng, recipe: recipe, buildLevel: buildLevel, create: create, isFree: isFree, freeTiles: freeTiles, take: take, undo: undo, putBack: putBack, shuffleBoard: shuffleBoard, hint: hint, stars: stars, overlaps: overlaps };
+  function stars(g) { var help=(g.assists||0)+(g.recoveries||0);return help===0?3:help<=2?2:1; }
+  return { TRAY: TRAY, FACES: FACES, rng: rng, recipe: recipe, removalOrder:removalOrder, buildLevel: buildLevel, create: create, isFree: isFree, freeTiles: freeTiles, take: take, undo: undo, putBack: putBack, shuffleBoard: shuffleBoard, hint: hint, stars: stars, overlaps: overlaps };
 })();
 if (typeof module !== 'undefined') module.exports = TT;
 </script>
@@ -457,7 +464,7 @@ var TTSound = (function () {
   };
 })();
 </script>
-<script src="../../shared/ads.js"></script>
+<script src="patisserie.js"></script><script src="../../shared/ads.js"></script>
 <script>
 /* Triple Treat app: drawing the stacked tiles and the tray, taps, flying tiles, matches, boosters (undo, shuffle,
    magic), put-back when the tray fills, stars by time, level select, saves, stats and house ads. */
@@ -498,7 +505,7 @@ var TTSound = (function () {
   function load() {
     var r = store.get('game', null);
     if (!r || r.n !== meta.level || !Array.isArray(r.tiles) || !Array.isArray(r.tray) || r.won || r.lost) return false;
-    var fresh = TT.create(r.n); if (!fresh || fresh.tiles.length !== r.tiles.length) return false;
+    if(r.tiles.some(function(t,i){return t.id!==i||t.k<0||t.k>=TT.FACES;}))return false;
     g = r; vt = g.tray.map(function (s) { return { id: s.id, k: s.k, x: null, y: null }; }); back = []; magic = []; ending = false;
     layout(); renderInfo(); return true;
   }
@@ -536,7 +543,7 @@ var TTSound = (function () {
     renderInfo();
     setTimeout(function () {
       var starHtml = '<div class="stars">' + '★★★'.slice(0, st) + '<i>' + '★★★'.slice(st) + '</i></div>';
-      showCard('Level ' + n + ' cleared!', starHtml + 'Time <b>' + clock(g.ms) + '</b>. Bonus: <b>+1 ' + { undo: 'Undo', shuffle: 'Shuffle', hint: 'Magic' }[gift] + '</b>.', [
+      showCard('Level ' + n + ' cleared!', starHtml + 'Solved with <b>' + ((g.assists||0)+(g.recoveries||0)) + '</b> assists. Time '+clock(g.ms)+'. Bonus: <b>+1 ' + { undo: 'Undo', shuffle: 'Shuffle', hint: 'Magic' }[gift] + '</b>.', [
         { label: 'Next level', red: true, go: function () { between(function () { startLevel(n + 1); }); } }]);
     }, 1000);
   }
@@ -562,7 +569,7 @@ var TTSound = (function () {
   function useShuffle() {
     if (!g || ending || g.won || busy() || sheetOpen()) return;
     if (meta.boost.shuffle <= 0) { toast('No shuffles left. You win one every three levels.'); S.nope(); return; }
-    TT.shuffleBoard(g, (Date.now() & 0xfffffff) + 1); meta.boost.shuffle--; saveMeta(); stats.boosters++; saveStats(); shuffleT = performance.now(); S.shuffle(); save(); renderInfo();
+    if(!TT.shuffleBoard(g, (Date.now() & 0xfffffff) + 1)){toast('No safe shuffle available');return;} meta.boost.shuffle--; saveMeta(); stats.boosters++; saveStats(); shuffleT = performance.now(); S.shuffle(); save(); renderInfo();
   }
   function useHint() {
     if (!g || ending || g.won || busy() || sheetOpen()) return;
@@ -626,12 +633,13 @@ var TTSound = (function () {
     if (scaleX != null && scaleX !== 1) { cx.translate(x + s / 2, 0); cx.scale(Math.max(0.02, scaleX), 1); cx.translate(-(x + s / 2), 0); }
     cx.drawImage(sp, x - 2, y - 2, w, h);
     cx.shadowColor = 'transparent';
-    if (dim) { rr(cx, x, y, s, s * 1.1 + s * 0.12, s * 0.16); cx.fillStyle = 'rgba(70,40,20,.46)'; cx.fill(); }
+    if (dim) { rr(cx, x, y, s, s * 1.1 + s * 0.12, s * 0.16); cx.fillStyle = 'rgba(17,44,45,.35)'; cx.fill(); }
     cx.restore();
   }
   function draw(now) {
     cx.setTransform(DPR, 0, 0, DPR, 0, 0); cx.clearRect(0, 0, W, H);
     if (!g) return;
+    TStudio.draw(cx,W,H);
     // board
     var st = shuffleT && now - shuffleT < 420 ? (now - shuffleT) / 420 : 1, scX = st < 1 ? Math.abs(Math.cos(st * Math.PI)) : 1;
     var list = g.tiles.filter(function (t) { return !t.gone; }).sort(drawOrder);
@@ -644,8 +652,9 @@ var TTSound = (function () {
     // tiles flying back to the board
     back.forEach(function (b) { var t = g.tiles[b.id], r = tileRect(t), k = ease(Math.min(1, b.t)); drawTile(t.k, b.x0 + (r.x - b.x0) * k, b.y0 + (r.y - b.y0) * k, TS + (S0 - TS) * k, false); });
     // the tray
+    cx.fillStyle='#faf0d5';cx.font='700 12px system-ui';cx.textAlign='center';cx.fillText('TRAY '+g.tray.length+'/7'+(g.tray.length>=5?' · Make a match before it fills':''),W/2,trayY-20);
     cx.save(); rr(cx, trayX, trayY - (trayH - TS * 1.1) / 2, trayW, trayH, trayH * 0.28);
-    cx.fillStyle = 'rgba(110,60,30,.55)'; cx.fill(); cx.lineWidth = 3; cx.strokeStyle = 'rgba(255,240,220,.55)'; cx.stroke(); cx.restore();
+    cx.fillStyle = g.tray.length>=5?'#75454c':'#264e4d'; cx.fill(); cx.lineWidth = 3; cx.strokeStyle = g.tray.length>=5?'#f2bc80':'#c2b184'; cx.stroke(); cx.restore();
     for (var i = 0; i < TT.TRAY; i++) { rr(cx, slotX(i), trayY, TS, TS * 1.1, TS * 0.16); cx.fillStyle = 'rgba(255,240,220,.16)'; cx.fill(); }
     var idx = 0;
     vt.forEach(function (v) {
@@ -698,7 +707,7 @@ var TTSound = (function () {
     $('info').innerHTML = '<span class="ggpill"><small>Lv</small> ' + g.n + '</span>' +
       '<span class="ggpill">' + Math.max(0, g.total - g.cleared - g.tray.length) + ' <small>left</small>' + (settings.timer ? ' · <span id="clock">' + clock(g.ms) + '</span>' : '') + '</span>';
     fitPills();
-    $('cntUndo').textContent = meta.boost.undo; $('cntShuffle').textContent = meta.boost.shuffle; $('cntHint').textContent = meta.boost.hint;
+    $('planStatus').textContent='★★★'.slice(0,TT.stars(g))+'☆☆☆'.slice(TT.stars(g))+' · '+((g.assists||0)+(g.recoveries||0))+' assists · Undo allowed';$('cntUndo').textContent = meta.boost.undo; $('cntShuffle').textContent = meta.boost.shuffle; $('cntHint').textContent = meta.boost.hint;
   }
   var toastT = 0;
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2200); }
@@ -724,8 +733,8 @@ var TTSound = (function () {
       '<b>Tap a tile</b> to move it down into the <b>tray</b>. Only tiles with nothing on top can be taken; the darker ones are covered.',
       'Three of the same kind in the tray <b>clear</b>. Clear every tile to win the level.',
       'The tray holds <b>7</b>. Fill it without a match and you\'re <b>out of room</b> (once per level you can send the last three tiles back).',
-      '<b>Undo</b> takes back the last tile, <b>Shuffle</b> mixes the tiles on the board, <b>Magic</b> clears a set of three for you. You win one more every level.',
-      'Faster clears earn more <b>stars</b>. Every level has been built so it can be cleared.'
+      '<b>Undo</b> takes back the last tile. <b>Shuffle</b> re-deals the remaining board with a safe solution from your current tray. <b>Magic</b> clears a set of three. You win one booster each level.',
+      '<b>Three stars</b> for solving without Magic, Shuffle or a full-tray recovery; two with up to two assists. Undo is allowed. Take your time—speed does not affect stars. Every fresh board has a legal solution.'
     ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
   }

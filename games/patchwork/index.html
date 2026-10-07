@@ -100,7 +100,7 @@ html, body { height: 100%; overflow: hidden; }
 .info .right { flex: none; }
 @media (max-width: 385px) { .brand h1 { font-size: 18px; } }
 </style>
-</head>
+<link rel="stylesheet" href="studio.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="pw-logo" viewBox="0 0 100 100"><defs><linearGradient id="pwlg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a5cff"/><stop offset=".6" stop-color="#ff7aa2"/><stop offset="1" stop-color="#ffc07a"/></linearGradient></defs>
@@ -137,7 +137,7 @@ html, body { height: 100%; overflow: hidden; }
     <button data-mode="photo">My photos</button>
   </div>
 
-  <div class="info" id="info"></div>
+  <div class="studio-controls"><label><input id="setRotation" type="checkbox"> Rotation challenge <small>next puzzle · select a tile, then ↻</small></label><button id="btnRotate" type="button">↻ Rotate selected</button></div><div class="info" id="info"></div>
 
   <div class="boardwrap" id="boardwrap">
     <div class="board" id="board">
@@ -220,7 +220,7 @@ html, body { height: 100%; overflow: hidden; }
         <li>Squares that sit next to their right neighbor <b>click together</b> and move as one piece.</li>
         <li>A square that lands in its right spot flashes green. Turn on <b>Lock pieces in place</b> in Settings if you want those squares to stay put.</li>
         <li>Stuck? <b>Peek</b> shows the whole picture while you hold it. <b>Hint</b> puts one piece home: 3 per puzzle, then each costs one quick ad.</li>
-        <li><b>My photos</b>: pick a picture from your phone and make a puzzle out of it.</li>
+        <li><b>Rotation challenge</b>: enable it before a new puzzle. Select a single tile and use Rotate selected. Upright neighbors join; all tiles must be upright to finish.</li><li><b>My photos</b>: pick a picture from your phone and make a puzzle out of it.</li>
       </ol>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseHelp">Let's play</button></div>
@@ -296,10 +296,11 @@ var PW = (function () {
   // pos[cell] = tile id; tile t's home cell is t. cells are row-major, cols wide.
   function isHome(pos, i) { return pos[i] === i; }
   // do the tiles in cells a and b (neighbors) belong next to each other?
-  function linkedRight(pos, cols, i) {
+  function linkedRight(pos, cols, i, rot) {
+    if(rot && (rot[pos[i]] || rot[pos[i+1]]))return false;
     return (i % cols) !== cols - 1 && pos[i] % cols !== cols - 1 && pos[i + 1] === pos[i] + 1;
   }
-  function linkedDown(pos, cols, i) { return i + cols < pos.length && pos[i + cols] === pos[i] + cols; }
+  function linkedDown(pos, cols, i, rot) { if(rot && (rot[pos[i]] || rot[pos[i+cols]]))return false; return i + cols < pos.length && pos[i + cols] === pos[i] + cols; }
 
   function scramble(cols, rows, seed) {
     var n = cols * rows, rand = rng(seed), pos = [], i, j, t;
@@ -319,34 +320,34 @@ var PW = (function () {
   }
 
   // groups: union-find over joined neighbors. returns { of: cell->group id, cells: {gid:[cells]} }
-  function groups(pos, cols) {
+  function groups(pos, cols, rot) {
     var n = pos.length, par = [], i;
     for (i = 0; i < n; i++) par.push(i);
     function f(x) { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; }
     function u(a, b) { a = f(a); b = f(b); if (a !== b) par[b] = a; }
     for (i = 0; i < n; i++) {
-      if (linkedRight(pos, cols, i)) u(i, i + 1);
-      if (linkedDown(pos, cols, i)) u(i, i + cols);
+      if (linkedRight(pos, cols, i, rot)) u(i, i + 1);
+      if (linkedDown(pos, cols, i, rot)) u(i, i + cols);
     }
     var of = [], cells = {};
     for (i = 0; i < n; i++) { var r = f(i); of.push(r); (cells[r] = cells[r] || []).push(i); }
     return { of: of, cells: cells };
   }
   // which sides of each cell are joined: bits 1 top, 2 right, 4 bottom, 8 left
-  function edges(pos, cols) {
+  function edges(pos, cols, rot) {
     var n = pos.length, e = [], i;
     for (i = 0; i < n; i++) e.push(0);
     for (i = 0; i < n; i++) {
-      if (linkedRight(pos, cols, i)) { e[i] |= 2; e[i + 1] |= 8; }
-      if (linkedDown(pos, cols, i)) { e[i] |= 4; e[i + cols] |= 1; }
+      if (linkedRight(pos, cols, i, rot)) { e[i] |= 2; e[i + 1] |= 8; }
+      if (linkedDown(pos, cols, i, rot)) { e[i] |= 4; e[i + cols] |= 1; }
     }
     return e;
   }
-  function links(pos, cols) { // set of joined tile pairs as "a-b" (tile ids) for spotting new joins
+  function links(pos, cols, rot) { // set of joined tile pairs as "a-b" (tile ids) for spotting new joins
     var s = {}, i;
     for (i = 0; i < pos.length; i++) {
-      if (linkedRight(pos, cols, i)) s[pos[i] + 'r'] = 1;
-      if (linkedDown(pos, cols, i)) s[pos[i] + 'd'] = 1;
+      if (linkedRight(pos, cols, i, rot)) s[pos[i] + 'r'] = 1;
+      if (linkedDown(pos, cols, i, rot)) s[pos[i] + 'd'] = 1;
     }
     return s;
   }
@@ -354,7 +355,7 @@ var PW = (function () {
   // Move the group in cells G by (dr, dc). Tiles in the way slide back into the cells the group left,
   // each along the move direction. Returns the new pos, or null if the move is off the board, or (with
   // lock on, the "Lock pieces in place" setting) would push a tile that is already in its right spot.
-  function move(pos, cols, G, dr, dc, lock) {
+  function move(pos, cols, G, dr, dc, lock, rot) {
     if (lock === undefined) lock = true;
     if (!dr && !dc) return null;
     var n = pos.length, rows = n / cols, d = dr * cols + dc, inG = {}, inT = {}, i;
@@ -368,7 +369,7 @@ var PW = (function () {
     for (var k in inT) {
       var p = +k;
       if (inG[p]) continue;
-      if (lock && pos[p] === p) return null; // locked tile in the way
+      if (lock && pos[p] === p && !(rot && rot[p])) return null; // locked tile in the way
       var q = p - d;
       while (inT[q]) q -= d;
       np[q] = pos[p];
@@ -376,7 +377,8 @@ var PW = (function () {
     return np;
   }
   // Hint: bring the lowest-numbered loose tile (and its group) home. Always legal.
-  function hint(pos, cols) {
+  function hint(pos, cols, rot) {
+    if(rot)for(var r=0;r<rot.length;r++)if(rot[r])return {rotate:r,pos:pos.slice(),G:[pos.indexOf(r)]};
     for (var t = 0; t < pos.length; t++) {
       if (pos[t] === t) continue;
       var c = pos.indexOf(t), g = groups(pos, cols), G = g.cells[g.of[c]];
@@ -385,8 +387,8 @@ var PW = (function () {
     }
     return null;
   }
-  function solved(pos) { for (var i = 0; i < pos.length; i++) if (pos[i] !== i) return false; return true; }
-  function homeCount(pos) { var k = 0; for (var i = 0; i < pos.length; i++) if (pos[i] === i) k++; return k; }
+  function solved(pos, rot) { if(rot && rot.some(function(r){return r!==0;}))return false; for (var i = 0; i < pos.length; i++) if (pos[i] !== i) return false; return true; }
+  function homeCount(pos, rot) { var k = 0; for (var i = 0; i < pos.length; i++) if (pos[i] === i && !(rot && rot[i])) k++; return k; }
 
   return {
     mix32: mix32, rng: rng, LEVEL_SCHEME: LEVEL_SCHEME, KINDS: KINDS, levelSize: levelSize, makeLevel: makeLevel,
@@ -1355,7 +1357,7 @@ var PWSound = (function () {
   };
 })();
 </script>
-<script src="../../shared/ads.js"></script>
+<script src="gallery.js"></script><script src="../../shared/ads.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1363,7 +1365,7 @@ var PWSound = (function () {
 
   // ================= storage =================
   var store = Goobs.store('patchwork');
-  var settings = { sound: false, adEvery: 3, lockHome: false }; // lockHome: pieces in their right spot can't be moved (Glenn: off by default)
+  var settings = { sound: false, adEvery: 3, lockHome: false, rotation: false }; // lockHome: pieces in their right spot can't be moved (Glenn: off by default)
   (function () {
     var s = store.get('settings', {}) || {};
     for (var k in settings) if (typeof s[k] === typeof settings[k]) settings[k] = s[k];
@@ -1486,6 +1488,7 @@ var PWSound = (function () {
     var g = { mode: mode, kind: spec.kind || 'photo', seed: spec.seed, cols: spec.cols, rows: spec.rows, moves: 0, hints: HINTS_PER_PUZZLE, done: false, level: 0, day: 0, photoId: 0 };
     for (var k in extra) g[k] = extra[k];
     g.pos = PW.scramble(g.cols, g.rows, g.seed);
+    g.rot = g.pos.map(function(_,i){return settings.rotation?Math.floor(PW.rng(g.seed+i*1777)()*4):0;});g.rotation=!!settings.rotation;g.assists=0;
     return g;
   }
   function startLevel(L, restart) {
@@ -1512,6 +1515,7 @@ var PWSound = (function () {
     game = saved; begin(); return true;
   }
   function begin() {
+    if(!game.rot)game.rot=game.pos.map(function(){return 0;});if(game.assists===undefined)game.assists=Math.max(0,HINTS_PER_PUZZLE-game.hints);
     meta.mode = game.mode === 'replay' ? 'level' : game.mode;
     saveMeta(); saveGame();
     sel = null;
@@ -1560,9 +1564,9 @@ var PWSound = (function () {
       return;
     }
     var svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(PWScenes.svg(g.kind, g.seed, g.cols, g.rows, pw, ph));
-    loadImg(svgUrl).then(function (img) {
+    var artUrl=window.PWGallery&&PWGallery.image(g.kind);(artUrl?loadImg(artUrl).catch(function(){return loadImg(svgUrl);}):loadImg(svgUrl)).then(function (img) {
       var cv = document.createElement('canvas'); cv.width = pw; cv.height = ph;
-      cv.getContext('2d').drawImage(img, 0, 0, pw, ph);
+      var iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,k=Math.max(pw/iw,ph/ih);cv.getContext('2d').drawImage(img,(pw-iw*k)/2,(ph-ih*k)/2,iw*k,ih*k);
       return canvasBlob(cv, 'image/png');
     }).then(function (b) { done(URL.createObjectURL(b), true); }, function () { done(svgUrl, false); });
   }
@@ -1599,17 +1603,17 @@ var PWSound = (function () {
   }
   function cellXY(i) { return [(i % game.cols) * pitch, Math.floor(i / game.cols) * pitch]; }
   function renderTiles() {
-    var e = PW.edges(game.pos, game.cols);
+    var e = PW.edges(game.pos, game.cols, game.rot);$('btnRotate').disabled=!game.rotation||!sel||sel.G.length!==1||game.done;
     for (var i = 0; i < game.pos.length; i++) {
       var el = tileEls[game.pos[i]], xy = cellXY(i);
-      el.style.transform = 'translate(' + xy[0] + 'px,' + xy[1] + 'px)';
+      el.style.transform = 'translate(' + xy[0] + 'px,' + xy[1] + 'px) rotate('+((game.rot&&game.rot[game.pos[i]]||0)*90)+'deg)';
       el.classList.toggle('jt', !!(e[i] & 1)); el.classList.toggle('jr', !!(e[i] & 2));
       el.classList.toggle('jb', !!(e[i] & 4)); el.classList.toggle('jl', !!(e[i] & 8));
       el.classList.toggle('sel', !!(sel && sel.set[i]));
     }
   }
   function renderInfo() {
-    var n = game.pos.length, home = PW.homeCount(game.pos), left;
+    var n = game.pos.length, home = PW.homeCount(game.pos, game.rot), left;
     if (game.mode === 'photo') left = '<div class="lbl">My photo \u00b7 ' + n + ' pieces</div><div class="ttl">Your picture</div>';
     else if (game.mode === 'daily') left = '<div class="lbl">Daily \u00b7 ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' \u00b7 ' + n + ' pieces</div><div class="ttl">' + PWScenes.NAMES[game.kind] + '</div>';
     else left = '<div class="lbl">' + (game.mode === 'replay' ? 'Replay \u00b7 ' : '') + 'Level ' + game.level + ' \u00b7 ' + n + ' pieces</div><div class="ttl">' + PWScenes.NAMES[game.kind] + '</div>';
@@ -1633,33 +1637,33 @@ var PWSound = (function () {
 
   // ================= moving pieces =================
   var sel = null, drag = null, busy = false;
-  function groupAt(cell) { var g = PW.groups(game.pos, game.cols); return g.cells[g.of[cell]]; }
+  function groupAt(cell) { var g = PW.groups(game.pos, game.cols, game.rot); return g.cells[g.of[cell]]; }
   function setOf(G) { var s = {}; G.forEach(function (c) { s[c] = 1; }); return s; }
   function flash(els, cls) {
     els.forEach(function (el) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); });
     setTimeout(function () { els.forEach(function (el) { el.classList.remove(cls); }); }, 520);
   }
   function commit(np, isHint) {
-    var before = PW.links(game.pos, game.cols), homeBefore = PW.homeCount(game.pos);
+    var before = PW.links(game.pos, game.cols, game.rot), homeBefore = PW.homeCount(game.pos, game.rot);
     game.pos = np;
-    if (!isHint) game.moves++;
-    var after = PW.links(np, game.cols), joined = [], k;
+    if (!isHint) game.moves++;else game.assists=(game.assists||0)+1;
+    var after = PW.links(np, game.cols, game.rot), joined = [], k;
     for (k in after) if (!before[k]) { var t = parseInt(k, 10); joined.push(tileEls[t], tileEls[k.slice(-1) === 'r' ? t + 1 : t + game.cols]); }
     sel = null; clearMarks();
     renderAll();
     S.slide();
-    var homeNow = PW.homeCount(np);
+    var homeNow = PW.homeCount(np, game.rot);
     if (joined.length) { flash(joined, 'join'); stats.joins += joined.length / 2; setTimeout(function () { S.join(joined.length / 2); }, 90); }
     if (homeNow > homeBefore) {
-      var hs = []; for (var i = 0; i < np.length; i++) if (np[i] === i) hs.push(tileEls[i]);
+      var hs = []; for (var i = 0; i < np.length; i++) if (np[i] === i && !(game.rot&&game.rot[i])) hs.push(tileEls[i]);
       setTimeout(function () { flash(hs.filter(function (el) { return joined.indexOf(el) < 0; }), 'homed'); S.home(); }, 180);
     }
-    if (PW.solved(np)) { win(); return; }
+    if (PW.solved(np, game.rot)) { win(); return; }
     saveGame(); saveStats();
   }
   function tryMove(G, anchor, target) {
     var dr = Math.floor(target / game.cols) - Math.floor(anchor / game.cols), dc = target % game.cols - anchor % game.cols;
-    return PW.move(game.pos, game.cols, G, dr, dc, settings.lockHome);
+    return PW.move(game.pos, game.cols, G, dr, dc, settings.lockHome, game.rot);
   }
   function cellFrom(e) {
     var r = $('tiles').getBoundingClientRect();
@@ -1693,7 +1697,7 @@ var PWSound = (function () {
     var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     if (!drag.moved) {
       if (Math.abs(dx) + Math.abs(dy) < 8) return;
-      if (settings.lockHome && game.pos[drag.anchor] === drag.anchor) { shake(drag.G); drag = null; return; }
+      if (settings.lockHome && game.pos[drag.anchor] === drag.anchor && !(game.rot&&game.rot[drag.anchor])) { shake(drag.G); drag = null; return; }
       drag.moved = true;
       if (sel) { sel = null; renderTiles(); }
       S.pick();
@@ -1701,13 +1705,13 @@ var PWSound = (function () {
     }
     drag.G.forEach(function (c) {
       var xy = cellXY(c);
-      tileEls[game.pos[c]].style.transform = 'translate(' + (xy[0] + dx) + 'px,' + (xy[1] + dy) + 'px) scale(1.03)';
+      tileEls[game.pos[c]].style.transform = 'translate(' + (xy[0] + dx) + 'px,' + (xy[1] + dy) + 'px) rotate('+((game.rot&&game.rot[game.pos[c]]||0)*90)+'deg) scale(1.03)';
     });
     var dr = Math.round(dy / pitch), dc = Math.round(dx / pitch);
     if (dr === drag.dr && dc === drag.dc) return;
     drag.dr = dr; drag.dc = dc;
     if (!dr && !dc) { drag.np = null; clearMarks(); return; }
-    drag.np = PW.move(game.pos, game.cols, drag.G, dr, dc, settings.lockHome);
+    drag.np = PW.move(game.pos, game.cols, drag.G, dr, dc, settings.lockHome, game.rot);
     var cells = [], rows = game.rows;
     drag.G.forEach(function (c) {
       var r = Math.floor(c / game.cols) + dr, cc = c % game.cols + dc;
@@ -1735,7 +1739,7 @@ var PWSound = (function () {
   }
   function tap(cell, G) {
     if (!sel) {
-      if (settings.lockHome && game.pos[cell] === cell) { shake(G); return; }
+      if (settings.lockHome && game.pos[cell] === cell && !(game.rot&&game.rot[cell])) { shake(G); return; }
       sel = { G: G, anchor: cell, set: setOf(G) }; S.pick(); renderTiles(); return;
     }
     if (sel.set[cell]) { sel = null; renderTiles(); return; }
@@ -1754,7 +1758,7 @@ var PWSound = (function () {
   function hint() {
     if (!game || game.done || busy || drag) return;
     function go() {
-      var h = PW.hint(game.pos, game.cols);
+      var h = PW.hint(game.pos, game.cols, game.rot);
       if (!h || !h.pos) return;
       stats.hints++;
       busy = true;
@@ -1763,7 +1767,7 @@ var PWSound = (function () {
         busy = false;
         h.G.forEach(function (c) { tileEls[game.pos[c]].classList.add('moving'); });
         setTimeout(function () { tileEls.forEach(function (el) { el.classList.remove('moving'); }); }, 230);
-        commit(h.pos, true);
+        if(h.rotate!==undefined)game.rot[h.rotate]=0;commit(h.pos, true);
       }, 450);
     }
     if (game.hints > 0) { game.hints--; renderTools(); go(); return; }
@@ -1806,19 +1810,19 @@ var PWSound = (function () {
     $('board').classList.add('solved');
     renderAll();
     S.win();
-    var g = game, first = false, txt = g.moves + (g.moves === 1 ? ' move' : ' moves') + ' · ' + g.pos.length + ' pieces';
+    var g = game, first = false, txt = g.moves + (g.moves === 1 ? ' move' : ' moves') + ' · ' + g.pos.length + ' pieces'+(g.rotation?' · Rotation challenge':'')+(g.assists?' · '+g.assists+' hints used':' · Unassisted');
     if (g.mode === 'level' || g.mode === 'replay') {
       var prev = meta.levelBest[g.level];
-      if (!prev || g.moves < prev) meta.levelBest[g.level] = g.moves;
+      if (!(g.assists||g.rotation) && (!prev || g.moves < prev)) meta.levelBest[g.level] = g.moves;
       if (g.mode === 'level' && meta.level === g.level) meta.level = g.level + 1;
     } else if (g.mode === 'daily') {
       first = !meta.daily[g.day];
       if (first) {
-        meta.daily[g.day] = g.moves;
+        meta.daily[g.day] = g.moves + (g.assists||0);
         stats.dStreak = stats.dLast === prevDay(g.day) ? stats.dStreak + 1 : 1;
         stats.dLast = g.day;
         if (stats.dStreak > stats.dBest) stats.dBest = stats.dStreak;
-        if (!stats.dFewest || g.moves < stats.dFewest) stats.dFewest = g.moves;
+        if (!(g.assists||g.rotation) && (!stats.dFewest || g.moves < stats.dFewest)) stats.dFewest = g.moves;
       }
     } else if (g.mode === 'photo') stats.photos++;
     finishRound();
@@ -1977,7 +1981,7 @@ var PWSound = (function () {
   function init() {
     // full screen: How to, Stats and Settings move into the Menu sheet; Hint, Peek and Restart / Next level stay under the board
     Goobs.fullscreen({ menu: ['btnHelp', 'btnStats', 'btnSettings'], info: menuInfo });
-    Goobs.themePicker($('themes'));
+    Goobs.themePicker($('themes'));$('setRotation').checked=settings.rotation;$('setRotation').onchange=function(){settings.rotation=this.checked;saveSettings();};$('btnRotate').onclick=function(){if(!game||game.done||busy||locked()||!sel||sel.G.length!==1)return;var id=game.pos[sel.anchor];var cell=sel.anchor;game.rot[id]=(game.rot[id]+1)%4;commit(game.pos.slice(),false);if(!game.done){var G=groupAt(cell);sel={G:G,anchor:cell,set:setOf(G)};renderTiles();}};
     var b = $('board');
     b.addEventListener('pointerdown', onDown);
     b.addEventListener('pointermove', onMove);

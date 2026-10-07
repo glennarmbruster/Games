@@ -126,7 +126,7 @@ html.gg-fs-over .toolbar.onlyL .tool { font-size: 13px; }
 html.gg-fs-over .bombhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
 .ggmenu .modes { margin: 2px 0 6px; }
 </style>
-</head>
+<link rel="stylesheet" href="flight.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="fa-logo" viewBox="0 0 100 100"><defs><linearGradient id="fabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#4f7dff"/></linearGradient></defs>
@@ -153,7 +153,7 @@ html.gg-fs-over .bombhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px
 <symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9M12 17.3v.2"/></g></symbol>
 </defs></svg>
 
-<div class="app">
+<div class="app"><div id="flightRule" class="flight-rule" hidden></div>
   <div class="top">
     <button class="brand homebtn" id="btnHome" aria-label="Back to all games">
       <span class="chev" aria-hidden="true">&#8249;</span>
@@ -332,7 +332,7 @@ var FA = (function () {
   function makeState(level) {
     var st = { sx: level.sx, sy: level.sy, sz: level.sz, blocks: [], occ: {}, left: 0, moves: 0, limit: level.limit || 0 };
     level.blocks.forEach(function (b, i) {
-      var nb = { id: i, x: b[0], y: b[1], z: b[2], d: b[3], gold: !!b[4], out: false };
+      var nb = { id: i, x: b[0], y: b[1], z: b[2], d: b[3], gold: !!b[4], lock: b[5]==null?-1:b[5], keyTag: b[6]||0, out: false };
       st.blocks.push(nb); st.occ[key(nb.x, nb.y, nb.z)] = i; st.left++;
     });
     return st;
@@ -340,7 +340,7 @@ var FA = (function () {
   function inside(st, x, y, z) { return x >= 0 && y >= 0 && z >= 0 && x < st.sx && y < st.sy && z < st.sz; }
   // what tapping block id would do: { kind: 'fly', steps } | { kind: 'bump', steps (free cells before the blocker), blocker }
   function look(st, id) {
-    var b = st.blocks[id], v = DIRS[b.d], x = b.x, y = b.y, z = b.z;
+    var b = st.blocks[id];if(b.lock>=0&&!st.blocks[b.lock].out)return {kind:'locked',steps:0,blocker:b.lock};var v = DIRS[b.d], x = b.x, y = b.y, z = b.z;
     for (var k = 1; ; k++) {
       x += v[0]; y += v[1]; z += v[2];
       if (!inside(st, x, y, z)) return { kind: 'fly', steps: k };
@@ -473,7 +473,7 @@ var FA = (function () {
   }
 
   // ---------- levels ----------
-  var LEVEL_SCHEME = 1;
+  var LEVEL_SCHEME = 2;
   function tier(L) { return L <= 5 ? 0 : L <= 15 ? 1 : L <= 40 ? 2 : L <= 100 ? 3 : 4; }
   function levelSpec(L, challenge) {
     var t = tier(L), seed = mix32(Math.imul(L, 0x9E3779B1) ^ (challenge ? 0xC4A11 : 0x7A9A7));
@@ -489,14 +489,15 @@ var FA = (function () {
     var a = arrows(shape, R, spec.hard), blocks = shape.cells.map(function (c, i) { return [c[0], c[1], c[2], a.d[i], 0]; });
     // gold blocks: some of the blocks that start out free-ish (so they're found along the way)
     for (var g = 0; g < spec.gold && blocks.length > 6; g++) blocks[Math.floor(R() * blocks.length)][4] = 1;
+    if(spec.challenge&&!spec.legacy){var pairs=Math.min(5,2+Math.floor(spec.level/8));for(var pi=0;pi<pairs;pi++){var ki=Math.floor((pi+.2)*a.order.length/(pairs+1)),li=Math.min(a.order.length-1,Math.floor((pi+.8)*a.order.length/(pairs+1)));var kid=a.order[ki],lid=a.order[li];if(kid!==lid){blocks[kid][4]=1;blocks[kid][6]=pi+1;blocks[lid][5]=kid;}}}
     var lv = { scheme: LEVEL_SCHEME, level: spec.level, challenge: spec.challenge, kind: spec.kind, sx: shape.sx, sy: shape.sy, sz: shape.sz, blocks: blocks, order: a.order };
-    lv.limit = spec.challenge ? blocks.length + spec.slack : 0;
+    lv.limit = spec.challenge ? blocks.length + (spec.legacy?spec.slack:Math.min(6,3+Math.floor(spec.level/10))) : 0;
     return lv;
   }
-  function newGame(L, challenge) { var lv = build(levelSpec(L, challenge)), st = makeState(lv); st.level = L; st.challenge = !!challenge; st.kind = lv.kind; return st; }
+  function newGame(L, challenge, legacy) { var spec=levelSpec(L,challenge);spec.legacy=!!legacy;var lv = build(spec), st = makeState(lv); st.level = L; st.challenge = !!challenge; st.kind = lv.kind; return st; }
   // replay a saved list of moves: [id] = tap, ['b', id] = bomb
-  function replay(L, challenge, moves) {
-    var st = newGame(L, challenge);
+  function replay(L, challenge, moves, legacy) {
+    var st = newGame(L, challenge, legacy);
     (moves || []).forEach(function (m) { if (Array.isArray(m)) bomb(st, m[1]); else tap(st, m); });
     return st;
   }
@@ -1003,7 +1004,7 @@ var FLRender = (function () {
 
     // ---------- the shape ----------
     var shapeMesh = null, edgeLines = null;
-    var shapeMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fc, roughness: 0.75, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    var shapeMat = new THREE.MeshStandardMaterial({ color: 0xfff6df, roughness: 0.38, metalness: 0.12, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
     var edgeMat = new THREE.LineBasicMaterial({ color: 0xc3cad8 });
     function buildShape() {
       if (shapeMesh) { root.remove(shapeMesh); shapeMesh.geometry.dispose(); root.remove(edgeLines); edgeLines.geometry.dispose(); }
@@ -1347,8 +1348,8 @@ var FARender = (function () {
       x.fillStyle = '#ffffff'; x.fillRect(0, 0, 128, 128);
       var g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.07)');
       x.fillStyle = g; x.fillRect(0, 0, 128, 128);
-      x.strokeStyle = 'rgba(0,0,0,.16)'; x.lineWidth = 6; x.strokeRect(3, 3, 122, 122);
-      x.fillStyle = 'rgba(20,24,40,.78)'; x.strokeStyle = 'rgba(20,24,40,.78)';
+      x.strokeStyle = 'rgba(0,0,0,.22)'; x.lineWidth = 8; x.strokeRect(3, 3, 122, 122);
+      x.strokeStyle='#ffffffbb';x.lineWidth=3;x.strokeRect(9,9,110,110);x.fillStyle = 'rgba(20,24,40,.9)'; x.strokeStyle = 'rgba(20,24,40,.78)';
       x.save(); x.translate(64, 64); x.rotate(rot || 0);
       if (kind === 'arrow') {
         x.lineWidth = 14; x.lineCap = 'round'; x.beginPath(); x.moveTo(0, 34); x.lineTo(0, -14); x.stroke();
@@ -1361,7 +1362,7 @@ var FARender = (function () {
     }
     var TEX = { up: faceTex('arrow', 0), right: faceTex('arrow', Math.PI / 2), down: faceTex('arrow', Math.PI), left: faceTex('arrow', -Math.PI / 2), head: faceTex('head'), tail: faceTex('tail') };
     var DIRS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
-    var geo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    var geo = new THREE.BoxGeometry(0.88, 0.88, 0.88, 4, 4, 4);
     // each face of three's box: which way its texture's u and v run in 3D (worked out from the geometry itself)
     var faceAxes = (function () {
       var pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, out = [];
@@ -1378,21 +1379,22 @@ var FARender = (function () {
       });
       return out;
     })();
+    var pa=geo.attributes.position;for(var gi=0;gi<pa.count;gi++){var vx=pa.getX(gi),vy=pa.getY(gi),vz=pa.getZ(gi),ix=Math.max(-.35,Math.min(.35,vx)),iy=Math.max(-.35,Math.min(.35,vy)),iz=Math.max(-.35,Math.min(.35,vz)),dd=Math.hypot(vx-ix,vy-iy,vz-iz)||1;pa.setXYZ(gi,ix+(vx-ix)/dd*.09,iy+(vy-iy)/dd*.09,iz+(vz-iz)/dd*.09);}geo.computeVertexNormals();
     function materialsFor(d) {
       var D = new THREE.Vector3(DIRS[d][0], DIRS[d][1], DIRS[d][2]);
       return faceAxes.map(function (f) {
         var n = f.N.dot(D), tex;
         if (n > 0.5) tex = TEX.head; else if (n < -0.5) tex = TEX.tail;
         else { var a = D.dot(f.U), b = D.dot(f.V); tex = Math.abs(b) >= Math.abs(a) ? (b > 0 ? TEX.up : TEX.down) : (a > 0 ? TEX.right : TEX.left); }
-        return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+        return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.32, metalness: 0.18 });
       });
     }
     var MATS = [0, 1, 2, 3, 4, 5].map(materialsFor);
-    var meshes = [], slotOf = [], M4 = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), Q0 = new THREE.Quaternion();
+    var marks = [], meshes = [], slotOf = [], M4 = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), Q0 = new THREE.Quaternion();
     var palette = ['#6aa8ff'], colors = [], goldColor = new THREE.Color('#ffc83d');
 
     function blockPos(b, out) { return (out || new THREE.Vector3()).set(b.x - (st.sx - 1) / 2, b.y - (st.sy - 1) / 2, b.z - (st.sz - 1) / 2); }
-    function colorOf(b) { return b.gold ? goldColor : colors[b.id]; }
+    function colorOf(b) { return b.lock>=0&&!st.blocks[b.lock].out?new THREE.Color('#9eaec3'):b.gold ? goldColor : colors[b.id]; }
     function setPalette(p) {
       palette = p;
       if (st) { colors = st.blocks.map(function (b) { return new THREE.Color(palette[(b.id * 7 + (b.x + b.y * 3 + b.z * 5)) % palette.length]); }); paintAll(); kick(); }
@@ -1402,8 +1404,10 @@ var FARender = (function () {
       st.blocks.forEach(function (b) { var s = slotOf[b.id]; meshes[s.d].setColorAt(s.k, colorOf(b)); });
       meshes.forEach(function (m) { if (m.instanceColor) m.instanceColor.needsUpdate = true; });
     }
+    function refreshMarks(){if(!st)return;marks.forEach(function(m){var b=st.blocks[m.userData.id];m.visible=!b.out&&(b.keyTag||b.lock>=0&&!st.blocks[b.lock].out);});paintAll();kick();}
+    function makeMark(b){var cv=document.createElement('canvas');cv.width=128;cv.height=64;var x=cv.getContext('2d');x.fillStyle=b.keyTag?'#ffda78':'#263d56';x.fillRect(0,0,128,64);x.strokeStyle='#fff4d6';x.lineWidth=5;x.strokeRect(3,3,122,58);x.fillStyle=b.keyTag?'#24394c':'#fff4d6';x.font='bold 33px sans-serif';x.textAlign='center';x.fillText((b.keyTag?'K':'L')+(b.keyTag||st.blocks[b.lock].keyTag),64,44);var tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;var m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:true}));m.scale.set(.58,.29,1);m.userData.id=b.id;marks.push(m);root.add(m);}
     function setState(s) {
-      st = s; anims = [];
+      marks.forEach(function(m){root.remove(m);m.material.map.dispose();m.material.dispose();});marks=[];st = s; anims = [];st.blocks.forEach(function(b){if(b.keyTag||b.lock>=0)makeMark(b);});
       meshes.forEach(function (m) { root.remove(m); m.dispose(); });
       meshes = []; slotOf = [];
       var counts = [0, 0, 0, 0, 0, 0];
@@ -1421,7 +1425,7 @@ var FARender = (function () {
       var s = slotOf[b.id], m = meshes[s.d];
       if (!p) m.setMatrixAt(s.k, ZERO);
       else { var sc = scale == null ? 1 : scale; M4.compose(p, Q0, new THREE.Vector3(sc, sc, sc)); m.setMatrixAt(s.k, M4); }
-      m.instanceMatrix.needsUpdate = true;
+      m.instanceMatrix.needsUpdate = true;marks.forEach(function(mark){if(mark.userData.id===b.id){mark.visible=!!p&&(b.keyTag||b.lock>=0&&!st.blocks[b.lock].out);if(p)mark.position.copy(p).add(new THREE.Vector3(.12,.48,.12));}});
     }
     function refresh() { // put every block where the state says (after undo-free replays, restarts)
       st.blocks.forEach(function (b) { setMatrix(b, b.out ? null : blockPos(b)); });
@@ -1569,7 +1573,7 @@ var FARender = (function () {
     }
 
     return {
-      setState: setState, refresh: refresh, resize: resize, redraw: kick, setPalette: setPalette, setMargins: setMargins,
+      setState: setState, refreshMarks:refreshMarks, refresh: refresh, resize: resize, redraw: kick, setPalette: setPalette, setMargins: setMargins,
       reset: function () { home(); kick(); }, onTap: function (cb) { tapCb = cb; },
       blockAt: blockAt, screenOf: screenOf, fly: fly, bump: bump, boom: boom,
       busy: function () { return anims.length > 0; }
@@ -1855,7 +1859,7 @@ var FLApp = (function () {
     { id: 'rainbow', name: 'Rainbow', price: 500, c: ['#ff6b6b', '#ffb84d', '#ffe066', '#6bd98a', '#5fb8ff', '#a88bff'] }
   ];
   var BACKS = [
-    { id: 'day', name: 'Day', price: 0, bg: 'linear-gradient(#dff1ff, #f5fbff)', sw: ['#dff1ff', '#f5fbff'] },
+    { id: 'day', name: 'Day', price: 0, bg: 'radial-gradient(ellipse at 25% 15%,#fff8de 0%,#bce0e2 30%,#739faf 75%,#405d78 100%)', sw: ['#dff1ff', '#f5fbff'] },
     { id: 'meadow', name: 'Meadow', price: 150, bg: 'linear-gradient(#dff7e3, #f6fff2)', sw: ['#cdeed5', '#f6fff2'] },
     { id: 'dusk', name: 'Dusk', price: 150, bg: 'linear-gradient(#ffd6b3, #ffeef2)', sw: ['#ffd6b3', '#ffeef2'] },
     { id: 'blossom', name: 'Blossom', price: 200, bg: 'linear-gradient(#ffdcee, #fff6fb)', sw: ['#ffdcee', '#fff6fb'] },
@@ -1898,14 +1902,14 @@ var FLApp = (function () {
   function start(mode, n, fresh) {
     if (game && !game.done) saveGame();
     var saved = !fresh && store.get(keyFor(mode), null);
-    if (saved && saved.n === n && saved.scheme === FA.LEVEL_SCHEME && !saved.done) game = saved;
+    if (saved && saved.n === n && (saved.scheme === FA.LEVEL_SCHEME || saved.scheme===1) && !saved.done) game = saved;
     else game = { mode: mode, n: n, scheme: FA.LEVEL_SCHEME, moves: [], extra: 0, done: false };
-    st = FA.replay(n, mode === 'challenge', game.moves);
+    st = FA.replay(n, mode === 'challenge', game.moves, game.scheme===1);$('flightRule').hidden=mode!=='challenge';$('flightRule').textContent=game.scheme===1?'Resuming your original challenge':'K1 unlocks L1 · Fly the key out first · 3–6 spare taps';
     if (st.limit) st.limit += game.extra * CONTINUE_MOVES;
     meta.mode = mode; saveMeta();
     disarm();
     R3.setState(st);
-    renderAll();
+    renderAll();fitMargins();
     saveGame();
     if (FA.outOfMoves(st)) setTimeout(outOfMoves, 300);
   }
@@ -1925,9 +1929,10 @@ var FLApp = (function () {
     if (r.kind === 'fly') {
       R3.fly(b); S.fly(); stats.blocks++;
       if (b.gold) { addCoins(5, x, y); stats.gold++; setTimeout(S.gold, 120); }
-    } else { R3.bump(b, r.steps, r.blocker); S.bump(); stats.bumps++; }
+    } else { R3.bump(b, r.steps, r.blocker); S.bump(); stats.bumps++;if(r.kind==='locked')cheer('Find key '+st.blocks[b.lock].keyTag+' first'); }
+    if(R3.refreshMarks)R3.refreshMarks();
     saveStats(); saveGame(); renderInfo();
-    if (FA.won(st)) setTimeout(levelDone, 560);
+    if (FA.won(st)) setTimeout((function(g0){return function(){if(game===g0)levelDone();};})(game), 560);
     else if (FA.outOfMoves(st)) setTimeout(outOfMoves, 480);
   }
   function addCoins(n, x, y) {
@@ -1961,10 +1966,10 @@ var FLApp = (function () {
     gone.forEach(function (id) { if (st.blocks[id].gold) gold++; });
     game.moves.push(['b', b.id]);
     meta.bombs--; stats.bombs++; stats.blocks += gone.length; saveMeta();
-    R3.boom(gone); S.boom();
+    R3.boom(gone);if(R3.refreshMarks)R3.refreshMarks(); S.boom();
     if (gold) { addCoins(5 * gold); stats.gold += gold; }
     saveStats(); saveGame(); renderInfo(); renderTools();
-    if (FA.won(st)) setTimeout(levelDone, 500);
+    if (FA.won(st)) setTimeout((function(g0){return function(){if(game===g0)levelDone();};})(game), 500);
   }
   function buyBomb() { if (meta.coins < BOMB_PRICE) return false; meta.coins -= BOMB_PRICE; meta.bombs++; saveMeta(); S.buy(); renderInfo(); renderTools(); return true; }
 
@@ -1987,8 +1992,8 @@ var FLApp = (function () {
   function finish() { game.done = true; store.del(keyFor(game.mode)); meta.finished++; saveMeta(); }
   function levelDone() {
     if (game.done) return;
-    var n = game.n, mode = game.mode, pay = coinsFor(mode, n), wasCur;
-    finish();
+    if(!FA.won(st))return;var n = game.n, mode = game.mode, pay = coinsFor(mode, n), wasCur;
+    var assisted=game.extra||game.moves.some(function(m){return Array.isArray(m);});var mistakes=st.moves-(st.blocks.length-game.moves.filter(function(m){return Array.isArray(m);}).length);var medal=assisted?1:mistakes===0?3:2;meta.challengeStars=meta.challengeStars||{};if(mode==='challenge')meta.challengeStars[n]=Math.max(meta.challengeStars[n]||0,medal);finish();
     S.win(); cheer(mode === 'challenge' ? 'Challenge done!' : 'Cleared!');
     addCoins(pay);
     if (mode === 'challenge') { wasCur = meta.ch === n; if (wasCur) meta.ch = n + 1; stats.challenges++; }
@@ -1999,7 +2004,7 @@ var FLApp = (function () {
       var btns = [{ label: label, red: true, go: function () { between(function () { start(mode, next, true); }); } }];
       if (mode === 'level' && meta.level > CH_UNLOCK && meta.level - 1 === CH_UNLOCK && wasCur) btns.push({ label: 'Try a challenge', go: function () { between(function () { start('challenge', meta.ch); }); } });
       showCard((mode === 'challenge' ? 'Challenge ' : 'Level ') + n + ' done!', '<span class="coins">' + coinIcon() + '+' + pay + '</span><br>' +
-        fmt(st.blocks.length) + ' blocks in ' + st.moves + ' taps' + (mode === 'level' && meta.level - 1 === CH_UNLOCK && wasCur ? '<br><b>Challenges are open!</b> They have a move limit.' : ''), btns);
+        (mode==='challenge'?'★'.repeat(medal)+' · ':'')+fmt(st.blocks.length) + ' blocks in ' + st.moves + ' taps' + (mode === 'level' && meta.level - 1 === CH_UNLOCK && wasCur ? '<br><b>Challenges are open!</b> They have a move limit.' : ''), btns);
     }, 700);
   }
   function outOfMoves() {
@@ -2026,7 +2031,7 @@ var FLApp = (function () {
 
   // ================= rendering (UI) =================
   function renderInfo() {
-    if (meta.kind === 'lines') { FLApp.render(); return; }
+    if (meta.kind === 'lines') { $('flightRule').hidden=true;FLApp.render(); return; }
     if (!game) return;
     var left = game.mode === 'challenge' ? 'Challenge ' + game.n : 'Level ' + game.n, h;
     h = '<div><div class="lbl">' + left + '</div><div class="ttl">' + (NAMES[st.kind] || 'Shape') + ' · ' + st.left + ' left</div></div>';
@@ -2076,7 +2081,7 @@ var FLApp = (function () {
   }
   function renderChallenges() {
     var cur = meta.ch, maxShown = cur + 9, h = '<p class="lvnext">Each challenge has a move limit. Next up: <b>Challenge ' + cur + '</b></p><div class="lvgrid">';
-    for (var n = 1; n <= maxShown; n++) h += '<button class="lv ' + (n < cur ? 'done' : n === cur ? 'cur' : '') + '" data-n="' + n + '"' + (n > cur ? ' disabled' : '') + '>' + n + '</button>';
+    for (var n = 1; n <= maxShown; n++) h += '<button class="lv ' + (n < cur ? 'done' : n === cur ? 'cur' : '') + '" data-n="' + n + '"' + (n > cur ? ' disabled' : '') + '>' + n + '<small>'+('★★★'.slice(0,(meta.challengeStars||{})[n]||0))+'</small></button>';
     $('chBody').innerHTML = h + '</div>';
   }
   function renderStats() {
@@ -2126,7 +2131,7 @@ var FLApp = (function () {
   }
   // Full screen (1.2.0): the free box for the shape is between the floating counters and the floating toolbar
   function fitMargins() {
-    var H = window.innerHeight, top = $('info').getBoundingClientRect().bottom, bars = document.querySelectorAll('.toolbar'), bot = H;
+    var H = window.innerHeight, top = $('info').getBoundingClientRect().bottom, bars = document.querySelectorAll('.toolbar,.flight-rule:not([hidden])'), bot = H;
     Array.prototype.forEach.call(bars, function (b) { var r = b.getBoundingClientRect(); if (r.height) bot = Math.min(bot, r.top); });
     var m = { top: Math.round(top + 6), bottom: Math.round(H - bot + 8), side: 6 };
     if (R3) R3.setMargins(m); FLApp.setMargins(m);
