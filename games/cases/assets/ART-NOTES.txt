@@ -1,0 +1,8 @@
+Case Closed studio edition. Built-in image generation used for original photographic assets.
+
+Stage prompt: luxury fictional television game show stage, portrait, midnight navy, curved brass architectural ribs, amber spotlights, reflective dark floor, empty center, no text/people/cases or real show branding.
+Closed case prompt: isolated brushed aluminum briefcase, straight front view, chrome reinforced corners, brass clasps, black leather handle, blank front panel, transparent background.
+Open case prompt: open aluminum presentation briefcase, chrome hardware, charcoal velvet interior and blank brass plaque, transparent background, no prize text baked in.
+Characters prompt: two separate fictional portraits, friendly tuxedoed salt-and-pepper-haired male host and anonymous banker silhouette behind amber frosted glass with a telephone.
+
+Artwork converted to WebP, transparent alpha retained. Case numbers and cash amounts remain live SVG text so all game values stay accurate. Main collection icons unchanged.

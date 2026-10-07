@@ -313,6 +313,7 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
   .bigbtn { font-size: 21px; }
 }
 </style>
+<link rel="stylesheet" href="studio.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -875,6 +876,7 @@ var CA = (function () {
   return { caseSVG: caseSVG, openSVG: openSVG, bigInside: bigInside, bigLid: bigLid, banker: banker, host: host, logo: logo, confetti: confetti, svgURL: svgURL };
 })();
 </script>
+<script src="studio-art.js"></script>
 <script>
 /* Case Closed sounds (CS): all synthesized with Web Audio, off by default. The Banker's old desk phone (a bell
    trill, twice), a snare drumroll that swells, the audience cheering (filtered noise and whistles) or groaning (a
@@ -1575,7 +1577,7 @@ var CS = (function () {
     commit();
     window.__ckReady = true;
     Goobs.markPlayed('cases');
-    Goobs.initUpdates({ beforeReload: commit, onVersions: function (v) { $('version').textContent = 'Case Closed ' + (v.cases || '0.1.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
+    Goobs.initUpdates({ beforeReload: commit, onVersions: function (v) { $('version').textContent = 'Case Closed ' + (v.cases || '1.0.0') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
   // hook for automated tests (players never reach it)
   window.__cases = {
