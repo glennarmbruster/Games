@@ -13,3 +13,5 @@
 @media(max-height:550px) and (orientation:landscape){.side .action{display:grid;grid-template-columns:minmax(200px,280px) 135px;gap:5px 10px;align-items:center}.side #instruction{grid-column:1/-1;max-width:none}.side #slingAim{grid-column:1;grid-row:2;padding:7px 12px}.side #fire{grid-column:2;grid-row:2;padding:12px}.side #controls{gap:10px}.side #ammo{max-width:200px}.side #ammo button{padding:9px 10px}.side .anglePresets button{min-height:32px}}
 
 #trajectoryPreview{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}#trajectoryPreview path{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:7 6}#previewShadow{stroke:#14272c;stroke-width:5;opacity:.8}#previewLine{stroke:#ffe4a3;stroke-width:2.5}
+
+body.side[data-sling-background="meadow"] .vignette,body.side[data-sling-background="coast"] .vignette{opacity:.28}

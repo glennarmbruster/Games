@@ -60,18 +60,22 @@ var CastleSling=(function(){
     // Detailed terrain remains behind every hit-tested object.
     var dirtTex=texture(function(x){var grd=x.createLinearGradient(0,0,0,256);grd.addColorStop(0,'#5f654b');grd.addColorStop(.12,'#414b3d');grd.addColorStop(1,'#15292b');x.fillStyle=grd;x.fillRect(0,0,256,256);for(var i=0;i<600;i++){x.fillStyle=i%2?'#998a6826':'#17232655';x.fillRect(R()*256,R()*256,2+R()*12,1+R()*3);}});dirtTex.wrapS=T.RepeatWrapping;dirtTex.repeat.set(14,1);
     var ground=mesh(new T.BoxGeometry(100,80,5),new T.MeshStandardMaterial({color:0x273b35,roughness:1}),0,-40.06,-.5);
-    mesh(new T.BoxGeometry(100,3.2,.06),new T.MeshStandardMaterial({map:dirtTex,roughness:1}),0,-1.65,2.02);
-    mesh(new T.BoxGeometry(100,.12,5.02),new T.MeshStandardMaterial({color:0x7e8a57,roughness:1}),0,-.08,-.5);
+    var soil=mesh(new T.BoxGeometry(100,3.2,.06),new T.MeshStandardMaterial({map:dirtTex,roughness:1}),0,-1.65,2.02);
+    var turf=mesh(new T.BoxGeometry(100,.12,5.02),new T.MeshStandardMaterial({color:0x7e8a57,roughness:1}),0,-.08,-.5);
     var grassMat=new T.MeshStandardMaterial({color:0x829465,roughness:1,side:T.DoubleSide}),flowerMat=new T.MeshStandardMaterial({color:0xcdbb84,roughness:1});
     for(var i=0;i<160;i++){var x=-35+R()*75,y=R()*.07,z=-.9-R()*2;var tuft=mesh(new T.ConeGeometry(.055+R()*.09,.22+R()*.3,3),grassMat,x,y+.12,z);tuft.rotation.z=(R()-.5)*.7;if(i%9===0)mesh(new T.SphereGeometry(.055,6,4),flowerMat,x,y+.32,z);}
     var rockMat=new T.MeshStandardMaterial({color:0x788074,roughness:1});for(var j=0;j<55;j++){var rock=mesh(new T.DodecahedronGeometry(.1+R()*.22,0),rockMat,-35+R()*75,-.24-R()*2.8,2.1);rock.scale.set(1.8,.55,.55);}
     // Dimensional broadleaf trees and layered pines at the edges of the playing field.
     var leaves=[0x405d49,0x536d4b,0x738456].map(c=>new T.MeshStandardMaterial({color:c,roughness:1,flatShading:true}));
     [-26,-22,-19,15,19,24,29].forEach(function(x,i){var h=2.7+R()*2.4,z=-5-R()*3;mesh(new T.CylinderGeometry(.13,.22,h*.75,7),wood,x,h*.35,z);for(var k=0;k<6;k++){var crown=mesh(new T.IcosahedronGeometry(.65+R()*.55,1),leaves[k%3],x+(R()-.5)*1.3,h*.55+R()*h*.4,z+(R()-.5)*.8);crown.scale.y=.9;} });
-    var loader=new T.TextureLoader();var backdropTex=loader.load('assets/sling-valley-v1.webp');backdropTex.colorSpace=T.SRGBColorSpace;
-    var backdrop=mesh(new T.PlaneGeometry(100,66.667),new T.MeshBasicMaterial({map:backdropTex,depthWrite:false,fog:false}),0,13,-45);backdrop.castShadow=false;backdrop.receiveShadow=false;
+    var loader=new T.TextureLoader(),textures={},loaded={},selected='valley';
+    var backdrop=mesh(new T.PlaneGeometry(100,66.667),new T.MeshBasicMaterial({depthWrite:false,fog:false}),0,13,-45);backdrop.castShadow=false;backdrop.receiveShadow=false;
+    var lightDirt=texture(function(x){var grd=x.createLinearGradient(0,0,0,256);grd.addColorStop(0,'#a9a17f');grd.addColorStop(1,'#76836b');x.fillStyle=grd;x.fillRect(0,0,256,256);for(var i=0;i<450;i++){x.fillStyle=i%2?'#e1d6ab55':'#65755744';x.fillRect(R()*256,R()*256,2+R()*12,1+R()*3);}});lightDirt.wrapS=T.RepeatWrapping;lightDirt.repeat.set(14,1);
+    function applyBackground(){if(!loaded[selected])return;backdrop.material.map=textures[selected];backdrop.material.needsUpdate=true;var light=selected!=='valley';ground.material.color.setHex(light?(selected==='coast'?0x9aa58a:0x81966d):0x273b35);soil.material.map=light?lightDirt:dirtTex;soil.material.needsUpdate=true;turf.material.color.setHex(light?0xa5b87d:0x7e8a57);grassMat.color.setHex(light?0xabc586:0x829465);g.userData.background=selected;}
+    ['valley','meadow','coast'].forEach(function(key){textures[key]=loader.load('assets/sling-'+key+'-v1.webp',function(){loaded[key]=true;applyBackground();});textures[key].colorSpace=T.SRGBColorSpace;});
+    function setBackground(key){selected=['valley','meadow','coast'].includes(key)?key:'valley';applyBackground();}
     scene.add(g);
-    return {group:g,fire:function(){motion=0;stone.visible=false;},update:function(angle,loaded,dt){motion=Math.min(1,motion+(dt||0)*2.8);arm.rotation.z=loaded?0:Math.sin(motion*Math.PI)*.9;stone.visible=loaded;pouch.visible=true;}};
+    return {group:g,setBackground:setBackground,fire:function(){motion=0;stone.visible=false;},update:function(angle,loaded,dt){motion=Math.min(1,motion+(dt||0)*2.8);arm.rotation.z=loaded?0:Math.sin(motion*Math.PI)*.9;stone.visible=loaded;pouch.visible=true;}};
   }
   return {predict:predict,angleTo:angleTo,level:level,constrain:constrain,fire:fire,blast:blast,rig:rig};
 })();
