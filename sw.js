@@ -3,7 +3,7 @@
    version of the part that changed; unchanged parts are not downloaded again. */
 const VERSIONS = {
   shell: '2.97.0',     // menu, manifest, icons, /shared (ads, themes, storage)
-  zoodoku: '1.9.0',
+  zoodoku: '1.10.0',
   woodpile: '1.3.0',
   patchwork: '3.0.1',
   cubecorral: '4.0.0',
@@ -49,7 +49,7 @@ const VERSIONS = {
   sudoku: '0.2.0',
   wordwheel: '0.3.0',
   trivia: '0.3.0',
-  links: '0.2.0',
+  links: '0.3.0',
   bowling: '0.3.0',
   deck: '0.3.1',
   wordboard: '0.1.2',
@@ -78,7 +78,7 @@ const GROUPS = {
     'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
     'shared/goobs.js', 'shared/goobs.css', 'shared/collection.css', 'shared/ads.js', 'shared/animals.svg'
   ],
-  zoodoku: ['games/zoodoku/', 'games/zoodoku/index.html'],
+  zoodoku: ['games/zoodoku/modern.css', 'games/zoodoku/', 'games/zoodoku/index.html'],
   woodpile: ['games/woodpile/modern.css', 'games/woodpile/', 'games/woodpile/index.html'],
   patchwork: ['games/patchwork/', 'games/patchwork/assets/alpine-v1.webp', 'games/patchwork/assets/canal-v1.webp', 'games/patchwork/assets/rail-v1.webp', 'games/patchwork/assets/reef-v1.webp', 'games/patchwork/gallery.js', 'games/patchwork/index.html', 'games/patchwork/studio.css'],
   cubecorral: ['games/cubecorral/', 'games/cubecorral/index.html', 'games/cubecorral/sculptures.js', 'games/cubecorral/gallery-levels.js', 'games/cubecorral/details.js', 'games/cubecorral/details.css'],
@@ -122,7 +122,7 @@ const GROUPS = {
   sudoku: ['games/sudoku/modern.css', 'games/sudoku/', 'games/sudoku/index.html'],
   wordwheel: ['games/wordwheel/', 'games/wordwheel/index.html', 'games/wordwheel/assets/coast-v1.webp', 'games/wordwheel/assets/mountains-v1.webp', 'games/wordwheel/assets/dunes-v1.webp', 'games/wordwheel/assets/hills-v1.webp', 'games/wordwheel/assets/wood-v1.webp'],
   trivia: ['games/trivia/', 'games/trivia/index.html', 'games/trivia/assets/quiet-cove-v1.webp', 'games/trivia/assets/coastal-dunes-v1.webp', 'games/trivia/assets/misty-headland-v1.webp', 'games/trivia/assets/harbor-dusk-v1.webp'],
-  links: ['games/links/', 'games/links/index.html'],
+  links: ['games/links/modern.css', 'games/links/', 'games/links/index.html'],
   bowling: ['games/bowling/', 'games/bowling/index.html', 'games/bowling/assets/lane-grain-v1.webp'],
   deck: ['games/deck/', 'games/deck/index.html', 'games/deck/assets/teak-v1.webp', 'games/deck/assets/maritime-sky-v1.webp'],
   wordboard: ['games/wordboard/', 'games/wordboard/index.html', 'games/wordboard/assets/wood-v1.webp'],

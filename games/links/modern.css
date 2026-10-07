@@ -1,0 +1,39 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Color Link: dark instrument panel with luminous, clearly separated paths. */
+:root{--accent:#356f9d;--accent-2:#28577e;--cl-bg:#101c2c;--cl-panel:#1b2b40;--cl-line:rgba(174,203,232,.22)}
+:root[data-theme="dark"]{--cl-bg:#101721;--cl-panel:#1d2938;--accent:#78b9db;--accent-2:#6aa3ce;--accent-ink:#102637}
+:root[data-theme="blue"]{--cl-bg:#0c1b30;--cl-panel:#183450;--accent:#9dcff1;--accent-2:#7cb8de;--accent-ink:#102637}
+body{background:linear-gradient(160deg,var(--cl-panel),transparent 78%),var(--cl-bg);background-attachment:fixed}
+.cnt{background:rgba(178,207,233,.075);border:1px solid var(--cl-line);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.055)}
+.cnt b{font-weight:650;letter-spacing:-.4px}.cnt span{color:#b9ccdd;font-size:10px;letter-spacing:1.15px;font-weight:600}.cnt.good b{color:#a1e9bd}
+.clhud .ggpill{font-weight:650;border:1px solid var(--polish-line);border-radius:12px}
+#cv{border-radius:14px;box-shadow:0 14px 36px -12px rgba(0,0,0,.45),0 0 0 1px rgba(177,209,241,.2)}
+.tbtn{border:1px solid var(--cl-line);background:linear-gradient(155deg,rgba(203,226,249,.08),transparent),var(--cl-panel);border-radius:13px;box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 4px 12px rgba(0,0,0,.1);font-weight:600;color:#eef6ff}
+.tbtn svg{width:22px;height:22px}.tbtn.glow{color:#ffe09d;border-color:rgba(225,184,103,.42);background:rgba(183,143,62,.14)}
+.tbtn:disabled{opacity:.4}.packtabs button{font-weight:650;border:1px solid var(--polish-line);border-radius:11px}
+.packtabs button.on,.packtabs button.on small{color:var(--accent-ink)}
+.lvgrid button{font-weight:650;border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint)}
+:root[data-theme="dark"] .lvgrid button.done,:root[data-theme="blue"] .lvgrid button.done{background:#234b40;color:#bcf0d2}
+:root[data-theme="dark"] .lvgrid button.perfect,:root[data-theme="blue"] .lvgrid button.perfect{background:#50452c;color:#ffe4a6}
+.making{color:#d9e8f5;font-weight:650}

@@ -1,0 +1,40 @@
+/* Modern bundle finish. Local to this game; no shared-kit overrides. */
+:root{--font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;--round:var(--font);--polish-bg:#f1f4f7;--polish-light:rgba(255,255,255,.82);--polish-line:rgba(32,52,78,.14);--polish-shadow:0 12px 32px -18px rgba(15,35,60,.35);--polish-glint:rgba(255,255,255,.75)}
+:root[data-theme="dark"]{--polish-bg:#141a24;--polish-light:rgba(41,50,65,.62);--polish-line:rgba(200,218,242,.19);--polish-glint:rgba(255,255,255,.09);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+:root[data-theme="blue"]{--polish-bg:#0d2037;--polish-light:rgba(36,66,99,.6);--polish-line:rgba(167,205,245,.22);--polish-glint:rgba(209,231,255,.11);--polish-shadow:0 14px 34px -16px rgba(0,0,0,.65)}
+body{background:linear-gradient(160deg,var(--polish-light),transparent 65%),var(--polish-bg);background-attachment:fixed}
+body::before{opacity:.16}
+button{-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.top .brand h1{font-weight:750;letter-spacing:-.6px}
+.iconbtn,.ggpill{border:1px solid var(--polish-line);box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 10px rgba(20,35,55,.05)}
+.modes{border:1px solid var(--polish-line);padding:3px;background:var(--surface-2)}
+.modes button{font-weight:650;letter-spacing:.05px}
+.modes button.on{box-shadow:0 2px 6px rgba(20,35,55,.1),inset 0 1px 0 var(--polish-glint)}
+.info{border-bottom:1px solid var(--polish-line);padding-bottom:5px}
+.info .lbl{font-size:10px;letter-spacing:1.5px;font-weight:750}
+.info .big{font-weight:650;letter-spacing:-1px}
+.tool,.cbtn,.stool,.pad button{box-shadow:inset 0 1px 0 var(--polish-glint),0 3px 9px rgba(15,32,53,.07)}
+.tool,.cbtn{border-color:var(--polish-line)}
+.sheet,.endcard,.card{border:1px solid var(--polish-line);box-shadow:0 24px 70px rgba(9,22,42,.24)}
+.sheet h2,.card h2{letter-spacing:-.5px;font-weight:750}
+.toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* Zoodoku: a clean ceramic playing surface around the original region palette. */
+:root{--accent:#426f68;--accent-2:#30564f;--polish-bg:#eef3ef;--zoo-frame:#d3ded7}
+:root[data-theme="dark"]{--accent:#a0d2bc;--accent-2:#82b7a5;--accent-ink:#18332b;--polish-bg:#17231f;--zoo-frame:#587668}
+:root[data-theme="blue"]{--accent:#acd5e6;--accent-2:#82b8d0;--accent-ink:#153243;--polish-bg:#142738;--zoo-frame:#63849b}
+.board{box-shadow:0 14px 32px -18px rgba(20,45,33,.4),0 0 0 1px var(--zoo-frame);border-radius:15px}
+:root[data-theme="dark"] .board,:root[data-theme="blue"] .board{box-shadow:0 14px 32px -18px rgba(0,0,0,.6),0 0 0 1px var(--zoo-frame)}
+.cell{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(21,41,32,.09);border-radius:10%}
+.cell svg.an{width:84%;height:84%;filter:drop-shadow(0 2px 1px rgba(22,40,29,.17))}
+.cell.hl-target::before{border-width:3px;box-shadow:0 0 0 2px rgba(255,255,255,.65)}
+.levelbar .lvinfo{border-radius:13px;border-color:var(--polish-line);background:linear-gradient(155deg,var(--polish-glint),transparent),var(--surface);box-shadow:0 3px 10px rgba(21,43,31,.05)}
+.levelbar .lvl{font-weight:700;letter-spacing:-.45px}.levelbar .sub{font-weight:500}
+.levelbar .daily{border-radius:13px;color:var(--accent-ink);box-shadow:0 5px 15px -10px var(--accent)}
+.levelbar .daily.done{background:#32755a;color:#fff}
+.status{gap:12px}.timer{border:1px solid var(--polish-line);font-size:15px;font-weight:600;background:var(--surface);border-radius:9px}
+.hearts svg.full{fill:#cf6370}.msg{font-weight:450}.msg.hint{border-radius:12px;border-left-color:var(--accent)}
+.sizes button,.practice button{border:1px solid var(--polish-line);border-radius:11px;box-shadow:inset 0 1px 0 var(--polish-glint)}
+.sizes button.on,.sizes button.on small,.lv.cur{color:var(--accent-ink)}
+.tool{border-radius:13px}.stable td{font-weight:600}.stable th{letter-spacing:.6px;font-weight:650}

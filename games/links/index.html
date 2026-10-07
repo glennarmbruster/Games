@@ -111,6 +111,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .endstars { font-size: 34px; color: #f5b301; letter-spacing: 4px; line-height: 1; margin: -2px 0 6px; }
 .endstars i { font-style: normal; color: #d7dbe6; }
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -829,17 +830,17 @@ function clMaker() {
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
     cx.clearRect(0, 0, side, side);
     // board and grid
-    rr(0.5, 0.5, side - 1, side - 1, Math.min(14, cs * 0.3)); cx.fillStyle = '#0c0e22'; cx.fill();
+    rr(0.5, 0.5, side - 1, side - 1, Math.min(14, cs * 0.3)); var boardTone=cx.createLinearGradient(0,0,side,side);boardTone.addColorStop(0,'#142536');boardTone.addColorStop(1,'#0a1421');cx.fillStyle=boardTone;cx.fill();
     cx.strokeStyle = 'rgba(255,255,255,.13)'; cx.lineWidth = 1; cx.stroke();
     cx.beginPath();
     for (var q = 1; q < n; q++) { var p = Math.round(q * cs) + 0.5; cx.moveTo(p, 2); cx.lineTo(p, side - 2); cx.moveTo(2, p); cx.lineTo(side - 2, p); }
-    cx.strokeStyle = 'rgba(255,255,255,.09)'; cx.stroke();
+    cx.strokeStyle = 'rgba(172,201,229,.16)'; cx.stroke();
     // squares under a pipe take a soft tint of its color (stronger once the pair is linked)
     var gl = winAnim ? Math.max(0, 1 - (now - winAnim) / 900) : 0;
     g.paths.forEach(function (pth, k) {
       if (pth.length < 2) return;
       var done = complete(k, pth);
-      cx.fillStyle = hexA(L.color[k], (done ? 0.26 : 0.17) + gl * 0.3);
+      cx.fillStyle = hexA(L.color[k], (done ? 0.19 : 0.11) + gl * 0.3);
       pth.forEach(function (v) { cx.fillRect(Math.round((v % n) * cs) + 1, Math.round(((v / n) | 0) * cs) + 1, Math.round(cs) - 1, Math.round(cs) - 1); });
     });
     // the pipes
@@ -848,7 +849,10 @@ function clMaker() {
       if (pth.length < 2) return;
       cx.beginPath();
       pth.forEach(function (v, j) { var c = ctr(v); if (j) cx.lineTo(c[0], c[1]); else cx.moveTo(c[0], c[1]); });
-      cx.strokeStyle = L.color[k]; cx.lineWidth = cs * 0.34; cx.stroke();
+      // A dark edge separates neighboring colors; the center stays the true puzzle color.
+      cx.strokeStyle='rgba(0,0,0,.36)';cx.lineWidth=cs*.40;cx.stroke();
+      cx.strokeStyle=L.color[k];cx.lineWidth=cs*.30;cx.stroke();
+      cx.strokeStyle='rgba(255,255,255,.14)';cx.lineWidth=cs*.07;cx.stroke();
     });
     // the drawing head: a soft halo so a finger can see where the pipe is
     if (drag && drag.cur.length) {
@@ -861,8 +865,10 @@ function clMaker() {
       L.ends[k].forEach(function (v) {
         var c = ctr(v);
         if (done2) { cx.beginPath(); cx.arc(c[0], c[1], cs * 0.44, 0, Math.PI * 2); cx.fillStyle = hexA(L.color[k], 0.28 + gl * 0.4); cx.fill(); }
-        cx.beginPath(); cx.arc(c[0], c[1], cs * 0.34, 0, Math.PI * 2); cx.fillStyle = L.color[k]; cx.fill();
-        cx.beginPath(); cx.arc(c[0] - cs * 0.09, c[1] - cs * 0.1, cs * 0.12, 0, Math.PI * 2); cx.fillStyle = 'rgba(255,255,255,.28)'; cx.fill();
+        cx.beginPath();cx.arc(c[0],c[1]+cs*.025,cs*.36,0,Math.PI*2);cx.fillStyle='rgba(0,0,0,.38)';cx.fill();
+        cx.beginPath();cx.arc(c[0],c[1],cs*.33,0,Math.PI*2);cx.fillStyle=L.color[k];cx.fill();
+        var gloss=cx.createLinearGradient(c[0],c[1]-cs*.33,c[0],c[1]+cs*.33);gloss.addColorStop(0,'rgba(255,255,255,.30)');gloss.addColorStop(.48,'rgba(255,255,255,0)');gloss.addColorStop(1,'rgba(0,0,0,.16)');cx.fillStyle=gloss;cx.fill();
+        cx.strokeStyle='rgba(255,255,255,.27)';cx.lineWidth=Math.max(.8,cs*.018);cx.stroke();
         if (g.hinted[k]) { cx.beginPath(); cx.arc(c[0], c[1], cs * 0.2, 0, Math.PI * 2); cx.strokeStyle = 'rgba(255,255,255,.85)'; cx.lineWidth = Math.max(1.5, cs * 0.05); cx.stroke(); }
         if (settings.letters) {
           cx.fillStyle = 'rgba(10,12,30,.78)'; cx.font = '800 ' + Math.round(cs * 0.36) + 'px -apple-system, system-ui, sans-serif';
