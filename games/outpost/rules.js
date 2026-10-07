@@ -26,21 +26,21 @@ function OP_FACTORY() {
   var W = 9, H = 17;        // the battlefield (world units)
   var CAP = 63;             // a tower's top number ("Max")
   var FORT_CAP = 99;        // a fort's top number (a level may raise it, e.g. 120)
-  var SPEED = [1.45, 0.95, 2.1, 1.05]; // units a second: soldier, tank (slower), paratrooper (flies), rust bot (the horde, 0.4.0)
+  var SPEED = [1.05, 0.68, 1.5, 0.75]; // units a second: soldier, tank (slower), paratrooper (flies), rust bot (the horde, 0.4.0)
   var HP = [1, 2, 1, 1];    // a tank counts as 2 soldiers
   var HORDE = 5, NOWN = 6;  // owner 5: the horde of an event level (0.4.0); owners 0-5
   var BOSS_EDGE = 1.0, BOSS_CAP = 300, BOSS_GROW = 2.6; // the boss citadel: big, a huge number, grows slowly (s per +1)
   var MAXU = 1400;          // past this many troops a gate makes stronger troops instead of more (keeps the page smooth)
   var EDGE = 0.42;          // troops leave / arrive at this distance from a building's middle
   var FORT_EDGE = 0.9;      // a fort is about 4x the footprint
-  var GROW_IDLE = 0.9;      // seconds per +1 for a tower with no outgoing lines (the original: idle towers level faster)
+  var GROW_IDLE = 1.95;      // seconds per +1 for a tower with no outgoing lines (the original: idle towers level faster)
   var GROW_SEND = Infinity; // sending suspends natural growth (kept in the public rules interface)
-  var SEND_LO = 0.62, SEND_HI = 0.4; // seconds between two troops on one line, at 0 and at 63 (bigger towers send faster)
+  var SEND_LO = 1.35, SEND_HI = 0.90; // seconds between two troops on one line, at 0 and at 63 (bigger towers send faster)
   var TANK_GAP = 2.0, PARA_GAP = 1.2; // a factory sends a tank every 2 soldier-gaps (same strength per second), a fort a paratrooper every 1.2
   var CLASH = 0.16;         // two opposing troops closer than this fight
   var START_CAP = 1;        // a captured tower starts with the troop that took it
-  var SNIPE_R = [2.0, 2.5, 3.0], SNIPE_GAP = [1.2, 0.95, 0.75]; // sniper range / seconds per shot below 10, 10-29, 30+
-  var ROCKET_DMG = 3, ROCKET_SPEED = 5.5, ROCKET_LO = 1.5, ROCKET_HI = 0.7; // rocket: -3, flies 5.5/s, one every 1.5 s at 0 -> 0.7 s at 63 (faster than any line)
+  var SNIPE_R = [2.0, 2.5, 3.0], SNIPE_GAP = [2.64, 2.09, 1.65]; // sniper range / seconds per shot below 10, 10-29, 30+
+  var ROCKET_DMG = 3, ROCKET_SPEED = 5.5, ROCKET_LO = 3.3, ROCKET_HI = 1.54; // rocket: -3, flies 5.5/s, one every 3.3 s at 0 -> 1.54 s at 63 (faster than any line)
   var MINE_TRIG = 0.32, MINE_R = 0.6, MINE_RE = 12; // a mine goes off when a troop passes this close, kills troops within MINE_R, re-arms after 12 s
   var GOLD_R = 0.5, GOLD_BOOST = 15, GOLD_COIN = 10; // gold bar pick-up distance; the sender grows twice as fast for 15 s; +10 gold for you
   var BOOST = 2;            // growth speed-up while boosted
@@ -705,7 +705,7 @@ function OP_FACTORY() {
     function canStart(S) { return S.links.length < slots(S.n, S.type); }
     function growRate(X) { return X.o && X.n < X.cap && !X.links.length ? (X.type === 'X' ? 1 / BOSS_GROW : (X.boost > s.t ? BOOST : 1) / GROW_IDLE) * s.prod[X.o] : 0; }
     function others(arr, a, b) { var v = 0; for (var q = 1; q < NOWN; q++) if (q !== a && q !== b) v += arr[q]; return v; }
-    var patience = P.patience || 35, acts = [];
+    var patience = (P.patience || 35) * 2.2, acts = [];
     // how long (s) until X falls to what owner o sends at it with an extra delivery rate `add` (Infinity: never)
     function fallTime(X, add, once) {
       var i2 = X.i, gain = growRate(X) + (X.o ? inR[i2][X.o] : 0), hit = inR[i2][o] + add + others(inR[i2], o, X.o);
@@ -750,7 +750,7 @@ function OP_FACTORY() {
       }
       if (tBest > patience) continue;
       S = cands[0];
-      var sc = 62 - dist(S, X) * 2.2 - tBest * 0.5 - (k2 - 1) * 3 + (X.o ? (P.attackBias || 0) + (X.n < 6 ? 8 : 0) : (P.expand || 0)) + (X.type !== 'b' ? 3 : 0);
+      var sc = 62 - dist(S, X) * 2.2 - tBest * 0.23 - (k2 - 1) * 3 + (X.o ? (P.attackBias || 0) + (X.n < 6 ? 8 : 0) : (P.expand || 0)) + (X.type !== 'b' ? 3 : 0);
       acts.push({ sc: sc, k: 'link', a: S.i, b: X.i });
     }
     // 3. cut lines that no longer pay: attacks that can't win (they stop the tower's growth and hold a slot), help

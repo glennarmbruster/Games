@@ -6,10 +6,11 @@ const types={b:'Barracks',f:'Tank factory',s:'Guard tower',r:'Rocket battery',F:
 const meta=Object.assign({level:1,open:1,stars:{},best:{},gold:0,up:{},finished:0,tips:{},ms:{},mbest:{}},store.get('meta',{})||{});
 meta.open=Math.max(1,meta.open|0);meta.level=Math.max(1,Math.min(meta.open,meta.level|0));meta.stars||={};meta.best||={};meta.up||={};
 const prefs=Object.assign({sound:true,speed:1},store.get('rushPrefs',{})||{});
+if(prefs.pacingVersion!=='2.1'){prefs.speed=1;prefs.pacingVersion='2.1';}
 const stats=Object.assign({tries:0,wins:0,losses:0,captured:0,lost:0,sent:0,links:0,cuts:0,goldEarned:0,playSec:0,upgrades:0,goldSpent:0},store.get('stats',{})||{});
 function save(){store.set('meta',meta);store.set('stats',stats);store.set('rushPrefs',prefs);}
 let basePosition,baseCamera,scene,sim,level,no=meta.level,state='ready',selected=-1,drag=null,last=0,acc=0,hudTick=0,toastTimer,loadToken=0,resultTimer,started=false;
-let cached=store.get('rushGenerated',{})||{},worker,pending=new Map();
+let cached=store.get('rushGenerated21',{})||{},worker,pending=new Map();
 const cvs=$('battle'),ink=$('ink'),ctx=ink.getContext('2d');
 const clock=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
 const paused=()=>!$('sheet').hidden||document.hidden||state!=='play';
@@ -40,12 +41,12 @@ function armory(){
 }
 async function getLevel(n){
  if(n<=levels.length)return levels[n-1];if(cached[n])return cached[n];
- if(!worker){worker=new Worker('generator.js');worker.onmessage=e=>{const {n,level,error}=e.data,p= pending.get(n);if(!p)return;pending.delete(n);if(error)p.reject(Error(error));else{cached[n]=level;const keys=Object.keys(cached);if(keys.length>8)delete cached[keys[0]];store.set('rushGenerated',cached);p.resolve(level);}};worker.onerror=e=>{for(const p of pending.values())p.reject(Error(e.message));pending.clear();worker.terminate();worker=null;};}
+ if(!worker){worker=new Worker('generator.js');worker.onmessage=e=>{const {n,level,error}=e.data,p= pending.get(n);if(!p)return;pending.delete(n);if(error)p.reject(Error(error));else{cached[n]=level;const keys=Object.keys(cached);if(keys.length>8)delete cached[keys[0]];store.set('rushGenerated21',cached);p.resolve(level);}};worker.onerror=e=>{for(const p of pending.values())p.reject(Error(e.message));pending.clear();worker.terminate();worker=null;};}
  return new Promise((resolve,reject)=>{pending.set(n,{resolve,reject});worker.postMessage(n);});
 }
 async function start(n,play=false){
  const token=++loadToken;clearTimeout(resultTimer);clearDrag();selected=-1;state='loading';$('loading').hidden=false;$('loading').textContent=n>levels.length?'Building your next battlefield…':'Preparing the battlefield…';$('sheet').hidden=true;
- try{const L=await getLevel(n);if(token!==loadToken)return;no=n;level=L;sim=OP.create(L,{seed:n*4729+11,ai:OP.cpuAI(L),up:meta.up});scene.setLevel(L,sim);acc=0;started=play;state=play?'play':'ready';meta.level=n;if(play)stats.tries++;save();$('levelTag').textContent='OPERATION '+String(n).padStart(2,'0');$('regionName').textContent=names[L.region||0];S.setRegion(L.region||0);resize();hud();status();$('loading').hidden=true;if(!play)menu(true);else if(n<=4)toast(['','Connect your blue tower to a neutral outpost.','Swipe across the blue line to cut it.','A tower with 30 troops can send along three lines.','Connect to your own tower to reinforce it.'][n]);}
+ try{const L=await getLevel(n);if(token!==loadToken)return;no=n;level=n<=levels.length?{...L,target:Math.round((L.target||60)*2.2)}:L;sim=OP.create(L,{seed:n*4729+11,ai:OP.cpuAI(L),up:meta.up});scene.setLevel(L,sim);acc=0;started=play;state=play?'play':'ready';meta.level=n;if(play)stats.tries++;save();$('levelTag').textContent='OPERATION '+String(n).padStart(2,'0');$('regionName').textContent=names[L.region||0];S.setRegion(L.region||0);resize();hud();status();$('loading').hidden=true;if(!play)menu(true);else if(n<=4)toast(['','Connect your blue tower to a neutral outpost.','Swipe across the blue line to cut it.','A tower with 30 troops can send along three lines.','Connect to your own tower to reinforce it.'][n]);}
  catch(e){if(token!==loadToken)return;$('loading').textContent='This battlefield could not load. Reload to try again.';console.error(e);}
 }
 function resize(){const r=cvs.getBoundingClientRect(),desktop=r.width>760&&r.height>480,left=desktop?300:12,right=desktop?30:12,top=r.height<480?65:99,bottom=r.height<480?68:105;scene.camera.position.copy(basePosition);scene.camera.quaternion.copy(baseCamera);if(r.width/r.height>1.7&&r.height<600){scene.camera.position.set(basePosition.z,basePosition.y,0);scene.camera.lookAt(0,0,0);}scene.camera.updateMatrixWorld(true);scene.resize(r.width-left-right,r.height,{top,bottom,side:12}); // Offset the camera framing without squeezing the canvas.

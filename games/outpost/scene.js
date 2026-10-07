@@ -69,13 +69,26 @@ var OPScene = (function () {
     var camera = new T.OrthographicCamera(-5, 5, 5, -5, 0.1, 200);
     var CD = 60; camera.position.set(0, Math.sin(PITCH) * CD, Math.cos(PITCH) * CD); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
     var hemi = new T.HemisphereLight(0xf4fbff, 0x5d8f45, 1.55); scene.add(hemi);
-    var sun = new T.DirectionalLight(0xfff4e0, 1.9); sun.position.set(-6, 14, 8); scene.add(sun); sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+    var sun = new T.DirectionalLight(0xfff4e0, 1.9); sun.position.set(-6, 14, 8); scene.add(sun); sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
     Object.assign(sun.shadow.camera,{left:-11,right:11,top:14,bottom:-14,near:1,far:40});sun.shadow.bias=-.001;sun.shadow.normalBias=.04;sun.shadow.camera.updateProjectionMatrix();
 
     // ---------------- ground per region ----------------
     var groundTex = REG.map(function (g, ri) {
       var t = ctex(512, 512, function (x, w, h) {
         x.fillStyle = g.ground[0]; x.fillRect(0, 0, w, h); var c = g.ground[1];
+        // Broad, seamless tonal patches beneath fine terrain grain.
+        for(var patch=0;patch<65;patch++){
+          var px=rnd(0,w),py=rnd(0,h),pr=rnd(24,100);
+          for(var ox=-1;ox<=1;ox++)for(var oy=-1;oy<=1;oy++){
+            var gx=px+ox*w,gy=py+oy*h,grad=x.createRadialGradient(gx,gy,0,gx,gy,pr);
+            grad.addColorStop(0,patch%2?'rgba(255,245,201,.13)':'rgba(40,75,48,.08)');grad.addColorStop(1,'rgba(0,0,0,0)');
+            x.fillStyle=grad;x.fillRect(gx-pr,gy-pr,pr*2,pr*2);
+          }
+        }
+        if(ri===0||ri===4||ri===5){
+          for(var blade=0;blade<9000;blade++){var bx=rnd(0,w),by=rnd(0,h);x.strokeStyle=blade%2?'rgba(246,255,214,.12)':'rgba(38,85,40,.10)';x.lineWidth=.6;x.beginPath();x.moveTo(bx,by);x.lineTo(bx+rnd(-1.5,1.5),by-rnd(1,4));x.stroke();}
+        }
+
         for (var i = 0; i < 1800; i++) { var l = rnd(0.96, 1.04); x.fillStyle = 'rgba(' + Math.round(c[0] * l) + ',' + Math.round(c[1] * l) + ',' + Math.round(c[2] * l) + ',.45)'; if (ri === 1) x.fillRect(rnd(0, w), rnd(0, h), rnd(6, 16), rnd(1, 2)); else x.fillRect(rnd(0, w), rnd(0, h), rnd(2, 5), rnd(2, 6)); }
         if (ri === 2) for (var k = 0; k < 160; k++) { x.fillStyle = 'rgba(255,255,255,.8)'; x.fillRect(rnd(0, w), rnd(0, h), 2, 2); }
         if (ri === 3) { // glowing cracks in the basalt
@@ -88,7 +101,7 @@ var OPScene = (function () {
       });
       t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(20, 20); return t;
     });
-    var groundM = new T.MeshLambertMaterial({ map: groundTex[0] });
+    var groundM = new T.MeshStandardMaterial({ map: groundTex[0],roughness:.94,metalness:0 });
     var ground = new T.Mesh(new T.PlaneGeometry(120, 120), groundM); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; scene.add(ground); ground.receiveShadow=true;
     var fieldTex = REG.map(function (g) { return ctex(64, 512, function (x, w, h) { for (var i = 0; i < 12; i++) { x.fillStyle = i % 2 ? g.stripe[0] : g.stripe[1]; x.fillRect(0, i * h / 12, w, h / 12); } }); });
     var fieldM = new T.MeshBasicMaterial({ map: fieldTex[0], transparent: true, depthWrite: false });
@@ -126,7 +139,7 @@ var OPScene = (function () {
     var palmTrunkG = merge([[new T.CylinderGeometry(0.055, 0.075, 0.42, 6), M(0, 0.21, 0)], [new T.CylinderGeometry(0.05, 0.06, 0.42, 6), M(0.035, 0.6, 0, 0, 0, -0.14)], [new T.CylinderGeometry(0.045, 0.055, 0.4, 6), M(0.1, 0.97, 0, 0, 0, -0.24)]]);
     var palmLeafG = (function () { var fr = new T.BoxGeometry(0.62, 0.025, 0.16); fr.translate(0.3, 0, 0); var l = []; for (var i = 0; i < 7; i++) l.push([fr, M(0.14, 1.15, 0, 0, i / 7 * 6.283 + 0.3, -0.42 - (i % 2) * 0.15)]); l.push([new T.IcosahedronGeometry(0.08, 0), M(0.14, 1.13, 0)]); return merge(l); })();
     var oakTrunkG = new T.CylinderGeometry(0.06, 0.085, 0.5, 6); oakTrunkG.translate(0, 0.25, 0);
-    var oakTopG = merge([[new T.IcosahedronGeometry(0.36, 0), M(0, 0.72, 0)], [new T.IcosahedronGeometry(0.26, 0), M(0.2, 0.62, 0.1)], [new T.IcosahedronGeometry(0.24, 0), M(-0.18, 0.66, -0.08)]]);
+    var oakTopG = merge([[new T.IcosahedronGeometry(0.36, 2), M(0, 0.72, 0)], [new T.IcosahedronGeometry(0.26, 2), M(0.2, 0.62, 0.1)], [new T.IcosahedronGeometry(0.24, 2), M(-0.18, 0.66, -0.08)]]);
     var mesaG = new T.CylinderGeometry(0.85, 1.0, 0.7, 7); mesaG.translate(0, 0.35, 0);
     var mesaTopG = new T.CylinderGeometry(0.72, 0.85, 0.36, 7); mesaTopG.translate(0, 0.88, 0);
     var mesaBandG = new T.CylinderGeometry(0.855, 0.9, 0.12, 7); mesaBandG.translate(0, 0.52, 0);
@@ -156,7 +169,19 @@ var OPScene = (function () {
           spots.push([xx,yy,rnd(.7,1.35)]);
         }
         spots=spots.concat(outside(140,2.8,14));
-        instanced(pineLow,pineM1,spots);instanced(pineTop,pineM2,spots);instanced(trunkG,trunkM,spots);
+        var pines=spots.filter(function(p,i){return i%3===0;}), oaks=spots.filter(function(p,i){return i%3!==0;});
+        instanced(pineLow,pineM1,pines);instanced(pineTop,pineM2,pines);instanced(trunkG,trunkM,pines);
+        var tallOak=oakTopG.clone();tallOak.scale(1.45,1.65,1.45);
+        instanced(tallOak,lam('#54885e'),oaks.filter(function(p,i){return i%2===0;}));
+        instanced(tallOak,lam('#76a365'),oaks.filter(function(p,i){return i%2===1;}));
+        var stems=oakTrunkG.clone();stems.scale(1,1.8,1);instanced(stems,barkM,oaks);
+        scenicCreek();
+        var grass=[];for(var gi=0;gi<240;gi++){var gx=gi%2?rnd(W+.2,W+1):rnd(-1,-.15);grass.push([gx,rnd(-.5,H+.5),rnd(.65,1.4)]);}
+        var grassGeo=merge([[new T.ConeGeometry(.04,.22,3),M(-.06,.11,0,0,0,.2)],[new T.ConeGeometry(.04,.30,3),M(0,.15,0)],[new T.ConeGeometry(.04,.2,3),M(.06,.10,0,0,0,-.25)]]);
+        instanced(grassGeo,lam('#6e9654'),grass);
+        var flowers=grass.filter(function(p,i){return i%7===0;}).map(function(p){return [p[0],p[1],p[2],0,.22];});
+        instanced(new T.SphereGeometry(.035,6,4),lam('#fff2c4'),flowers);
+
         var stones=outside(45,.8,5);instanced(new T.IcosahedronGeometry(.22,1),stoneM,stones);
       } else if (ri === 1) {
         // the railroad along the top: two rails on sleepers, a little wagon; rocks, cacti and tires around the field
@@ -167,7 +192,7 @@ var OPScene = (function () {
         var wag = new T.Group(); var wb = new T.Mesh(new T.BoxGeometry(1.1, 0.42, 0.62), lam('#8a5a30')); wb.position.y = 0.33; wag.add(wb);
         var wt = new T.Mesh(new T.BoxGeometry(1.16, 0.08, 0.68), lam('#5b3b1f')); wt.position.y = 0.56; wag.add(wt);
         [-0.35, 0.35].forEach(function (wx) { [-0.3, 0.3].forEach(function (wz) { var wh = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 0.06, 10), metalM); wh.rotation.x = Math.PI / 2; wh.position.set(wx, 0.13, wz); wag.add(wh); }); });
-        var ore = new T.Mesh(new T.IcosahedronGeometry(0.26, 0), goldM); ore.position.set(0.1, 0.62, 0); ore.scale.set(1.4, 0.6, 0.9); wag.add(ore);
+        var ore = new T.Mesh(new T.IcosahedronGeometry(0.26, 2), goldM); ore.position.set(0.1, 0.62, 0); ore.scale.set(1.4, 0.6, 0.9); wag.add(ore);
         wag.position.set(X(W * 0.72), 0, Z(y0)); border.add(wag);
         var tank = new T.Group(); var tb = new T.Mesh(new T.CylinderGeometry(0.34, 0.34, 1.0, 12), lam('#c0392b')); tb.rotation.z = Math.PI / 2; tb.position.y = 0.45; tank.add(tb);
         var tb2 = new T.Mesh(new T.BoxGeometry(1.1, 0.1, 0.6), lam('#5b3b1f')); tb2.position.y = 0.12; tank.add(tb2); tank.position.set(X(W * 0.72 - 1.3), 0, Z(y0)); border.add(tank);
@@ -188,6 +213,20 @@ var OPScene = (function () {
         var moundG = new T.SphereGeometry(0.5, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); instanced(moundG, snowM, mounds);
         for (k = 0; k < 6; k++) { var sm = snowman(); var a = k / 6 * 6.28; sm.position.set(X(k % 2 ? -1.5 - R() * 2 : W + 1.5 + R() * 2), 0, Z(1 + k * 3)); sm.rotation.y = a; border.add(sm); }
       }
+    }
+    function scenicCreek(){
+      function ribbon(width,height,material){
+        var pos=[],uv=[],ix=[],N=100;
+        for(var i=0;i<=N;i++){var y=-5+(H+10)*i/N,cx=-1.05+Math.sin(y*.42)*.22;
+          pos.push(X(cx-width/2),height,Z(y),X(cx+width/2),height,Z(y));uv.push(0,i/9,1,i/9);
+          if(i<N){var j=i*2;ix.push(j,j+2,j+1,j+1,j+2,j+3);}}
+        var geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(ix);geo.computeVertexNormals();
+        var mesh=new T.Mesh(geo,material);mesh.receiveShadow=true;border.add(mesh);
+      }
+      ribbon(1.20,.006,lam('#c7c5a0'));ribbon(.92,.012,lam('#86a8a0'));
+      ribbon(.74,.018,new T.MeshStandardMaterial({color:'#559ca8',roughness:.3,metalness:.15,map:waterTex}));
+      var pebbles=[];for(var j=0;j<50;j++){var yy=-2+j*(H+4)/50;pebbles.push([-1.05+Math.sin(yy*.42)*.22+(j%2?.48:-.48),yy,rnd(.25,.65),rnd(0,6),.035,rnd(.5,.9)]);}
+      instanced(new T.IcosahedronGeometry(.17,1),lam('#b7bea7'),pebbles);
     }
     // 0.3.0's regions round the field (the space above and below the field shows on a tall phone, so both get scenery)
     var anim = []; // things that move: lava textures, glows that flicker, boats that bob
@@ -350,7 +389,7 @@ var OPScene = (function () {
 
     // ---------------- map elements ----------------
     var elGroup = new T.Group(); scene.add(elGroup);
-    var waterTex = ctex(128, 128, function (x, w, h) { x.fillStyle = '#4fb3e8'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; for (var i = 0; i < 9; i++) { var yy = rnd(0, h), xx = rnd(0, w); x.beginPath(); x.moveTo(xx, yy); x.quadraticCurveTo(xx + 10, yy - 5, xx + 22, yy); x.stroke(); } });
+    var waterTex = ctex(128, 128, function (x, w, h) { x.fillStyle = '#80bec8'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.20)'; x.lineWidth = 1.5; for (var i = 0; i < 9; i++) { var yy = rnd(0, h), xx = rnd(0, w); x.beginPath(); x.moveTo(xx, yy); x.quadraticCurveTo(xx + 10, yy - 5, xx + 22, yy); x.stroke(); } });
     waterTex.wrapS = waterTex.wrapT = T.RepeatWrapping;
     var waterM = new T.MeshLambertMaterial({ map: waterTex }), iceWaterM = new T.MeshLambertMaterial({ color: '#9fd4f5', map: waterTex }), chasmM = lam('#5a3a22'), chasmDeep = lam('#2b1a0e');
     var bankM = [lam('#8fd46a'), lam('#e0b36b'), lam('#ffffff'), lam('#231c1e'), lam('#ecd79a'), lam('#8f9a48'), lam('#b0603a'), lam('#8a93a8')];
@@ -699,14 +738,14 @@ var OPScene = (function () {
     var laneVS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
     var laneFS = 'uniform vec3 col; uniform float len; uniform float time; uniform float op; uniform float flow; uniform float dash; varying vec2 vUv;\n' +
       'void main(){ float u = vUv.x * len; float v = vUv.y - 0.5; float edge = 1.0 - smoothstep(0.40, 0.5, abs(v));\n' +
-      ' float ph = fract((u - abs(v) * 0.7 - time * flow) / 0.62); float ch = smoothstep(0.0, 0.07, ph) * (1.0 - smoothstep(0.22, 0.3, ph));\n' +
+      ' float ph = fract((u + abs(v) * 0.7 - time * flow) / 0.62); float ch = smoothstep(0.0, 0.07, ph) * (1.0 - smoothstep(0.22, 0.3, ph));\n' +
       ' float rim = smoothstep(0.34, 0.42, abs(v)) * edge; vec3 c = mix(col, vec3(1.0), 0.22 + ch * 0.5); c = mix(c, col * 0.75, rim);\n' +
       ' float dd = dash > 0.5 ? step(0.45, fract(u / 0.36 - time * flow * 1.5)) : 1.0;\n' +
       ' gl_FragColor = vec4(c, min(1.0, op * edge * dd * (0.95 + 0.2 * ch + 0.2 * rim)));\n#include <colorspace_fragment>\n}';
     var laneG = new T.PlaneGeometry(1, 1); laneG.rotateX(-Math.PI / 2); laneG.translate(0.5, 0, 0); // x from 0 to 1 along the lane
     (function () { var uv = laneG.attributes.uv, pos = laneG.attributes.position; for (var i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i), pos.getZ(i) + 0.5); uv.needsUpdate = true; })();
     function laneMat(team) { return new T.ShaderMaterial({ vertexShader: laneVS, fragmentShader: laneFS, transparent: true, depthWrite: false,
-      uniforms: { col: { value: new T.Color(TEAM[team].main) }, len: { value: 1 }, time: { value: 0 }, op: { value: 0.72 }, flow: { value: 1.0 }, dash: { value: 0 } } }); }
+      uniforms: { col: { value: new T.Color(TEAM[team].main) }, len: { value: 1 }, time: { value: 0 }, op: { value: 0.72 }, flow: { value: 0.7 }, dash: { value: 0 } } }); }
     var lanes = {}; // link id -> { mesh, mat }
     var meets = {}; // pair key -> meeting point (distance from the lower-numbered tower)
     function laneMesh(team) { var m = laneMat(team), me = new T.Mesh(laneG, m); me.renderOrder = 1; scene.add(me); return { mesh: me, mat: m }; }
