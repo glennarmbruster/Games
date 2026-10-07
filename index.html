@@ -116,8 +116,9 @@
 @media (prefers-reduced-motion: reduce) { .spooky .bat, .spooky .bat svg { animation: none; } .spooky .b1 { left: 20%; } .spooky .b2 { left: 70%; } .spooky .b3 { left: 45%; } }
 :root[data-skin="halloween"] .logo circle { fill: #ff7a1a; }
 </style>
+<link rel="stylesheet" href="shared/collection.css">
 </head>
-<body>
+<body class="collection">
 <div class="spooky" aria-hidden="true"><svg class="moon" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ffe9b0"/><circle cx="38" cy="40" r="7" fill="#f2d48c"/><circle cx="60" cy="62" r="9" fill="#f2d48c"/><circle cx="62" cy="34" r="4" fill="#f2d48c"/></svg><svg class="web" viewBox="0 0 100 100" fill="none" stroke="#e9dcff" stroke-width="1.2"><path d="M0 0L100 30M0 0L80 70M0 0L35 100M0 0L0 100M0 0L100 0"/><path d="M0 22Q12 14 22 0M0 44Q26 30 44 0M0 66Q40 46 66 0M0 88Q55 62 88 0"/></svg><div class="bat b1"><svg viewBox="0 0 46 22"><path d="M23 7c1.5-3 3-3 3-3l1 3c4-3 9-4 13-2-2 1-3 3-3 5 3-1 6 0 9 2-5 0-9 2-11 6-2-3-5-4-8-3-1-1-2-3-4-3s-3 2-4 3c-3-1-6 0-8 3-2-4-6-6-11-6 3-2 6-3 9-2 0-2-1-4-3-5 4-2 9-1 13 2l1-3s1.5 0 3 3z" fill="#6a4686"/></svg></div><div class="bat b2"><svg viewBox="0 0 46 22"><path d="M23 7c1.5-3 3-3 3-3l1 3c4-3 9-4 13-2-2 1-3 3-3 5 3-1 6 0 9 2-5 0-9 2-11 6-2-3-5-4-8-3-1-1-2-3-4-3s-3 2-4 3c-3-1-6 0-8 3-2-4-6-6-11-6 3-2 6-3 9-2 0-2-1-4-3-5 4-2 9-1 13 2l1-3s1.5 0 3 3z" fill="#6a4686"/></svg></div><div class="bat b3"><svg viewBox="0 0 46 22"><path d="M23 7c1.5-3 3-3 3-3l1 3c4-3 9-4 13-2-2 1-3 3-3 5 3-1 6 0 9 2-5 0-9 2-11 6-2-3-5-4-8-3-1-1-2-3-4-3s-3 2-4 3c-3-1-6 0-8 3-2-4-6-6-11-6 3-2 6-3 9-2 0-2-1-4-3-5 4-2 9-1 13 2l1-3s1.5 0 3 3z" fill="#6a4686"/></svg></div><div class="pumpkins"><svg viewBox="0 0 400 70" preserveAspectRatio="xMidYMax meet"><g fill="#ff7a1a"><ellipse cx="60" cy="50" rx="30" ry="20"/><ellipse cx="46" cy="50" rx="14" ry="19" fill="#e96a10"/><ellipse cx="74" cy="50" rx="14" ry="19" fill="#e96a10"/><rect x="57" y="24" width="6" height="10" rx="2" fill="#4a7a2a"/>
 <ellipse cx="340" cy="54" rx="24" ry="16"/><ellipse cx="329" cy="54" rx="11" ry="15" fill="#e96a10"/><ellipse cx="351" cy="54" rx="11" ry="15" fill="#e96a10"/><rect x="337" y="33" width="5" height="9" rx="2" fill="#4a7a2a"/></g>
 <g fill="#2a1200"><path d="M48 44l6 6h-9zM66 44l6 6h-9zM46 58q14 8 28 0l-4 4-3-3-4 4-3-4-4 4-3-3z"/><path d="M332 49l5 5h-8zM345 49l5 5h-8zM330 60q10 6 20 0l-3 3-3-2-2 3-3-3-3 3z"/></g></svg></div></div>
@@ -136,8 +137,8 @@
 
   <p class="hello" id="hello">A little game for every mood.</p>
   <div class="section" id="secContinue"></div>
-  <div class="section" id="secFavs"></div>
-  <div class="section"><h2 id="allTitle">All games</h2><div class="grid" id="gridAll"></div></div>
+  <div class="collection-tabs" id="gameTabs" role="tablist" aria-label="Game categories"></div>
+  <div class="section" id="gamePanel" role="tabpanel" tabindex="0"><h2 id="allTitle">Games</h2><div class="grid" id="gridAll"></div><p class="favorites-empty" id="favoritesEmpty" hidden>Tap the star on any game to keep it here.</p></div>
   <div class="foot" id="foot">Goobs-Games</div>
 </div>
 
@@ -189,6 +190,7 @@
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#192e43"/><circle cx="73" cy="25" r="15" fill="#d0c1a9"/><path d="M0 64L22 43 41 66 70 46 100 69V100H0Z" fill="#415e6a"/><path d="M0 82L19 70 43 83 63 64 100 84V100H0Z" fill="#243d4b"/><path d="M72 87L77 44 83 36 89 87Z" fill="#102737"/><path d="M81 48V71" stroke="#9ce6d5"/><path d="M0 88H100V100H0Z" fill="#112432"/><path d="M39 86L40 69 48 69 49 86M38 69L37 56 48 56 51 70" fill="#c7835f"/><path d="M39 56L38 48 45 45 51 50 50 57Z" fill="#486572"/><path d="M43 50H52V54H43Z" fill="#c8fff0"/><path d="M41 75L39 89M47 75L50 89" stroke="#86a3aa" stroke-width="3"/></svg>',
       status: function () { var m = readLS('stranded.meta'); return m && m.best ? 'Arcade · best ' + m.best.toLocaleString() : 'Six sectors. One way home.'; }
     },
+
     {
       id: 'zoodoku', name: 'Zoodoku', blurb: 'Animal logic puzzle', path: 'games/zoodoku/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#f4f1fb"/>' + (function () {
@@ -674,15 +676,14 @@
       }
     },
     {
-      id: 'pinball', name: 'Harbor Lights', blurb: 'Flip, bump and light the way', path: 'games/pinball/',
+      id: 'pinball', name: 'Goober Ball', blurb: 'Two machines. One more ball.', path: 'games/pinball/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="hlT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2a6b"/><stop offset="1" stop-color="#0a5c7a"/></linearGradient></defs><rect width="100" height="100" fill="url(#hlT)"/>' +
         '<path d="M50 34L4 16v26z" fill="#fff6b0" opacity=".3"/><path d="M45 72l2-38h6l2 38z" fill="#fff"/><path d="M46 50h8l.5 7h-9z" fill="#e8354a"/><rect x="45" y="28" width="10" height="7" rx="1.5" fill="#ffe07a"/>' +
         '<circle cx="24" cy="30" r="8" fill="#e8354a"/><circle cx="24" cy="30" r="3.5" fill="#ffd24a"/><circle cx="76" cy="36" r="8" fill="#e8354a"/><circle cx="76" cy="36" r="3.5" fill="#ffd24a"/>' +
         '<path d="M14 88l22-6" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M86 88l-22-6" stroke="#fff" stroke-width="6" stroke-linecap="round"/>' +
         '<circle cx="60" cy="64" r="5" fill="#dfe4ee"/><circle cx="58.5" cy="62.5" r="1.8" fill="#fff"/></svg>',
       status: function () {
-        var m = readLS('pinball.meta'); if (!m || !m.scores || !m.scores.length) return 'Flip, bump and light the way';
-        return 'High score ' + m.scores[0].s.toLocaleString();
+        var a=readLS('pinball.meta'),b=readLS('pinball.goober.meta'),best=Math.max(a&&a.scores&&a.scores.length?a.scores[0].s:0,b&&b.scores&&b.scores.length?b.scores[0].s:0);return best?'High score '+best.toLocaleString():'Goober Ball · Harbor Lights';
       }
     },
     {
@@ -697,14 +698,14 @@
       }
     },
     {
-      id: 'minigolf', name: 'Seaside Putt', blurb: '18 holes of mini golf by the sea', path: 'games/minigolf/',
+      id: 'minigolf', name: 'Seaside Putt', blurb: 'Two courses. 36 seaside holes.', path: 'games/minigolf/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#2fb4e0"/><path d="M0 84c12-6 22-6 34 0s22 6 34 0 22-6 32-1V100H0z" fill="#1d8fd0" opacity=".6"/>' +
         '<rect x="12" y="10" width="76" height="72" rx="16" fill="#e8b36a"/><rect x="17" y="15" width="66" height="62" rx="12" fill="#4cc25a"/><path d="M17 33h66M17 55h66" stroke="#5fd06b" stroke-width="9" opacity=".7"/>' +
         '<rect x="40" y="44" width="30" height="8" rx="2" fill="#e8505b"/><g transform="rotate(30 55 48)" fill="#fffaf0" stroke="#8a5a2b" stroke-width="1"><rect x="55" y="45.5" width="16" height="5"/><rect x="39" y="45.5" width="16" height="5"/></g><circle cx="55" cy="48" r="3" fill="#5b3a1e"/>' +
         '<ellipse cx="62" cy="27" rx="5" ry="4" fill="#16211a"/><path d="M62 27V8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M63 8l13 5-13 5z" fill="#ff4d5e"/>' +
         '<circle cx="34" cy="66" r="5.5" fill="#fff" stroke="#1f2a44" stroke-width="1.6"/><circle cx="32.5" cy="64.5" r="1.6" fill="#e8eef8"/></svg>',
       status: function () {
-        var m = readLS('minigolf.meta'); if (!m || !(m.reached > 0 || m.best)) return '18 holes of mini golf by the sea';
+        var course=readLS('minigolf.course')||'adventure';var m = readLS(course==='classic'?'minigolf.meta':'minigolf.adventure.meta'); if (!m || !(m.reached > 0 || m.best)) return 'Coastal Adventure + Classic · 36 holes';
         return m.best ? 'Best round ' + m.best : 'On hole ' + ((m.hole || 0) + 1);
       }
     },
@@ -798,7 +799,7 @@
       }
     },
     {
-      id: 'getout', name: 'Get Out!', blurb: 'Five locked rooms. Find the way out.', path: 'games/getout/',
+      id: 'getout', name: 'Get Out!', blurb: 'Locked rooms. Find the way out.', path: 'games/getout/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="goT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f5a4f"/><stop offset="1" stop-color="#1b3a33"/></linearGradient><linearGradient id="goB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7dc8a"/><stop offset=".5" stop-color="#d9a640"/><stop offset="1" stop-color="#8f5f1a"/></linearGradient></defs><rect width="100" height="100" fill="url(#goT)"/>' +
         '<rect x="28" y="20" width="44" height="72" rx="4" fill="#7b4526"/><rect x="24" y="16" width="52" height="8" rx="2" fill="#5b3519"/><path d="M32 92V28h36v64" fill="#fff4c9" opacity=".95"/><path d="M32 28h20v64H32z" fill="#7b4526"/><path d="M32 28l20-4v72l-20-4z" fill="#8a5530"/><circle cx="47" cy="60" r="3" fill="url(#goB)"/>' +
         '<g transform="translate(70 26) rotate(30)"><circle r="9" fill="none" stroke="url(#goB)" stroke-width="5"/><rect x="-2.5" y="8" width="5" height="22" fill="url(#goB)"/><rect x="2" y="22" width="6" height="4" fill="url(#goB)"/></g></svg>',
@@ -1091,25 +1092,66 @@
   var byId = {};
   GAMES.forEach(function (g) { byId[g.id] = g; });
 
+  // One category per game. Favorites remain in their category as well.
+  var GAME_TABS = [
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
+    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
+    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
+    { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
+  ];
+  var TAB_KEY = 'goobs.menuTab';
+  var activeTab = readLS(TAB_KEY) || 'puzzles';
+  if (activeTab === 'words') { activeTab = 'tabletop'; try { localStorage.setItem(TAB_KEY, JSON.stringify(activeTab)); } catch (e) {} }
+  function validTab(id) { return GAME_TABS.some(function (t) { return t.id === id; }); }
+  if (!validTab(activeTab)) activeTab = 'puzzles';
+  function selectTab(id, focus) {
+    if (!validTab(id)) return;
+    activeTab = id;
+    try { localStorage.setItem(TAB_KEY, JSON.stringify(id)); } catch (e) { /* private/full storage */ }
+    render();
+    window.scrollTo(0, 0);
+    if (focus) $('tab-' + id).focus({ preventScroll: true });
+  }
+  GAME_TABS.forEach(function (t, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.id = 'tab-' + t.id;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'gamePanel'); b.textContent = t.label;
+    b.addEventListener('click', function () { selectTab(t.id, false); });
+    b.addEventListener('keydown', function (e) {
+      var n = e.key === 'ArrowRight' ? (i + 1) % GAME_TABS.length : e.key === 'ArrowLeft' ? (i + GAME_TABS.length - 1) % GAME_TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? GAME_TABS.length - 1 : -1;
+      if (n >= 0) { e.preventDefault(); selectTab(GAME_TABS[n].id, true); }
+    });
+    $('gameTabs').appendChild(b);
+  });
+
   function open(g) { location.href = g.path; }
 
+  // Local 224px artwork for all 60 games. Original vector definitions remain
+  // available as a fallback if an individual icon fails to load.
+  GAMES.forEach(function (g) {
+    g.vectorArt = g.art;
+    g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
+  });
+  document.addEventListener('error', function (e) {
+    var im=e.target, id=im&&im.getAttribute&&im.getAttribute('data-game-icon');
+    if(id&&byId[id]&&im.parentNode)im.parentNode.innerHTML=byId[id].vectorArt;
+  }, true);
   function tile(g) {
     var fav = Goobs.favs().indexOf(g.id) >= 0;
-    var b = document.createElement('button');
-    b.className = 'gtile';
-    b.innerHTML = '<div class="art">' + g.art + '</div><div class="tinfo"><b>' + g.name + '</b><small>' + g.status() + '</small></div>' +
-      '<span class="star' + (fav ? ' on' : '') + '" role="button" aria-label="' + (fav ? 'Remove from' : 'Add to') + ' favorites">' + (fav ? '★' : '☆') + '</span>';
-    b.addEventListener('click', function (e) {
-      if (e.target.closest('.star')) { Goobs.toggleFav(g.id); render(); return; }
-      open(g);
-    });
-    return b;
+    var card = document.createElement('div'); card.className = 'gtile';
+    var b = document.createElement('button'); b.className = 'game-open';
+    b.innerHTML = '<div class="art">' + g.art + '</div><div class="tinfo"><b>' + g.name + '</b><small>' + g.status() + '</small></div>';
+    b.addEventListener('click', function () { open(g); });
+    var star = document.createElement('button'); star.className = 'star' + (fav ? ' on' : '');
+    star.setAttribute('aria-label', (fav ? 'Remove ' : 'Add ') + g.name + (fav ? ' from' : ' to') + ' favorites');
+    star.setAttribute('aria-pressed', String(fav)); star.textContent = fav ? '★' : '☆';
+    star.addEventListener('click', function () { Goobs.toggleFav(g.id); render(); var next = document.querySelector('[data-game="' + g.id + '"] .star'); if (next) next.focus({preventScroll:true}); else $('tab-' + activeTab).focus({preventScroll:true}); });
+    card.setAttribute('data-game', g.id); card.appendChild(b); card.appendChild(star); return card;
   }
 
   // alphabetical, ignoring punctuation, so a series sorts in order: "Get Out!" before "Get Out 2!" (Glenn, 2026-10-03)
   function sortKey(g) { return g.name.replace(/[^A-Za-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function byName(a, b) { var x = sortKey(a), y = sortKey(b); return x < y ? -1 : x > y ? 1 : 0; }
-  function render() {
+  function render(event) {
     // pick up where you left off (one slim bar)
     var recent = Goobs.recent().filter(function (id) { return byId[id]; });
     var sc = $('secContinue');
@@ -1122,26 +1164,23 @@
       b.addEventListener('click', function () { open(g); });
       sc.appendChild(b);
     }
-    // favorites first, then everything else, each A to Z
-    var favIds = Goobs.favs().filter(function (id) { return byId[id]; });
-    var favs = favIds.map(function (id) { return byId[id]; }).sort(byName);
-    var rest = GAMES.filter(function (g) { return favIds.indexOf(g.id) < 0; }).sort(byName);
-    var sf = $('secFavs');
-    sf.innerHTML = '';
-    if (favs.length) {
-      sf.innerHTML = '<h2>Favorites</h2>';
-      var fg = document.createElement('div'); fg.className = 'grid';
-      favs.forEach(function (gg) { fg.appendChild(tile(gg)); });
-      sf.appendChild(fg);
-    }
-    $('allTitle').textContent = favs.length ? 'More games' : 'All games';
-    var all = $('gridAll');
-    all.innerHTML = '';
-    rest.forEach(function (gg) { all.appendChild(tile(gg)); });
-    var soon = document.createElement('div');
-    soon.className = 'gtile soon';
-    soon.innerHTML = '<span class="tinfo"><b>More on the way</b><small>What should be next?</small></span>';
-    all.appendChild(soon);
+    // Restore the last category across page reloads and game-to-menu returns.
+    var stored = event ? readLS(TAB_KEY) : null;
+    if (stored === 'words') stored = 'tabletop';
+    if (validTab(stored)) activeTab = stored;
+    var category = GAME_TABS.filter(function (t) { return t.id === activeTab; })[0];
+    var ids = activeTab === 'favorites' ? Goobs.favs() : category.games.split(' ');
+    var visible = GAMES.filter(function (g) { return ids.indexOf(g.id) >= 0; }).sort(byName);
+    GAME_TABS.forEach(function (t) {
+      var b = $('tab-' + t.id), selected = t.id === activeTab;
+      b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1;
+    });
+    $('gamePanel').setAttribute('aria-labelledby', 'tab-' + activeTab);
+    $('allTitle').textContent = category.title + ' · ' + visible.length;
+    $('favoritesEmpty').hidden = activeTab !== 'favorites' || visible.length > 0;
+    var all = $('gridAll'); all.innerHTML = '';
+    visible.forEach(function (g) { all.appendChild(tile(g)); });
+
   }
 
   // ---------- settings ----------
