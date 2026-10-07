@@ -186,6 +186,11 @@
   }
   var GAMES = [
     {
+      id: 'containment', name: 'Containment', blurb: 'Divide, adapt, escape the deep-sea lab', path: 'games/containment/',
+      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#102934"/><rect x="13" y="10" width="74" height="80" rx="9" fill="#1d4950"/><path d="M25 70C8 65 10 38 26 35M26 58C8 48 12 25 34 26M26 48C19 16 42 15 48 28" stroke="#8eead4" fill="none" stroke-width="2"/><path d="M28 33C39 15 64 23 75 45S72 78 51 78 16 56 28 33Z" fill="#78cdb5"/><circle cx="52" cy="50" r="14" fill="#205660"/><circle cx="54" cy="48" r="7" fill="#c6ffe6"/></svg>',
+      status: function () { var m = readLS('containment.meta'); return m && m.unlocked ? (m.unlocked + 1) + ' / 12 chambers unlocked' : 'Twelve chambers. One organism.'; }
+    },
+    {
       id: 'stranded', name: 'Stranded', blurb: 'Cinematic alien-world arcade adventure', path: 'games/stranded/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#192e43"/><circle cx="73" cy="25" r="15" fill="#d0c1a9"/><path d="M0 64L22 43 41 66 70 46 100 69V100H0Z" fill="#415e6a"/><path d="M0 82L19 70 43 83 63 64 100 84V100H0Z" fill="#243d4b"/><path d="M72 87L77 44 83 36 89 87Z" fill="#102737"/><path d="M81 48V71" stroke="#9ce6d5"/><path d="M0 88H100V100H0Z" fill="#112432"/><path d="M39 86L40 69 48 69 49 86M38 69L37 56 48 56 51 70" fill="#c7835f"/><path d="M39 56L38 48 45 45 51 50 50 57Z" fill="#486572"/><path d="M43 50H52V54H43Z" fill="#c8fff0"/><path d="M41 75L39 89M47 75L50 89" stroke="#86a3aa" stroke-width="3"/></svg>',
       status: function () { var m = readLS('stranded.meta'); return m && m.best ? 'Arcade · best ' + m.best.toLocaleString() : 'Six sectors. One way home.'; }
@@ -1095,7 +1100,7 @@
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
     { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
-    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
+    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
     { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
