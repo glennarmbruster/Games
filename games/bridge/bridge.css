@@ -7,3 +7,5 @@
 
 html,body{overscroll-behavior:none}#game{touch-action:none}button,select,a{touch-action:manipulation}#sheet{touch-action:pan-y;overscroll-behavior:contain}
 #toast{top:169px}@media(max-width:600px){#toast{top:151px}}@media(max-height:480px){#toast{top:126px}}
+
+.gamesBack{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-height:44px;padding:10px 13px;border-radius:12px;background:#f4f5e7f2;color:#24463f;text-decoration:none;font-size:13px;font-weight:800;box-shadow:0 2px 10px #19384315}.menuBack{display:block;padding:13px;text-align:center;border:1px solid #c8d5bc;border-radius:12px;color:#285c52;font-size:13px;font-weight:750;text-decoration:none}@media(max-width:600px){header{gap:6px}.gamesBack{font-size:11px;padding:8px;min-width:58px}.site{padding:8px;}.site strong{font-size:11px}.site span{font-size:6px;letter-spacing:.5px}#budget{min-width:87px;max-width:98px;padding:8px}#money{font-size:12px}#money small{font-size:9px}}
