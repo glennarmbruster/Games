@@ -5,7 +5,7 @@ const VERSIONS = {
   shell: '2.97.0',     // menu, manifest, icons, /shared (ads, themes, storage)
   zoodoku: '1.9.0',
   woodpile: '1.2.0',
-  patchwork: '3.0.0',
+  patchwork: '3.0.1',
   cubecorral: '3.3.0',
   screwball: '2.4.0',
   skeehop: '1.4.0',
