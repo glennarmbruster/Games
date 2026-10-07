@@ -247,6 +247,7 @@ html.go-wrap .arrow, html.go-wrap .zoomout, html.go-wrap .invbar, html.go-wrap .
 .sheet h2,.card h2 { font-weight:700; letter-spacing:-.5px; }
 .btn { font-weight:650; }
 </style>
+<link rel="stylesheet" href="mayhem-ui.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -315,10 +316,11 @@ html.go-wrap .arrow, html.go-wrap .zoomout, html.go-wrap .invbar, html.go-wrap .
 <div class="lane" id="lane">
   <div class="lanein">
     <div class="lanehead">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#go-logo"/></svg>
-      <div><h1 id="laneTitle">Get Out 2!</h1><p>Mayhem Pictures presents: deathtraps, starring you</p></div>
+      <span class="studio-badge" aria-hidden="true">II</span>
+      <div><h1 id="laneTitle">Get Out 2!</h1><p>Mayhem Pictures · Deathtraps, starring you</p></div>
     </div>
     <div class="marquee" id="marquee"></div>
+    <div class="scene-heading"><span>Choose your scene</span><span>10 scenes · 3 difficulties</span></div>
     <div class="rooms" id="rooms"></div>
     <div class="lanebtns">
       <button class="tool" id="lnLetter"><svg viewBox="0 0 24 24"><use href="#i-letter"/></svg><span>Call sheet</span></button>
@@ -18291,7 +18293,7 @@ var GOSound = (function () {
 (function () {
   'use strict';
   var E = GOEngine, A = GOArt, S = GOSound;
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   // scenes: every rooms/room<n>.js built in defines GORoom<n> with its own STORY (name, desc, scene number, music, sign-off)
   var ROOMS = {}, LEVELS = [];
   for (var rn0 = 1; rn0 <= 30; rn0++) if (window['GORoom' + rn0]) { ROOMS[rn0] = window['GORoom' + rn0]; LEVELS.push(rn0); }
@@ -19003,7 +19005,7 @@ var GOSound = (function () {
     var html = '';
     LEVELS.forEach(function (n) {
       var st = ROOMS[n].STORY, wf = waysFound(n), wt = waysOf(n).length;
-      html += '<div class="room"><div class="rh"><div class="rn">' + clapSvg(st.scene || n) + '</div><div><h3>Scene ' + (st.scene || n) + ': ' + esc(st.name) + '</h3><p class="rd">' + esc(st.desc) + '</p></div></div>';
+      html += '<div class="room"><div class="rh"><div class="rn">' + String(st.scene || n).padStart(2, '0') + '</div><div><span class="scene-kicker">SCENE ' + (st.scene || n) + '</span><h3>' + esc(st.name) + '</h3><p class="rd">' + esc(st.desc) + '</p></div></div>';
       html += '<div class="diffs">';
       ['e', 'm', 'h'].forEach(function (d) {
         var b = meta.best[n + d], sv = saved(n, d), s0 = b ? '<span class="st">' + '★★★'.slice(0, b.stars) + '</span>' : '';
@@ -19017,14 +19019,10 @@ var GOSound = (function () {
     $('rooms').innerHTML = html;
     $('marquee').innerHTML = marqueeSvg();
   }
-  // a cinema marquee with chasing bulbs over the title
+  // Photographic studio entrance; progress still comes from the existing saves.
   function marqueeSvg() {
-    var bulbs = '';
-    for (var i = 0; i < 26; i++) { var x = 14 + i * 12.9; bulbs += '<circle class="bulb b' + (i % 3) + '" cx="' + x.toFixed(1) + '" cy="8" r="3.2"/><circle class="bulb b' + ((i + 1) % 3) + '" cx="' + x.toFixed(1) + '" cy="92" r="3.2"/>'; }
-    return '<svg viewBox="0 0 360 100" aria-hidden="true"><defs><linearGradient id="mqB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a1d2a"/><stop offset="1" stop-color="#3e0c16"/></linearGradient></defs>' +
-      '<rect x="2" y="2" width="356" height="96" rx="12" fill="url(#mqB)" stroke="#ffd23f" stroke-width="3"/>' + bulbs +
-      '<text x="180" y="40" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700" font-size="15" fill="#ffe7a8">Mayhem Pictures presents</text>' +
-      '<text x="180" y="72" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="25" fill="#fff" letter-spacing="1">NOW SHOWING: SCENE ' + (ROOMS[LEVELS[LEVELS.length - 1]].STORY.scene || LEVELS[LEVELS.length - 1]) + '</text></svg>';
+    var escaped = LEVELS.filter(function(n) { return ['e','m','h'].some(function(d) { return !!meta.best[n+d]; }); }).length;
+    return '<img src="assets/mayhem-menu-v1.webp" alt="A red roadster on a moonlit movie set, beside a camera and car crusher"><div class="marquee-caption"><span class="studio-label">MAYHEM PICTURES PRESENTS</span><strong>One take.<br>Get out alive.</strong><span class="studio-progress">' + escaped + ' / ' + LEVELS.length + ' scenes escaped</span></div>';
   }
   $('rooms').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-room]'); if (!b) return;
