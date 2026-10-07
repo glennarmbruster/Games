@@ -20,7 +20,7 @@ const VERSIONS = {
   worddice: '1.2.0',
   digger: '1.2.0',
   blocks: '1.3.0',
-  maze: '1.2.0',
+  maze: '1.2.1',
   mahjong: '1.3.1',
   dice: '1.2.0',
   daily: '1.3.3',

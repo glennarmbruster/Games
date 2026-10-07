@@ -29,3 +29,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .ready .go{background:linear-gradient(135deg,#d3a259,#b8853d);color:#241b10;box-shadow:0 5px 18px rgba(0,0,0,.16)}
 .joy .ring{fill:var(--surface);stroke:var(--polish-line)}.joy .knob{fill:#dcb775;stroke:#92703c;stroke-width:2}
 .tool{border-radius:13px}.info .mid{font-weight:600}.info .big{font-weight:650}
+
+/* Cheese Chase 1.2.1: larger steering targets and arrow artwork. */
+.joy, html.gg-fs .joy { width: 210px; height: 210px; }
+.joy .arr { transform-box: fill-box; transform-origin: center; transform: scale(1.15); fill: var(--ink); }
+.joy .arr.on { fill: var(--accent); }
+@media (max-height: 700px) { .joy, html.gg-fs .joy { width: 176px; height: 176px; } }
