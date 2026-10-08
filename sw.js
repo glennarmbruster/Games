@@ -2,7 +2,7 @@
    Each part has its own version and its own cache. To publish an update, bump ONLY the
    version of the part that changed; unchanged parts are not downloaded again. */
 const VERSIONS = {
-  shell: '3.1.0',     // menu, manifest, icons, /shared (ads, themes, storage)
+  shell: '3.2.0',     // menu, manifest, icons, /shared (ads, themes, storage)
   zoodoku: '1.10.0',
   woodpile: '1.3.0',
   patchwork: '3.0.1',
@@ -43,6 +43,7 @@ const VERSIONS = {
   shelf: '2.0.1',
   castle: '2.2.0',
   hexslide: '1.2.0',
+  farkle: '1.0.0',
   bridge: '1.3.0',
   outpost: '3.0.1',
   getout: '0.22.0',
@@ -119,6 +120,7 @@ const GROUPS = {
   golf: ['games/golf/', 'games/golf/index.html', 'games/golf/course-art.js', 'games/golf/assets/oak-v1.webp', 'games/golf/assets/pine-v1.webp', 'games/golf/assets/sky-v1.webp', 'games/golf/assets/canopy-v1.webp'],
   shelf: ["games/shelf/", "games/shelf/assets/good-0.png", "games/shelf/assets/good-1.png", "games/shelf/assets/good-10.png", "games/shelf/assets/good-11.png", "games/shelf/assets/good-12.png", "games/shelf/assets/good-13.png", "games/shelf/assets/good-14.png", "games/shelf/assets/good-15.png", "games/shelf/assets/good-16.png", "games/shelf/assets/good-17.png", "games/shelf/assets/good-18.png", "games/shelf/assets/good-19.png", "games/shelf/assets/good-2.png", "games/shelf/assets/good-20.png", "games/shelf/assets/good-21.png", "games/shelf/assets/good-22.png", "games/shelf/assets/good-23.png", "games/shelf/assets/good-24.png", "games/shelf/assets/good-25.png", "games/shelf/assets/good-26.png", "games/shelf/assets/good-27.png", "games/shelf/assets/good-28.png", "games/shelf/assets/good-29.png", "games/shelf/assets/good-3.png", "games/shelf/assets/good-30.png", "games/shelf/assets/good-31.png", "games/shelf/assets/good-32.png", "games/shelf/assets/good-33.png", "games/shelf/assets/good-34.png", "games/shelf/assets/good-35.png", "games/shelf/assets/good-36.png", "games/shelf/assets/good-37.png", "games/shelf/assets/good-38.png", "games/shelf/assets/good-39.png", "games/shelf/assets/good-4.png", "games/shelf/assets/good-5.png", "games/shelf/assets/good-6.png", "games/shelf/assets/good-7.png", "games/shelf/assets/good-8.png", "games/shelf/assets/good-9.png", "games/shelf/assets/shop-wall.webp", "games/shelf/assets/wood.webp", "games/shelf/index.html", "games/shelf/store-studio.js"],
   castle: ['games/castle/', 'games/castle/castle.css', 'games/castle/core.js', 'games/castle/game.js', 'games/castle/index.html', 'games/castle/levels.js', 'games/castle/scene.js', 'games/castle/side.js', 'games/castle/assets/sling-valley-v1.webp', 'games/castle/assets/sling-meadow-v1.webp', 'games/castle/assets/sling-coast-v1.webp', 'games/castle/sound.js', 'shared/three.module.min.js', 'shared/cannon-es.min.js'],
+  farkle: ['games/farkle/', 'games/farkle/index.html', 'games/farkle/style.css', 'games/farkle/rules.js', 'games/farkle/game.js'],
   hexslide: ['games/hexslide/', 'games/hexslide/game.js', 'games/hexslide/index.html', 'games/hexslide/render.js', 'games/hexslide/rules.js', 'games/hexslide/style.css'],
   bridge: ['games/bridge/auto.js', 'games/bridge/', 'games/bridge/assets/alpine.webp', 'games/bridge/assets/canyon.webp', 'games/bridge/assets/limestone.webp', 'games/bridge/assets/spruce.webp', 'games/bridge/assets/valley.webp', 'games/bridge/bridge.css', 'games/bridge/core.js', 'games/bridge/game.js', 'games/bridge/index.html', 'games/bridge/levels.js', 'games/bridge/scene.js'],
   outpost: ['games/outpost/rush.html', 'games/outpost/war-games.css', 'games/outpost/regions/', 'games/outpost/regions/game.js', 'games/outpost/regions/style.css', 'games/outpost/regions/rules.js', 'games/outpost/regions/index.html', 'games/outpost/regions/scene.js', 'games/outpost/regions/assets/spruce.webp', 'games/outpost/regions/assets/meadow.webp', 'games/outpost/regions/assets/snow.webp', 'games/outpost/regions/assets/sand.webp', 'games/outpost/', 'games/outpost/index.html', 'games/outpost/rush.css', 'games/outpost/rush.js', 'games/outpost/rules.js', 'games/outpost/levels.js', 'games/outpost/scene.js', 'games/outpost/sound.js', 'games/outpost/generator.js', 'games/outpost/legacy.html', 'games/outpost/assets/meadow-v1.webp', 'games/outpost/assets/sand-v1.webp', 'games/outpost/assets/snow-v1.webp', 'games/outpost/assets/basalt-v1.webp', 'games/outpost/assets/spruce-v1.webp'],
