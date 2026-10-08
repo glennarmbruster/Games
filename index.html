@@ -776,6 +776,11 @@
       }
     },
     {
+      id: 'blockparty', name: 'Block Party', blurb: 'Color Rush & Shape Escape. Two ways to untangle the grid.', path: 'games/blockparty/',
+      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#ffe0bb"/><rect x="12" y="13" width="76" height="76" rx="18" fill="#fff7e7"/><rect x="20" y="22" width="26" height="54" rx="7" fill="#eb7770"/><path d="M51 22H78V48H65V61H51Z" fill="#6eafe8"/><rect x="51" y="67" width="27" height="12" rx="5" fill="#e9b844"/><path d="M6 35H13M87 58H95" stroke="#ea8177" stroke-width="7" stroke-linecap="round"/></svg>',
+      status: function () { var m=readLS('blockparty.meta'); return m ? 'Color '+(m.color||1)+' · Shape '+(m.shape||1) : '96 boards · Endless play'; }
+    },
+    {
       id: 'farkle', name: 'Farkle', blurb: 'Six dice. Keep, bank, or risk one more roll.', path: 'games/farkle/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#28543e"/><g fill="#f3e8cf" stroke="#c4a76d" stroke-width="2"><rect x="12" y="16" width="46" height="46" rx="10" transform="rotate(-12 35 39)"/><rect x="43" y="43" width="46" height="46" rx="10" transform="rotate(12 66 66)"/></g><g fill="#294c3c"><circle cx="24" cy="29" r="4"/><circle cx="35" cy="39" r="4"/><circle cx="46" cy="49" r="4"/><circle cx="56" cy="54" r="4"/><circle cx="76" cy="58" r="4"/><circle cx="66" cy="66" r="4"/><circle cx="56" cy="74" r="4"/><circle cx="76" cy="78" r="4"/></g></svg>',
       status: function () { var m=readLS('farkle.meta'); return m ? m.games+' games played · '+m.wins+' wins vs computer' : 'Vs computer · 2–6 players'; }
@@ -1111,7 +1116,7 @@
 
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
-    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'blockparty hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
     { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong farkle dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
@@ -1146,7 +1151,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'bridge' || g.id === 'hexslide' || g.id === 'farkle') return;
+    if (g.id === 'bridge' || g.id === 'hexslide' || g.id === 'farkle' || g.id === 'blockparty') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
   document.addEventListener('error', function (e) {
