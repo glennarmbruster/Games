@@ -308,7 +308,7 @@ html.gg-fs-over .top .iconbtn,html.gg-fs-over .top .brand {background:#172c39;co
 // (a Blob, no extra file) to make and check the levels past the bank without stalling the page.
 function BBModule() {
   'use strict';
-  var COLS = 11, ROWS = 15, BR = 0.16, SPEED = 0.5, SUB = 3, FIRE_GAP = 3, MINVY = 0.16, MAX_STEPS = 60 * 45;
+  var COLS = 11, ROWS = 15, BR = 0.16, SPEED = 0.5, SUB = 3, FIRE_GAP = 3, MIN_AIM = Math.PI / 180, MINVY = Math.sin(MIN_AIM), MAX_STEPS = 60 * 45;
 
   function rng(seed) { var s = seed >>> 0 || 1; return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function emptyRow() { var a = new Array(COLS); for (var i = 0; i < COLS; i++) a[i] = null; return a; }
@@ -479,7 +479,7 @@ function BBModule() {
         else hit(g, best[0], best[1], g.power ? 2 : 1, ev);
       }
     }
-    // never let a ball skim sideways for ever
+    // keep a tiny upward/downward component without steepening low shots
     var sp = Math.hypot(b.vx, b.vy) || 1;
     if (Math.abs(b.vy) < MINVY * SPEED) { b.vy = (b.vy < 0 ? -1 : 1) * MINVY * SPEED; }
     sp = Math.hypot(b.vx, b.vy); b.vx *= SPEED / sp; b.vy *= SPEED / sp;
@@ -498,8 +498,8 @@ function BBModule() {
   }
 
   // ---------------- a turn ----------------
-  function aimOk(a) { return a > 0.12 && a < Math.PI - 0.12; }
-  function clampAim(a) { return Math.max(0.12, Math.min(Math.PI - 0.12, a)); }
+  function aimOk(a) { return a >= MIN_AIM && a <= Math.PI - MIN_AIM; }
+  function clampAim(a) { return Math.max(MIN_AIM, Math.min(Math.PI - MIN_AIM, a)); }
   // angle: measured from the right-hand floor, so PI/2 is straight up
   function startShot(g, angle) {
     angle = clampAim(angle);
@@ -1405,7 +1405,7 @@ var BBSound = (function () {
   function local(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / k, (e.clientY - r.top) / k]; }
   function aimFrom(p) {
     var dy = (ROWS - BR) - p[1], dx = p[0] - g.x;
-    if (p[1] > ROWS - 0.25) return { a: Math.PI / 2, ok: false };
+    if (dy < 0) return { a: Math.PI / 2, ok: false };
     var a = Math.atan2(dy, dx); return { a: BB.clampAim(a), ok: true };
   }
   // 1.3.0: the whole screen takes the drag (not just the field), so a finger can aim from the navy around the field too;
