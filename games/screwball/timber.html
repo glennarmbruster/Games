@@ -8,4 +8,12 @@
 </div>
 <dialog id="dialog"><div id="dialogContent"></div></dialog>
 <script src="timber-rules.js"></script><script src="timber-levels.js"></script><script src="timber-game.js"></script>
-</body></html>
+<script>
+// Do not display a new label on an older, mixed-cache engine.
+if(!window.TimberGame||TimberGame.build!=='1.1.1'||!window.TimberRules||TimberRules.build!=='1.1.1'){
+ document.getElementById('difficulty').textContent='Older files';
+ document.getElementById('message').textContent='Older game files loaded. Return to Games, install the update, then reopen Timber Tumble.';
+ document.getElementById('board').style.pointerEvents='none';
+ document.querySelectorAll('.tools button').forEach(function(b){b.disabled=true;});
+}
+</script></body></html>

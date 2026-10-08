@@ -12,3 +12,5 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .status,.tools,.instruction{min-width:0}
 @media(orientation:landscape) and (max-height:600px){.workshop{grid-template-columns:minmax(0,1fr) 210px}}
 @media(max-width:370px){.game-title h1{white-space:normal;line-height:1.1}.game-title span{display:none}}
+
+#puzzleDetails{display:block;width:100%;resize:vertical;max-height:35dvh;background:#102b27;color:#f3e4c4;border:1px solid #bda16a;border-radius:8px;padding:10px;font-size:11px}#copyStatus{font-size:12px}.build-detail{font-size:11px;text-align:center;color:#b9c3ae;margin:15px 0 0}

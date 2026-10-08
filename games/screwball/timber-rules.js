@@ -1,29 +1,86 @@
-/* Timber Tumble — deterministic pin-and-plank rules, shared by game and solver. */
+/* Timber Tumble 1.1 — swept screw collisions, shared by play, hints and generation. */
 (function(root){
 'use strict';
+const PEG_RADIUS=17,EPS=.0001,TAU=Math.PI*2;
 const clone=s=>({pins:s.pins.slice(),bars:s.bars.map(b=>({...b}))});
 const initial=l=>({pins:l.holes.map(h=>!!h.pin),bars:l.planks.map(()=>({mode:2,pivot:-1}))});
 function geometry(l,s,i){
  const p=l.planks[i],b=s.bars[i],a=l.holes[p.a],z=l.holes[p.b],len=Math.hypot(z.x-a.x,z.y-a.y);
- if(b.mode===1){const h=l.holes[b.pivot];return {x1:h.x,y1:h.y,x2:h.x,y2:h.y+len,len};}
+ if(b.x1!==undefined)return {x1:b.x1,y1:b.y1,x2:b.x2,y2:b.y2,len};
  return {x1:a.x,y1:a.y,x2:z.x,y2:z.y,len};
 }
 function distance(x,y,g){const dx=g.x2-g.x1,dy=g.y2-g.y1,t=Math.max(0,Math.min(1,((x-g.x1)*dx+(y-g.y1)*dy)/(dx*dx+dy*dy)));return Math.hypot(x-g.x1-t*dx,y-g.y1-t*dy);}
+function capsule(g,width){const e=25-width/2,ux=(g.x2-g.x1)/g.len,uy=(g.y2-g.y1)/g.len;return{x1:g.x1-e*ux,y1:g.y1-e*uy,x2:g.x2+e*ux,y2:g.y2+e*uy,len:g.len+2*e};}
 function accessible(l,s,h){
  const at=l.holes[h];
  for(let i=0;i<l.planks.length;i++){
-  const b=s.bars[i],p=l.planks[i]; if(!b.mode)continue;
-  // Every aligned drilled hole remains open through all layers.
+  const b=s.bars[i],p=l.planks[i];if(!b.mode)continue;
   if((b.mode===2&&(p.a===h||p.b===h))||(b.mode===1&&b.pivot===h))continue;
-  if(distance(at.x,at.y,geometry(l,s,i))<p.width/2+11)return false;
+  if(distance(at.x,at.y,capsule(geometry(l,s,i),p.width))<p.width/2+(s.pins[h]?11:PEG_RADIUS))return false;
  }
  return true;
 }
+function obstaclePins(l,s,g,width,except=-1){
+ const cap=capsule(g,width),radius=width/2+PEG_RADIUS;
+ const result=[];
+ for(let j=0;j<l.holes.length;j++)if(s.pins[j]&&j!==except){
+  const h=l.holes[j];
+  // Pins already concealed behind an overlapping layer do not suddenly jump
+  // in front of it. Once the layer clears them, subsequent motion collides.
+  if(distance(h.x,h.y,cap)<radius-.001)continue;
+  result.push(j);
+ }
+ return result;
+}
+function swing(l,s,g,width,pivot){
+ const h=l.holes[pivot];let start=Math.atan2(g.y2-g.y1,g.x2-g.x1),delta=Math.PI/2-start;
+ while(delta>Math.PI)delta-=TAU;while(delta< -Math.PI)delta+=TAU;
+ if(Math.abs(delta)<EPS)return {g,stop:-1};
+ const sign=Math.sign(delta),radius=width/2+PEG_RADIUS,L=g.len+25-width/2;
+ let travel=Math.abs(delta),stop=-1;
+ for(const j of obstaclePins(l,s,g,width,pivot)){
+  const p=l.holes[j],dx=p.x-h.x,dy=p.y-h.y,d=Math.hypot(dx,dy);if(d>L+radius||d<radius)continue;
+  const theta=Math.atan2(dy,dx);
+  const beta=d<=Math.hypot(L,radius)?Math.asin(radius/d):Math.acos(Math.max(-1,Math.min(1,(d*d+L*L-radius*radius)/(2*d*L))));
+  for(let k=-2;k<=2;k++){
+   const low=theta-beta+k*TAU,high=theta+beta+k*TAU;
+   const entry=sign>0?low:high,dt=(entry-start)*sign;
+   // At contact: allow a motion away, but never continue through the peg.
+   if(dt>=-EPS&&dt<=travel){travel=Math.max(0,dt);stop=j;}
+  }
+ }
+ const angle=start+sign*Math.max(0,travel-(stop>=0?.000002:0));
+ return {g:{x1:h.x,y1:h.y,x2:h.x+g.len*Math.cos(angle),y2:h.y+g.len*Math.sin(angle),len:g.len},stop};
+}
+function fall(l,s,g,width){
+ const cap=capsule(g,width),ux=(cap.x2-cap.x1)/cap.len,uy=(cap.y2-cap.y1)/cap.len,radius=width/2+PEG_RADIUS;
+ let travel=900,stop=-1;
+ function hit(t,j){if(t>=-EPS&&t<travel){travel=Math.max(0,t);stop=j;}}
+ for(const j of obstaclePins(l,s,g,width)){
+  const p=l.holes[j],rx=p.x-cap.x1,ry=p.y-cap.y1;
+  const u=rx*ux+ry*uy,v=-rx*uy+ry*ux;
+  // Swept side faces of the capsule.
+  if(Math.abs(ux)>EPS)for(const side of [-radius,radius]){const t=(v-side)/ux,along=u-uy*t;if(along>=0&&along<=cap.len)hit(t,j);}
+  // Swept rounded ends. First contact prevents even very long falls tunnelling.
+  for(const [x,y]of [[cap.x1,cap.y1],[cap.x2,cap.y2]]){const dx=p.x-x;if(Math.abs(dx)<=radius)hit(p.y-y-Math.sqrt(Math.max(0,radius*radius-dx*dx)),j);}
+ }
+ const dy=Math.max(0,travel-(stop>=0?.0001:0));
+ return{g:{...g,y1:g.y1+dy,y2:g.y2+dy},stop};
+}
+function setGeometry(b,g){b.x1=g.x1;b.y1=g.y1;b.x2=g.x2;b.y2=g.y2;}
 function settle(l,s){
  for(let i=0;i<l.planks.length;i++){
-  const b=s.bars[i],p=l.planks[i];
-  if(b.mode===2){const a=s.pins[p.a],z=s.pins[p.b];if(!a&&!z)b.mode=0;else if(!a||!z){b.mode=1;b.pivot=a?p.a:p.b;}}
-  else if(b.mode===1&&!s.pins[b.pivot])b.mode=0;
+  const b=s.bars[i],p=l.planks[i];if(!b.mode)continue;
+  let g=geometry(l,s,i);
+  if(b.mode===2){
+   const a=s.pins[p.a],z=s.pins[p.b];if(a&&z)continue;
+   if(a||z){b.mode=1;b.pivot=a?p.a:p.b;if(z)g={x1:g.x2,y1:g.y2,x2:g.x1,y2:g.y1,len:g.len};}
+   else{b.mode=3;b.pivot=-1;}
+  }
+  if(b.mode===1&&!s.pins[b.pivot]){b.mode=3;b.pivot=-1;}
+  const next=b.mode===1?swing(l,s,g,p.width,b.pivot):fall(l,s,g,p.width);
+  b.stop=next.stop;setGeometry(b,next.g);
+  if(b.mode===3&&next.stop<0)b.mode=0;
  }
  return s;
 }
@@ -32,23 +89,38 @@ function move(l,s,from,to){
  const n=clone(s);n.pins[from]=false;n.pins[to]=true;return settle(l,n);
 }
 const won=s=>s.bars.every(b=>b.mode===0);
-const key=s=>s.pins.map(Number).join('')+'/'+s.bars.map(b=>b.mode===1?'h'+b.pivot:b.mode).join(',');
+const key=s=>s.pins.map(Number).join('')+'/'+s.bars.map(b=>!b.mode?'0':[b.mode,b.pivot,...['x1','y1','x2','y2'].map(k=>Math.round((b[k]||0)*1000))].join(':')).join(',');
 function choices(l,s){
  const sources=[],dest=[];
  for(let h=0;h<l.holes.length;h++)if(accessible(l,s,h))(s.pins[h]?sources:dest).push(h);
  const result=[];
  for(const a of sources)for(const b of dest){const n=move(l,s,a,b);let rank=0;
- for(let i=0;i<s.bars.length;i++){rank+=(s.bars[i].mode-n.bars[i].mode)*25;if(s.bars[i].mode&&n.bars[i].mode===0)rank+=80;}
+ for(let i=0;i<s.bars.length;i++){
+  if(s.bars[i].mode&&n.bars[i].mode===0)rank+=110;
+  else if(s.bars[i].mode===2&&n.bars[i].mode!==2)rank+=25;
+  if(s.bars[i].stop===a)rank+=18;
+ }
  rank+=l.holes.reduce((v,h,j)=>v+(!n.pins[j]&&accessible(l,n,j)?1:0),0)*4;
  result.push({from:a,to:b,state:n,rank});}
  return result.sort((a,b)=>b.rank-a.rank);
 }
-function solve(l,start,limit=30000){
- let visited=0;const seen=new Set(),path=[];let exhausted=false;
- function walk(s,depth){if(won(s))return true;if(++visited>limit){exhausted=true;return false;}if(depth>l.planks.length*5+12)return false;const k=key(s);if(seen.has(k))return false;seen.add(k);
-  for(const m of choices(l,s)){path.push([m.from,m.to]);if(walk(m.state,depth+1))return true;path.pop();if(exhausted)return false;}return false;
+function solve(l,start,limit=6000){
+ const first=start||initial(l);if(won(first))return{path:[],visited:0};
+ const score=s=>s.bars.reduce((v,b)=>v+(b.mode===2?180:b.mode===1?100:b.mode===3?65:0)+(b.mode&&b.stop>=0?8:0),0);
+ const heap=[],seen=new Set([key(first)]);let visited=0;
+ function push(n){heap.push(n);let i=heap.length-1;while(i){const p=(i-1)>>1;if(heap[p].score<=n.score)break;heap[i]=heap[p];i=p;}heap[i]=n;}
+ function pop(){const top=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let c=i*2+1;if(c+1<heap.length&&heap[c+1].score<heap[c].score)c++;if(heap[c].score>=last.score)break;heap[i]=heap[c];i=c;}heap[i]=last;}return top;}
+ push({s:first,depth:0,score:score(first),parent:null,move:null});
+ while(heap.length&&visited++<limit){
+  const at=pop();if(at.depth>l.planks.length*4+20)continue;
+  for(const m of choices(l,at.s)){
+   const k=key(m.state);if(seen.has(k))continue;seen.add(k);
+   const node={s:m.state,depth:at.depth+1,parent:at,move:[m.from,m.to],score:score(m.state)+(at.depth+1)*1.5};
+   if(won(m.state)){const path=[];for(let p=node;p.parent;p=p.parent)path.push(p.move);return{path:path.reverse(),visited};}
+   push(node);
+  }
  }
- return walk(start||initial(l),0)?{path:path.slice(),visited}:null;
+ return null;
 }
 function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function generate(level,seed=0){
@@ -61,21 +133,36 @@ function generate(level,seed=0){
   let ax=Math.floor(r()*grid),ay=Math.floor(r()*grid),bx=Math.floor(r()*grid),by=Math.floor(r()*grid);
   if(level<3){ay=Math.min(ay,1);by=ay;bx=(ax+1)%grid;}
   const dx=bx-ax,dy=by-ay,dist=Math.hypot(dx,dy);if(dist<1||dist>3.1)continue;
-  if(level<5&&dx&&dy&&Math.abs(dx)!==Math.abs(dy))continue;
+  if(dx&&dy&&Math.abs(dx)!==Math.abs(dy))continue;
   const pa=ay*grid+ax,pb=by*grid+bx,k=Math.min(pa,pb)+','+Math.max(pa,pb);if(pairs.has(k))continue;pairs.add(k);
   const a=hole(off+ax*gap,110+ay*gap),b=hole(off+bx*gap,110+by*gap);
   planks.push({a,b,width:level<3?49:42,finish:level>=8&&planks.length%6===4?'steel':['oak','cedar','teal','walnut','honey','red'][Math.floor(r()*6)]});
  }
  // Two exposed parking holes; advanced boards add a third, obstructed reserve socket.
- if(level<=4){hole(164,627,false);hole(436,627,false);}
+ if(level<=4){hole(64,58,false);hole(536,58,false);}
  else {
-  hole(164,627,false);
+  hole(64,58,false);hole(536,58,false);if(level>=13)hole(300,650,false);
   // A reserve hole is physically concealed under a plank until that layer moves.
   const p=planks[Math.floor(r()*planks.length)],a=holes[p.a],b=holes[p.b];
   hole((a.x+b.x)/2,(a.y+b.y)/2,false);
  }
  return {level,seed,holes,planks};
 }
-root.TimberRules={initial,clone,geometry,accessible,settle,move,won,key,choices,solve,generate};
+function replay(l,path){let s=initial(l);for(const m of path){s=move(l,s,...m);if(!s)return false;}return won(s);}
+function remix(base,number,variant){
+ const r=rng(number*2179+variant*571+711),l=JSON.parse(JSON.stringify(base));
+ l.level=number;l.seed=variant;l.family=base.family||base.level;
+ const changes=1+Math.floor(r()*3),available=l.holes.map((h,i)=>h.pin?i:-1).filter(i=>i>=0);
+ for(let k=0;k<changes;k++){
+  const index=Math.floor(r()*l.planks.length),p=l.planks[index],a=available[Math.floor(r()*available.length)],b=available[Math.floor(r()*available.length)];
+  const len=Math.hypot(l.holes[a].x-l.holes[b].x,l.holes[a].y-l.holes[b].y);
+  if(a===b||len<80||len>330||l.planks.some((q,j)=>j!==index&&((q.a===a&&q.b===b)||(q.a===b&&q.b===a))))return null;
+  p.a=a;p.b=b;
+ }
+ if(l.planks.every((p,i)=>(p.a===base.planks[i].a&&p.b===base.planks[i].b)||(p.a===base.planks[i].b&&p.b===base.planks[i].a)))return null;
+ const finishes=['oak','cedar','teal','walnut','honey','red'];for(let i=0;i<l.planks.length;i++)l.planks[i].finish=i%6===4?'steel':finishes[Math.floor(r()*finishes.length)];
+ return replay(l,l.solution)?l:null;
+}
+root.TimberRules={build:'1.1.1',physics:'screw-stops-1.1',initial,clone,geometry,accessible,settle,move,won,key,choices,solve,generate,remix,replay,swing,fall,PEG_RADIUS,distance,capsule};
 if(typeof module!=='undefined')module.exports=root.TimberRules;
 })(typeof globalThis!=='undefined'?globalThis:this);
