@@ -9,7 +9,7 @@ const VERSIONS = {
   "skeehop": "1.4.0",
   "merge": "2.0.0",
   "tapaway": "2.0.0",
-  "homerun": "1.6.1",
+  "homerun": "1.7.0",
   "match3": "2.0.0",
   "snake": "1.2.0",
   "solitaire": "1.1.1",

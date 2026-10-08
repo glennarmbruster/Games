@@ -133,6 +133,11 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
 .cardicon svg { border-radius: 16px; }
 .modes button { font-size: 14px; padding-left: 2px; padding-right: 2px; }
 .modes button.locked { opacity: .5; }
+
+#ovRecovery{position:fixed;inset:0;z-index:100;display:none;background:#07131dcc;padding:calc(env(safe-area-inset-top) + 12px) max(12px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 12px) max(12px,env(safe-area-inset-left));align-items:center;justify-content:center}
+#ovRecovery.show{display:flex}.recovery-card{display:flex;flex-direction:column;max-height:100%;width:min(680px,100%);background:#172c3c;color:#edf2ec;border:1px solid #dbc17e88;border-radius:18px;padding:18px;box-sizing:border-box}.recovery-card h2{font-size:24px;margin:0 0 6px}.recovery-scroll{overflow:auto;min-height:0;touch-action:pan-y;-webkit-overflow-scrolling:touch}.recovery-card p{font-size:12px;line-height:1.5;color:#c5d4d4;margin:6px 0 12px}.recovery-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.recovery-fields label{font-size:11px;color:#e8d4a2}.recovery-fields input,.recovery-fields select{display:block;width:100%;box-sizing:border-box;margin-top:5px;background:#0d202f;color:white;border:1px solid #ffffff55;border-radius:8px;min-height:42px;padding:7px;font-size:16px}.recovery-row{display:flex;align-items:center;gap:12px;border-top:1px solid #ffffff22;padding:10px 0}.recovery-row span{flex:1;font-size:14px}.recovery-row small{display:block;color:#aec4c9;font-size:11px;margin-top:3px}.recovery-row button{width:42px;min-height:40px;background:#314958;border:1px solid #ffffff44;border-radius:8px;color:white;font-size:20px}.recovery-row output{min-width:22px;text-align:center;font-weight:bold}.recovery-card button:disabled{opacity:.35}.recovery-actions{display:flex;gap:8px;flex-shrink:0;padding-top:10px}.recovery-actions button{flex:1;min-height:46px;border-radius:9px;padding:8px;font-weight:bold;font-size:12px;border:1px solid #edd393;color:#233947;background:#eacb83}.recovery-actions #recoverySkip{background:#253d4d;color:#dee7e5;border-color:#ffffff44}#recoveryStatus{color:#ffca9c;margin:0}#recoveryCount{color:#f4d792;font-weight:bold}#ovRecovery button:focus-visible,#ovRecovery input:focus-visible,#ovRecovery select:focus-visible{outline:3px solid #ffdf88;outline-offset:2px}
+@media(max-height:450px){.recovery-card{padding:12px 16px}.recovery-card h2{font-size:20px}.recovery-row{padding:6px 0}.recovery-fields{margin:8px 0}.recovery-actions{padding-top:7px}}
+
 </style>
 </head>
 <body>
@@ -276,9 +281,11 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
         <li>The <b>camera</b> button switches between the side view and the view from behind the plate. The <b>sunglasses</b> show the next pitches (a few uses per step). Points earn experience; each level up gives an upgrade: <b>Power</b>, <b>Contact</b> (a bigger sweet spot) or <b>Batting Eye</b> (more sunglasses).</li>
       </ol>
     </div>
-    <div class="actions"><button class="btn red" id="btnCloseHelp">Play ball!</button></div>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Play ball!</button></div><p style="font-size:11px;opacity:.7;text-align:center">Moonshot · Version 1.7.0</p>
   </div>
 </div>
+
+<div id="ovRecovery"><section class="recovery-card" role="dialog" aria-modal="true" aria-labelledby="recoveryTitle"><h2 id="recoveryTitle">Welcome back to Moonshot</h2><div class="recovery-scroll"><p>Restore your progress after reinstalling. This choice is available once on this profile. Nothing changes until you confirm.</p><div class="recovery-fields"><label>Player level<input id="recoveryLevel" type="number" min="1" max="100" step="1" value="8" inputmode="numeric"></label><label>League<select id="recoveryMode"><option value="minor">Minor</option><option value="major">Major</option></select></label><label>League step<input id="recoveryStep" type="number" min="1" max="999" step="1" value="8" inputmode="numeric"></label></div><p>Player level is your experience rank. League step is the stage you play.</p><div id="recoveryCount" aria-live="polite">0 / 18 upgrades</div><div class="recovery-row"><span>Power<small>Hit the ball farther.</small></span><button type="button" id="minus-power" data-recover="power" data-delta="-1" aria-label="Remove Power upgrade">−</button><output id="restore-power">0</output><button type="button" id="plus-power" data-recover="power" data-delta="1" aria-label="Add Power upgrade">+</button></div><div class="recovery-row"><span>Contact<small>A bigger sweet spot.</small></span><button type="button" id="minus-contact" data-recover="contact" data-delta="-1" aria-label="Remove Contact upgrade">−</button><output id="restore-contact">0</output><button type="button" id="plus-contact" data-recover="contact" data-delta="1" aria-label="Add Contact upgrade">+</button></div><div class="recovery-row"><span>Batting Eye<small>More pitch previews.</small></span><button type="button" id="minus-eye" data-recover="eye" data-delta="-1" aria-label="Remove Batting Eye upgrade">−</button><output id="restore-eye">0</output><button type="button" id="plus-eye" data-recover="eye" data-delta="1" aria-label="Add Batting Eye upgrade">+</button></div><p>Choose up to 18 upgrades total, with up to 15 in any skill. These become your restored skill totals; no extra unspent points are added. You can earn more upgrades normally afterward.</p><p id="recoveryStatus" role="status"></p></div><div class="recovery-actions"><button id="recoveryApply">Restore progress</button><button id="recoverySkip">Keep current progress</button></div></section></div>
 
 <!-- Cards -->
 <div class="overlay center" id="ovEnd">
@@ -1014,7 +1021,7 @@ var MSSound = (function () {
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function isOpen(id) { return $(id).classList.contains('show'); }
   function portrait() { return window.matchMedia && matchMedia('(orientation: portrait)').matches; }
-  function locked() { return portrait() || isOpen('ovMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkills') || isOpen('ovSteps') || GoobsAds.isOpen(); }
+  function locked() { return portrait() || isOpen('ovMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkills') || isOpen('ovSteps') || isOpen('ovRecovery') || GoobsAds.isOpen(); }
   function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
   function level() { return MS.levelFromXp(meta.xp); }
   function majorOpen() { return meta.minor > MAJOR_AT; }
@@ -1385,6 +1392,53 @@ var MSSound = (function () {
     $(close).addEventListener('click', function () { $(ov).classList.remove('show'); });
     $(ov).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
   }
+  // One completed recovery choice per local profile; kept with normal backup data.
+  var recoveryDraft = null;
+  function recoveryTotal() { return recoveryDraft.power + recoveryDraft.contact + recoveryDraft.eye; }
+  function renderRecovery() {
+    var total = recoveryTotal();
+    $('recoveryCount').textContent = total + ' / 18 upgrades';
+    ['power','contact','eye'].forEach(function(k) {
+      $('restore-'+k).textContent = recoveryDraft[k];
+      $('minus-'+k).disabled = recoveryDraft[k] <= 0;
+      $('plus-'+k).disabled = total >= 18 || recoveryDraft[k] >= MS.MAX_SKILL;
+    });
+    $('recoveryApply').textContent = 'Restore progress · ' + total + ' upgrades';
+  }
+  function openRecovery() {
+    if (meta.recoveryChoiceV1) return;
+    recoveryDraft = { power: Math.min(15,meta.skills.power||0), contact: Math.min(15,meta.skills.contact||0), eye: Math.min(15,meta.skills.eye||0) };
+    if (recoveryTotal()>18) recoveryDraft={power:0,contact:0,eye:0};
+    $('recoveryLevel').value = Math.max(8,level()+1);
+    $('recoveryMode').value = meta.mode==='major'?'major':'minor';
+    $('recoveryStep').value = Math.max(8,meta[$('recoveryMode').value]||1);
+    $('ovHelp').classList.remove('show');$('ovRecovery').classList.add('show');renderRecovery();
+    $('recoveryLevel').focus();
+  }
+  function commitRecovery(restore) {
+    if (meta.recoveryChoiceV1) return;
+    var lv=Number($('recoveryLevel').value),step=Number($('recoveryStep').value),mode=$('recoveryMode').value,total=recoveryTotal();
+    if (restore && (!Number.isInteger(lv)||lv<1||lv>100||!Number.isInteger(step)||step<1||step>999||(mode!=='minor'&&mode!=='major')||total>18||['power','contact','eye'].some(function(k){return !Number.isInteger(recoveryDraft[k])||recoveryDraft[k]<0||recoveryDraft[k]>MS.MAX_SKILL;}))) {
+      $('recoveryStatus').textContent='Choose player level 1–100, league step 1–999, and no more than 18 upgrades.';return;
+    }
+    var next=JSON.parse(JSON.stringify(meta));
+    if (restore) {
+      next.xp=MS.xpForLevel(lv-1);next.pts=0;next.skills={power:recoveryDraft.power,contact:recoveryDraft.contact,eye:recoveryDraft.eye};
+      next.mode=mode;next[mode]=Math.max(next[mode]||1,step);if(mode==='major')next.minor=Math.max(next.minor,MAJOR_AT+1);
+      next.seenHelp=true;next.recoveryStartV1={mode:mode,step:step};
+    }
+    next.recoveryChoiceV1={used:true,restored:restore,date:Date.now()};
+    try {
+      // Backup first, then commit the selection and its one-time marker together.
+      if (restore) localStorage.setItem('homerun.recoveryBackupV1',JSON.stringify({meta:meta,minor:store.get('run.minor',null),major:store.get('run.major',null),moonstar:store.get('run.moonstar',null)}));
+      localStorage.setItem('homerun.meta',JSON.stringify(next));
+    } catch(e) { $('recoveryStatus').textContent='Could not save your choices. Free some device storage, then try again.';return; }
+    meta=next;$('ovRecovery').classList.remove('show');
+    if (restore) { clearTimers();run=null;store.del('run.'+mode);start(mode,step,true);delete meta.recoveryStartV1;saveMeta(); }
+    else if(!meta.seenHelp) $('ovHelp').classList.add('show');
+    renderAll();
+  }
+
   function init() {
     Goobs.themePicker($('themes'));
     try { R3 = MSRender.create(THREE, $('cv')); }
@@ -1392,6 +1446,9 @@ var MSSound = (function () {
     SV = MSSide.create($('side'),R3);window.addEventListener('moonartready',kickSide);
     if (window.ResizeObserver) new ResizeObserver(function () { SV.resize(); kickSide(); }).observe($('side'));
     window.addEventListener('resize', function () { SV.resize(); kickSide(); });
+    $('ovRecovery').addEventListener('click',function(e){var b=e.target.closest('[data-recover]');if(!b||!recoveryDraft)return;var k=b.dataset.recover,d=+b.dataset.delta,v=recoveryDraft[k]+d;if(v>=0&&v<=MS.MAX_SKILL&&(d<0||recoveryTotal()<18)){recoveryDraft[k]=v;renderRecovery();}});
+    $('recoveryApply').onclick=function(){commitRecovery(true);};$('recoverySkip').onclick=function(){commitRecovery(false);};
+    $('ovRecovery').addEventListener('keydown',function(e){if(e.key==='Tab'){var nodes=Array.prototype.filter.call(this.querySelectorAll('input,select,button'),function(n){return !n.disabled;}),first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
     renderChips();
     if (settings.view !== 'side') settings.view = 'back';
     R3.setView('back'); syncView();
@@ -1457,8 +1514,9 @@ var MSSound = (function () {
     if (!meta.hitOnce) $('flickHint').classList.add('show');
     var m0 = meta.mode === 'major' && !majorOpen() ? 'minor' : meta.mode;
     var sv = store.get('run.' + m0, null);
-    start(m0, m0 === 'minor' || m0 === 'major' ? (sv && !sv.done && sv.step <= meta[m0] ? sv.step : meta[m0]) : 0);
-    if (!meta.seenHelp) $('ovHelp').classList.add('show');
+    if(meta.recoveryStartV1){var pending=meta.recoveryStartV1;run=null;start(pending.mode,pending.step,true);delete meta.recoveryStartV1;saveMeta();}
+    else start(m0, m0 === 'minor' || m0 === 'major' ? (sv && !sv.done && sv.step <= meta[m0] ? sv.step : meta[m0]) : 0);
+    if(!meta.recoveryChoiceV1)openRecovery();else if (!meta.seenHelp) $('ovHelp').classList.add('show');
     Goobs.markPlayed('homerun');
     Goobs.initUpdates({ beforeReload: saveRun, onVersions: function (v) { $('version').textContent = 'Moonshot ' + (v.homerun || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }
