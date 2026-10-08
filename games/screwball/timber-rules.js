@@ -1,8 +1,8 @@
-/* Timber Tumble 1.1 — swept screw collisions, shared by play, hints and generation. */
+/* Timber Tumble 1.2 — gravity-driven sliding and screw contacts; shared by play, hints and generation. */
 (function(root){
 'use strict';
 const PEG_RADIUS=17,EPS=.0001,TAU=Math.PI*2;
-const clone=s=>({pins:s.pins.slice(),bars:s.bars.map(b=>({...b}))});
+const clone=s=>({pins:s.pins.slice(),bars:s.bars.map(b=>({...b,trace:undefined}))});
 const initial=l=>({pins:l.holes.map(h=>!!h.pin),bars:l.planks.map(()=>({mode:2,pivot:-1}))});
 function geometry(l,s,i){
  const p=l.planks[i],b=s.bars[i],a=l.holes[p.a],z=l.holes[p.b],len=Math.hypot(z.x-a.x,z.y-a.y);
@@ -67,8 +67,46 @@ function fall(l,s,g,width){
  const dy=Math.max(0,travel-(stop>=0?.0001:0));
  return{g:{...g,y1:g.y1+dy,y2:g.y2+dy},stop};
 }
+// A loose plank is a rigid capsule, not a latch. Resolve gravity against round
+// screw heads with translation AND rotation. Low-friction contact allows sliding;
+// two supports (or a perfectly balanced support) can still hold a plank at rest.
+function slide(l,s,g,width,record=true){
+ const first=fall(l,s,g,width),trace=record?[{...g},{...first.g}]:[];
+ if(first.stop<0)return{...first,trace};
+ const radius=width/2+PEG_RADIUS,half=g.len/2,capHalf=half+25-width/2;
+ const invI=12/(g.len*g.len+width*width),active=new Set(obstaclePins(l,s,g,width));
+ let x=(first.g.x1+first.g.x2)/2,y=(first.g.y1+first.g.y2)/2,a=Math.atan2(g.y2-g.y1,g.x2-g.x1),stop=first.stop,still=0;
+ const pose=()=>({x1:x-half*Math.cos(a),y1:y-half*Math.sin(a),x2:x+half*Math.cos(a),y2:y+half*Math.sin(a),len:g.len});
+ function contact(j){const h=l.holes[j],ux=Math.cos(a),uy=Math.sin(a),t=Math.max(-capHalf,Math.min(capHalf,(h.x-x)*ux+(h.y-y)*uy)),px=x+t*ux,py=y+t*uy,dx=px-h.x,dy=py-h.y,d=Math.hypot(dx,dy);return{t,ux,uy,dx,dy,d};}
+ for(let step=0;step<1800;step++){
+  const ox=x,oy=y,oa=a;y+=1.5;
+  // Short advances bound the sweep to less than a screw-head radius. Iterative
+  // impulses share the correction between center translation and angular motion.
+  for(let iteration=0;iteration<32;iteration++){
+   let penetration=0,dx=0,dy=0,da=0,count=0;
+   for(const j of active){const q=contact(j),depth=radius+.002-q.d;if(depth<=0)continue;
+    const nx=q.d>EPS?q.dx/q.d:0,ny=q.d>EPS?q.dy/q.d:-1;
+    const arm=q.t*(q.ux*ny-q.uy*nx),amount=depth/(1+arm*arm*invI);
+    dx+=nx*amount;dy+=ny*amount;da+=arm*amount*invI;count++;penetration=Math.max(penetration,depth);stop=j;
+   }
+   if(count){x+=dx/count;y+=dy/count;a+=da/count;}
+   if(penetration<.0005)break;
+  }
+  // A screw concealed behind a layer becomes a future obstacle once uncovered.
+  for(let j=0;j<l.holes.length;j++)if(s.pins[j]&&!active.has(j)&&contact(j).d>=radius+.02)active.add(j);
+  const motion=Math.hypot(x-ox,y-oy)+Math.abs(a-oa)*half;
+  if(motion<.004)still++;else still=0;
+  if(record&&step%2===0)trace.push(pose());
+  if(still>=5){const out=pose();if(record)trace.push(out);return{g:out,stop,trace};}
+  let touching=false;for(const j of active)if(contact(j).d<radius+.06){touching=true;break;}
+  if(!touching){const next=fall(l,s,pose(),width);x=(next.g.x1+next.g.x2)/2;y=(next.g.y1+next.g.y2)/2;if(record)trace.push(next.g);if(next.stop<0)return{...next,trace};stop=next.stop;}
+  if(y>850+half){const out=pose();if(record)trace.push(out);return{g:out,stop:-1,trace};}
+ }
+ const out=pose();if(record)trace.push(out);return{g:out,stop,trace};
+}
+
 function setGeometry(b,g){b.x1=g.x1;b.y1=g.y1;b.x2=g.x2;b.y2=g.y2;}
-function settle(l,s){
+function settle(l,s,record=false){
  for(let i=0;i<l.planks.length;i++){
   const b=s.bars[i],p=l.planks[i];if(!b.mode)continue;
   let g=geometry(l,s,i);
@@ -78,15 +116,15 @@ function settle(l,s){
    else{b.mode=3;b.pivot=-1;}
   }
   if(b.mode===1&&!s.pins[b.pivot]){b.mode=3;b.pivot=-1;}
-  const next=b.mode===1?swing(l,s,g,p.width,b.pivot):fall(l,s,g,p.width);
-  b.stop=next.stop;setGeometry(b,next.g);
+  const next=b.mode===1?swing(l,s,g,p.width,b.pivot):slide(l,s,g,p.width,record);
+  b.stop=next.stop;b.trace=next.trace;setGeometry(b,next.g);
   if(b.mode===3&&next.stop<0)b.mode=0;
  }
  return s;
 }
-function move(l,s,from,to){
+function move(l,s,from,to,record=false){
  if(from===to||!s.pins[from]||s.pins[to]||!accessible(l,s,from)||!accessible(l,s,to))return null;
- const n=clone(s);n.pins[from]=false;n.pins[to]=true;return settle(l,n);
+ const n=clone(s);n.pins[from]=false;n.pins[to]=true;return settle(l,n,record);
 }
 const won=s=>s.bars.every(b=>b.mode===0);
 const key=s=>s.pins.map(Number).join('')+'/'+s.bars.map(b=>!b.mode?'0':[b.mode,b.pivot,...['x1','y1','x2','y2'].map(k=>Math.round((b[k]||0)*1000))].join(':')).join(',');
@@ -163,6 +201,6 @@ function remix(base,number,variant){
  const finishes=['oak','cedar','teal','walnut','honey','red'];for(let i=0;i<l.planks.length;i++)l.planks[i].finish=i%6===4?'steel':finishes[Math.floor(r()*finishes.length)];
  return replay(l,l.solution)?l:null;
 }
-root.TimberRules={build:'1.1.1',physics:'screw-stops-1.1',initial,clone,geometry,accessible,settle,move,won,key,choices,solve,generate,remix,replay,swing,fall,PEG_RADIUS,distance,capsule};
+root.TimberRules={build:'1.2.0',physics:'sliding-contacts-1.2',initial,clone,geometry,accessible,settle,move,won,key,choices,solve,generate,remix,replay,swing,fall,slide,PEG_RADIUS,distance,capsule};
 if(typeof module!=='undefined')module.exports=root.TimberRules;
 })(typeof globalThis!=='undefined'?globalThis:this);

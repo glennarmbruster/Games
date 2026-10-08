@@ -1,5 +1,5 @@
 (function(){'use strict';
-const BUILD='1.1.1',R=TimberRules,$=id=>document.getElementById(id),svg=$('board'),KEY='goobs.timberTumble.save.v1';
+const BUILD='1.2.0',R=TimberRules,$=id=>document.getElementById(id),svg=$('board'),KEY='goobs.timberTumble.save.v1';
 if(R.build!==BUILD)return;
 let level,state,history=[],moves=0,unlocked=1,best={},sound=false,selected=-1,hintPair=null,busy=false,anim=null,drag=null,worker=null,workerTimer=null,request=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -30,7 +30,11 @@ function plank(i,t){const p=level.planks[i],b=state.bars[i],prior=anim&&anim.old
    // Ease into the exact collision pose; never overshoot a supporting screw.
    const ease=1-Math.pow(1-u,2);q={...q,angle:old.angle+delta*ease};
   }else{
-   const ease=u*u;q={...old,x:old.x+(q.x-old.x)*ease,y:old.y+(q.y-old.y)*ease};
+   if(b.trace&&b.trace.length>1){
+    const poses=[old,...b.trace.map(g=>({x:g.x1,y:g.y1,angle:Math.atan2(g.y2-g.y1,g.x2-g.x1)*180/Math.PI,len:g.len}))];
+    const lengths=[0];for(let k=1;k<poses.length;k++){let da=poses[k].angle-poses[k-1].angle;while(da>180)da-=360;while(da< -180)da+=360;poses[k].angle=poses[k-1].angle+da;lengths.push(lengths[k-1]+Math.min(160,Math.hypot(poses[k].x-poses[k-1].x,poses[k].y-poses[k-1].y)+Math.abs(da)*Math.PI/180*q.len*.5));}
+    const at=u*lengths[lengths.length-1];let k=1;while(k<lengths.length-1&&lengths[k]<at)k++;const f=(at-lengths[k-1])/Math.max(.0001,lengths[k]-lengths[k-1]),a=poses[k-1],z=poses[k];q={...q,x:a.x+(z.x-a.x)*f,y:a.y+(z.y-a.y)*f,angle:a.angle+(z.angle-a.angle)*f};
+   }else{const ease=u*u;q={...old,x:old.x+(q.x-old.x)*ease,y:old.y+(q.y-old.y)*ease};}
    if(!b.mode)opacity=1-Math.max(0,(u-.65)/.35);
   }
  }
@@ -75,12 +79,12 @@ function act(h){if(busy||R.won(state)||h<0)return;if(!R.accessible(level,state,h
  if(state.pins[h]){selected=selected===h?-1:h;say(selected<0?'Tap a screw to pick it up.':'Choose an exposed empty hole. Tap the screw again to cancel.');render();ping(430);return;}
  if(selected<0){say('Pick up a brass screw first, then tap this empty hole.');return;}doMove(selected,h);
 }
-function doMove(a,b){const next=R.move(level,state,a,b);if(!next){say('Choose a clear, empty hole.');return;}history.push({state:R.clone(state),moves});if(history.length>200)history.shift();const old=state;state=next;moves++;selected=-1;hintPair=null;busy=true;anim={old,from:a,to:b};save();ping(300);
- const finish=()=>{anim=null;busy=false;render();save();if(R.won(state)){won();return;}const choices=R.choices(level,state);if(!choices.length)say('No moves left. Undo to free up a hole, or restart.');else if(state.bars.some(b=>b.mode&&b.stop>=0))say('Caught on a screw. Move the supporting screw to let the plank continue.');else say('Keep an empty hole available. Every screw matters.');};
- if(reduced){finish();return;}const begin=performance.now();function frame(now){let t=Math.min(1,(now-begin)/700);render(t);if(t<1)requestAnimationFrame(frame);else finish();}requestAnimationFrame(frame);
+function doMove(a,b){const next=R.move(level,state,a,b,true);if(!next){say('Choose a clear, empty hole.');return;}history.push({state:R.clone(state),moves});if(history.length>200)history.shift();const old=state;state=next;moves++;selected=-1;hintPair=null;busy=true;anim={old,from:a,to:b};save();ping(300);
+ const finish=()=>{for(const b of state.bars)delete b.trace;anim=null;busy=false;render();save();if(R.won(state)){won();return;}const choices=R.choices(level,state);if(!choices.length)say('No moves left. Undo to free up a hole, or restart.');else if(state.bars.some(b=>b.mode&&b.stop>=0))say('Resting on a screw. Shift its support to let it continue.');else say('Keep an empty hole available. Every screw matters.');};
+ if(reduced){finish();return;}const begin=performance.now();function frame(now){let t=Math.min(1,(now-begin)/1100);render(t);if(t<1)requestAnimationFrame(frame);else finish();}requestAnimationFrame(frame);
 }
 function hint(){if(busy)return;busy=true;selected=-1;say('Studying the grain…');render();const snapshot=R.key(state);askWorker({type:'hint',level,state},result=>{busy=false;if(R.key(state)!==snapshot){render();return;}const path=result.result&&result.result.path;if(path&&path.length){hintPair=path[0];say('Move screw 1 to hole 2. Follow the bright rings.');}else{hintPair=null;say(result.error||'No solution found from here. Undo a move, or restart this board.');}render();});}
-function help(){dialog(`<div class="eyebrow">THE ART OF LETTING GO</div><h2>A screw at a time.</h2><p><strong>1.</strong> Tap a brass screw, then an exposed empty hole. You can also drag it there.</p><p><strong>2.</strong> With one screw left, a plank swings down until it hits an installed screw. With none, it drops—but catches on screws beneath it.</p><p><strong>3.</strong> Clear every plank. Move a supporting screw to release a caught plank. Screws holding other boards and parked screws both act as stops.</p><p>Undo and hints are always free. No timer, lives, or paid holes. The first four puzzles are practice; level 5 starts the real workshop.</p><button class="primary" data-action="close">Back to the board</button><p class="build-detail" id="versionInfo">Timber Tumble · Version ${BUILD}</p>`);}
+function help(){dialog(`<div class="eyebrow">THE ART OF LETTING GO</div><h2>A screw at a time.</h2><p><strong>1.</strong> Tap a brass screw, then an exposed empty hole. You can also drag it there.</p><p><strong>2.</strong> With one screw left, a plank swings down until it hits an installed screw. With none, it drops, slides, and tips around screws beneath it.</p><p><strong>3.</strong> Clear every plank. A balanced plank can rest on a screw; an unbalanced one can slide or tip past it. Screws holding other boards and parked screws both stay solid.</p><p>Undo and hints are always free. No timer, lives, or paid holes. The first four puzzles are practice; level 5 starts the real workshop.</p><button class="primary" data-action="close">Back to the board</button><p class="build-detail" id="versionInfo">Timber Tumble · Version ${BUILD}</p>`);}
 function diagnostics(){
  const states=history.map(h=>h.state).concat([state]),sequence=[];
  for(let i=1;i<states.length;i++){const old=states[i-1].pins,now=states[i].pins;sequence.push([old.findIndex((p,j)=>p&&!now[j]),old.findIndex((p,j)=>!p&&now[j])]);}

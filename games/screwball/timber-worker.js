@@ -5,7 +5,7 @@ onmessage=function(e){
   if(type==='hint'){
    // Reuse the verified witness whenever this state lies on its route.
    let at=TimberRules.initial(level),result=null;
-   for(let i=0;i<(level.solution||[]).length;i++){
+   if(TimberRules.replay(level,level.solution||[]))for(let i=0;i<(level.solution||[]).length;i++){
     if(TimberRules.key(at)===TimberRules.key(state)){result={path:level.solution.slice(i),visited:0};break;}
     at=TimberRules.move(level,at,...level.solution[i]);if(!at)break;
    }
