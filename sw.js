@@ -39,7 +39,7 @@ const VERSIONS = {
   "buzz": "2.2.0",
   "golf": "0.5.1",
   "shelf": "2.0.1",
-  "castle": "3.1.0",
+  "castle": "3.2.0",
   "hexslide": "1.2.0",
   "farkle": "1.4.0",
   "blockparty": "1.4.0",
@@ -459,6 +459,7 @@ const GROUPS = {
     "games/castle/feud.html",
     "games/castle/feud.css",
     "games/castle/feud.js",
+    "games/castle/feud-art.js",
     "games/castle/feud-engine.js",
     "shared/three.module.min.js",
     "shared/cannon-es.min.js"
