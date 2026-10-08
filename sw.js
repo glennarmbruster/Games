@@ -44,7 +44,7 @@ const VERSIONS = {
   castle: '2.2.0',
   hexslide: '1.2.0',
   farkle: '1.2.0',
-  blockparty: '1.0.0',
+  blockparty: '1.1.0',
   bridge: '1.3.0',
   outpost: '3.0.1',
   getout: '0.22.0',
