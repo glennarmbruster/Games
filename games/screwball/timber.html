@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#163b38"><title>Timber Tumble · Screwball</title><link rel="stylesheet" href="timber.css"></head><body>
+<div class="workshop">
+<header class="topbar"><a class="exit" href="../../index.html">‹ Exit Game</a><div class="game-title"><h1>Timber Tumble</h1><span>THE SCREWBALL WORKSHOP</span></div><button id="menu" class="menu-button" aria-label="Open workshop menu">☰</button></header>
+<div class="status"><button id="levelButton" class="level-tag">Level 1</button><span id="difficulty">Apprentice</span><span id="remaining">2 planks</span><span id="moves">0 moves</span></div>
+<main class="workbench"><svg id="board" viewBox="0 0 600 710" aria-label="Wooden puzzle board. Select a screw, then an exposed empty hole." role="group"></svg></main>
+<div class="instruction" id="message" role="status" aria-live="polite">Tap a screw, then a glowing empty hole.</div>
+<footer class="tools"><button id="undo">↶ <span>Undo</span></button><button id="hint">✧ <span>Hint</span></button><button id="restart">↻ <span>Restart</span></button><button id="help">? <span>How to</span></button></footer>
+</div>
+<dialog id="dialog"><div id="dialogContent"></div></dialog>
+<script src="timber-rules.js"></script><script src="timber-levels.js"></script><script src="timber-game.js"></script>
+</body></html>

@@ -1,0 +1,2 @@
+importScripts('timber-rules.js');
+onmessage=function(e){const {id,type,level,state,number}=e.data;try{if(type==='hint'){const result=TimberRules.solve(level,state,60000);postMessage({id,result});}else{for(let seed=0;seed<300;seed++){const l=TimberRules.generate(number,seed),r=TimberRules.solve(l,null,5000);if(r){l.solution=r.path;postMessage({id,level:l});return;}}postMessage({id,error:'This board needs another try.'});}}catch(err){postMessage({id,error:String(err.message)});}};
