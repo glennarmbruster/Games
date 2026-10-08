@@ -14,3 +14,10 @@ header{flex-shrink:0}
 #setupActions button{flex:1;min-width:0;min-height:46px;font-size:14px}
 #battle{flex:1;min-height:0}
 @media(max-height:520px) and (orientation:landscape){#setupActions{padding-top:5px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}#setupActions p{margin-bottom:4px;font-size:10px}#setupActions button{min-height:40px}#setup{padding-bottom:14px}}
+
+/* Prebuilt battles: one aiming gesture and two large controls. */
+.console .aim{flex-wrap:nowrap;gap:10px}
+.console .aim #arc{min-width:105px;width:auto;flex:0 0 auto;min-height:46px;font-size:12px}
+.console .aim #fire{flex:1;width:auto;min-width:0}
+#field:focus-visible{outline:2px solid #f1d28a;outline-offset:-3px}
+@media(max-height:520px) and (orientation:landscape){.console .aim{flex-direction:column;gap:8px}.console .aim #arc,.console .aim #fire{width:100%;min-height:40px}.console>.tip{line-height:1.5;margin-top:9px}}
