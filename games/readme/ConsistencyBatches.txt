@@ -102,3 +102,7 @@ Requested Corrections 1 is complete for the 35 games listed in Corrections1.txt.
 
 CORRECTIONS 1 REVISED
 Portrait safe-area and control-row fixes are included. See Corrections1-Revised.txt for the current install instructions and corrected category counts.
+
+
+BOTTOM CONTROLS UPDATE
+Corrections 1 now uses bottom Exit navigation following Roll Call, with the requested Beacon Bound, Buzz Off!, Containment, Golf, Mean Birds, Stranded, Lost & Found and Picture Perfect corrections. See Corrections1-Bottom-Controls.txt.

@@ -115,7 +115,7 @@ html, body { background: #8fd6ff; }
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="mb-logo" viewBox="0 0 100 100"><defs><linearGradient id="mbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#d9f3ff"/></linearGradient></defs>
@@ -134,7 +134,7 @@ html, body { background: #8fd6ff; }
 <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
 </defs></svg>
 
-<canvas id="cv"></canvas>
+<canvas id="cv"></canvas><button id="mbLaunchPad" type="button" hidden aria-label="Drag back and release to launch the bird">↖ Drag back to launch</button>
 
 <!-- in-game buttons -->
 <div class="hud" id="hud">
@@ -1548,6 +1548,7 @@ var MBSound = (function () {
     c.restore();
   }
   function renderHUD() {
+    var pad=$('mbLaunchPad');if(pad)pad.hidden=paused()||phase!=='aim';
     if (!S) return;
     shownScore += (S.score - shownScore) * 0.25; if (Math.abs(S.score - shownScore) < 10) shownScore = S.score;
     $('score').textContent = fmt(shownScore);
@@ -1560,23 +1561,24 @@ var MBSound = (function () {
     var b = birdPos(), r = MB.BIRDS[S.queue[0]].r * cam.z;
     return Math.hypot(px - sx(b.x), py - sy(b.y)) < Math.max(48, r * 2.4);
   }
+  function pointerPoint(e) { var r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}; }
   function onDown(e) {
     if (paused()) return;
     SND.unlock();
-    pts[e.pointerId] = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top) };
+    pts[e.pointerId] = { x: pointerPoint(e).x, y: pointerPoint(e).y };
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     var n = Object.keys(pts).length;
-    tapStart = n === 1 ? { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top), t: performance.now(), id: e.pointerId, used: false } : null;
-    if (n === 1 && nearBird(e.clientX, (e.clientY - cv.getBoundingClientRect().top))) { dragging = true; pull = { x: 0, y: 0 }; SND.stretch(); return; }
+    tapStart = n === 1 ? { x: pointerPoint(e).x, y: pointerPoint(e).y, t: performance.now(), id: e.pointerId, used: false } : null;
+    if (n === 1 && nearBird(pointerPoint(e).x, pointerPoint(e).y)) { dragging = true; pull = { x: 0, y: 0 }; SND.stretch(); return; }
     if (n === 1 && phase === 'flight' && S.ability) { if (MB.useAbility(S)) { tapStart.used = true; return; } }
     if (n === 2) { dragging = false; pull = null; var k = Object.keys(pts), a = pts[k[0]], b = pts[k[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, wx: wx((a.x + b.x) / 2), wy: wy((a.y + b.y) / 2) }; pan = null; camMode = 'manual'; return; }
-    if (n === 1) pan = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top), cx: cam.x, cy: cam.y };
+    if (n === 1) pan = { x: pointerPoint(e).x, y: pointerPoint(e).y, cx: cam.x, cy: cam.y };
   }
   function onMove(e) {
     if (!pts[e.pointerId]) return;
-    pts[e.pointerId] = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top) };
+    pts[e.pointerId] = { x: pointerPoint(e).x, y: pointerPoint(e).y };
     if (dragging) {
-      var p = MB.clampPull({ x: wx(e.clientX) - S.pouch.x, y: wy((e.clientY - cv.getBoundingClientRect().top)) - S.pouch.y });
+      var p = MB.clampPull({ x: wx(pointerPoint(e).x) - S.pouch.x, y: wy(pointerPoint(e).y) - S.pouch.y });
       var was = pull ? Math.hypot(pull.x, pull.y) : 0, now = Math.hypot(p.x, p.y);
       if (Math.floor(now * 3) > Math.floor(was * 3)) SND.stretch();
       pull = p; return;
@@ -1589,7 +1591,7 @@ var MBSound = (function () {
       return;
     }
     if (pan) {
-      var dx = e.clientX - pan.x, dy = (e.clientY - cv.getBoundingClientRect().top) - pan.y;
+      var dx = pointerPoint(e).x - pan.x, dy = pointerPoint(e).y - pan.y;
       if (Math.abs(dx) + Math.abs(dy) > 6) camMode = 'manual';
       if (camMode === 'manual') { cam.x = pan.cx - dx / cam.z; cam.y = pan.cy + dy / cam.z; clampCam(); }
     }
@@ -1597,7 +1599,7 @@ var MBSound = (function () {
   function onUp(e) {
     delete pts[e.pointerId];
     var ts = tapStart; tapStart = null;
-    if (ts && ts.id === e.pointerId && !ts.used && !dragging && !pinch && Math.hypot(e.clientX - ts.x, (e.clientY - cv.getBoundingClientRect().top) - ts.y) < 12 && performance.now() - ts.t < 450) { skipAhead(); }
+    if (ts && ts.id === e.pointerId && !ts.used && !dragging && !pinch && Math.hypot(pointerPoint(e).x - ts.x, pointerPoint(e).y - ts.y) < 12 && performance.now() - ts.t < 450) { skipAhead(); }
     if (dragging) {
       dragging = false;
       if (pull && Math.hypot(pull.x, pull.y) > 0.35) doLaunch(pull); else pull = null;
@@ -1799,6 +1801,11 @@ var MBSound = (function () {
   }
 
   function init() {
+    var launchPad=$('mbLaunchPad'), padDrag=null;
+    launchPad.addEventListener('pointerdown',function(e){if(paused()||phase!=='aim')return;e.preventDefault();e.stopPropagation();SND.unlock();camMode='auto';snapCam();padDrag={id:e.pointerId,x:e.clientX,y:e.clientY};dragging=true;pull={x:0,y:0};launchPad.setPointerCapture(e.pointerId);launchPad.textContent='Release to launch';});
+    launchPad.addEventListener('pointermove',function(e){if(!padDrag||e.pointerId!==padDrag.id)return;e.preventDefault();pull=MB.clampPull({x:(e.clientX-padDrag.x)/cam.z,y:-(e.clientY-padDrag.y)/cam.z});});
+    launchPad.addEventListener('pointerup',function(e){if(!padDrag||e.pointerId!==padDrag.id)return;e.preventDefault();padDrag=null;dragging=false;if(pull&&Math.hypot(pull.x,pull.y)>.35)doLaunch(pull);else pull=null;launchPad.textContent='↖ Drag back to launch';});
+    launchPad.addEventListener('pointercancel',function(){padDrag=null;dragging=false;pull=null;launchPad.textContent='↖ Drag back to launch';});
     cv.addEventListener('pointerdown', onDown);
     cv.addEventListener('pointermove', onMove);
     cv.addEventListener('pointerup', onUp);
@@ -1848,5 +1855,5 @@ var MBSound = (function () {
 </script>
 <script src="../../shared/collection-batch4.js"></script>
 <script src="../../shared/corrections-1.js"></script>
-</body>
+<script src="../../shared/bottom-navigation.js"></script></body>
 </html>

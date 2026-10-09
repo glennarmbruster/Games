@@ -1,0 +1,32 @@
+CORRECTIONS 1 — BOTTOM CONTROLS UPDATE
+
+INSTALL BOTH PARTS
+This is the complete 35-game correction batch, including all earlier Corrections 1 changes. It supersedes the earlier correction ZIPs. Install both parts over Batch 5 or any prior Corrections 1 upload. Merge folders and replace included files; do not delete existing folders. Upload Part 1 first and Part 2 second. Part 2 contains sw.js. Open online and accept Update available before testing offline.
+
+LATEST REQUESTED CHANGES
+- Roll Call remains the reference and retains its working bottom Exit / How to Play row and black dice pips.
+- Exit is at the bottom throughout this batch, alongside How to Play where practical; title space and top menus are no longer covered by a floating Exit.
+- Farkle: Exit uses the bottom footer space; How to Play is beside it. Sound is in the header. Farkle remains restored on Tabletop.
+- Beacon Bound: full title is visible. Exit / How to Play / New run / Play share the map-screen row. Gameplay navigation sits below the touch controls, clear of Jump.
+- Buzz Off!: Exit / How to Play / Restart / Hint share the bottom action row.
+- Cheese Chase: Exit / How to Play sit below the movement controls.
+- Containment: during gameplay, Exit and How to Play sit beside Split / Stop / Dash. Title-screen navigation stays accessible too.
+- Golf: both 18 Holes and Seaside Putt use the established blue collection selector, sized for portrait and landscape.
+- Mean Birds: corrected canvas pointer coordinates and added a visible Drag back to launch control. The original slingshot gesture also remains. Both use the existing launch physics.
+- Stranded: fullscreen Return is immediately to the right of Pause. It works with native fullscreen and the fallback view; Exit remains available.
+- Double Take: its accepted fullscreen / return behavior remains unchanged.
+- Lost & Found: fullscreen fits the entire picture below the safe top boundary and keeps the bottom list visible. Zoom and pan remain available.
+- Picture Perfect: the brown frame and white outer border are removed only in fullscreen; the regular-view frame is retained.
+
+CHECKS
+35 game entry pages checked in portrait and landscape without script errors or horizontal body overflow. Focused checks cover navigation, help, Farkle active play, Beacon map/game controls, Mean Birds direct touch launch and launch-pad touch gestures, Stranded fullscreen Return, both Golf modes visible, and Picture Perfect frame removal/restoration. Touch tests use browser emulation; physical iPhone/Safari testing is still needed.
+
+No remaining-game batch or main-menu redesign has been started. See Corrections1.txt for the original game-by-game changes and Corrections1-Revised.txt for the alphabetical category checklist.
+
+WOODPILE SHAPES REBUILD
+- Replaced pixel-block pictures with smooth wooden inlay silhouettes: Cat, Sailboat, Bird, House, Pine tree, Heart.
+- Drag-and-drop pieces follow your finger at board scale. A glowing preview confirms a valid fit before release.
+- Curved and angled boundary pieces match the silhouette. No rotation required.
+- Placed pieces can be picked up again; invalid drops and cancelled gestures preserve the puzzle.
+- Hint, Undo, Restart, completion and separate saved progress are supported. Old Shapes progress is replaced by the redesigned puzzles; Classic/Daily/Levels saves remain unchanged.
+- All six shapes completed by dragging in portrait and landscape browser checks. Touch-emulation checks passed valid/invalid drops, pointer cancellation, moving a placed piece, saved progress and Undo. Physical iOS testing remains recommended.

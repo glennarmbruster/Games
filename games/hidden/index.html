@@ -162,7 +162,7 @@ html:not([data-theme="dark"]) .tool.red { background:#65543a;color:#fff; }
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="ho-logo" viewBox="0 0 100 100"><defs><linearGradient id="hobg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ee"/><stop offset="1" stop-color="#fbe2b8"/></linearGradient>
@@ -4231,6 +4231,7 @@ var HS = (function () {
 
   // ================= layout =================
   var DPR = 1, SW = 300, SH = 400, V = { x: 0, y: 50, w: 300, h: 350 }, home = 0.5, zMin = 1, cv, cx2, fx, fxc;
+  var lastFocusView = false;
   function fit() {
     DPR = Math.min(3, window.devicePixelRatio || 1);
     layoutList();
@@ -4242,7 +4243,7 @@ var HS = (function () {
     V = { x: 0, y: y0, w: SW, h: SH - y0 };
     // home: the scene fills the height (wider than a phone); on a big screen (iPad) things are capped at 1.15 px per
     // unit, so it shows more of the scene instead of drawing everything huge
-    var contain = Math.min(V.w / A.W, V.h / A.H); home = Math.max(contain, Math.min(Math.max(V.w / A.W, V.h / A.H), 1.15)); zMin = contain / home;
+    var contain = Math.min(V.w / A.W, V.h / A.H), focusView = document.body.classList.contains('focus-view'); home = focusView ? contain : Math.max(contain, Math.min(Math.max(V.w / A.W, V.h / A.H), 1.15)); zMin = contain / home; if(focusView!==lastFocusView){view.z=1;view.cx=A.W/2;view.cy=A.H/2;vAnim=null;lastFocusView=focusView;}
     cv.width = Math.round(SW * DPR); cv.height = Math.round(SH * DPR);
     fx.width = Math.round(window.innerWidth * DPR); fx.height = Math.round(window.innerHeight * DPR);
     $('sceneName').style.top = (y0 + 6) + 'px'; $('toast').style.top = (y0 + 40) + 'px';
@@ -4810,5 +4811,5 @@ var HS = (function () {
 </script>
 <script src="../../shared/collection-batch3.js"></script>
 <script src="../../shared/corrections-1.js"></script>
-<script src="../../shared/control-rows.js"></script></body>
+<script src="../../shared/control-rows.js"></script><script src="../../shared/bottom-navigation.js"></script></body>
 </html>
