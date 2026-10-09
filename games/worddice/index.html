@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="collection-ui batch5-ui gg-landscape">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -93,8 +93,10 @@ html.gg-fs .found .fw { font-size: 15px; padding: 4px 9px; }
 @media (prefers-reduced-motion:reduce) { .board.shaking .die { animation:none; } }
 
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch5.css">
 </head>
-<body>
+<body class="collection-page" data-collection="worddice">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="wr-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#ffe7a8"/>
 <g transform="rotate(-8 34 36)"><rect x="14" y="16" width="40" height="40" rx="9" fill="#fffaf0" stroke="#d9b36a" stroke-width="3"/><text x="34" y="46" font-size="30" font-weight="900" text-anchor="middle" fill="#2b2f45" font-family="system-ui, sans-serif">W</text></g>
@@ -699,5 +701,6 @@ var WRSound = (function () {
   init();
 })();
 </script>
+<script src="../../shared/collection-batch5.js"></script>
 </body>
 </html>

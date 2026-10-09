@@ -1,0 +1,12 @@
+Spin & Solve — Version 0.2.0
+Consistency Batch 5
+
+Common 44px Exit Game button uses the original exit handler. Readable controls, help text and version label. Portrait and landscape presentation reviewed.
+
+Brighter Full/Quick Show cards. Landscape puts puzzle and contestants beside the wheel and actions. Puzzle tile sizing follows the available display area; rules and wheel outcomes are unchanged.
+
+No gameplay, rules, physics, scoring, levels, save formats or artwork assets changed.
+
+Install after Batches 1–4: merge this update into the existing site root, including sw.js. Accept the Update available prompt while online. Do not replace whole games/shared folders.
+
+Browser layouts checked at 390x844, 844x390 and 320x568. Physical iPhone/Safari testing remains useful.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="collection-ui batch5-ui gg-landscape">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -150,8 +150,10 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 @media(prefers-reduced-motion:reduce) { .qcard.in,.ans.wrong,.after.show { animation:none; } }
 
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch5.css">
 </head>
-<body>
+<body class="collection-page" data-collection="trivia">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="qc-logo" viewBox="0 0 100 100"><defs><linearGradient id="qcLg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb7c9"/><stop offset="1" stop-color="#1a6fb5"/></linearGradient></defs>
 <rect width="100" height="100" rx="24" fill="url(#qcLg)"/><path d="M0 74q25-10 50 0t50 0v26H0z" fill="#ffe3a3"/><path d="M0 66q25-9 50 0t50 0v8q-25 9-50 0T0 74z" fill="#7fd7e6" opacity=".7"/>
@@ -751,5 +753,6 @@ var QCSound = (function () {
     rightIndex: function () { var q = cur(); return r.order[q.id].indexOf(q.a); } };
 })();
 </script>
+<script src="../../shared/collection-batch5.js"></script>
 </body>
 </html>

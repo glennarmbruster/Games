@@ -1,0 +1,85 @@
+/* Final batch: opt-in navigation, readable selectors and responsive presentation. */
+.batch5-ui .collection-nav{box-sizing:border-box}
+.batch5-ui .collection-nav>button{width:auto!important;flex:0 0 auto;margin:0;max-width:none}
+.batch5-ui .collection-page #modes{display:flex!important}
+.batch5-ui .modes button,.batch5-ui .tool{min-height:44px;font-size:14px}
+.batch5-ui .info .lbl{font-size:12px;letter-spacing:.4px}
+.batch5-ui .sheet p,.batch5-ui .sheet li{font-size:15px;line-height:1.5}
+.batch5-ui .collection-build{font-size:14px;color:var(--muted,#62738b)}
+.batch5-ui[data-theme=dark],.batch5-ui[data-theme=blue]{--muted:#bfd0e4}
+.batch5-ui .overlay :is(.endcard,.roundcard,.startcard){max-height:calc(100dvh - var(--collection-top) - 24px);overflow-y:auto}
+.batch5-ui .modebtn,.batch5-ui .modes2 button,.batch5-ui .layouts button{border:1px solid #b5c9d4;background:linear-gradient(120deg,#fdf9eb,#e3eff4);color:#203953;border-radius:14px;box-shadow:0 5px 12px #0c233b15;padding:16px;min-height:80px}
+.batch5-ui .modebtn b,.batch5-ui .modes2 button b{font-size:21px}
+.batch5-ui .modebtn small,.batch5-ui .modes2 button small,.batch5-ui .layouts small{font-size:14px;line-height:1.4;color:#53687b;opacity:1}
+.batch5-ui .layouts button.cur{border-color:#286c99;box-shadow:0 0 0 2px #72bed8}
+.batch5-ui .collection-page:is([data-collection=cases],[data-collection=spin]) .stage{padding-top:calc(var(--collection-top) + 56px)}
+.batch5-ui .collection-page:is([data-collection=trivia],[data-collection=wordboard],[data-collection=wordwheel]) .app{padding-top:calc(var(--collection-top) + 58px)}
+.batch5-ui :is(.qchud,.tthud,.wwhud){top:calc(var(--collection-top) + 6px)}
+.batch5-ui .collection-page[data-collection=topple] .stage{top:var(--collection-top)}
+.batch5-ui .collection-page[data-collection=topple] #btnAll{display:none}
+.batch5-ui .collection-page[data-collection=wordwheel] .scene::after{background:#13242312}
+.batch5-ui .collection-page[data-collection=wordwheel] .sq{background:#ffffff85}
+.batch5-ui .collection-page[data-collection=wordwheel] .sq.on{background:#fff}
+.batch5-ui .collection-page[data-collection=mahjong]{--tt-table:#e4f4eb;--tt-table-2:#c6e4d8}
+.batch5-ui .collection-page[data-collection=wickway] .lvpill small{font-size:12px;color:#46516c}
+@media(max-width:360px){.batch5-ui .collection-nav-title{display:block;font-size:13px}.batch5-ui .collection-nav:has(.collection-choose:not([hidden])) .collection-nav-title{display:none}}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui .collection-page:is([data-collection=buzz],[data-collection=mahjong],[data-collection=worddice]) .app{position:relative;padding:calc(var(--collection-top) + 6px) calc(100% - 228px) 8px 12px!important;align-items:stretch;gap:6px}
+ .batch5-ui .collection-page:is([data-collection=buzz],[data-collection=mahjong]) .stagewrap,.batch5-ui .collection-page[data-collection=worddice] .ggfit{position:absolute;left:246px;right:12px;top:calc(var(--collection-top) + 8px);bottom:12px;width:auto!important;height:auto!important;margin:0!important;min-height:0}
+ .batch5-ui .collection-page:is([data-collection=buzz],[data-collection=mahjong],[data-collection=worddice]) .toolbar{flex-wrap:wrap;margin-top:auto}
+ .batch5-ui .collection-page[data-collection=worddice] .cover{gap:8px;padding:12px}
+ .batch5-ui .collection-page[data-collection=worddice] .cover h2{font-size:22px}
+ .batch5-ui .collection-page[data-collection=wordwheel] .app{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 40px;gap:0 12px}
+ .batch5-ui .collection-page[data-collection=wordwheel] .boardarea{grid-column:1;grid-row:1/3;height:100%}
+ .batch5-ui .collection-page[data-collection=wordwheel] .wheelarea{grid-column:2;grid-row:1;height:100%;min-height:0}
+ .batch5-ui .collection-page[data-collection=wordwheel] .wordline{grid-column:2;grid-row:2;height:40px}
+ .batch5-ui .collection-page[data-collection=trivia] .qcard{max-width:800px;padding:12px 16px}
+ .batch5-ui .collection-page[data-collection=trivia] .answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .batch5-ui .collection-page[data-collection=trivia] .qtext{font-size:19px;margin-bottom:10px}
+ .batch5-ui .collection-page[data-collection=wordboard] .app{display:grid;grid-template-columns:minmax(0,1fr) 350px;grid-template-rows:auto 1fr auto auto auto;gap:6px 12px}
+ .batch5-ui .collection-page[data-collection=wordboard] .boardarea{grid-column:1;grid-row:1/6;height:100%}
+ .batch5-ui .collection-page[data-collection=wordboard] .app>:not(.top):not(.boardarea){grid-column:2}
+ .batch5-ui .collection-page[data-collection=wordboard] .rack{--ts:40px;--rk:50px;--gap:5px}
+ .batch5-ui .collection-page[data-collection=cases] .stage{display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:1fr auto;gap:8px 12px}
+ .batch5-ui .collection-page[data-collection=cases] .band{grid-column:1;grid-row:1;height:auto;flex-wrap:wrap;align-content:start}
+ .batch5-ui .collection-page[data-collection=cases] .floor{grid-column:2;grid-row:1/3;height:100%}
+ .batch5-ui .collection-page[data-collection=cases] .bottom{grid-column:1;grid-row:2}
+ .batch5-ui .collection-page[data-collection=spin] .stage{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-rows:auto auto 1fr;gap:6px 16px}
+ .batch5-ui .collection-page[data-collection=spin] .boardwrap{grid-column:1;grid-row:1}
+ .batch5-ui .collection-page[data-collection=spin] .podiums{grid-column:1;grid-row:2}
+ .batch5-ui .collection-page[data-collection=spin] .hostline{grid-column:1;grid-row:3}
+ .batch5-ui .collection-page[data-collection=spin] .arena{grid-column:2;grid-row:1/3;min-height:150px}
+ .batch5-ui .collection-page[data-collection=spin] .acts{grid-column:2;grid-row:3;min-height:44px}
+ .batch5-ui .collection-page[data-collection=spin] .panel{max-height:calc(100dvh - var(--collection-top) - 8px);overflow-y:auto}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui :is([data-collection=cases],[data-collection=spin]) .startcard{width:min(700px,95vw);max-width:700px}
+ .batch5-ui :is([data-collection=cases],[data-collection=spin]) .startlogo{display:none}
+ .batch5-ui :is([data-collection=cases],[data-collection=spin]) .startbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+}
+.batch5-ui .collection-page[data-collection=wordboard] .cover{padding-top:calc(var(--collection-top) + 58px)}
+.batch5-ui .collection-page[data-collection=wordboard] .covercard{max-height:calc(100dvh - var(--collection-top) - 90px);overflow-y:auto}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui .collection-page[data-collection=wordwheel] .wheel{width:min(25vw,calc(100dvh - var(--collection-top) - 112px))}
+ .batch5-ui .collection-page[data-collection=wickway] #ovStart .cardicon{display:none}
+ .batch5-ui .collection-page[data-collection=wickway] #ovStart .card{width:min(620px,94vw);max-width:620px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui .collection-page[data-collection=cases] .band{display:grid;grid-template-columns:74px 1fr;grid-template-rows:66px auto;gap:8px}
+ .batch5-ui .collection-page[data-collection=cases] .hostline{grid-column:1/3;grid-row:2;align-self:start}
+ .batch5-ui .collection-page[data-collection=cases] .hostline p{font-size:13px!important;max-height:80px}
+ .batch5-ui .collection-page[data-collection=cases] .skybox{grid-column:2;grid-row:1;width:100%}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui .collection-page[data-collection=spin] .stage{grid-template-rows:minmax(0,1fr) 50px 48px}
+ .batch5-ui .collection-page[data-collection=spin] .boardwrap{min-height:0}
+ .batch5-ui .collection-page[data-collection=spin] .hostline{min-height:0}
+ .batch5-ui .collection-page[data-collection=spin] .hostline p{font-size:13px!important;max-height:46px}
+ .batch5-ui .collection-page[data-collection=spin] .arena{min-height:0}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch5-ui .collection-page[data-collection=cases] .stage{grid-template-rows:minmax(0,1fr) auto}
+ .batch5-ui .collection-page[data-collection=cases] .band{min-height:0;grid-template-rows:58px auto;gap:6px}
+ .batch5-ui .collection-page[data-collection=cases] .hostline p{max-height:70px;overflow-y:auto}
+ .batch5-ui .collection-page[data-collection=spin] .hostline p{overflow-y:auto}
+}

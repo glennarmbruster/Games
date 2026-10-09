@@ -15,17 +15,17 @@ const VERSIONS = {
   "solitaire": "1.2.0",
   "meanbirds": "1.3.0",
   "aliens": "1.3.0",
-  "worddice": "1.2.0",
+  "worddice": "1.3.0",
   "digger": "1.3.0",
   "blocks": "1.4.0",
   "maze": "1.3.0",
-  "mahjong": "1.3.1",
+  "mahjong": "1.4.0",
   "dice": "1.3.0",
   "daily": "1.4.0",
   "mines": "1.3.0",
   "bubbles": "1.5.0",
   "bricks": "1.4.0",
-  "topple": "1.9.0",
+  "topple": "1.10.0",
   "barrage": "1.7.0",
   "siege": "1.4.0",
   "hoops": "1.4.0",
@@ -36,7 +36,7 @@ const VERSIONS = {
   "parking": "2.1.0",
   "minigolf": "2.2.0",
   "board": "1.2.0",
-  "buzz": "2.2.0",
+  "buzz": "2.3.0",
   "golf": "0.6.0",
   "shelf": "2.1.0",
   "castle": "3.3.0",
@@ -49,24 +49,24 @@ const VERSIONS = {
   "stranded": "1.1.0",
   "containment": "1.1.0",
   "sudoku": "0.3.0",
-  "wordwheel": "0.3.0",
-  "trivia": "0.3.0",
+  "wordwheel": "0.4.0",
+  "trivia": "0.4.0",
   "links": "0.4.0",
   "bowling": "0.4.0",
   "deck": "0.4.0",
-  "wordboard": "0.1.2",
+  "wordboard": "0.2.0",
   "nonogram": "0.3.0",
   "getout2": "1.5.0",
   "huddle": "0.3.0",
-  "wickway": "1.1.0",
+  "wickway": "1.2.0",
   "pegs": "0.4.0",
   "perch": "1.1.0",
   "knotty": "1.1.0",
   "casino": "0.2.0",
   "spotdiff": "0.5.0",
   "hidden": "1.1.0",
-  "cases": "1.0.0",
-  "spin": "0.1.1",
+  "cases": "1.1.0",
+  "spin": "0.2.0",
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0"
@@ -324,7 +324,10 @@ const GROUPS = {
     "games/worddice/",
     "games/worddice/index.html",
     "games/worddice/assets/wood-v1.webp",
-    "games/worddice/words.txt"
+    "games/worddice/words.txt",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "digger": [
     "games/digger/",
@@ -351,7 +354,10 @@ const GROUPS = {
   "mahjong": [
     "games/mahjong/",
     "games/mahjong/index.html",
-    "games/mahjong/assets/cloth-v1.webp"
+    "games/mahjong/assets/cloth-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "dice": [
     "shared/collection-ui.css",
@@ -395,7 +401,10 @@ const GROUPS = {
     "games/topple/assets/wood-v1.webp",
     "games/topple/assets/fabric-v1.webp",
     "games/topple/assets/grass-v1.webp",
-    "games/topple/assets/metal-v1.webp"
+    "games/topple/assets/metal-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "barrage": [
     "games/barrage/",
@@ -501,7 +510,10 @@ const GROUPS = {
     "games/buzz/assets/brook-v1.webp",
     "games/buzz/assets/biscuit-v1.webp",
     "games/buzz/assets/hive-v1.webp",
-    "games/buzz/assets/bee-v1.webp"
+    "games/buzz/assets/bee-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "golf": [
     "games/golf/",
@@ -1182,7 +1194,10 @@ const GROUPS = {
     "games/wordwheel/assets/mountains-v1.webp",
     "games/wordwheel/assets/dunes-v1.webp",
     "games/wordwheel/assets/hills-v1.webp",
-    "games/wordwheel/assets/wood-v1.webp"
+    "games/wordwheel/assets/wood-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "trivia": [
     "games/trivia/",
@@ -1190,7 +1205,10 @@ const GROUPS = {
     "games/trivia/assets/quiet-cove-v1.webp",
     "games/trivia/assets/coastal-dunes-v1.webp",
     "games/trivia/assets/misty-headland-v1.webp",
-    "games/trivia/assets/harbor-dusk-v1.webp"
+    "games/trivia/assets/harbor-dusk-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "links": [
     "games/links/modern.css",
@@ -1221,7 +1239,10 @@ const GROUPS = {
   "wordboard": [
     "games/wordboard/",
     "games/wordboard/index.html",
-    "games/wordboard/assets/wood-v1.webp"
+    "games/wordboard/assets/wood-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "nonogram": [
     "games/nonogram/modern.css",
@@ -1546,7 +1567,10 @@ const GROUPS = {
   "wickway": [
     "games/wickway/modern.css",
     "games/wickway/",
-    "games/wickway/index.html"
+    "games/wickway/index.html",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "pegs": [
     "games/pegs/",
@@ -1773,12 +1797,18 @@ const GROUPS = {
     "games/cases/assets/studio.webp",
     "games/cases/index.html",
     "games/cases/studio-art.js",
-    "games/cases/studio.css"
+    "games/cases/studio.css",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "spin": [
     "games/spin/",
     "games/spin/index.html",
-    "games/spin/assets/cloth-v1.webp"
+    "games/spin/assets/cloth-v1.webp",
+    "shared/collection-ui.css",
+    "shared/collection-batch5.css",
+    "shared/collection-batch5.js"
   ],
   "three": [
     "shared/three.module.min.js"

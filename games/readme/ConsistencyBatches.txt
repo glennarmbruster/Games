@@ -2,7 +2,7 @@ GOOBS GAMES — CONSISTENCY BATCH TRACKER
 
 Scope: navigation, game selectors, readable text, colors and orientation layouts.
 Rules, physics, levels, scoring, difficulty and save formats remain unchanged.
-Batches 1–4 delivered; final batch planned. 56 / 66 collections complete.
+Batches 1–5 complete. 66 / 66 collections complete.
 
 BATCH 1 — COMPLETE (6 collections)
   Castle Havoc — games/castle
@@ -70,7 +70,7 @@ BATCH 4 — COMPLETE (20 collections)
   Pool Party Hoops — games/hoops
   Skee-Hop — games/skeehop
 
-BATCH 5 — PLANNED (10 collections)
+BATCH 5 — COMPLETE (10 collections)
   Buzz Off! — games/buzz
   Case Closed — games/cases
   Tile Temple — games/mahjong
@@ -82,19 +82,19 @@ BATCH 5 — PLANNED (10 collections)
   Word Rattle — games/worddice
   Letter Loop — games/wordwheel
 
-INSTALL BATCH 4
+INSTALL BATCH 5
 Extract this ZIP into the existing site root, merging folders and replacing the included files. Do not replace or delete the entire games or shared folder. Upload sw.js too. Open the site online and accept its Update available prompt. Existing saved games remain in the browser.
 
-Install after Batches 1–3. This is an update package, not a standalone site.
+Install after Batches 1–4. This is an update package, not a standalone site.
 
 ORIENTATION DETAILS
-Arcade games use landscape side controls where appropriate. Moonshot, Mean Birds and Beacon Bound retain their existing landscape requirement. Stranded and Containment keep their fixed-aspect game views and recommend landscape, while their menus now read comfortably in portrait. Tall fields such as Fizz Pop, Seaside Putt and Skee-Hop are largest in portrait.
+Final ten support portrait and landscape layouts. Tall Tile Temple layouts remain largest in portrait; existing wide layouts and zoom are available. Earlier orientation exceptions remain: Moonshot, Mean Birds and Beacon Bound retain their landscape requirement; Stranded and Containment retain their fixed-aspect views.
 
 CHECKS
-Browser checks cover all 20 collections at 390x844 portrait and 844x390 landscape, plus 320x568 small-phone layouts. Gameplay launch and exit paths checked. Original artwork and gameplay-engine files are unchanged. Mean Birds and Beacon Bound have display-viewport adjustments; Mean Birds pointer coordinates follow that viewport. Physical iPhone/Safari testing remains useful.
+Final batch browser checks cover all ten at 390x844 portrait, 844x390 landscape and 320x568 small-phone size. Launch and original-handler exit paths checked. Original artwork and gameplay engine assets are unchanged. Spin & Solve has display-only puzzle tile sizing adjustments. Physical iPhone/Safari testing remains useful.
 
 IMPLEMENTATION NOTE
-Batch 4 uses a new opt-in presentation extension. Shared Batch 1–3 assets and their cache versions remain unchanged. Future shared-file changes must bump cache versions for every collection using them, or use new filenames.
+Batch 5 uses a new opt-in presentation extension. Shared Batch 1–4 assets and cache versions remain unchanged. Future shared-file changes must bump cache versions for every collection using them, or use new filenames.
 
 CORRECTION PASS
 Glenn is collecting minor corrections for one pass after the final batch. Those notes are not yet applied here.
