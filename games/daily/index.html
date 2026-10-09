@@ -112,7 +112,8 @@ body { background-image:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(
 .brand h1 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-.5px; }
 .brand .chev { color:var(--lm-detail); }
 .modes { background:color-mix(in srgb,var(--lm-tray) 25%,var(--surface-2)); box-shadow:inset 0 1px 2px #00000008; }
-.modes button.on { color:var(--lm-detail); box-shadow:inset 0 -3px var(--lm-detail),0 2px 4px #0000000a; }
+.modes button.on { background:#c8d9e9; color:#215780; box-shadow:none; text-shadow:none; }
+:root[data-theme="dark"] .modes button.on,:root[data-theme="blue"] .modes button.on { background:#234563; color:#a9dcff; }
 .grid { position:relative; isolation:isolate; }
 .grid::before { content:""; position:absolute; inset:-5px; z-index:-1; border:1px solid var(--lm-tray-edge); border-radius:12px; background:var(--lm-tray); box-shadow:inset 0 1px #ffffff40,0 3px 0 color-mix(in srgb,var(--lm-tray-edge) 70%,transparent),0 6px 14px #142e2410; pointer-events:none; }
 .cell { border-width:1px; border-radius:7px; font-weight:800; font-variant-numeric:tabular-nums; background-image:linear-gradient(155deg,#ffffff16,transparent 55%,#00000006); box-shadow:inset 0 1px #ffffff60,inset 0 -2px #00000009,0 2px 2px #142e2424; }

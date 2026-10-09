@@ -15,6 +15,7 @@ Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Stranded, Get Out!,
 - A Pause menu remains reachable from opening screens and portrait rotate prompts.
 
 INTEGRATED NAVIGATION
+- Lettermind: Exit and How to Play belong in the top row immediately left of Sound and Menu. Preserve the original full-width Enter control below the keyboard.
 - Skee-Hop: Score, Sound, Menu, Exit and How to Play share one top row; style them as game controls, not a yellow collection Exit.
 - Tunnel Pop: Exit and How to Play in the top Sound/Menu row, preserving more board space.
 - Bridge Works: Exit and How to Play beside Construction Budget, styled with the game's controls.

@@ -45,3 +45,8 @@ html.remaining-navigation .collection-page[data-collection=pinball] #integratedH
 html.remaining-navigation .collection-page[data-collection=outpost] #integratedHelp{min-width:76px!important}
 
 html.remaining-navigation .collection-page[data-collection=castle] #readout{top:calc(var(--remaining-hud-bottom,112px) + 8px)!important}
+
+/* Letter Loop status occupies the left of the native header, never an overlay. */
+html.remaining-navigation .collection-page[data-collection=wordwheel] .top .wwhud{position:static!important;inset:auto!important;transform:none!important;width:auto!important;height:40px;flex:none;justify-content:flex-start;gap:5px;margin-right:auto}
+html.remaining-navigation .collection-page[data-collection=wordwheel] .wwhud .ggpill{font-size:13px;padding:7px 8px;white-space:nowrap}
+html.remaining-navigation .collection-page[data-collection=wordwheel] .top>#integratedGameNav{margin-left:0}

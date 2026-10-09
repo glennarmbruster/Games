@@ -1,0 +1,7 @@
+Lettermind controls update
+
+Upload after the Menus-and-Collection update, keeping the folders intact and replacing matching files.
+
+Exit and How to Play now sit at the top, left of Sound and Menu. Enter is restored to its original full-width layout below the keyboard. Checked in portrait and landscape.
+
+Mode selection now uses a flat darker box with blue lettering, without shadow or underline. This ZIP includes the earlier Lettermind control fix; use it instead of that ZIP.
