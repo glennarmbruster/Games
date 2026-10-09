@@ -1,73 +1,73 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.0",
+  "shell": "3.8.1",
   "handheld": "1.1.3",
-  "zoodoku": "1.12.5",
+  "zoodoku": "1.12.6",
   "woodpile": "1.7.1",
   "patchwork": "3.2.5",
-  "cubecorral": "4.1.3",
-  "screwball": "4.4.5",
+  "cubecorral": "4.1.4",
+  "screwball": "4.4.6",
   "skeehop": "1.6.5",
   "merge": "2.1.3",
   "tapaway": "2.1.3",
-  "homerun": "1.9.6",
+  "homerun": "1.9.7",
   "match3": "2.2.5",
-  "snake": "1.4.5",
-  "solitaire": "1.2.3",
+  "snake": "1.4.6",
+  "solitaire": "1.2.4",
   "meanbirds": "1.4.6",
   "aliens": "1.3.3",
-  "worddice": "1.3.3",
+  "worddice": "1.3.4",
   "digger": "1.4.5",
-  "blocks": "1.4.3",
-  "maze": "1.4.5",
+  "blocks": "1.4.4",
+  "maze": "1.4.6",
   "mahjong": "1.4.3",
   "dice": "1.4.6",
   "daily": "1.4.6",
-  "mines": "1.4.5",
-  "bubbles": "1.5.3",
-  "bricks": "1.5.5",
-  "topple": "1.11.5",
-  "barrage": "1.8.5",
+  "mines": "1.4.6",
+  "bubbles": "1.5.4",
+  "bricks": "1.5.6",
+  "topple": "1.11.6",
+  "barrage": "1.8.6",
   "siege": "1.5.5",
-  "hoops": "1.4.3",
+  "hoops": "1.4.4",
   "beacon": "0.7.5",
   "sort": "2.2.3",
-  "triple": "2.2.5",
-  "pinball": "2.2.3",
-  "parking": "2.1.3",
+  "triple": "2.2.6",
+  "pinball": "2.2.4",
+  "parking": "2.1.4",
   "minigolf": "2.3.4",
   "board": "1.3.0",
   "buzz": "2.4.5",
   "golf": "0.7.5",
-  "shelf": "2.2.5",
+  "shelf": "2.2.6",
   "castle": "3.3.3",
-  "hexslide": "1.4.5",
-  "farkle": "1.6.5",
+  "hexslide": "1.4.6",
+  "farkle": "1.6.6",
   "blockparty": "1.5.1",
-  "bridge": "1.5.5",
+  "bridge": "1.5.6",
   "outpost": "3.1.3",
   "getout": "0.24.5",
-  "stranded": "1.2.5",
-  "containment": "1.2.5",
-  "sudoku": "0.3.3",
+  "stranded": "1.2.6",
+  "containment": "1.2.6",
+  "sudoku": "0.3.4",
   "wordwheel": "0.4.4",
-  "trivia": "0.4.3",
+  "trivia": "0.4.4",
   "links": "0.4.3",
   "bowling": "0.4.3",
   "deck": "0.4.3",
   "wordboard": "0.2.3",
   "nonogram": "0.3.3",
   "getout2": "1.6.5",
-  "huddle": "0.4.5",
+  "huddle": "0.4.6",
   "wickway": "1.2.3",
-  "pegs": "0.4.3",
+  "pegs": "0.4.4",
   "perch": "1.2.5",
   "knotty": "1.1.3",
   "casino": "0.2.3",
   "spotdiff": "0.6.5",
   "hidden": "1.2.5",
   "cases": "1.1.3",
-  "spin": "0.3.5",
+  "spin": "0.3.6",
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0",
@@ -99,7 +99,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "stranded": [
     "games/stranded/",
@@ -116,7 +118,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "shell": [
     "shared/corrections-1.js",
@@ -201,7 +205,9 @@ const GROUPS = {
     "shared/remaining-navigation.css",
     "shared/menu-polish.css",
     "shared/new-games.css",
-    "shared/new-games.js"
+    "shared/new-games.js",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "zoodoku": [
     "games/zoodoku/modern.css",
@@ -217,7 +223,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "woodpile": [
     "games/woodpile/modern.css",
@@ -269,7 +277,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "screwball": [
     "shared/collection-ui.css",
@@ -292,7 +302,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "skeehop": [
     "games/skeehop/",
@@ -357,7 +369,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "match3": [
     "games/match3/",
@@ -389,7 +403,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "solitaire": [
     "shared/collection-ui.css",
@@ -405,7 +421,9 @@ const GROUPS = {
     "games/solitaire/assets/cloth-v1.webp",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "meanbirds": [
     "games/meanbirds/",
@@ -448,7 +466,9 @@ const GROUPS = {
     "shared/collection-batch5.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "digger": [
     "games/digger/",
@@ -473,7 +493,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "maze": [
     "games/maze/modern.css",
@@ -487,7 +509,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "mahjong": [
     "games/mahjong/",
@@ -536,7 +560,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "bubbles": [
     "games/bubbles/",
@@ -546,7 +572,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "bricks": [
     "games/bricks/",
@@ -559,7 +587,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "topple": [
     "games/topple/",
@@ -580,7 +610,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "barrage": [
     "games/barrage/",
@@ -593,7 +625,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "siege": [
     "shared/collection-ui.css",
@@ -620,7 +654,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "beacon": [
     "games/beacon/",
@@ -668,7 +704,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "pinball": [
     "shared/collection-ui.css",
@@ -684,7 +722,9 @@ const GROUPS = {
     "games/pinball/assets/harbor-playfield-v1.webp",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "parking": [
     "games/parking/",
@@ -698,7 +738,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "minigolf": [
     "games/minigolf/",
@@ -832,7 +874,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "castle": [
     "./shared/collection-ui.css",
@@ -888,7 +932,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "hexslide": [
     "shared/collection-ui.css",
@@ -907,7 +953,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "bridge": [
     "shared/collection-ui.css",
@@ -933,7 +981,9 @@ const GROUPS = {
     "shared/bottom-navigation.js",
     "shared/navigation-exceptions.js",
     "shared/navigation-exceptions.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "outpost": [
     "./shared/collection-ui.css",
@@ -1481,7 +1531,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "wordwheel": [
     "games/wordwheel/",
@@ -1510,7 +1562,9 @@ const GROUPS = {
     "shared/collection-batch5.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "links": [
     "games/links/modern.css",
@@ -1893,7 +1947,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "wickway": [
     "games/wickway/modern.css",
@@ -1933,7 +1989,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "perch": [
     "games/perch/",
@@ -2184,7 +2242,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/layout-finish.css",
+    "shared/layout-finish.js"
   ],
   "three": [
     "shared/three.module.min.js"
