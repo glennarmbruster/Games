@@ -1,3 +1,0 @@
-Letter Loop: level and coins now sit on the left of the top row, with no overlap over Exit or How to Play. Portrait and landscape checked.
-
-This ZIP also includes both Lettermind corrections. Upload after Menus-and-Collection; it replaces the separate Lettermind update ZIPs. Keep the folders intact.
