@@ -42,3 +42,22 @@ body.collection { background: var(--bg); }
 .collection #gamePanel:focus-visible { outline:2px solid var(--accent); outline-offset:5px; border-radius:8px; }
 @media(max-width:540px) { .collection-tabs { gap:1px; padding:4px; } .collection-tabs button { font-size:15.5px; } }
 @media(max-width:350px) { .collection-tabs button { font-size:13px; } }
+
+/* Main collection polish: modestly larger categories, clear selection, blue accents. */
+:root:not([data-skin="halloween"]) body.collection{background:radial-gradient(ellipse at 10% 0,#4e9bc31c,transparent 55%),var(--bg)}
+.collection .menu{gap:20px}
+.collection .collection-tabs{border-color:#7699bb70;background:linear-gradient(115deg,#234f79,#163654);box-shadow:0 5px 16px #17365524;padding:5px;gap:3px}
+.collection .collection-tabs button{min-height:50px;font-size:20px;color:#deedfa;letter-spacing:-.35px}
+.collection .collection-tabs button[aria-selected="true"]{background:#f2f8ff;color:#183957;box-shadow:0 2px 6px #061b3440}
+.collection .collection-tabs button:focus-visible{outline:3px solid #ffc96b;outline-offset:-3px}
+.collection .gtile{border-radius:18px;box-shadow:0 4px 12px #1736550b}
+.collection .game-open{min-height:168px}
+.collection .gtile b{font-size:16px;line-height:1.25}
+.collection .gtile .star.on{color:#b36a00;background:#fff0bf}
+.collection .continue{border-color:#7eadd075;background:linear-gradient(110deg,#1f4c76,#153553);color:#f5f9ff}
+.collection .continue em,.collection .continue small{color:#cee2f3}
+.collection .continue .play{background:#e8f4ff;color:#173f65}
+.collection .section h2{font-size:13px;letter-spacing:1px}
+@media(max-width:540px){.collection .collection-tabs{padding:4px;gap:2px}.collection .collection-tabs button{font-size:17px;min-height:50px;padding:8px 1px}.collection .menu{padding-left:12px;padding-right:12px}.collection .gtile b{font-size:15.5px}}
+@media(max-width:360px){.collection .collection-tabs button{font-size:15px;letter-spacing:-.45px}}
+.collection .collection-tabs{grid-template-columns:.95fr .88fr 1.13fr 1.22fr}

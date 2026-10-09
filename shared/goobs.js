@@ -7,6 +7,13 @@ var Goobs = (function () {
     try { return new URL('../', document.currentScript.src).href; } catch (e) { return './'; }
   })();
 
+  // Presentation only: share the opening-menu palette without changing game state.
+  document.documentElement.dataset.menuGame = (location.pathname.split('/games/')[1] || '').split('/')[0];
+  var menuStyle = document.createElement('link');
+  menuStyle.rel = 'stylesheet';
+  menuStyle.href = new URL('shared/menu-polish.css', ROOT).href;
+  document.head.appendChild(menuStyle);
+
   // ---------- storage, namespaced per game, never throws ----------
   function store(ns) {
     var pre = ns + '.';

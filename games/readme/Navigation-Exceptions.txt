@@ -33,7 +33,7 @@ OTHER ACCEPTED LAYOUTS
 
 SCOPE
 This pass changes layouts for 18 games: Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Skee-Hop, Stranded, Topple Fair, Tunnel Pop, Bridge Works, Get Out!, Get Out 2!, Hex Slide, Perch Pals, Shelf Life, Triple Treat, Woodpile, Zoodoku.
-The remaining 30-game navigation rollout is complete: Exit and How to Play are integrated with native controls or opening/pause dialogs; the separate collection Exit bar is removed. Preserve all pause-only exceptions above. Main-menu redesign is still pending.
+The remaining 30-game navigation rollout is complete: Exit and How to Play are integrated with native controls or opening/pause dialogs; the separate collection Exit bar is removed. Preserve all pause-only exceptions above. Opening-menu and main-collection polish is complete: shared blue menu styling, clearer selected category, and modestly larger category buttons. Preserve the native game artwork and all navigation exceptions.
 
 REMAINING-GAME ROLLOUT
 TABLETOP: Captain's Casino, Card Table, Game Chest, Letter Loop, Lettermind, Ninefold, Pixel Pier, Quiz Cove, Tile Temple, Tile Tide, Word Rattle

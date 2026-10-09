@@ -1,0 +1,44 @@
+/* Shared opening-menu finish. No board, HUD, or gameplay layout rules. */
+html .collection-selector,html .collection-page #hub,html .collection-page>main.collection-lobby,html #woodpileLobby,
+html[data-menu-game=handheld] #lobby,html[data-menu-game=siege] #menu{
+ background:radial-gradient(ellipse at 12% 0,#397bae 0,transparent 68%),linear-gradient(145deg,#183e67,#102941)!important;
+ color:#f5f9ff;--collection-bg:#102941;--collection-glow:#397bae;--collection-accent:#9ee5ff;
+ --collection-card:#f5f9ff;--collection-ink:#183957;--collection-muted:#49657f;
+}
+html .collection-intro h1{color:#fff!important;text-shadow:0 2px 12px #08213c50}
+html .collection-intro p,html .collection-note{color:#d9eafa!important}
+html .collection-eyebrow{color:#a7e4ff!important}
+html .collection-card{border-color:#c9e4fa!important;background:#f5f9ff!important;color:#183957!important;box-shadow:0 8px 22px #061b3638}
+html .collection-card-title{color:#183957!important}
+html .collection-description{color:#49657f!important}
+html .collection-play{background:#235f95!important;color:#fff!important;border-radius:10px}
+html .collection-card:focus-visible{outline:3px solid #ffc96b;outline-offset:3px}
+/* Shared in-game menu sheets, plus native opening panels that are not collection selectors. */
+html .ggmenu .sheet,
+html #ovMenu>.sheet,
+html #ovStart>.startcard,html #ovStart>.titlecard,
+html #ovTitle>.titlebox,
+html[data-menu-game=handheld] #menu,
+html[data-menu-game=containment] #overlay>#panel,
+html[data-menu-game=stranded] #overlay>#panel{
+ background:linear-gradient(145deg,#285784,#153451)!important;color:#f5f9ff!important;
+ border-color:#719abe!important;--ink:#f5f9ff;--muted:#c6dced;--surface:#254d74;--surface-2:#315f88;--line:#91b9da45;--accent:#9bdcff;--accent-ink:#12324f;
+}
+html .ggmenu .ggmenu-info,html .ggmenu .ggmenu-info b{color:#d7eafa!important}
+html .ggmenu .ggmenu-top h2,html #ovMenu h2{color:#fff!important}
+html .ggmenu .ggmenu-list>button{background:#ffffff12!important;color:#f4f9ff!important;border:1px solid #abcbe84d!important;border-radius:12px}
+html .ggmenu .ggmenu-list>button:hover{background:#ffffff24!important}
+html .ggmenu .ggmenu-list>button:focus-visible{outline:3px solid #ffc96b;outline-offset:-3px}
+html[data-menu-game=handheld] #lobby .modeCard{background:#f5f9ff;color:#183957;border-color:#bdd8ef}
+html[data-menu-game=handheld] #lobby .modeCard small{color:#49657f}
+html[data-menu-game=handheld] #lobby .modeCard em{color:#235f95}
+html[data-menu-game=handheld] #lobby .intro p,html[data-menu-game=handheld] #lobby .lobbyNote{color:#d9eafa}
+@media(prefers-reduced-motion:reduce){html .collection-card{transition:none}}
+html #ovStart>.startcard>.startsub{color:#d9eafa!important}
+html #ovStart>.titlecard #btnPlay,html #ovTitle>.titlebox #tPlay{background:#b7e7ff!important;color:#163957!important;border:1px solid #d6f2ff;box-shadow:0 3px 10px #061b3630}
+html[data-menu-game=deck] #ovStart>.card,html[data-menu-game=barrage] #ovStart>.startsheet{background:linear-gradient(145deg,#285784,#153451)!important;color:#f5f9ff!important;--ink:#f5f9ff;--muted:#c6dced;--surface:#254d74;--surface-2:#315f88;--line:#91b9da45}
+html[data-menu-game=getout] #lane,html[data-menu-game=getout2] #lane{background:radial-gradient(ellipse at 12% 0,#397bae 0,transparent 68%),linear-gradient(145deg,#183e67,#102941)!important}
+html[data-menu-game=siege] #menu :is(.sub,.lab,.modeinfo){color:#cce3f7!important}
+html[data-menu-game=siege] #menu .seg:not(#segMode) button{color:#d8eafa}
+html[data-menu-game=siege] #menu .seg:not(#segMode) button.on{color:#102c46}
+html[data-menu-game=siege] #menu #segMode button{height:auto!important;min-height:180px;white-space:normal;overflow:visible}
