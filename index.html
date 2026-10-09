@@ -518,6 +518,11 @@
       }
     },
     {
+      id: 'farkle', name: 'Farkle', blurb: 'Six dice. Bank your points or risk another roll.', path: 'games/farkle/',
+      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="16" fill="#245a96"/><rect x="18" y="18" width="64" height="64" rx="14" fill="#fffaf0"/><g fill="#161a21"><circle cx="34" cy="32" r="6"/><circle cx="66" cy="32" r="6"/><circle cx="34" cy="50" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="34" cy="68" r="6"/><circle cx="66" cy="68" r="6"/></g></svg>',
+      status: function () { return 'Roll, bank, or risk it'; }
+    },
+    {
       id: 'dice', name: 'Roll Call', blurb: 'Five dice, thirteen boxes', path: 'games/dice/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#ffe9d6"/>' +
         '<g transform="rotate(-12 34 60)"><rect x="12" y="38" width="44" height="44" rx="10" fill="#fff" stroke="#e05a3a" stroke-width="3"/><g fill="#e05a3a"><circle cx="24" cy="50" r="4.5"/><circle cx="44" cy="50" r="4.5"/><circle cx="34" cy="60" r="4.5"/><circle cx="24" cy="70" r="4.5"/><circle cx="44" cy="70" r="4.5"/></g></g>' +
@@ -1097,7 +1102,7 @@
   var GAME_TABS = [
     { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
-    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
+    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
   var TAB_KEY = 'goobs.menuTab';
@@ -1130,7 +1135,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'bridge' || g.id === 'hexslide') return;
+    if (g.id === 'farkle' || g.id === 'bridge' || g.id === 'hexslide') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
   document.addEventListener('error', function (e) {

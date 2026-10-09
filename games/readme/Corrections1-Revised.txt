@@ -1,0 +1,59 @@
+CORRECTIONS 1 — REVISED PORTRAIT & CONTROLS PASS
+
+INSTALL
+This ZIP supersedes Goobs-Games-Corrections-1.zip and the RollCall-Farkle-Fix ZIP. It includes all original Corrections 1 changes plus the fixes below. Install over Batch 5 or over the first Corrections 1 upload. Merge folders and replace every included file, including sw.js. Do not delete existing folders. Open the site online and accept Update available before testing offline.
+
+REVISION
+- Restored Farkle to the Tabletop menu.
+- Roll Call: Exit beneath the roll button, next to How to Play. All dice pips black; held-dice highlight retained. Red ones/fours previously had no gameplay significance.
+- All 35 targeted games: portrait controls respect a minimum 56px top boundary, or the device safe area if larger. Background artwork can extend above it. Menu sheets also fit between safe top and bottom boundaries.
+- Spin & Solve: sound, Help and menu remain below that boundary; puzzle board begins below the controls.
+- Double Take, Picture Perfect and Lost & Found: Exit, How to Play, game tools and Full screen share the bottom action row. Fullscreen X returns to the row on exit. Lost & Found retains its bottom target list.
+- Tunnel Pop/Cheese Chase: portrait canvas leaves the top control row usable, with play controls below.
+- Landscape layouts retained except the requested action-row changes. Landscape-only games retain their rotate prompt and accessible Exit in portrait.
+
+TEST CHECKLIST — ALPHABETICAL WITHIN CATEGORY
+TABLETOP (4)
+Farkle
+Huddle
+Roll Call / Yacht!
+Spin & Solve
+
+ARCADE (16 games, 15 icons)
+Ball Barrage
+Beacon Bound
+Brickyard
+Buzz Off!
+Cheese Chase
+Containment
+Golf: 18 Holes AND Seaside Putt
+Mean Birds
+Moonshot
+Neon Siege
+Noodle
+Skee-Hop
+Stranded
+Topple Fair
+Tunnel Pop
+
+PUZZLES (15)
+Bridge Works
+Double Take
+Garden Swap
+Get Out!
+Get Out 2!
+Hex Slide
+Lost & Found
+Mine Meadow
+Perch Pals
+Picture Perfect
+Screwball (Classic and Timber Tumble)
+Shelf Life
+Triple Treat
+Woodpile (including Shapes)
+Zoodoku
+
+CHECKS
+All 35 landing/game pages reviewed at 390x740 portrait. Focused smaller portrait and landscape checks cover Spin & Solve, all three focus-mode puzzles, Roll Call, Tunnel Pop, Cheese Chase, 18 Holes and both Screwball modes. Portrait safe-area simulation uses 59px top and 34px bottom. Browser checks are not a physical iPhone/Safari test: please verify menu access, touch input, rotation and fullscreen return on your device.
+
+The remaining collection-wide rollout and main-menu redesign remain deferred. See Corrections1.txt for the original game-by-game changes.

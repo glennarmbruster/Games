@@ -1,0 +1,70 @@
+/* Correction 1 revision: portrait controls must sit below the iOS status/notch area.
+   Artwork can remain edge-to-edge. Landscape rules are deliberately unaffected. */
+@media (orientation:portrait){
+ html{--portrait-safe-top:max(56px,env(safe-area-inset-top,0px));--portrait-safe-bottom:max(12px,env(safe-area-inset-bottom,0px))}
+ html.collection-ui.correction-ui{--collection-top:var(--portrait-safe-top);--collection-safe-top:var(--portrait-safe-top);--collection-safe-bottom:var(--portrait-safe-bottom)}
+ html.correction-ui .collection-nav{top:calc(var(--portrait-safe-top) + 6px)!important}
+ html.correction-ui.gg-fs:not(.gg-fs-over) .app{padding-top:calc(var(--portrait-safe-top) + 7px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui.gg-fs-over .top{top:var(--portrait-safe-top)!important;padding-top:7px!important;z-index:30;min-height:56px!important}
+ html.correction-ui .top .topbtns{flex:none}
+ html.correction-ui .top .pills{min-width:0}
+ html.correction-ui .top .roundpill{min-width:0;font-size:12px;padding:7px}
+ html.correction-ui .overlay{padding-top:calc(var(--portrait-safe-top) + 58px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui .overlay :is(.card,.sheet,.startcard,.endcard,.roundcard){max-height:calc(100dvh - var(--portrait-safe-top) - var(--portrait-safe-bottom) - 72px)!important;overflow-y:auto}
+ html.correction-ui .collection-page[data-collection=spin] .stage{padding-top:calc(var(--portrait-safe-top) + 64px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .app{padding-top:calc(var(--portrait-safe-top) + 60px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .top{top:var(--portrait-safe-top)!important}
+ html.correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:calc(var(--portrait-safe-top) + 64px)!important}
+ html.correction-ui .collection-page[data-collection=farkle] #app{padding-top:calc(var(--portrait-safe-top) + 6px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui .collection-page[data-collection=farkle] header{padding-left:130px}
+ html.correction-ui .collection-page[data-collection=farkle] header>div{font-size:16px;letter-spacing:1px}
+ html.correction-ui .collection-page[data-collection=screwball] .collection-main{padding-top:calc(var(--portrait-safe-top) + 66px)!important}
+ html.correction-ui .collection-page[data-collection=screwball] .workshop{padding-top:calc(var(--portrait-safe-top) + 58px)!important}
+ html.correction-ui .collection-page[data-collection=bridge] header{padding-left:138px}
+ html.correction-ui .collection-page[data-collection=hexslide] header{padding-left:140px}
+ html.correction-ui .collection-page[data-collection=siege] .screen{padding-top:64px!important;padding-bottom:var(--portrait-safe-bottom)!important;overflow-y:auto}
+ html.correction-ui .collection-page[data-collection=siege] #topbar{padding-left:140px}
+ html.correction-ui .collection-page[data-collection=topple] .hud{top:var(--portrait-safe-top)!important}
+ html.correction-ui .collection-page[data-collection=topple] .hud2{top:calc(var(--portrait-safe-top) + 60px)!important}
+ html.correction-ui #shapeMode{padding-top:calc(var(--portrait-safe-top) + 8px);padding-bottom:var(--portrait-safe-bottom)}
+ html.correction-ui .focus-toggle,html.correction-ui .fullscreen-return{top:calc(var(--portrait-safe-top) + 6px)!important;bottom:auto!important}
+ html.correction-ui .collection-page:not(.focus-view) .focus-toggle{top:auto!important;bottom:calc(var(--portrait-safe-bottom) + 6px)!important}
+ html.correction-ui .collection-page[data-collection=hidden]:not(.focus-view) .focus-toggle{bottom:calc(var(--trayh,160px) + 8px)!important}
+ html.correction-ui .focus-view .app{padding:0!important}
+ html.correction-ui .collection-page[data-collection=dice] #diceExitSlot .collection-nav{top:auto!important}
+ .golf-lobby{padding-top:calc(var(--portrait-safe-top) + 64px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ body:has(.golf-lobby)>.exit{top:calc(var(--portrait-safe-top) + 6px)!important}
+}
+
+/* Double Take's five actions share one row; fullscreen retains only its X. */
+html.correction-ui .collection-page[data-collection=spotdiff]:not(.focus-view) .toolbar{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:stretch}
+html.correction-ui .collection-page[data-collection=spotdiff]:not(.focus-view) .toolbar>button,html.correction-ui .collection-page[data-collection=spotdiff] .toolbar .collection-exit{width:100%;min-width:0;font-size:12px;line-height:1.15;padding:5px 3px;white-space:normal;height:50px;min-height:44px}
+html.correction-ui .collection-page[data-collection=spotdiff] .toolbar .collection-nav{position:static!important;inset:auto!important;transform:none!important;width:100%!important;height:50px!important}
+html.correction-ui .collection-page[data-collection=spotdiff]:not(.focus-view) .toolbar .focus-toggle{position:static!important;inset:auto!important;margin:0;border-radius:12px}
+html.correction-ui .collection-page[data-collection=spotdiff] .top{padding-left:10px!important}
+@media(orientation:portrait){html.correction-ui .collection-page[data-collection=spotdiff] .toolbar{bottom:var(--portrait-safe-bottom)!important}}
+@media(orientation:portrait){
+ html.collection-ui.correction-ui.batch4-ui.gg-fs:not(.gg-fs-over) .collection-page:is([data-collection=digger],[data-collection=maze]) .app{padding-top:calc(var(--portrait-safe-top) + 60px)!important;padding-bottom:var(--portrait-safe-bottom)!important}
+ html.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .top{z-index:30}
+}
+/* Shared action-row order: Exit, How to Play, game tools, Full screen. */
+html.correction-ui .collection-page .game-controls{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none!important;gap:6px;align-items:stretch;flex:none}
+html.correction-ui .collection-page .game-controls>button,html.correction-ui .collection-page .game-controls .collection-exit{width:100%;min-width:0;max-width:none;font:700 12px/1.15 system-ui;padding:5px 3px;white-space:normal;min-height:44px;height:50px;border-radius:12px}
+html.correction-ui .collection-page .game-controls .collection-nav{position:static!important;inset:auto!important;transform:none!important;width:100%!important;height:50px!important;margin:0!important}
+html.correction-ui .collection-page:not(.focus-view) .game-controls .focus-toggle{position:static!important;inset:auto!important;margin:0;border-radius:12px}
+html.correction-ui .collection-page:is([data-collection=patchwork],[data-collection=spotdiff],[data-collection=hidden]) .top{padding-left:10px!important}
+html.correction-ui .collection-page[data-collection=dice] #diceExitSlot{min-height:44px;height:44px}
+html.correction-ui .collection-page[data-collection=dice] #diceExitSlot :is(button,.collection-nav){height:44px!important}
+html.correction-ui .focus-view .game-controls .collection-nav{display:none!important}
+@media(orientation:portrait){
+ html.correction-ui .collection-page[data-collection=topple] .hud{top:0!important}
+ html.correction-ui .collection-page[data-collection=topple] .hud2{top:60px!important}
+}
+@media(orientation:portrait){html:has(.collection-page),html:has(.collection-page) body{height:100dvh;min-height:0}}
+html.correction-ui .collection-page .game-controls .collection-nav>button{width:100%!important;max-width:100%!important;min-width:0!important;flex:1 1 0!important;box-sizing:border-box;font-size:12px;padding:5px 3px!important;white-space:normal}
+@media(orientation:landscape) and (max-height:600px){
+ html.correction-ui .collection-page[data-collection=patchwork] .game-controls{grid-auto-flow:row!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-auto-columns:auto!important;height:auto!important}
+ html.correction-ui .collection-page[data-collection=patchwork] .game-controls .collection-nav{grid-column:1;grid-row:1}
+ html.correction-ui .collection-page[data-collection=patchwork] .game-controls .control-help{grid-column:2;grid-row:1}
+ html.correction-ui .collection-page[data-collection=patchwork] .game-controls .focus-toggle{grid-column:3;grid-row:1}
+}
