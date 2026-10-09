@@ -1,0 +1,7 @@
+HANDHELD SPORTS 1.1.1
+Upload these files over Handheld Sports, preserving folder paths. This ZIP also includes the previous green-football/layout and baseball-animation changes.
+
+Touchdowns now trigger a two-second retro fanfare: two ascending calls followed by a held victory cadence. It plays once per touchdown, including a score on the final play. The existing tackle buzzer remains separate. Sound Off immediately silences the fanfare, including scheduled notes. Touchdowns still award 7 points; scoring rules are unchanged.
+
+Verified touchdown sound sequence, duration, no repeated trigger, mute, final-play scoring, and existing sports rule checks.
+Shell cache 3.5.2.
