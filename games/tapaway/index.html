@@ -128,7 +128,7 @@ html.gg-fs-over .bombhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px
 </style>
 <link rel="stylesheet" href="flight.css"><link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-</head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="fa-logo" viewBox="0 0 100 100"><defs><linearGradient id="fabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#4f7dff"/></linearGradient></defs>
@@ -2224,5 +2224,5 @@ FAApp.start(THREE);
 setTimeout(function () { if (!window.FAApp || !FAApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
 </script>
 <script src="../../shared/collection-batch3.js"></script>
-</body>
+<script defer src="../../shared/remaining-navigation.js"></script></body>
 </html>

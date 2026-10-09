@@ -2,13 +2,15 @@
 const $=id=>document.getElementById(id),store=Goobs.store('handheld');let game=null,mode='',paused=false,held=null,holdTime=0,last=performance.now(),saveClock=0,lastEvent=-1,audio=null,lastTackle=0,lastTouchdown=0,batTime=0;const voices=new Set;let sound=store.get('sound',true),records=store.get('records',{}),saved=store.get('games',{}),prefs=store.get('prefs',{skill:'classic',innings:3});$('skill').value=prefs.skill;$('innings').value=String(prefs.innings);
 function setText(id,text){if($(id).textContent!==text)$(id).textContent=text;}
 function unlockSound(){if(!sound)return;try{if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();}catch{}}
-function tone(freq=440,duration=.07,delay=0){if(!sound||!audio)return;try{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(.025,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(audio.destination);voices.add(o);o.onended=()=>voices.delete(o);o.start(t);o.stop(t+duration);}catch{}}
+function tone(freq=440,duration=.07,delay=0,sustain=false){if(!sound||!audio)return;try{const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(.025,t);if(sustain){g.gain.setValueAtTime(.025,t+Math.max(0,duration-.003));g.gain.linearRampToValueAtTime(0,t+duration);}else g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(audio.destination);voices.add(o);o.onended=()=>voices.delete(o);o.start(t);o.stop(t+duration);}catch{}}
 function silence(){for(const o of voices){try{o.stop();}catch{}}voices.clear();}
 function touchdownSound(){
- // Two bright ascending calls followed by a held victory cadence.
- const notes=[[523,.12,0],[659,.12,.14],[784,.22,.28],[523,.12,.56],[659,.12,.70],[784,.22,.84],[1047,.18,1.10],[988,.12,1.30],[784,.12,1.44],[1047,.42,1.60]];
- for(const [hz,duration,delay] of notes)tone(hz,duration,delay);
- tone(262,.25,1.60);
+ // Six-note Charge call; frequencies and cycle lengths measured from original hardware.
+ // Reference: Sean Riddle, footballproto.asm (piezo-output measurements).
+ let at=0;
+ for(const [hz,cycles] of [[708,160],[976,192],[1152,192],[1400,256],[1152,192],[1400,256]]){
+  const duration=cycles/hz;tone(hz,duration,at,true);at+=duration;
+ }
 }
 function tackleSound(){
  // A short, raspy square-wave trill recalls a vintage handheld's tackle buzzer.
@@ -63,7 +65,7 @@ function drawBaseball(){
 }
 function draw(){ctx.clearRect(0,0,w,h);if(!game)return;if(mode==='football')drawFootball();else drawBaseball();}
 function paint(){if(!game)return;const scored=(game.touchdownSerial||0)!==lastTouchdown;if(scored){lastTouchdown=game.touchdownSerial;touchdownSound();}const tackled=(game.tackleSerial||0)!==lastTackle;if(tackled){lastTackle=game.tackleSerial;tackleSound();}setText('you',String(game.you).padStart(2,'0'));setText('cpu',String(game.cpu).padStart(2,'0'));setText('message',game.message);if(game.event!==lastEvent){lastEvent=game.event;if(!scored&&/HOME RUN|WIN/.test(game.message)){[523,659,784].forEach((n,i)=>tone(n,.13,i*.13));}else if(!tackled&&!scored)tone(/OUT|Tackled|miss/.test(game.message)?180:480,.08);}if(mode==='football'){const q=Math.min(4,1+Math.floor((180-game.time)/45)),secs=Math.ceil(game.time%45)|| (game.time>0?45:0);setText('period','Q'+q+' · 0:'+String(secs).padStart(2,'0'));setText('detail',game.phase==='over'?'FINAL':game.down+(['','st','nd','rd','th'][game.down]||'th')+' & '+Math.max(1,game.line-game.yard));setText('readout',game.phase==='computer'?'COMPUTER DRIVE…':game.yard<=50?'BALL ON YOUR '+Math.floor(game.yard):'BALL ON CPU '+Math.floor(100-game.yard));$('snap').disabled=game.phase!=='ready';$('kick').disabled=game.phase!=='ready';$('kick').textContent=117-game.yard<=55?'FIELD GOAL':'PUNT';document.querySelectorAll('[data-dir]').forEach(b=>b.disabled=game.phase!=='live');}else{setText('period',(game.half==='top'?'TOP ':'BOT ')+game.inning+' / '+game.innings);setText('detail',game.phase==='over'?'FINAL':game.outs+' OUT · '+game.balls+'–'+game.strikes);setText('readout',game.half==='top'?'YOU PITCH · CPU BATS':'YOU BAT · TIME YOUR SWING');setText('pitchType',game.pitchType==='fast'?'FASTBALL':'CURVE');setText('pitchCaption',game.half==='top'?'Change pitch':'Watch the ball');$('pitchType').disabled=game.half!=='top'||game.phase!=='ready';$('pitch').disabled=game.phase!=='ready';$('swing').disabled=game.half!=='bottom'||game.phase!=='pitch';}record();draw();}
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(game&&!paused){batTime=Math.max(0,batTime-dt);if(held){holdTime+=dt;if(holdTime>=.13){holdTime=0;move(held);}}game.update(dt);paint();saveClock+=dt;if(saveClock>=1){saveClock=0;save();}}requestAnimationFrame(frame);}requestAnimationFrame(frame);lobbyRecords();Goobs.initUpdates({beforeReload:save,onVersions:v=>setText('version','Handheld Sports '+(v.handheld||'1.1.1'))});
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(game&&!paused){batTime=Math.max(0,batTime-dt);if(held){holdTime+=dt;if(holdTime>=.13){holdTime=0;move(held);}}game.update(dt);paint();saveClock+=dt;if(saveClock>=1){saveClock=0;save();}}requestAnimationFrame(frame);}requestAnimationFrame(frame);lobbyRecords();Goobs.initUpdates({beforeReload:save,onVersions:v=>setText('version','Handheld Sports '+(v.handheld||'1.1.2'))});
 // Read-only handles help validate rendering and rules together.
 window.HandheldSports={get game(){return game},get paused(){return paused}};
 })();

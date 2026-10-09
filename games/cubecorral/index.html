@@ -115,7 +115,7 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
 <link rel="stylesheet" href="details.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-</head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="cc-logo" viewBox="0 0 100 100"><defs><linearGradient id="ccg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb8ff"/><stop offset="1" stop-color="#5a54f0"/></linearGradient></defs>
@@ -1699,5 +1699,5 @@ CCApp.start(THREE);
 setTimeout(function () { if (!window.CCApp || !CCApp.started()) { var h = document.getElementById('turnHint'); if (h) h.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; } }, 6000);
 </script>
 <script src="../../shared/collection-batch3.js"></script>
-</body>
+<script defer src="../../shared/remaining-navigation.js"></script></body>
 </html>

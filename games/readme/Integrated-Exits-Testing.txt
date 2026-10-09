@@ -1,0 +1,57 @@
+GOOBS GAMES — INTEGRATED EXITS + MATTEL TOUCHDOWN
+October 9, 2026 · shell 3.6.0 · Handheld Sports 1.1.2
+
+UPLOAD
+Upload the contents into the existing site root, preserving the games/ and shared/ folders and replacing matching files. Keep existing game files. This is an update, not the full collection. Let the site update while online, then reopen it.
+
+CHANGES
+30 remaining game icons now integrate Exit and How to Play with their game controls or opening dialogs, without a separate Exit bar. Multi-game selectors retain their existing choices and gain integrated navigation. Earlier approved layouts and pause-only exceptions remain in place. Game rules and balance are unchanged.
+
+Handheld Sports Football: replaces the previous victory tune with six square-wave notes using measured Mattel Football pitches and cycle counts: 708/160, 976/192, 1152/192, 1400/256, 1152/192, 1400/256 (Hz/cycles). Reference: https://seanriddle.com/footballproto.html and footballproto.asm. The supplied YouTube reference at 1:28 could not be auditioned in this environment; compare on your device.
+
+TESTING LIST (alphabetical by category)
+
+TABLETOP
+- Captain's Casino
+- Card Table
+- Game Chest
+- Letter Loop
+- Lettermind
+- Ninefold
+- Pixel Pier
+- Quiz Cove
+- Tile Temple
+- Tile Tide
+- Word Rattle
+
+ARCADE
+- Castle Havoc
+- Fizz Pop
+- Goober Ball
+- Lido Deck
+- Peg Lagoon
+- Pool Party Hoops
+- Star Siege
+- Strike Alley
+- Tumbledown
+- War Games
+
+PUZZLES
+- Case Closed
+- Color Link
+- Cube Pop
+- Fly Away
+- Knotty
+- Lot Escape
+- Number Nook
+- Splash Sort
+- Wick’s Way
+
+ALSO UPDATED
+- Handheld Sports — Football touchdown sound
+
+VALIDATION
+Browser checks at 390x740 portrait and 844x390 landscape for visible/reachable Exit controls; mode selection, help, and home navigation checks. Football checks cover six-note scheduling, one sound per score, mute, and final-play touchdown scoring. These are browser checks, not a physical iPhone test.
+
+ON YOUR DEVICE
+Confirm Exit is reachable without scrolling, controls do not overlap the board, and multi-game choices still open. Check both orientations. In Football, score a touchdown with sound enabled and compare its tune to the reference.
