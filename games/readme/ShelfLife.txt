@@ -1,0 +1,9 @@
+SHELF LIFE — CONSISTENCY BATCH 3
+Version 2.1.0
+
+Landscape places status and actions beside the shelves. Existing store artwork and item layouts are preserved.
+
+Shared changes: consistent gold Exit Game button, navy navigation bar, clearer labels and safe-area-aware help sheets.
+
+Presentation only. Rules, difficulty, scoring, level data, artwork and save formats are preserved.
+Install with the Batch 3 ZIP after Batches 1 and 2, merging into the existing site root and including sw.js.

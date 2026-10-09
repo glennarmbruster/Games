@@ -2,7 +2,7 @@ GOOBS GAMES — CONSISTENCY BATCH TRACKER
 
 Scope: navigation, game selectors, readable text, colors and orientation layouts.
 Rules, physics, levels, scoring, difficulty and save formats remain unchanged.
-Batches 1 and 2 delivered; remaining batches planned. 16 / 66 collections complete.
+Batches 1–3 delivered; remaining batches planned. 36 / 66 collections complete.
 
 BATCH 1 — COMPLETE (6 collections)
   Castle Havoc — games/castle
@@ -24,7 +24,7 @@ BATCH 2 — COMPLETE (10 collections)
   Hex Slide — games/hexslide
   Yacht! — games/dice
 
-BATCH 3 — PLANNED (10 collections)
+BATCH 3 — COMPLETE (20 collections)
   Ninefold — games/sudoku
   Pixel Pier — games/nonogram
   Mine Meadow — games/mines
@@ -36,7 +36,6 @@ BATCH 3 — PLANNED (10 collections)
   Picture Perfect — games/patchwork
   Double Take — games/spotdiff
 
-BATCH 4 — PLANNED (10 collections)
   Get Out! — games/getout
   Get Out 2! — games/getout2
   Perch Pals — games/perch
@@ -48,7 +47,7 @@ BATCH 4 — PLANNED (10 collections)
   Fly Away — games/tapaway
   Garden Swap — games/match3
 
-BATCH 5 — PLANNED (10 collections)
+BATCH 4 — PLANNED (10 collections)
   Ball Barrage — games/barrage
   Brickyard — games/bricks
   Fizz Pop — games/bubbles
@@ -60,7 +59,7 @@ BATCH 5 — PLANNED (10 collections)
   Noodle — games/snake
   Triple Treat — games/triple
 
-BATCH 6 — PLANNED (10 collections)
+BATCH 5 — PLANNED (10 collections)
   Moonshot — games/homerun
   Mean Birds — games/meanbirds
   Beacon Bound — games/beacon
@@ -72,7 +71,7 @@ BATCH 6 — PLANNED (10 collections)
   Pool Party Hoops — games/hoops
   Skee-Hop — games/skeehop
 
-BATCH 7 — PLANNED (10 collections)
+BATCH 6 — PLANNED (10 collections)
   Buzz Off! — games/buzz
   Case Closed — games/cases
   Tile Temple — games/mahjong
@@ -84,16 +83,16 @@ BATCH 7 — PLANNED (10 collections)
   Word Rattle — games/worddice
   Letter Loop — games/wordwheel
 
-INSTALL BATCH 2
+INSTALL BATCH 3
 Extract this ZIP into the existing site root, merging folders and replacing the included files. Do not replace or delete the entire games or shared folder. Upload sw.js too. Open the site online and accept its Update available prompt. Existing saved games remain in the browser.
 
-Install after Batch 1. This is an update package, not a standalone copy of the site.
+Install after Batches 1 and 2. This is an update package, not a standalone copy of the site.
 
 LANDSCAPE DETAILS
-Card Table, Yacht! and Screwball Classic place controls beside the play area. Casino uses side controls; roulette, craps and video-poker payouts scroll within their panels to keep targets readable. Pinball keeps the tall table shape, so portrait gives the largest playfield.
+Square puzzle boards and Lettermind use side controls. Double Take places pictures side by side. Lost & Found moves its object list to a scrollable side panel. Cube Pop and Fly Away reserve separate space for the sculpture and controls. Get Out's tall room scenes and Knotty's tall peg boards remain largest in portrait; their navigation and panels also fit landscape.
 
 CHECKS
-Browser checks at 390x844 portrait and 844x390 landscape, small-phone selectors at 320x568, and simulated safe-area insets. All ten Batch 2 collections and their subgames/modes checked. Physical iPhone/Safari verification is still recommended.
+All 20 collections opened in browser checks at 390x844 portrait and 844x390 landscape without page errors. Smaller phone checks use 320x568. Exit navigation, room return and selector paths checked. Existing artwork and non-presentation source files are unchanged. This is browser testing, not physical iPhone/Safari certification.
 
 IMPLEMENTATION NOTE
-The Batch 2 presentation extension is opt-in for its ten collections. Batch 1 presentation assets are unchanged. Future shared-layer changes must update cache versions for every collection that loads that layer (or use newly versioned filenames).
+Batch 3 uses a new opt-in presentation extension. Shared Batch 1 and Batch 2 assets and their cache versions are unchanged. Future changes to shared presentation files must bump cache versions for every collection using them, or use new filenames.

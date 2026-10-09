@@ -112,6 +112,8 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 .endstars i { font-style: normal; color: #d7dbe6; }
 </style>
 <link rel="stylesheet" href="modern.css">
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1218,5 +1220,6 @@ function clMaker() {
     gen: { cache: genCache, log: genLog, get jobs() { return jobs.slice(); }, get job() { return job; }, get workerDead() { return workerDead; }, get worker() { return !!worker; }, maker: MK } };
 })();
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

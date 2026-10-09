@@ -126,7 +126,9 @@ html.gg-fs-over .toolbar.onlyL .tool { font-size: 13px; }
 html.gg-fs-over .bombhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
 .ggmenu .modes { margin: 2px 0 6px; }
 </style>
-<link rel="stylesheet" href="flight.css"></head>
+<link rel="stylesheet" href="flight.css"><link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
+</head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="fa-logo" viewBox="0 0 100 100"><defs><linearGradient id="fabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#4f7dff"/></linearGradient></defs>
@@ -1889,7 +1891,7 @@ var FLApp = (function () {
   function $(id) { return document.getElementById(id); }
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function locked() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkins') || isOpen('ovChallenges') || isOpen('ovLevelsL') || GoobsAds.isOpen(); }
+  function locked() { return document.documentElement.classList.contains('collection-open') || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkins') || isOpen('ovChallenges') || isOpen('ovLevelsL') || GoobsAds.isOpen(); }
   function coinIcon() { return '<svg viewBox="0 0 24 24"><use href="#coin"/></svg>'; }
   function skinById(id) { for (var i = 0; i < SKINS.length; i++) if (SKINS[i].id === id) return SKINS[i]; return SKINS[0]; }
   function backById(id) { for (var i = 0; i < BACKS.length; i++) if (BACKS[i].id === id) return BACKS[i]; return BACKS[0]; }
@@ -2133,6 +2135,7 @@ var FLApp = (function () {
   function fitMargins() {
     var H = window.innerHeight, top = $('info').getBoundingClientRect().bottom, bars = document.querySelectorAll('.toolbar,.flight-rule:not([hidden])'), bot = H;
     Array.prototype.forEach.call(bars, function (b) { var r = b.getBoundingClientRect(); if (r.height) bot = Math.min(bot, r.top); });
+    if (window.innerWidth > window.innerHeight && window.innerHeight <= 600) top = document.querySelector('.top').getBoundingClientRect().bottom;
     var m = { top: Math.round(top + 6), bottom: Math.round(H - bot + 8), side: 6 };
     if (R3) R3.setMargins(m); FLApp.setMargins(m);
   }
@@ -2220,5 +2223,6 @@ FAApp.start(THREE);
 <script>
 setTimeout(function () { if (!window.FAApp || !FAApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

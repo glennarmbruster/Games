@@ -159,6 +159,8 @@ html:not([data-theme="dark"]) .tool.red { background:#65543a;color:#fff; }
 .scenename { background:rgba(28,23,17,.8);border-radius:4px;letter-spacing:.12em; }
 .slot { border-radius:6px; }
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -4805,5 +4807,6 @@ var HS = (function () {
   PhotoHunt.ready.then(init).catch(function(e){console.error(e);window.dispatchEvent(new ErrorEvent('error',{message:'Scene images could not load. Please reload.'}));});
 })();
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

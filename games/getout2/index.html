@@ -248,6 +248,8 @@ html.go-wrap .arrow, html.go-wrap .zoomout, html.go-wrap .invbar, html.go-wrap .
 .btn { font-weight:650; }
 </style>
 <link rel="stylesheet" href="mayhem-ui.css">
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -19075,7 +19077,7 @@ var GOSound = (function () {
   $('dbgClose').addEventListener('click', function () { close('ovDebug'); });
 
   // ================= menu, settings, stats, help =================
-  $('btnHome').addEventListener('click', function () { if (G) { if (!busy()) leaveRoom(); } else Goobs.home(); });
+  $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
   $('btnLane').addEventListener('click', function () { if (G && !busy()) leaveRoom(); });
   $('btnRestart').addEventListener('click', function () {
     if (!G || busy()) return;
@@ -19261,5 +19263,6 @@ var GOSound = (function () {
   $('version').textContent = 'Get Out 2! ' + VERSION;
 })();
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

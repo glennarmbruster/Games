@@ -1,0 +1,9 @@
+GET OUT 2! — CONSISTENCY BATCH 3
+Version 1.5.0
+
+Exit Game saves and returns to the main collection. Choose Room returns to the scene list through the original room handler. Brighter room cards and larger descriptions; scrollable call sheets fit beneath navigation. Portrait remains best for the tall room scenes.
+
+Shared changes: consistent gold Exit Game button, navy navigation bar, clearer labels and safe-area-aware help sheets.
+
+Presentation only. Rules, difficulty, scoring, level data, artwork and save formats are preserved.
+Install with the Batch 3 ZIP after Batches 1 and 2, merging into the existing site root and including sw.js.

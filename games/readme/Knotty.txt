@@ -1,0 +1,9 @@
+KNOTTY — CONSISTENCY BATCH 3
+Version 1.1.0
+
+Consistent navigation and readable tools; the peg board fits between status and actions in either orientation. Portrait gives the largest view of tall boards.
+
+Shared changes: consistent gold Exit Game button, navy navigation bar, clearer labels and safe-area-aware help sheets.
+
+Presentation only. Rules, difficulty, scoring, level data, artwork and save formats are preserved.
+Install with the Batch 3 ZIP after Batches 1 and 2, merging into the existing site root and including sw.js.

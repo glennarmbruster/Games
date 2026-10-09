@@ -322,6 +322,8 @@ html.go-lane .lane { display: block; }
 .btn { font-weight: 650; }
 </style>
 <link rel="stylesheet" href="study-ui.css">
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -4008,7 +4010,7 @@ var GORoom8 = (function () {
     order: [130, 250, 520, 840], stub: [650, 860, 240, 200],
     pocket: [370, 640, 280, 300], cape: [170, 150, 660, 1150],
     sand: [420, 620, 170, 170],
-    glass: [160, 120, 680, 820], socket: [722, 50, 150, 150], cardsAt: [150, 560, 230, 330], wrenNote: [690, 600, 150, 190], propCard: [430, 1000, 200, 150], tin: [690, 1060, 200, 130],
+    glass: [160, 120, 680, 820], socket: [722, 92, 96, 96], cardsAt: [150, 560, 230, 330], wrenNote: [690, 600, 150, 190], propCard: [430, 1000, 200, 150], tin: [690, 1060, 200, 130],
     cardRow: [40, 380, 920, 360],
     lockPlate: [180, 260, 640, 380], drawerIn: [300, 900, 400, 260],
     coats: [40, 170, 920, 1000],
@@ -15284,8 +15286,6 @@ var GOArt6 = (function () {
   var H = GOArt.H, L = GORoom6.L, PI = Math.PI, TAU = PI * 2;
   var rr = H.rr, lin = H.lin, rad = H.rad, box = H.box, circ = H.circ, line = H.line, txt = H.txt, seeded = H.seeded, shade = H.shade,
     dropShadow = H.dropShadow, noShadow = H.noShadow, brass = H.brass, wood = H.wood, gloss = H.gloss, SERIF = H.SERIF, HAND = H.HAND;
-  var plainBox=box;
-  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOPhoto678!=="undefined")GOPhoto678.skin(c,6,x,y,w,h,r,fill);};
   var K = '#1a2226', CREAM = '#ddd5bd', SEAG = '#3d7d72', STEEL = '#8d989c', RED = '#d23a2c', SONAR = '#5dff9a';
   var BOATC = { red: '#d8322a', blue: '#2f6fd0', green: '#2f9a4a' };
 
@@ -15366,7 +15366,7 @@ var GOArt6 = (function () {
   // ================= sea life (portholes, jars, the guide) =================
   // s ~ the creature's width; f = 1 or -1 faces right or left
   function critter(c, kind, x, y, s, f) {
-    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.critter(c,kind,x,y,s,f))return;
+    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.sprite(c,"marine",kind,x,y,s,null,f))return;
     c.save(); c.translate(x, y); c.scale((f || 1) * s / 100, s / 100); c.lineJoin = 'round'; c.lineCap = 'round';
     var ink = 'rgba(20,20,30,.75)';
     if (kind === 'fish') {
@@ -15447,7 +15447,6 @@ var GOArt6 = (function () {
     if (o.red != null) { c.strokeStyle = 'rgba(220,40,30,.85)'; c.lineWidth = r * 0.16; c.beginPath(); c.arc(x, y, r * 0.78, a0 + (a1 - a0) * o.red, a1); c.stroke(); }
     for (var k = 0; k <= 10; k++) { var a = a0 + (a1 - a0) * k / 10; line(c, x + Math.cos(a) * r * 0.66, y + Math.sin(a) * r * 0.66, x + Math.cos(a) * r * 0.88, y + Math.sin(a) * r * 0.88, '#2a2a2a', k % 5 ? r * 0.025 : r * 0.05); }
     if (o.label) txt(c, o.label, x, y + r * 0.42, r * 0.2, '#2a2a2a', { weight: 900 });
-    if(photoX&&photoX._photoGauges)photoX._photoGauges.push([x,y,r,v,c.getTransform()]);
     var an = a0 + (a1 - a0) * Math.max(0, Math.min(1, v));
     line(c, x, y, x + Math.cos(an) * r * 0.8, y + Math.sin(an) * r * 0.8, '#c0201a', r * 0.07);
     circ(c, x, y, r * 0.1, '#2a2a2a');
@@ -15649,6 +15648,7 @@ var GOArt6 = (function () {
     gloss(c, x - r, y - r, r * 2, r * 2, 0.22);
   }
   function portScene(c, X, which) {
+    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.water(c,X,which))return;
     var C = L.portC, cl = which === 1 ? X.R.clues.sea : X.R.clues.sea2;
     sea(c, C[0] - C[2], C[1] - C[2], C[0] + C[2], C[1] + C[2], which === 1 ? 31 : 37, false);
     // the harbor floor: sand, pebbles, kelp at the sides (behind the sea life)
@@ -15662,7 +15662,6 @@ var GOArt6 = (function () {
       c.fillStyle = 'rgba(10,40,60,.45)'; c.beginPath(); c.ellipse(C[0] - 120, C[1] - 160, 170, 48, -0.1, 0, TAU); c.fill(); c.beginPath(); c.moveTo(C[0] + 40, C[1] - 170); c.lineTo(C[0] + 110, C[1] - 220); c.lineTo(C[0] + 100, C[1] - 120); c.fill();
       return;
     }
-    if(typeof GOPhoto678!=="undefined")GOPhoto678.sea(c,which);
     cl.life.forEach(function (s) { critter(c, s.k, s.x, s.y, 100, s.f); });
   }
   V.lab = function (c, X) {
@@ -15913,7 +15912,6 @@ var GOArt6 = (function () {
     circ(c, x, y, r, rad(c, x - r * 0.3, y - r * 0.3, r * 0.1, r * 1.1, [[0, '#ffffff'], [1, '#e8e4da']]), '#2a2a2a', big ? 4 : 2);
     for (var i = 0; i < 60; i++) { var a = i / 60 * TAU, bg = i % 5 === 0; line(c, x + Math.sin(a) * r * (bg ? 0.84 : 0.9), y - Math.cos(a) * r * (bg ? 0.84 : 0.9), x + Math.sin(a) * r * 0.96, y - Math.cos(a) * r * 0.96, '#1a1a1a', bg ? r * 0.03 : r * 0.012); }
     for (i = 1; i <= 12; i++) { var b = i / 12 * TAU; txt(c, String(i), x + Math.sin(b) * r * 0.7, y - Math.cos(b) * r * 0.7, r * 0.17, '#1a1a1a', { weight: 800 }); }
-    if(photoX&&photoX._photoClocks)photoX._photoClocks.push([x,y,r,h,m,c.getTransform()]);
     var hd = GOArt.hands(h, m);
     line(c, x, y, x + Math.sin(hd.h) * r * 0.48, y - Math.cos(hd.h) * r * 0.48, '#14181a', r * 0.065);
     line(c, x, y, x + Math.sin(hd.m) * r * 0.78, y - Math.cos(hd.m) * r * 0.78, '#14181a', r * 0.04);
@@ -16106,11 +16104,8 @@ var GOArt6 = (function () {
   }
 
   // ================= public =================
-  var photoX;
-  var original_hull=hull; hull=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.backdrop(c,6,photoX._photoView,photoX.ext,photoX))return;return original_hull.apply(null,arguments);};
-
-  function drawOriginal(c, view, X) { var prior=photoX,priorView=X._photoView; photoX=X;X._photoView=view; try { if(V[view]) V[view](c,X); } finally { photoX=prior;X._photoView=priorView; } }
-  function draw(c, view, X) { if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,6,view,X,drawOriginal))return;drawOriginal(c,view,X); }
+  function drawOriginal(c, view, X) { if (V[view]) V[view](c, X); }
+  function draw(c,view,X){if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,6,view,X,drawOriginal))return;drawOriginal(c,view,X);}
   function animated(view, X) {
     if (view === 'sonarz' || view === 'helm') return !!X.st.f['f:sonarOn'];
     if (view === 'port1z' || view === 'port2z' || view === 'viewz' || view === 'ports') return true;
@@ -16195,8 +16190,6 @@ var GOArt7 = (function () {
   var H = GOArt.H, L = GORoom7.L, PI = Math.PI, TAU = PI * 2;
   var rr = H.rr, lin = H.lin, rad = H.rad, box = H.box, circ = H.circ, line = H.line, txt = H.txt, seeded = H.seeded, shade = H.shade,
     dropShadow = H.dropShadow, noShadow = H.noShadow, sym = H.sym, brass = H.brass, wood = H.wood, SERIF = H.SERIF, HAND = H.HAND;
-  var plainBox=box;
-  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOPhoto678!=="undefined")GOPhoto678.skin(c,7,x,y,w,h,r,fill);};
   var K = '#2a1a10', CREAM = '#fbf4e2', SHADOW = '#2a2238';
   var TC = { red: '#e23b32', blue: '#2f6fe0', yellow: '#f5c21b', green: '#2fa84f', orange: '#f2862a', purple: '#8a4fd0', pink: '#ee7ab4', white: '#f6f2e8' };
   function hx(col, def) { return TC[col] || col || def; }
@@ -16242,7 +16235,6 @@ var GOArt7 = (function () {
   function shelf(c, x, y, w, seed) { dropShadow(c, 14, 6, 0.4); wood(c, x, y, w, 22, '#9a6236', false, seed); noShadow(c); c.fillStyle = '#5a2e14'; [x + 30, x + w - 50].forEach(function (bx) { c.beginPath(); c.moveTo(bx, y + 22); c.lineTo(bx + 20, y + 22); c.lineTo(bx + 20, y + 60); c.closePath(); c.fill(); }); }
   // the snowy street outside, through glass
   function street(c, x0, y0, x1, y1, seed) {
-    if(photoX&&typeof GOPhoto678!=="undefined"&&GOPhoto678.street(c,x0,y0,x1,y1,photoX))return;
     c.fillStyle = lin(c, 0, y0, 0, y1, [[0, '#0e1a3e'], [0.7, '#2a3f72'], [1, '#4a5d8e']]); c.fillRect(x0, y0, x1 - x0, y1 - y0);
     var r = seeded(seed || 3);
     // the houses across the street, with lit windows and snow on the roofs
@@ -16270,7 +16262,7 @@ var GOArt7 = (function () {
   // centred at (x, y), about s across; col: a colour name or hex; sh: draw everything in this one colour (a silhouette);
   // rot: quarter turns
   function toy(c, id, x, y, s, col, sh, rot) {
-    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.toy(c,id,x,y,s,col,sh,rot))return;
+    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.sprite(c,"toys",id,x,y,s,col,1,rot,sh))return;
     c.save(); c.translate(x, y); if (rot) c.rotate(rot * PI / 2); c.scale(s / 100, s / 100); c.lineCap = 'round'; c.lineJoin = 'round';
     var F = function (k) { return sh || k; }, d = !sh;
     if (id === 'soldier') {
@@ -16360,7 +16352,7 @@ var GOArt7 = (function () {
   function pegDoll(c, x, y, s, prop, k) {
     c.save(); c.translate(x, y); c.scale(s / 100, s / 100); c.lineCap = 'round'; c.lineJoin = 'round';
     var dc = DRESS[k % DRESS.length];
-    c.fillStyle = lin(c,-24,0,24,0,[[0,shade(dc,-.45)],[.3,shade(dc,.24)],[.65,dc],[1,shade(dc,-.4)]]); c.beginPath(); c.moveTo(-13, -22); c.lineTo(13, -22); c.lineTo(24, 44); c.lineTo(-24, 44); c.closePath(); c.fill();
+    c.fillStyle = dc; c.beginPath(); c.moveTo(-13, -22); c.lineTo(13, -22); c.lineTo(24, 44); c.lineTo(-24, 44); c.closePath(); c.fill();
     c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(-20, 30, 40, 5);
     circ(c, 0, -36, 15, '#ffd9b8'); c.fillStyle = ['#6a3a1a', '#e8b84a', '#2a1a10', '#c8642a'][k % 4]; c.beginPath(); c.arc(0, -38, 16, PI, TAU); c.fill();
     var sleepy = prop === 'bed';
@@ -16394,7 +16386,6 @@ var GOArt7 = (function () {
     c.restore();
   }
   function furn(c, id, x, y, s) {
-    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.furniture(c,id,x,y,s))return;
     // bottom-centred at (x, y), about s across
     c.save(); c.translate(x, y); c.scale(s / 100, s / 100); c.lineJoin = 'round';
     if (id === 'bed') {
@@ -16451,7 +16442,7 @@ var GOArt7 = (function () {
     fl.forEach(function (n, f) {
       for (var k = 0; k < n; k++) {
         var rx = x + 12 + k * (w - 24) / n, rw = (w - 24) / n - 10, ry0 = by + 12 + f * fh, rh = fh - 22, i = idx++;
-        c.fillStyle = wp[i % wp.length]; c.fillRect(rx, ry0, rw, rh);if(typeof GOPhoto678!=="undefined")GOPhoto678.miniRoom(c,rx,ry0,rw,rh);
+        c.fillStyle = wp[i % wp.length]; c.fillRect(rx, ry0, rw, rh);
         if (big) for (var sx = rx + 14; sx < rx + rw; sx += 28) { c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(sx, ry0, 8, rh * 0.7); }
         c.fillStyle = '#b07a44'; c.fillRect(rx, ry0 + rh * 0.78, rw, rh * 0.22); line(c, rx, ry0 + rh * 0.78, rx + rw, ry0 + rh * 0.78, '#7a4a22', big ? 3 : 1);
         c.strokeStyle = '#7a4a22'; c.lineWidth = big ? 4 : 2; c.strokeRect(rx, ry0, rw, rh);
@@ -16467,6 +16458,7 @@ var GOArt7 = (function () {
 
   // ================= furniture of the shop =================
   function windowDisplay(c, X, x, y, w, h, big) {
+    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.stock(c,X,x,y,w,h,big))return;
     // the display shelves; each toy on its own place (the till asks how many of some are there)
     var cl = X.R.clues.window, n = cl.shelves, m = cl.slots, rh = h / n, sw = w / m, ts = Math.min(sw * 0.86, rh * 0.62);
     for (var k = 0; k < n; k++) {
@@ -16838,6 +16830,7 @@ var GOArt7 = (function () {
     return y + lines.length * size * 1.25;
   }
   V.windowz = function (c, X) {
+    if(typeof GOPhoto678!=="undefined"&&GOPhoto678.stock(c,X,40,240,920,1080,true)){txt(c,"The window display",500,170,44,"#f8e4b9",{font:SERIF,italic:true,weight:700});return;}
     var e = X.ext;
     street(c, e.x0, e.y0, e.x1, Math.min(e.y1, 1400), 15);
     c.fillStyle = 'rgba(40,24,10,.55)'; c.fillRect(e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0);
@@ -17070,13 +17063,8 @@ var GOArt7 = (function () {
   }
 
   // ================= public =================
-  var photoX;
-  var original_wallBg=wallBg; wallBg=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.backdrop(c,7,photoX._photoView,photoX.ext,photoX))return;return original_wallBg.apply(null,arguments);};
-  var original_plainBg=plainBg; plainBg=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.backdrop(c,7,photoX._photoView,photoX.ext,photoX))return;return original_plainBg.apply(null,arguments);};
-  var original_floor=floor; floor=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.images["7-"+photoX._photoView])return;return original_floor.apply(null,arguments);};
-
-  function drawOriginal(c, view, X) { var prior=photoX,priorView=X._photoView; photoX=X;X._photoView=view; try { if(V[view]) V[view](c,X); } finally { photoX=prior;X._photoView=priorView; } }
-  function draw(c, view, X) { if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,7,view,X,drawOriginal))return;drawOriginal(c,view,X); }
+  function drawOriginal(c, view, X) { if (V[view]) V[view](c, X); }
+  function draw(c,view,X){if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,7,view,X,drawOriginal))return;drawOriginal(c,view,X);}
   function animT(X, id) { return X.anim && X.anim.id === id ? (performance.now() - X.anim.t0) / 1000 : -1; }
   function animated(view, X) {
     if (view === 'door' || view === 'doorz' || view === 'train' || view === 'trainz' || view === 'house') return true;
@@ -17176,8 +17164,6 @@ var GOArt8 = (function () {
   var rr = H.rr, lin = H.lin, rad = H.rad, box = H.box, circ = H.circ, line = H.line, txt = H.txt, seeded = H.seeded, shade = H.shade,
     dropShadow = H.dropShadow, noShadow = H.noShadow, sym = H.sym, brass = H.brass, wood = H.wood, gloss = H.gloss, weave = H.weave,
     SERIF = H.SERIF, SANS = H.SANS, HAND = H.HAND;
-  var plainBox=box;
-  box=function(c,x,y,w,h,r,fill,stroke,lw){plainBox(c,x,y,w,h,r,fill,stroke,lw);if(typeof GOPhoto678!=="undefined")GOPhoto678.skin(c,8,x,y,w,h,r,fill);};
   var K = '#1e0c12', VELVET = '#8a1426', NAVY = '#16204a', GOLD = '#e8c26a';
   var CUP = { red: '#d8333f', blue: '#2f6fd8', gold: '#e8b83a', green: '#2fa65a' };
   var COAT = { red: '#c0303a', blue: '#2f56b8', green: '#2a8a50', purple: '#7a3ab0', gold: '#d8a830', silver: '#b8c2d0' };
@@ -17350,7 +17336,7 @@ var GOArt8 = (function () {
     dropShadow(c, big ? 18 : 8, 6, 0.45);
     c.fillStyle = lin(c, x - w / 2, 0, x + w / 2, 0, [[0, shade(base, -0.4)], [0.3, shade(base, 0.12)], [0.55, base], [1, shade(base, -0.45)]]);
     c.beginPath(); c.moveTo(x - w * 0.42, y + h * 0.12); c.quadraticCurveTo(x - w * 0.56, y + h * 0.6, x - w * 0.5, y + h); c.lineTo(x + w * 0.5, y + h); c.quadraticCurveTo(x + w * 0.56, y + h * 0.6, x + w * 0.42, y + h * 0.12); c.quadraticCurveTo(x, y + h * 0.2, x - w * 0.42, y + h * 0.12); c.fill(); noShadow(c);
-    if(typeof GOPhoto678!=="undefined")GOPhoto678.cloth(c,x,y,w,h,base);
+    if(typeof GOPhoto678!=="undefined")GOPhoto678.fabric(c,col,x-w/2,y+h*.12,w,h*.88);
     // lapels and sequins
     c.fillStyle = shade(base, -0.3); c.beginPath(); c.moveTo(x - w * 0.12, y + h * 0.14); c.lineTo(x, y + h * 0.5); c.lineTo(x + w * 0.12, y + h * 0.14); c.closePath(); c.fill();
     var r = seeded(Math.round(x + w));
@@ -18063,14 +18049,8 @@ var GOArt8 = (function () {
   }
 
   // ================= public =================
-  var photoX;
-  var original_wallpaper=wallpaper; wallpaper=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.backdrop(c,8,photoX._photoView,photoX.ext,photoX))return;return original_wallpaper.apply(null,arguments);};
-  var original_closeWall=closeWall; closeWall=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.backdrop(c,8,photoX._photoView,photoX.ext,photoX))return;return original_closeWall.apply(null,arguments);};
-  var original_wainscot=wainscot; wainscot=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.images["8-"+photoX._photoView])return;return original_wainscot.apply(null,arguments);};
-  var original_floor=floor; floor=function(c){if(photoX&&photoX._photoView&&typeof GOPhoto678!=="undefined"&&GOPhoto678.images["8-"+photoX._photoView])return;return original_floor.apply(null,arguments);};
-
-  function drawOriginal(c, view, X) { var prior=photoX,priorView=X._photoView; photoX=X;X._photoView=view; try { if(V[view]) V[view](c,X); } finally { photoX=prior;X._photoView=priorView; } }
-  function draw(c, view, X) { if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,8,view,X,drawOriginal))return;drawOriginal(c,view,X); }
+  function drawOriginal(c, view, X) { if (V[view]) V[view](c, X); }
+  function draw(c,view,X){if(typeof GOPhoto678!=="undefined"&&GOPhoto678.render(c,8,view,X,drawOriginal))return;drawOriginal(c,view,X);}
   function lit(X) { return X.diff === 'e' || !!X.st.f['f:lit']; }
   function animated(view, X) {
     if (view === 'costume' || view === 'hatz') return !X.st.done.take_hat || !!X.st.f['f:awake'];
@@ -18148,7 +18128,7 @@ var GOArt8 = (function () {
     cabinet: { gloss: [[560, 270, 320, 780, 0.12]], spec: [[710, 210, 18], [480, 740, 10]] }
   });
 
-  var mod = { draw: draw, dyn: dyn, animated: animated, item: item, playingCard:playingCard };
+  var mod = { draw: draw, dyn: dyn, animated: animated, item: item };
   GOArt.register(8, mod);
   return mod;
 })();
@@ -32283,7 +32263,6 @@ var GOSound = (function () {
   });
 })();
 </script>
-<script src="continuation-art.js"></script>
 <script src="../../shared/ads.js"></script>
 <script>
 /* Get Out! app: Keyhole Lane (the room list), the room screen (a full-screen canvas: walls, close-ups, puzzles),
@@ -32294,7 +32273,7 @@ var GOSound = (function () {
 (function () {
   'use strict';
   var E = GOEngine, A = GOArt, S = GOSound;
-  var VERSION = '0.22.0';
+  var VERSION = '0.18.0';
   // rooms 1-5: Keyhole Lane (the brass pieces and the finale); rooms 6+: Beyond the Lane (0.5.0), each a separate file that
   // defines GORoom<n> with its own STORY (name, desc, stamp, notes). Rooms 10 and 11 are the two parts of one place.
   var ROOMS = {};
@@ -33197,7 +33176,7 @@ var GOSound = (function () {
   $('dbgClose').addEventListener('click', function () { close('ovDebug'); });
 
   // ================= menu, settings, stats, help =================
-  $('btnHome').addEventListener('click', function () { if (G) { if (!busy()) leaveRoom(); } else Goobs.home(); });
+  $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
   $('btnLane').addEventListener('click', function () { if (G && !busy()) leaveRoom(); });
   $('btnRestart').addEventListener('click', function () {
     if (!G || busy()) return;
@@ -33339,5 +33318,6 @@ var GOSound = (function () {
   $('version').textContent = 'Get Out! ' + VERSION;
 })();
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

@@ -162,6 +162,8 @@ html.gg-fs .app { gap: 6px; }
 .endstats span { font-size: 12px; color: var(--muted); font-weight: 700; }
 </style>
 <link rel="stylesheet" href="modern.css">
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch3.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1467,5 +1469,6 @@ var SD_BANK = {"e":"20,V-9L4I@FDE&;H_)o;hsI+Kms$r$aW.4&%%:D>c$(%9-qUep&HnWrd01#/
     setNotes: function (on) { notesMode = !!on; renderAll(); }, solveAllBut: function (k) { var left = []; for (var i = 0; i < 81; i++) if (!g.v[i]) left.push(i); left.slice(k || 0).forEach(function (i) { g.v[i] = g.s[i]; }); save(); renderAll(); } };
 })();
 </script>
+<script src="../../shared/collection-batch3.js"></script>
 </body>
 </html>

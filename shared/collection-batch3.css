@@ -1,0 +1,123 @@
+/* Batch 3 opt-in presentation. Keep established puzzle colors and artwork. */
+.batch3-ui .collection-page #modes{display:flex!important}
+.batch3-ui .collection-nav{box-sizing:border-box}
+.batch3-ui .collection-nav>.collection-exit,.batch3-ui .collection-nav>.collection-choose{width:auto!important;flex:0 0 auto;margin:0;max-width:none}
+.batch3-ui .modes button,.batch3-ui .lot-modes button,.batch3-ui .lot-modes select{font-size:14px;min-height:44px}
+.batch3-ui .tool{font-size:14px;min-height:44px}
+.batch3-ui .info .lbl{font-size:12px;letter-spacing:.5px}
+.batch3-ui .sheet p,.batch3-ui .sheet li{font-size:15px;line-height:1.5}
+.batch3-ui .collection-build{font-size:14px;color:var(--muted,#53677d)}
+.batch3-ui .ggmenu{padding-top:calc(var(--collection-top) + 8px)}
+.batch3-ui[data-theme=dark],.batch3-ui[data-theme=blue]{--muted:#bccde2}
+.batch3-ui .collection-page[data-collection=links]{--muted:#c4d7ed}
+.batch3-ui .collection-page[data-collection=links] .tool:not(.primary){background:#29435e;color:#f3f8ff;border-color:#6e899d}
+/* These canvases already measure their status and toolbar rectangles. Shift status once. */
+.batch3-ui .nghud,.batch3-ui .clhud,.batch3-ui .hdhud{top:calc(var(--collection-top) + 7px)}
+.batch3-ui.gg-fs-over .collection-page:is([data-collection=nonogram],[data-collection=links],[data-collection=huddle]) .app{padding-top:calc(var(--collection-top) + 58px)}
+.batch3-ui .collection-page[data-collection=cubecorral] .turnhint{top:calc(var(--collection-top) + 61px)}
+.batch3-ui .collection-page[data-collection=tapaway] .info{top:calc(var(--collection-top) + 56px)}
+.batch3-ui .collection-page[data-collection=tapaway] .turnhint{top:calc(var(--collection-top) + 116px)}
+.batch3-ui .collection-page[data-collection=tapaway] #kinds{display:none!important}
+.collection-flight-art{display:grid;place-items:center;min-height:180px;font:900 100px/1 system-ui;color:#fff8dc;text-shadow:4px 7px 0 #122f6570;background:radial-gradient(circle at 25% 20%,#7af0d7,transparent 65%),linear-gradient(135deg,#2aa9ac,#2d4f9e)}
+.collection-flight-art.kindBlocks{background:radial-gradient(circle at 20% 10%,#ffde9b,transparent 70%),linear-gradient(135deg,#d17b79,#5053ac)}
+/* Escape room list and scene share a single permanent navigation bar. */
+.batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:calc(var(--collection-top) + 58px);max-width:1000px}
+.batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .safeprobe{padding-top:var(--collection-top)}
+.batch3-ui .lanehead h1{font-size:32px}.batch3-ui .lanehead p,.batch3-ui .roomdesc{font-size:15px;line-height:1.45}
+.batch3-ui .roomcard{border-radius:16px;box-shadow:0 8px 20px #0003}
+.batch3-ui .roomcard button{min-height:44px;font-size:14px}
+@media(orientation:landscape) and (max-height:600px){
+ /* Square puzzle boards occupy the right; status/actions use the left column. */
+ .batch3-ui.gg-fs:not(.gg-fs-over) .collection-page:is([data-collection=sudoku],[data-collection=mines],[data-collection=woodpile],[data-collection=zoodoku],[data-collection=patchwork],[data-collection=shelf],[data-collection=parking],[data-collection=match3]) .app{display:flex;flex-direction:column;position:relative;padding:calc(var(--collection-top) + 6px) calc(100% - 240px) max(8px,var(--collection-safe-bottom)) 12px!important;gap:5px;align-items:stretch}
+ .batch3-ui .collection-page:is([data-collection=sudoku],[data-collection=mines],[data-collection=woodpile],[data-collection=zoodoku],[data-collection=patchwork],[data-collection=shelf],[data-collection=parking],[data-collection=match3]) .app>.ggfit,
+ .batch3-ui .collection-page:is([data-collection=mines],[data-collection=shelf],[data-collection=parking],[data-collection=match3]) .app>.stagewrap,
+ .batch3-ui .collection-page[data-collection=patchwork] #boardwrap{position:absolute;left:258px;right:12px;top:calc(var(--collection-top) + 8px);bottom:max(8px,var(--collection-safe-bottom));width:auto!important;height:auto!important;margin:0!important;min-height:0}
+ .batch3-ui .collection-page[data-collection=sudoku] .pad{margin-top:auto;grid-template-columns:repeat(5,1fr);gap:4px}
+ .batch3-ui .collection-page[data-collection=sudoku] .pad button{min-height:44px;height:44px;font-size:22px}
+ .batch3-ui .collection-page[data-collection=woodpile] .tray{height:76px;margin-top:auto}
+ .batch3-ui .collection-page[data-collection=zoodoku] .msg{min-height:0;font-size:13px}
+ .batch3-ui .collection-page[data-collection=zoodoku] .levelbar{min-height:44px}
+ .batch3-ui .collection-page[data-collection=patchwork] .info{flex-wrap:wrap;gap:4px}
+ .batch3-ui .collection-page[data-collection=parking] .lot-modes{flex-wrap:wrap;padding:0;gap:4px}
+ .batch3-ui .collection-page[data-collection=parking] .lot-modes button,.batch3-ui .collection-page[data-collection=parking] .lot-modes select{flex:1;font-size:13px;padding:6px}
+ .batch3-ui .collection-page[data-collection=match3] .boosters .tool{height:44px}
+ .batch3-ui .collection-page[data-collection=match3] .goals{flex-wrap:wrap}
+ .batch3-ui .collection-page[data-collection=daily] .app{display:grid;grid-template-columns:42% 1fr;grid-template-rows:44px 48px 1fr;gap:6px 16px;padding:calc(var(--collection-top) + 6px) 14px 8px!important}
+ .batch3-ui .collection-page[data-collection=daily] .top{grid-column:2;grid-row:1}.batch3-ui .collection-page[data-collection=daily] #modes{grid-column:2;grid-row:2}
+ .batch3-ui .collection-page[data-collection=daily] #gridwrap{grid-column:1;grid-row:1/4;min-height:0;width:100%;height:100%}.batch3-ui .collection-page[data-collection=daily] .kb{grid-column:2;grid-row:3;align-self:end;width:100%;gap:4px}.batch3-ui .collection-page[data-collection=daily] .kb button{height:44px;font-size:16px}
+ .batch3-ui .collection-page[data-collection=cubecorral] .slots,.batch3-ui .collection-page[data-collection=cubecorral] .lanes{width:240px;align-self:flex-end}
+ .batch3-ui .collection-page[data-collection=cubecorral] .turnhint{left:30%;transform:translateX(-50%)}
+ .batch3-ui .collection-page[data-collection=tapaway] .info{right:auto;width:200px;flex-wrap:wrap}.batch3-ui .collection-page[data-collection=tapaway] .turnhint{display:none}
+}
+.batch3-ui .room{border-radius:16px;background:linear-gradient(#fff9ec,#f0e6d1)}
+.batch3-ui .room .rd{font-size:15px;color:#525c5e;line-height:1.45}
+.batch3-ui .room h3{font-size:23px;color:#243b53}
+.batch3-ui .room .diffs button small{font-size:12px}
+.batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lane{background:radial-gradient(ellipse at 10% 0,#34618b,transparent 70%),#192b45}
+.batch3-ui .lanehead p,.batch3-ui .beyond p{color:#d8e5f2}
+.batch3-ui .pieces,.batch3-ui .lane-photo-caption b{font-size:14px}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui.gg-fs-over .collection-page:is([data-collection=nonogram],[data-collection=links]) .app{padding:calc(var(--collection-top) + 64px) calc(100% - 240px) 10px 12px!important;align-items:stretch}
+ .batch3-ui .collection-page:is([data-collection=nonogram],[data-collection=links]) .boardarea{position:absolute;left:258px;right:12px;top:calc(var(--collection-top) + 8px);bottom:max(8px,var(--collection-safe-bottom));width:auto;height:auto;min-height:0}
+ .batch3-ui .collection-page:is([data-collection=nonogram],[data-collection=links]) .top{right:auto;left:188px;width:50px}
+ .batch3-ui .nghud,.batch3-ui .clhud{left:12px;right:auto;width:172px;justify-content:flex-start}
+ .batch3-ui .nghud .lvpill,.batch3-ui .clhud .lvpill{font-size:13px;white-space:normal}
+ .batch3-ui .collection-page[data-collection=links] .toolbar{margin-top:auto;flex-wrap:wrap;gap:5px}
+ .batch3-ui .collection-page[data-collection=links] .toolbar .tbtn{flex:1 0 27%;font-size:13px;min-height:48px}
+ .batch3-ui .collection-page[data-collection=nonogram] #controls{margin-top:auto;width:100%}.batch3-ui .collection-page[data-collection=nonogram] .toolrow{flex-wrap:wrap}.batch3-ui .collection-page[data-collection=nonogram] .tbtn{flex:1 0 27%;font-size:13px;min-height:44px}
+ .batch3-ui .collection-page[data-collection=huddle] .play{width:100%;min-height:0;flex:1;display:grid;grid-template-columns:200px 1fr;grid-template-rows:1fr}
+ .batch3-ui .collection-page[data-collection=huddle] #boardWrap{grid-column:2;grid-row:1;height:100%;min-height:0;align-self:stretch;width:100%}
+ .batch3-ui .collection-page[data-collection=huddle] #controls,.batch3-ui .collection-page[data-collection=huddle] #doneBar{grid-column:1;grid-row:1;align-self:center;flex-wrap:wrap;width:190px}
+ .batch3-ui .collection-page[data-collection=huddle] .cbtn{flex:1 0 40%;min-height:50px}
+ .batch3-ui .collection-page[data-collection=huddle] #boardHead{padding:0 0 6px}.batch3-ui .collection-page[data-collection=huddle] .prompt{margin:3px 0;font-size:14px}
+ .batch3-ui .collection-page[data-collection=daily] .app{grid-template-rows:40px 44px 1fr 44px}
+ .batch3-ui .collection-page[data-collection=daily] #gridwrap{grid-row:1/5}
+ .batch3-ui .collection-page[data-collection=daily] .toolbar{grid-column:2;grid-row:4;width:100%}
+ .batch3-ui .collection-page[data-collection=daily] .toolbar .tool{height:44px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui .collection-page[data-collection=cubecorral] .stage{right:340px!important}
+ .batch3-ui .collection-page[data-collection=cubecorral] .slots,.batch3-ui .collection-page[data-collection=cubecorral] .lanes,.batch3-ui .collection-page[data-collection=cubecorral] .tactical{width:320px;align-self:flex-end}
+ .batch3-ui .collection-page[data-collection=cubecorral] .lane-read{white-space:normal;font-size:11px;line-height:13px}
+ .batch3-ui .collection-page[data-collection=cubecorral] .lane .front{padding-bottom:28px}
+ .batch3-ui .collection-page[data-collection=cubecorral] .turnhint{left:50%;font-size:12px}
+ .batch3-ui .collection-page[data-collection=hidden] .stagewrap{right:300px;bottom:0}
+ .batch3-ui .collection-page[data-collection=hidden] .tray{left:auto;width:300px;top:calc(var(--collection-top) + 58px);overflow-y:auto;padding-bottom:max(8px,var(--collection-safe-bottom))}
+ .batch3-ui .collection-page[data-collection=hidden] .tray .toolbar{flex-wrap:wrap}.batch3-ui .collection-page[data-collection=hidden] .tray .tool{min-width:45%}
+ .batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanescene{height:130px;aspect-ratio:auto}
+ .batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:calc(var(--collection-top) + 12px)}
+ .batch3-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanehead{margin-bottom:10px}
+}
+.batch3-ui.go-lane .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:calc(var(--collection-top) + 18px)}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui .collection-page[data-collection=huddle] .play{max-width:none;grid-template-columns:200px minmax(0,1fr);gap:16px}
+ .batch3-ui .collection-page[data-collection=huddle] #boardWrap{min-width:0;max-width:none;justify-content:flex-start}
+}
+.batch3-ui .overlay .letter,.batch3-ui .overlay .endcard{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 24px);overflow-y:auto}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui .collection-page[data-collection=cubecorral] .stage{width:auto!important}
+ .batch3-ui .collection-page[data-collection=huddle] #boardHead{position:absolute;left:-216px;top:0;width:200px}
+ .batch3-ui .collection-page[data-collection=huddle] #boardWrap{justify-content:center}
+ .batch3-ui .collection-page[data-collection=huddle] #controls,.batch3-ui .collection-page[data-collection=huddle] #doneBar{align-self:end;margin-bottom:8px}
+ .batch3-ui .collection-page[data-collection=huddle] .status{flex-wrap:wrap}.batch3-ui .collection-page[data-collection=huddle] .hintbar:not(.show){display:none}
+ .batch3-ui .collection-page[data-collection=tapaway] .stage{left:220px;right:0;width:auto}
+ .batch3-ui .collection-page[data-collection=tapaway] .toolbar{left:240px;right:16px}
+ .batch3-ui .collection-page[data-collection=tapaway] .flight-rule{left:calc(50% + 110px);width:calc(100vw - 260px)}
+}
+@media(max-width:360px){
+ .batch3-ui .collection-nav-title{display:block;font-size:13px}
+ .batch3-ui .collection-nav:has(.collection-choose:not([hidden])) .collection-nav-title{display:none}
+ .batch3-ui .collection-page[data-collection=parking] .lot-modes{gap:4px;min-width:0}
+ .batch3-ui .collection-page[data-collection=parking] .lot-modes button,.batch3-ui .collection-page[data-collection=parking] .lot-modes select{font-size:13px;padding:6px 8px;min-width:0}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui.gg-fs .collection-page[data-collection=match3] .app{padding-right:calc(100% - 300px)!important}
+ .batch3-ui .collection-page[data-collection=match3] .app>.stage{position:absolute;left:318px;right:12px;top:calc(var(--collection-top) + 8px);bottom:max(8px,var(--collection-safe-bottom));width:auto!important;height:auto!important;min-height:0!important;margin:0}
+ .batch3-ui .collection-page[data-collection=match3] .journey-nav button,.batch3-ui .collection-page[data-collection=match3] .journey-nav select{font-size:13px;min-height:40px}
+ .batch3-ui .collection-page[data-collection=match3] .boosters .tool span{font-size:12px!important}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .batch3-ui .collection-page[data-collection=match3] .journey-nav{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+ .batch3-ui .collection-page[data-collection=match3] .journey-nav select{grid-column:1/-1;width:100%;max-width:none;min-height:32px;height:32px;padding:4px 8px}
+ .batch3-ui .collection-page[data-collection=match3] .chapter{display:none}
+}
