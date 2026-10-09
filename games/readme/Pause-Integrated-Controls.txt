@@ -1,0 +1,16 @@
+PAUSE AND INTEGRATED CONTROLS UPDATE
+
+INSTALL BOTH PARTS over the latest Corrections 1 Bottom Controls release (the 54-file and 53-file ZIPs, including the rebuilt Woodpile Shapes).
+Merge folders and replace files; do not delete existing files. Upload Part 1 first, Part 2 second. Part 2 contains sw.js. Open online and accept Update available before offline testing.
+
+18 GAMES WITH LAYOUT CHANGES
+Arcade: Beacon Bound; Containment; Mean Birds; Moonshot; Neon Siege; Skee-Hop; Stranded; Topple Fair; Tunnel Pop.
+Puzzles: Bridge Works; Get Out!; Get Out 2!; Hex Slide; Perch Pals; Shelf Life; Triple Treat; Woodpile (Classic and Shapes); Zoodoku.
+No Tabletop layout changes in this pass.
+
+The Exit Game label has been shortened to Exit throughout the whole collection. Games outside this 18-game layout pass receive only that label change and the required cache-version refresh.
+
+See Navigation-Exceptions.txt for the exact persistent placement rules. Future consistency work must preserve these rules unless Glenn explicitly overrides them.
+
+CHECKS
+Portrait and landscape layouts inspected. Pause/help/resume checked for all eight pause-only games. Get Out! and Get Out 2! elapsed clocks verified running, frozen during Pause, and running after Resume. Moonshot's game clock and run state stay frozen during explicit Pause. Stranded's native fullscreen fills the viewport height and keeps Return beside Pause. Woodpile opening selector, Classic, Shapes, Shapes Help and return to selector checked. Focused hit tests verify the integrated Exit buttons are unobstructed. Browser tests and touch emulation do not replace physical iPhone/Safari testing.

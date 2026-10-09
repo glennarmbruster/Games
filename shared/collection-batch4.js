@@ -5,7 +5,7 @@ const [title,version]=configs[key],$=id=>document.getElementById(id);
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text)n.textContent=text;return n;}
 function setup(){
  document.documentElement.classList.add('collection-ui','batch4-ui');if(!['homerun','meanbirds','beacon'].includes(key))document.documentElement.classList.add('gg-landscape');document.body.classList.add('collection-page');document.body.dataset.collection=key;
- const nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');const exit=el('button','collection-exit','‹ Exit Game');exit.id='collectionExit';exit.type='button';exit.onclick=()=>{if($('btnHome'))$('btnHome').click();else{if($('app').classList.contains('playing'))$('pause').click();$('home').click();}};
+ const nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');const exit=el('button','collection-exit','Exit');exit.id='collectionExit';exit.type='button';exit.onclick=()=>{if($('btnHome'))$('btnHome').click();else{if($('app').classList.contains('playing'))$('pause').click();$('home').click();}};
  const choose=el('button','collection-choose','Choose Game');choose.id='collectionChoose';choose.type='button';choose.hidden=true;nav.append(exit,el('span','collection-nav-title',title),choose);document.body.append(nav);
  if(key==='golf'){
   choose.onclick=()=>{for(const id of ['btnCloseHelp','btnCloseSettings','btnCloseCard','btnClosePlayers']){const b=$(id);if(b?.closest('.overlay.show'))b.click();}$('ggMenu')?.classList.remove('show');$('btnMenu').click();};

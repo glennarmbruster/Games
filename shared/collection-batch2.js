@@ -6,7 +6,7 @@ const key=Object.keys(configs).find(k=>path.includes('/games/'+k+'/'));if(!key)r
 const [title,version]=configs[key],$=id=>document.getElementById(id);
 function el(tag,cls,text){let n=document.createElement(tag);if(cls)n.className=cls;if(text)n.textContent=text;return n;}
 function setup(){document.documentElement.classList.add('collection-ui','gg-landscape','batch2-ui');document.body.classList.add('collection-page');document.body.dataset.collection=key;
-const nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');const exit=el('button','collection-exit','‹ Exit Game');exit.id='collectionExit';exit.type='button';exit.onclick=()=>{$('btnHome')?$('btnHome').click():location.href=new URL('index.html',root).href;};
+const nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');const exit=el('button','collection-exit','Exit');exit.id='collectionExit';exit.type='button';exit.onclick=()=>{$('btnHome')?$('btnHome').click():location.href=new URL('index.html',root).href;};
 const choose=el('button','collection-choose','Choose Game');choose.id='collectionChoose';choose.type='button';choose.hidden=true;nav.append(exit,el('span','collection-nav-title',title),choose);document.body.append(nav);
 if(key==='casino'){choose.hidden=false;choose.onclick=()=>{$('ovHelp')?.classList.remove('show');$('ggMenu')?.classList.remove('show');$('btnLobby').click();};const sync=()=>choose.hidden=$('vLobby').classList.contains('on');new MutationObserver(sync).observe($('vLobby'),{attributes:true,attributeFilter:['class']});sync();}
 if(key==='screwball'){choose.hidden=/\/(classic|timber)\.html$/.test(path)===false;choose.onclick=()=>location.href='index.html';}
@@ -24,7 +24,7 @@ if(key==='solitaire'){
 // Keep a build label on static help sheets, below their content.
 const help=document.querySelector('#ovHelp .sheet,#ovHelp .card,#how .card');if(help)help.append(el('p','collection-build',title+' · Version '+version));
 document.querySelectorAll('#panel,#sheet #card,#dialogContent').forEach(panel=>{const label=()=>{if(!panel.querySelector('.collection-build'))panel.append(el('p','collection-build',title+' · Version '+version));};new MutationObserver(label).observe(panel,{childList:true});label();});
-document.querySelectorAll('dialog').forEach(d=>{let row=el('nav','collection-nav collection-dialog-nav'),ex=el('button','collection-exit','‹ Exit Game'),ch=el('button','collection-choose','Choose Game');ex.onclick=exit.onclick;ch.onclick=()=>location.href='index.html';row.append(ex,el('span','collection-nav-title',title),ch);d.append(row);});
+document.querySelectorAll('dialog').forEach(d=>{let row=el('nav','collection-nav collection-dialog-nav'),ex=el('button','collection-exit','Exit'),ch=el('button','collection-choose','Choose Game');ex.onclick=exit.onclick;ch.onclick=()=>location.href='index.html';row.append(ex,el('span','collection-nav-title',title),ch);d.append(row);});
 const hideExtraExits=()=>document.querySelectorAll('.overlay button').forEach(b=>{if(/^(All games|Exit to Games|Exit to main menu)$/i.test(b.textContent.trim()))b.hidden=true;});document.querySelectorAll('.overlay').forEach(o=>new MutationObserver(hideExtraExits).observe(o,{childList:true,subtree:true}));hideExtraExits();
 window.GoobsCollection={version,isOpen:()=>!!selector&&!selector.hidden};window.dispatchEvent(new Event('resize'));
 }

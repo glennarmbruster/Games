@@ -1,72 +1,72 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.4.4",
-  "zoodoku": "1.12.2",
-  "woodpile": "1.6.0",
-  "patchwork": "3.2.2",
-  "cubecorral": "4.1.0",
-  "screwball": "4.4.2",
-  "skeehop": "1.6.2",
-  "merge": "2.1.0",
-  "tapaway": "2.1.0",
-  "homerun": "1.9.2",
-  "match3": "2.2.2",
-  "snake": "1.4.2",
-  "solitaire": "1.2.0",
-  "meanbirds": "1.4.2",
-  "aliens": "1.3.0",
-  "worddice": "1.3.0",
-  "digger": "1.4.2",
-  "blocks": "1.4.0",
-  "maze": "1.4.2",
-  "mahjong": "1.4.0",
-  "dice": "1.4.3",
-  "daily": "1.4.0",
-  "mines": "1.4.2",
-  "bubbles": "1.5.0",
-  "bricks": "1.5.2",
-  "topple": "1.11.2",
-  "barrage": "1.8.2",
-  "siege": "1.5.2",
-  "hoops": "1.4.0",
-  "beacon": "0.7.2",
-  "sort": "2.2.0",
-  "triple": "2.2.2",
-  "pinball": "2.2.0",
-  "parking": "2.1.0",
-  "minigolf": "2.3.2",
-  "board": "1.2.0",
-  "buzz": "2.4.2",
-  "golf": "0.7.2",
-  "shelf": "2.2.2",
-  "castle": "3.3.0",
-  "hexslide": "1.4.2",
-  "farkle": "1.6.2",
-  "blockparty": "1.5.0",
-  "bridge": "1.5.2",
-  "outpost": "3.1.0",
-  "getout": "0.24.2",
-  "stranded": "1.2.2",
-  "containment": "1.2.2",
-  "sudoku": "0.3.0",
-  "wordwheel": "0.4.0",
-  "trivia": "0.4.0",
-  "links": "0.4.0",
-  "bowling": "0.4.0",
-  "deck": "0.4.0",
-  "wordboard": "0.2.0",
-  "nonogram": "0.3.0",
-  "getout2": "1.6.2",
-  "huddle": "0.4.2",
-  "wickway": "1.2.0",
-  "pegs": "0.4.0",
-  "perch": "1.2.2",
-  "knotty": "1.1.0",
-  "casino": "0.2.0",
-  "spotdiff": "0.6.2",
-  "hidden": "1.2.2",
-  "cases": "1.1.0",
-  "spin": "0.3.2",
+  "shell": "3.4.5",
+  "zoodoku": "1.12.3",
+  "woodpile": "1.6.1",
+  "patchwork": "3.2.3",
+  "cubecorral": "4.1.1",
+  "screwball": "4.4.3",
+  "skeehop": "1.6.3",
+  "merge": "2.1.1",
+  "tapaway": "2.1.1",
+  "homerun": "1.9.3",
+  "match3": "2.2.3",
+  "snake": "1.4.3",
+  "solitaire": "1.2.1",
+  "meanbirds": "1.4.3",
+  "aliens": "1.3.1",
+  "worddice": "1.3.1",
+  "digger": "1.4.3",
+  "blocks": "1.4.1",
+  "maze": "1.4.3",
+  "mahjong": "1.4.1",
+  "dice": "1.4.4",
+  "daily": "1.4.1",
+  "mines": "1.4.3",
+  "bubbles": "1.5.1",
+  "bricks": "1.5.3",
+  "topple": "1.11.3",
+  "barrage": "1.8.3",
+  "siege": "1.5.3",
+  "hoops": "1.4.1",
+  "beacon": "0.7.3",
+  "sort": "2.2.1",
+  "triple": "2.2.3",
+  "pinball": "2.2.1",
+  "parking": "2.1.1",
+  "minigolf": "2.3.3",
+  "board": "1.2.1",
+  "buzz": "2.4.3",
+  "golf": "0.7.3",
+  "shelf": "2.2.3",
+  "castle": "3.3.1",
+  "hexslide": "1.4.3",
+  "farkle": "1.6.3",
+  "blockparty": "1.5.1",
+  "bridge": "1.5.3",
+  "outpost": "3.1.1",
+  "getout": "0.24.3",
+  "stranded": "1.2.3",
+  "containment": "1.2.3",
+  "sudoku": "0.3.1",
+  "wordwheel": "0.4.1",
+  "trivia": "0.4.1",
+  "links": "0.4.1",
+  "bowling": "0.4.1",
+  "deck": "0.4.1",
+  "wordboard": "0.2.1",
+  "nonogram": "0.3.1",
+  "getout2": "1.6.3",
+  "huddle": "0.4.3",
+  "wickway": "1.2.1",
+  "pegs": "0.4.1",
+  "perch": "1.2.3",
+  "knotty": "1.1.1",
+  "casino": "0.2.1",
+  "spotdiff": "0.6.3",
+  "hidden": "1.2.3",
+  "cases": "1.1.1",
+  "spin": "0.3.3",
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0"
@@ -84,7 +84,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "stranded": [
     "games/stranded/",
@@ -98,7 +100,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "shell": [
     "./",
@@ -188,7 +192,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "woodpile": [
     "games/woodpile/modern.css",
@@ -203,7 +209,9 @@ const GROUPS = {
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
     "shared/bottom-navigation.js",
-    "games/woodpile/shapes.css"
+    "games/woodpile/shapes.css",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "patchwork": [
     "games/patchwork/",
@@ -267,7 +275,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "merge": [
     "./shared/collection-ui.css",
@@ -308,7 +318,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "match3": [
     "games/match3/",
@@ -369,7 +381,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "aliens": [
     "games/aliens/",
@@ -397,7 +411,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "blocks": [
     "games/blocks/",
@@ -495,7 +511,9 @@ const GROUPS = {
     "games/topple/assets/pine-v2.webp",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "barrage": [
     "games/barrage/",
@@ -519,7 +537,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "hoops": [
     "games/hoops/",
@@ -541,7 +561,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "sort": [
     "./shared/collection-ui.css",
@@ -567,7 +589,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "pinball": [
     "shared/collection-ui.css",
@@ -708,7 +732,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "castle": [
     "./shared/collection-ui.css",
@@ -776,7 +802,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "bridge": [
     "shared/collection-ui.css",
@@ -799,7 +827,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "outpost": [
     "./shared/collection-ui.css",
@@ -1330,7 +1360,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "sudoku": [
     "games/sudoku/modern.css",
@@ -1712,7 +1744,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "huddle": [
     "games/huddle/modern.css",
@@ -1815,7 +1849,9 @@ const GROUPS = {
     "games/perch/assets/squirrel-v1.png",
     "shared/portrait-safe.css",
     "shared/bottom-navigation.css",
-    "shared/bottom-navigation.js"
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
+    "shared/navigation-exceptions.css"
   ],
   "knotty": [
     "games/knotty/",

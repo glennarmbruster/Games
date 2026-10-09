@@ -95,5 +95,5 @@ function input(){let k={};for(let n of ['left','right','fire','shield'])k[n]=hel
 function frame(ms){let dt=Math.min(.06,(ms-(last||ms))/1000);last=ms;clock+=dt;toastTimer-=dt;if(toastTimer<=0)$('toast').classList.remove('show');shake=Math.max(0,shake-dt*32);let k=input();queuedJump=queuedJump||k.jump;queuedUse=queuedUse||k.use;if(screen==='game'){if(!paused){acc+=dt;while(acc>=1/60){game.update(1/60,{...k,jump:queuedJump,use:queuedUse});queuedJump=queuedUse=false;acc-=1/60;}}else acc=0;renderGame();}else renderTitle();requestAnimationFrame(frame);}
 function resize(){let d=Math.min(devicePixelRatio||1,2);cv.width=W*d;cv.height=H*d;c.setTransform(d,0,0,d,0,0);}addEventListener('resize',resize);resize();title();if(typeof Goobs!=='undefined')Goobs.initUpdates({beforeReload:save});requestAnimationFrame(frame);
 // Named surface used by local regression checks; no automatic gameplay or network calls.
-window.StrandedUI={start:()=>start(false),pause,resume,render:renderGame,title};
+window.StrandedUI={get isPaused(){return paused;},start:()=>start(false),pause,resume,render:renderGame,title};
 })();

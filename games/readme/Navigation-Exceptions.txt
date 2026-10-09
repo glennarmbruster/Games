@@ -1,0 +1,34 @@
+GOOBS GAMES — USER-OWNED NAVIGATION RULES
+Approved by Glenn on October 9, 2026. Preserve these exceptions during future consistency or visual-polish work unless Glenn explicitly overrides them.
+
+GLOBAL LABEL
+Use "Exit", not "Exit Game", everywhere. The label change applies to the full collection, including games outside this layout pass.
+
+PAUSE-ONLY NAVIGATION
+Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Stranded, Get Out!, and Get Out 2!: show Exit and How to Play only in the paused interface. Keep a small accessible Pause button. Do not add an always-visible bottom navigation strip or reserve space for one during play.
+- Neon Siege: retain Pause at the top.
+- Stranded: true fullscreen gameplay; fullscreen Return immediately to the right of Pause.
+- Get Out! and Get Out 2!: Pause stops elapsed time; Get Out 2! also stops hazard time.
+- Moonshot: explicit pause freezes game time and scheduled game actions.
+- A Pause menu remains reachable from opening screens and portrait rotate prompts.
+
+INTEGRATED NAVIGATION
+- Skee-Hop: Exit and How to Play in the top row with Sound; style them as game controls, not a yellow collection Exit.
+- Tunnel Pop: Exit and How to Play in the top Sound/Menu row, preserving more board space.
+- Bridge Works: Exit and How to Play beside Construction Budget, styled with the game's controls.
+- Perch Pals: Exit and How to Play directly below Restart, Undo, Shuffle, Branch.
+- Shelf Life: compact Undo, Shuffle, Hint, Exit, How to Play on the board's lower edge; reserve enough room to avoid covering playable shelves.
+- Triple Treat: Undo, Shuffle, Magic, Exit, How to Play in one row.
+- Woodpile: Undo, New Game, Exit, How to Play together; opening selector offers Classic and Shapes. Keep Daily and Levels available within Classic. Shapes keeps its fitted wooden drag-and-drop pieces.
+- Zoodoku: Undo, Hint, Clear, Exit, How to Play in one row.
+
+OTHER ACCEPTED LAYOUTS
+- Garden Swap's buttons are explicitly approved; retain their layout and style.
+- Roll Call remains the default bottom-action reference for games without a specific exception.
+- Double Take fullscreen/return is explicitly approved; preserve it.
+- Topple Fair's ball and piece counts belong in a separate non-overlapping row inside the game HUD.
+- Hex Slide's Undo, Hint, Remove, Shuffle row sits below the stack choices. Title, progress, board, and tray must not overlap.
+
+SCOPE
+This pass changes layouts for 18 games: Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Skee-Hop, Stranded, Topple Fair, Tunnel Pop, Bridge Works, Get Out!, Get Out 2!, Hex Slide, Perch Pals, Shelf Life, Triple Treat, Woodpile, Zoodoku.
+The remaining-game fullscreen rollout and main-menu redesign have not started.

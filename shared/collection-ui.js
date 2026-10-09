@@ -12,7 +12,7 @@ function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=c
 function setup(){
  document.documentElement.classList.add('collection-ui','gg-landscape');document.body.classList.add('collection-page');document.body.dataset.collection=key;document.body.dataset.collectionTheme=cfg.theme;
  var nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');
- var exit=el('button','collection-exit','‹ Exit Game');exit.type='button';exit.id='collectionExit';exit.onclick=function(){var old=document.getElementById('btnHome');if(old)old.click();else location.href=new URL('index.html',root).href;};
+ var exit=el('button','collection-exit','Exit');exit.type='button';exit.id='collectionExit';exit.onclick=function(){var old=document.getElementById('btnHome');if(old)old.click();else location.href=new URL('index.html',root).href;};
  var title=el('span','collection-nav-title',cfg.title),choose=el('button','collection-choose','Choose Game');choose.type='button';choose.id='collectionChoose';nav.append(exit,title,choose);document.body.append(nav);
  var selector=null,returnFocus=null;function hide(){if(selector){selector.hidden=true;document.documentElement.classList.remove('collection-open');}choose.hidden=false;window.dispatchEvent(new Event('resize'));}
  function open(){if(!selector)return;returnFocus=document.activeElement;selector.hidden=false;document.documentElement.classList.add('collection-open');choose.hidden=true;selector.querySelector('button[data-pick]').focus({preventScroll:true});}
@@ -39,7 +39,7 @@ function setup(){
  }
  document.addEventListener('keydown',function(e){if(!selector||selector.hidden)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();hide();if(returnFocus&&returnFocus.isConnected)returnFocus.focus({preventScroll:true});}if(e.key==='Tab'){var focusable=[exit].concat(Array.from(selector.querySelectorAll('button')));var i=focusable.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();focusable[focusable.length-1].focus();}else if(!e.shiftKey&&i===focusable.length-1){e.preventDefault();exit.focus();}}},true);
  // Native dialogs sit above the fixed header, so each gets its own single exit.
- document.querySelectorAll('dialog').forEach(function(d){var row=el('nav','collection-nav collection-dialog-nav'),ex=el('button','collection-exit','‹ Exit Game'),ch=el('button','collection-choose','Choose Game');ex.onclick=exit.onclick;ch.onclick=function(){location.href=new URL('games/'+key+'/index.html',root).href;};row.append(ex,el('span','collection-nav-title',cfg.title),ch);d.append(row);});
+ document.querySelectorAll('dialog').forEach(function(d){var row=el('nav','collection-nav collection-dialog-nav'),ex=el('button','collection-exit','Exit'),ch=el('button','collection-choose','Choose Game');ex.onclick=exit.onclick;ch.onclick=function(){location.href=new URL('games/'+key+'/index.html',root).href;};row.append(ex,el('span','collection-nav-title',cfg.title),ch);d.append(row);});
  var help=document.querySelector('#ovHelp .sheet,#ovHelp .card');if(help){var version=el('p','collection-build',cfg.title+' · Version '+cfg.version);help.append(version);}
  window.GoobsCollection={open:open,close:hide,get isOpen(){return !!selector&&!selector.hidden;},version:cfg.version};window.dispatchEvent(new Event('resize'));
 }

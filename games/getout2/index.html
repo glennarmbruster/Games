@@ -251,7 +251,7 @@ html.go-wrap .arrow, html.go-wrap .zoomout, html.go-wrap .invbar, html.go-wrap .
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/navigation-exceptions.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="go-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2f5a"/><stop offset="1" stop-color="#141530"/></linearGradient>
@@ -18326,7 +18326,7 @@ var GOSound = (function () {
   var OVS = ['ovHint', 'ovNote', 'ovPic', 'ovInspect', 'ovLetter', 'ovDone', 'ovDeath', 'ovConfirm', 'ovSettings', 'ovStats', 'ovHelp', 'ovDebug'];
   function anyOpen() { return FS.isOpen() || GoobsAds.isOpen() || OVS.some(isOpen); }
   // the clocks (yours and the trap's) stop while any sheet, card or the Menu covers the scene, and while the app is hidden
-  function pausing() { return anyOpen() || document.hidden; }
+  function pausing() { return document.body.classList.contains('navigation-paused') || anyOpen() || document.hidden; }
   function fmtTime(ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60); s %= 60; return m + ':' + (s < 10 ? '0' : '') + s; }
   var toastT = 0;
   function toast(msg, ms) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, ms || 2000); }
@@ -19123,6 +19123,7 @@ var GOSound = (function () {
 
   // ================= the clocks: your time, and the trap's =================
   var lastTick = Date.now();
+  window.addEventListener('goobs-pause-change',function(){lastTick=Date.now();if(document.body.classList.contains('navigation-paused')){save();S.pause();}else{S.resume();dirty=true;}});
   function tick() {
     var now = Date.now(), dt = Math.min(1500, now - lastTick); lastTick = now;
     if (!G || G.over || doorAnim || G.dying || pausing()) return;
@@ -19266,5 +19267,5 @@ var GOSound = (function () {
 </script>
 <script src="../../shared/collection-batch3.js"></script>
 <script src="../../shared/corrections-1.js"></script>
-<script src="../../shared/bottom-navigation.js"></script></body>
+<script src="../../shared/navigation-exceptions.js"></script><script src="../../shared/bottom-navigation.js"></script></body>
 </html>

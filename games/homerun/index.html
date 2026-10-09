@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="gg-landscape">
-<head>
+<head><script>window.MSClock=(()=>{let held=null,offset=0;window.addEventListener('goobs-pause-change',()=>{const paused=document.body.classList.contains('navigation-paused');if(paused&&held===null)held=performance.now();else if(!paused&&held!==null){offset+=performance.now()-held;held=null;}});return{now:()=> (held===null?performance.now():held)-offset};})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
@@ -142,7 +142,7 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/navigation-exceptions.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="ms-logo" viewBox="0 0 100 100"><defs><linearGradient id="msbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2356"/><stop offset="1" stop-color="#4b3f9a"/></linearGradient></defs>
@@ -719,7 +719,7 @@ var MSRender = (function () {
         return { b: b, obj: obj, pop: 0 };
       });
     }
-    function popTarget(id) { targets.forEach(function (t) { if (t.b.id === id) t.pop = performance.now(); }); kick(); }
+    function popTarget(id) { targets.forEach(function (t) { if (t.b.id === id) t.pop = MSClock.now(); }); kick(); }
     function setSky(k) { sceneryRevision++;currentSky=k;sky.material.map=parkSkies[k]||skyTex(k);sky.material.needsUpdate=true;sun.color.set(k==='dusk'?0xffdbb0:0xf1f5ff);sun.intensity=k==='night'?1.3:1.6;hemi.intensity=k==='night'?.65:1.05;sky.material.toneMapped=false;kick(); }
 
     // ---------- the play ----------
@@ -787,7 +787,7 @@ var MSRender = (function () {
     function draw() {
       raf = 0;
       if (paused) return;
-      var busy = update(performance.now());
+      var busy = update(MSClock.now());
       renderer.render(scene, camera);
       if (onFrame) onFrame();
       if (busy) kick();
@@ -1020,7 +1020,7 @@ var MSSound = (function () {
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function isOpen(id) { return $(id).classList.contains('show'); }
   function portrait() { return window.matchMedia && matchMedia('(orientation: portrait)').matches; }
-  function locked() { return portrait() || isOpen('ovMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkills') || isOpen('ovSteps') || isOpen('ovRecovery') || GoobsAds.isOpen(); }
+  function locked() { return document.body.classList.contains('navigation-paused') || portrait() || isOpen('ovMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovSkills') || isOpen('ovSteps') || isOpen('ovRecovery') || GoobsAds.isOpen(); }
   function newSeed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return Math.floor(Math.random() * 4294967296); } }
   function level() { return MS.levelFromXp(meta.xp); }
   function majorOpen() { return meta.minor > MAJOR_AT; }
@@ -1028,7 +1028,7 @@ var MSSound = (function () {
   // ================= a run (a step, a Moon-Star game, or training) =================
   // run: { mode, step, seed, i (next ball), health, score, hrs, looks, popped: [target ids], done }
   var run = null, pitches = [], targets = [], live = null, timers = [];
-  function later(fn, ms) { var id = setTimeout(function () { timers = timers.filter(function (x) { return x !== id; }); fn(); }, ms); timers.push(id); }
+  function later(fn, ms) { var due=MSClock.now()+ms,id;function check(){timers=timers.filter(function(x){return x!==id;});var left=due-MSClock.now();if(left>1||document.body.classList.contains('navigation-paused')){id=setTimeout(check,Math.max(30,Math.min(100,left)));timers.push(id);}else fn();}id=setTimeout(check,ms);timers.push(id); }
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
   function saveRun() { if (run && !run.done && run.mode !== 'training') store.set('run.' + run.mode, run); }
   function start(mode, step, fresh) {
@@ -1063,7 +1063,7 @@ var MSSound = (function () {
   function throwBall() {
     if (!run || run.done) return;
     if (locked()) { later(throwBall, 400); return; }
-    var pitch = currentPitch(), t0 = performance.now();
+    var pitch = currentPitch(), t0 = MSClock.now();
     live = { pitch: pitch, t0: t0, done: false, whiff: false };
     S.launch(); R3.pitch(pitch, t0); kickSide();
     later(function () { if (live && !live.done && live.pitch === pitch) resolveMiss(); }, (MS.pitchDuration(pitch) + 0.3) * 1000);
@@ -1086,7 +1086,7 @@ var MSSound = (function () {
     if (!sideShown) return;
     var st = null;
     if (live && !live.hit) {
-      var t = (performance.now() - live.t0) / 1000;
+      var t = (MSClock.now() - live.t0) / 1000;
       if (t < MS.pitchDuration(live.pitch) + 1.2) st = { pitch: live.pitch, t: t };
     }
     SV.draw(st);
@@ -1095,7 +1095,7 @@ var MSSound = (function () {
 
   // ================= the swing =================
   var stroke = null, ink = [], inkRaf = 0;
-  function cvPos(e) { var r = $('ink').getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; }
+  function cvPos(e) { var r = $('ink').getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, t: MSClock.now() }; }
   function onDown(e) {
     S.unlock();
     if (locked()) return;
@@ -1115,7 +1115,7 @@ var MSSound = (function () {
     stroke = null;
     // a quick flick that ended before the ball got there is a swing and a miss
     if (live && !live.done && !live.whiff && sw && sw.len > 30 && sw.speed > 0.9) {
-      var z = MS.pitchPos(live.pitch, (performance.now() - live.t0) / 1000)[2];
+      var z = MS.pitchPos(live.pitch, (MSClock.now() - live.t0) / 1000)[2];
       if (z > MS.ZONE.far) { live.whiff = true; S.swish(); }
     }
   }
@@ -1153,7 +1153,7 @@ var MSSound = (function () {
     inkRaf = 0;
     var c = $('ink'), r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
     if (c.width !== Math.round(r.width * dpr)) { c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); }
-    var x = c.getContext('2d'), now = performance.now();
+    var x = c.getContext('2d'), now = MSClock.now();
     x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, r.width, r.height);
     ink = ink.filter(function (p) { return now - p.t < 220; });
     x.lineCap = 'round'; x.lineJoin = 'round';
@@ -1168,7 +1168,7 @@ var MSSound = (function () {
   // ================= results =================
   function onHit(swing) {
     var pitch = live.pitch; live.done = true;
-    var ex = MS.exitVelocity(pitch, swing, meta.skills), res = MS.fly(ex, targets), now = performance.now();
+    var ex = MS.exitVelocity(pitch, swing, meta.skills), res = MS.fly(ex, targets), now = MSClock.now();
     live.hit = true; flying = true; showSide(false); R3.hit(res, now); S.crack(swing.quality);
     if (!meta.hitOnce) { meta.hitOnce = true; saveMeta(); $('flickHint').classList.remove('show'); }
     stats.balls++; stats.hits++;
@@ -1535,5 +1535,5 @@ setTimeout(function () { if (!window.MSApp || !MSApp.started()) { var b = docume
 </script>
 <script src="../../shared/collection-batch4.js"></script>
 <script src="../../shared/corrections-1.js"></script>
-<script src="../../shared/bottom-navigation.js"></script></body>
+<script src="../../shared/navigation-exceptions.js"></script><script src="../../shared/bottom-navigation.js"></script></body>
 </html>

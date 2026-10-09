@@ -85,7 +85,7 @@ html.gg-fs .top .homebtn .chev { color:#344e41; }
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/navigation-exceptions.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="sl-logo" viewBox="0 0 100 100"><defs><linearGradient id="slbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd8ff"/><stop offset="1" stop-color="#6a7cff"/></linearGradient></defs>
@@ -1191,13 +1191,14 @@ var SLSound = (function () {
   function layout() {
     cache = {}; boxes = []; rowsI = []; bgC = null;
     if (!g) return;
+    var boardH = H - 56;
     var n = g.boxes.length, best = 0, pitchOf = function (rw) { return rw >= 6 ? 2.14 : 2.3; };
     // three cubbies to a shelf, like a real store shelf (the smallest first levels use fewer)
     cols = n <= 3 ? n : n === 4 ? 2 : 3; void best;
     var rows = Math.ceil(n / cols), pitch = pitchOf(rows);
-    SW = Math.min((W - 16) / (cols * 3.3 + (cols - 1) * 0.3), (H - 24) / (rows * pitch + 0.1), 56);
+    SW = Math.min((W - 16) / (cols * 3.3 + (cols - 1) * 0.3), (boardH - 24) / (rows * pitch + 0.1), 56);
     // when the height sets the item size, the cubbies still use the width (wider slots are easier to hit)
-    var gap = SW * 0.3, bw = Math.min((W - 16 - (cols - 1) * gap) / cols, SW * 4.4), bh = SW * (pitch - 0.35), total = rows * SW * pitch, top = Math.max(10, (H - total) / 2 + SW * 0.05);
+    var gap = SW * 0.3, bw = Math.min((W - 16 - (cols - 1) * gap) / cols, SW * 4.4), bh = SW * (pitch - 0.35), total = rows * SW * pitch, top = Math.max(10, (boardH - total) / 2 + SW * 0.05);
     SL = (bw - SW * 0.3) / 3;
     for (var i = 0; i < n; i++) {
       var r = Math.floor(i / cols), inRow = Math.min(cols, n - r * cols), c = i % cols, rowW = inRow * bw + (inRow - 1) * gap;
@@ -1525,5 +1526,5 @@ var SLSound = (function () {
 </script>
 <script src="../../shared/collection-batch3.js"></script>
 <script src="../../shared/corrections-1.js"></script>
-<script src="../../shared/bottom-navigation.js"></script></body>
+<script src="../../shared/navigation-exceptions.js"></script><script src="../../shared/bottom-navigation.js"></script></body>
 </html>

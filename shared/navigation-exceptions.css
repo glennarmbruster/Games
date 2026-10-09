@@ -1,0 +1,93 @@
+/* Explicit per-game exceptions. Keep these when applying collection-wide styling. */
+html.bottom-navigation .navigation-exception{--bottom-nav-space:0px}
+html.bottom-navigation .navigation-exception>.app,html.bottom-navigation .navigation-exception>#app{height:100dvh!important;padding-bottom:max(0px,env(safe-area-inset-bottom))!important}
+html.bottom-navigation .navigation-exception .collection-nav{display:none!important}
+html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigation{position:static;inset:auto;transform:none;width:auto;height:auto;display:flex;gap:7px;flex:none;z-index:auto;margin:0;pointer-events:auto}
+html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigation[hidden]{display:none!important}
+html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigation>*{background:#eaf3ff!important;color:#234466!important;border:1px solid #8aacc666!important;box-shadow:none!important;border-radius:9px!important;height:40px!important;min-height:40px!important;width:auto!important;padding:7px 10px!important;font:700 12px/1.2 system-ui!important;white-space:nowrap!important}
+html.bottom-navigation .pause-navigation #gameBottomNav.integrated-navigation{margin-top:12px;justify-content:flex-start;flex-wrap:wrap}
+.integrated-pause{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;min-height:40px;padding:0;border-radius:10px;border:1px solid #93b2ca88;background:#193c5ee8;color:#fff;font:800 18px system-ui;pointer-events:auto;touch-action:manipulation;cursor:pointer}
+.integrated-pause[hidden]{display:none!important}#lobbyPause{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:40}
+.navigation-dialog{box-sizing:border-box;max-width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 36px);padding:24px;border-radius:18px;border:1px solid #7399bd;background:linear-gradient(140deg,#254d75,#122e4c);color:#f6f9ff;box-shadow:0 16px 70px #0006;overflow:auto;font:15px/1.55 system-ui;z-index:6000}
+.navigation-dialog::backdrop{background:#071728ae}.navigation-dialog h2{color:inherit;margin:0 0 10px;font:800 25px system-ui;letter-spacing:0}.navigation-dialog p,.navigation-dialog .navigation-guide{color:#e2edfa;white-space:pre-line}.navigation-dialog button{min-height:44px;border:1px solid #a4bed7;border-radius:9px;background:#eaf3ff;color:#234466;font:750 14px system-ui;padding:9px 18px;margin-top:12px}
+html.bottom-navigation .navigation-exception[data-collection=containment] #shell{width:min(100%,calc((100dvh - 58px)*1.77778))!important}
+html.bottom-navigation .navigation-exception[data-collection=containment] #controls{height:58px;min-height:58px}
+html.bottom-navigation .navigation-exception[data-collection=containment] #hint{max-width:35%}
+html.bottom-navigation .navigation-exception[data-collection=stranded] #frame{width:min(100vw,177.778dvh)!important;height:min(56.25vw,100dvh)!important}
+html.bottom-navigation .navigation-exception[data-collection=stranded].stranded-expanded #frame,html.bottom-navigation .navigation-exception[data-collection=stranded] #frame:fullscreen{width:100vw!important;height:100dvh!important;padding:0!important}
+html.bottom-navigation .navigation-exception[data-collection=stranded] #frame #game{height:100%!important}
+html.bottom-navigation .navigation-exception[data-collection=stranded] #frame #touch{bottom:0!important}
+html.bottom-navigation .pause-navigation:is([data-collection=stranded],[data-collection=containment]) #panel{max-height:100%!important;overflow:auto}
+html.bottom-navigation .pause-navigation:is([data-collection=stranded],[data-collection=containment]) #panel #gameBottomNav>*{background:#193842!important;color:#dcefe9!important;border-color:#53787d!important}
+html.bottom-navigation .pause-navigation[data-collection=siege] #topbar{padding-left:10px!important}
+html.bottom-navigation .pause-navigation:is([data-collection=getout],[data-collection=getout2]) .topbtns{gap:5px}
+html.bottom-navigation .pause-navigation:is([data-collection=getout],[data-collection=getout2]) #btnHelp{display:none!important}
+html.bottom-navigation .pause-navigation[data-collection=beacon] #btnHome{display:none!important}
+html.bottom-navigation .pause-navigation #mbLaunchPad{bottom:max(8px,env(safe-area-inset-bottom))}
+html.bottom-navigation .pause-navigation[data-collection=homerun] .hudr{gap:5px}
+/* Inline controls belong to the game's existing chrome, without a separate footer strip. */
+html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .topbtns{gap:5px;flex-wrap:nowrap}
+html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) #gameBottomNav>*{height:40px!important;padding:5px 8px!important;font-size:11px!important}
+html.bottom-navigation .navigation-exception[data-collection=bridge] header{gap:8px;padding-left:0!important;flex-wrap:wrap}
+html.bottom-navigation .navigation-exception[data-collection=bridge] header #gameBottomNav>*{background:#26465e!important;color:#f5f7ff!important;border-color:#8aafc588!important}
+html.bottom-navigation .navigation-exception[data-collection=perch] .perch-integrated-tools{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:48px 40px;gap:5px}
+html.bottom-navigation .navigation-exception[data-collection=perch] .perch-integrated-tools>#btnHelp{display:none!important}
+html.bottom-navigation .navigation-exception[data-collection=perch] .perch-integrated-tools>#gameBottomNav{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+html.bottom-navigation .navigation-exception[data-collection=perch] #gameBottomNav>*{width:100%!important;background:#e9f4f9!important;color:#244c63!important}
+/* Topple: the counter row participates in layout instead of overlapping the HUD. */
+html.correction-ui .collection-page[data-collection=topple] .hud{display:grid;grid-template-columns:1fr auto;row-gap:6px;align-items:center}
+html.correction-ui .collection-page[data-collection=topple] .hud2{position:static!important;inset:auto!important;grid-column:1/-1;padding:0!important;gap:8px;justify-content:space-between}
+html.correction-ui .collection-page[data-collection=topple] .ballsleft,html.correction-ui .collection-page[data-collection=topple] .onstand{font-size:13px;padding:5px 9px;border-radius:9px;background:#173c59df;color:#fff;box-shadow:none}
+/* Hex Slide: controls below the complete stack tray, progress below the title. */
+html.bottom-navigation .collection-page[data-collection=hexslide] footer{bottom:4px!important;padding:4px!important}
+html.bottom-navigation .collection-page[data-collection=hexslide] footer button{min-height:44px!important}
+html.bottom-navigation .collection-page[data-collection=hexslide] .progress{top:76px!important}
+html.bottom-navigation .collection-page[data-collection=hexslide] header{top:10px!important}
+@media(orientation:portrait){
+ .navigation-dialog{max-height:calc(100dvh - var(--portrait-safe-top,56px) - 30px);margin-top:calc(var(--portrait-safe-top,56px) + 12px)}
+ #lobbyPause{top:calc(var(--portrait-safe-top,56px) + 8px)}
+ html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .top{display:grid!important;grid-template-columns:1fr;gap:4px!important;padding:4px 8px!important;min-height:0!important}
+ html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .top>.brand{display:none!important}
+ html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .top>.topbtns{justify-content:center}
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] .top>.scorepill{position:static;justify-self:center;margin:0!important}
+ html.bottom-navigation .navigation-exception[data-collection=bridge] header{display:grid;grid-template-columns:minmax(90px,1fr) auto 42px}
+ html.bottom-navigation .navigation-exception[data-collection=bridge] header .site{grid-column:1/3;grid-row:1}
+ html.bottom-navigation .navigation-exception[data-collection=bridge] header #menu{grid-column:3;grid-row:1}
+ html.bottom-navigation .navigation-exception[data-collection=bridge] header #budget{grid-column:1;grid-row:2;margin:0;max-width:none;width:auto}
+ html.bottom-navigation .navigation-exception[data-collection=bridge] header #gameBottomNav{grid-column:2/4;grid-row:2;justify-content:flex-end}
+ html.bottom-navigation .navigation-exception[data-collection=perch] .toolbar{bottom:max(8px,env(safe-area-inset-bottom))!important}
+}
+/* Shelf Life: compact actions on the board's lower edge, no separate footer. */
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools{position:absolute!important;left:6px!important;right:6px!important;top:auto!important;bottom:6px!important;transform:none!important;width:auto!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px!important;z-index:5;background:#18354bd9;border-radius:11px;padding:5px!important}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools>#btnHelp{display:none!important}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools>#gameBottomNav{display:contents}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools>:is(button),html.bottom-navigation .navigation-exception[data-collection=shelf] #gameBottomNav>*{width:100%!important;height:40px!important;min-height:40px!important;padding:3px!important;font:700 10px/1.1 system-ui!important;border-radius:7px!important;background:#eaf3ff!important;color:#234466!important;box-shadow:none!important;white-space:normal!important}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools svg{width:16px;height:16px}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools .cnt{font-size:9px;top:0;right:1px;min-width:14px;height:14px}
+html.bottom-navigation .navigation-exception #gameBottomNav>#bottomHelp{background:#eaf3ff!important;color:#234466!important;box-shadow:none!important}
+html.bottom-navigation .navigation-exception .single-integrated-tools{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px!important}
+html.bottom-navigation .navigation-exception .single-integrated-tools>#btnHelp{display:none!important}
+html.bottom-navigation .navigation-exception .single-integrated-tools>#gameBottomNav{display:contents}
+html.bottom-navigation .navigation-exception .single-integrated-tools>button,html.bottom-navigation .navigation-exception .single-integrated-tools #gameBottomNav>*{height:44px!important;min-height:44px!important;font-size:11px!important;min-width:0!important;padding:4px!important;white-space:normal!important;width:100%!important}
+html.bottom-navigation .navigation-exception[data-collection=woodpile] .single-integrated-tools{grid-template-columns:repeat(4,minmax(0,1fr))}
+html.bottom-navigation .navigation-exception[data-collection=shelf] .shelf-integrated-tools{grid-template-columns:repeat(5,minmax(0,1fr))}
+html.bottom-navigation .collection-page[data-collection=hexslide] #message{font-size:11px!important;line-height:1.3!important;width:96%}
+html.bottom-navigation .navigation-exception[data-collection=perch] .habitat{top:calc(var(--collection-top,0px) + 64px)!important}
+#woodpileLobby{position:fixed;inset:0;z-index:150;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:max(24px,env(safe-area-inset-top)) 24px;background:radial-gradient(ellipse at top left,#356d9f,#102942 80%);color:#f2f8ff}
+#woodpileLobby[hidden]{display:none!important}.woodpile-lobby-open>.app{visibility:hidden}
+#woodpileLobby .collection-intro,#woodpileLobby .collection-grid,#woodLobbyNav{width:min(760px,100%);margin:0 auto}
+#woodpileLobby h1{font:800 clamp(24px,4vw,36px) system-ui;margin:5px 0}#woodpileLobby p{color:#d2e5f5;margin:6px 0}
+#woodpileLobby .collection-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#woodpileLobby .collection-card{display:grid;grid-template-columns:90px 1fr;text-align:left;align-items:center;gap:8px;padding:16px;border:1px solid #9bc0dc;border-radius:16px;background:linear-gradient(145deg,#f5f9ff,#d9e9f7);color:#21476a;cursor:pointer}
+#woodpileLobby .collection-card svg{width:80px;height:80px;grid-row:1/3}#woodpileLobby .collection-card strong{font:800 23px system-ui}#woodpileLobby .collection-card span{font:500 13px/1.4 system-ui}
+#woodModeMenu{width:auto;font-size:12px;padding:0 10px}
+html.bottom-navigation .navigation-exception[data-collection=woodpile] .shapeActions #gameBottomNav{display:contents}
+@media(orientation:portrait){
+ html.bottom-navigation .navigation-exception[data-collection=bridge] #buildAssist{top:calc(var(--collection-top,56px) + 126px)!important}
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] .stage .hud{top:calc(var(--portrait-safe-top,56px) + 110px)!important}
+ #woodpileLobby{padding-top:calc(var(--portrait-safe-top,56px) + 16px);justify-content:flex-start}
+ #woodpileLobby .collection-grid{grid-template-columns:1fr}#woodpileLobby .collection-card{min-height:140px}
+}
+#portraitPause{position:absolute;top:calc(var(--portrait-safe-top,56px) + 8px);right:16px;z-index:60}
+.navigation-exception[data-collection=woodpile] #shapeModeShortcut{display:none}
+html.bottom-navigation .navigation-exception[data-collection=bridge] #gameBottomNav>#bottomHelp{background:#26465e!important;color:#f5f7ff!important;border-color:#8aafc588!important}

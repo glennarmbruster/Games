@@ -8,7 +8,7 @@ function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className
 function setup(){
  document.documentElement.classList.add('collection-ui','gg-landscape','batch3-ui');document.body.classList.add('collection-page');document.body.dataset.collection=key;
  const nav=el('nav','collection-nav');nav.setAttribute('aria-label','Game navigation');
- const exit=el('button','collection-exit','‹ Exit Game');exit.type='button';exit.id='collectionExit';exit.onclick=()=>$('btnHome').click();
+ const exit=el('button','collection-exit','Exit');exit.type='button';exit.id='collectionExit';exit.onclick=()=>$('btnHome').click();
  const choose=el('button','collection-choose','Choose Game');choose.type='button';choose.id='collectionChoose';choose.hidden=true;
  nav.append(exit,el('span','collection-nav-title',title),choose);document.body.append(nav);
  if(key==='getout'||key==='getout2'){
