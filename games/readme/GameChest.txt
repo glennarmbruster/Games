@@ -1,0 +1,6 @@
+GameChest — Version 1.2.0
+Consistency batch 1
+
+Illustrated Checkers/Chess/Four in a Row selector. Shared navigation; landscape board beside status and controls.
+
+Presentation/navigation changes only. Original game engines, rules, levels, scoring and save keys retained. Version appears in How to Play. Install together with shared/collection-ui.css, shared/collection-ui.js, shared/collection-art and the included sw.js.

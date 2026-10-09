@@ -1,0 +1,6 @@
+LidoDeck — Version 0.4.0
+Consistency batch 1
+
+Illustrated Shuffleboard/Cornhole selector. Shared navigation; landscape Aim/Power/Push controls remain available.
+
+Presentation/navigation changes only. Original game engines, rules, levels, scoring and save keys retained. Version appears in How to Play. Install together with shared/collection-ui.css, shared/collection-ui.js, shared/collection-art and the included sw.js.

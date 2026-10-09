@@ -1,0 +1,6 @@
+WarGames — Version 3.1.0
+Consistency batch 1
+
+Illustrated Rush/Regions selector. Shared exit and collection navigation, brighter panels, larger help text. Previous interface remains available.
+
+Presentation/navigation changes only. Original game engines, rules, levels, scoring and save keys retained. Version appears in How to Play. Install together with shared/collection-ui.css, shared/collection-ui.js, shared/collection-art and the included sw.js.

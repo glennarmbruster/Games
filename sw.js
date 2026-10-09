@@ -7,7 +7,7 @@ const VERSIONS = {
   "cubecorral": "4.0.0",
   "screwball": "4.2.0",
   "skeehop": "1.4.0",
-  "merge": "2.0.0",
+  "merge": "2.1.0",
   "tapaway": "2.0.0",
   "homerun": "1.7.1",
   "match3": "2.0.0",
@@ -30,21 +30,21 @@ const VERSIONS = {
   "siege": "1.3.0",
   "hoops": "1.3.1",
   "beacon": "0.5.1",
-  "sort": "2.1.0",
+  "sort": "2.2.0",
   "triple": "2.0.0",
   "pinball": "2.1.0",
   "parking": "2.0.0",
   "minigolf": "2.1.0",
-  "board": "1.1.1",
+  "board": "1.2.0",
   "buzz": "2.2.0",
   "golf": "0.5.1",
   "shelf": "2.0.1",
-  "castle": "3.2.0",
+  "castle": "3.3.0",
   "hexslide": "1.2.0",
   "farkle": "1.4.0",
   "blockparty": "1.4.0",
   "bridge": "1.3.0",
-  "outpost": "3.0.1",
+  "outpost": "3.1.0",
   "getout": "0.22.0",
   "stranded": "1.0.0",
   "containment": "1.0.0",
@@ -53,7 +53,7 @@ const VERSIONS = {
   "trivia": "0.3.0",
   "links": "0.3.0",
   "bowling": "0.3.0",
-  "deck": "0.3.1",
+  "deck": "0.4.0",
   "wordboard": "0.1.2",
   "nonogram": "0.2.0",
   "getout2": "1.4.3",
@@ -208,6 +208,12 @@ const GROUPS = {
     "games/skeehop/index.html"
   ],
   "merge": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/classic.svg",
+    "./shared/collection-art/trios.svg",
+    "./shared/collection-art/chain.svg",
+
     "games/merge/",
     "games/merge/assets/nook-studio.webp",
     "games/merge/index.html",
@@ -336,6 +342,11 @@ const GROUPS = {
     "games/beacon/modern.css"
   ],
   "sort": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/water.svg",
+    "./shared/collection-art/balls.svg",
+
     "games/sort/",
     "games/sort/assets/cork.png",
     "games/sort/assets/liquid-studio.webp",
@@ -373,6 +384,12 @@ const GROUPS = {
     "games/minigolf/assets/coastal-garden-v1.webp"
   ],
   "board": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/checkers.svg",
+    "./shared/collection-art/chess.svg",
+    "./shared/collection-art/four.svg",
+
     "games/board/",
     "games/board/index.html",
     "games/board/assets/wood-v1.webp"
@@ -444,6 +461,12 @@ const GROUPS = {
     "games/shelf/store-studio.js"
   ],
   "castle": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/cannon.svg",
+    "./shared/collection-art/sling.svg",
+    "./shared/collection-art/feud.svg",
+
     "games/castle/",
     "games/castle/castle.css",
     "games/castle/core.js",
@@ -503,6 +526,11 @@ const GROUPS = {
     "games/bridge/scene.js"
   ],
   "outpost": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/rush.svg",
+    "./shared/collection-art/regions.svg",
+
     "games/outpost/rush.html",
     "games/outpost/war-games.css",
     "games/outpost/regions/",
@@ -1054,6 +1082,11 @@ const GROUPS = {
     "games/bowling/assets/lane-grain-v1.webp"
   ],
   "deck": [
+    "./shared/collection-ui.css",
+    "./shared/collection-ui.js",
+    "./shared/collection-art/shuffle.svg",
+    "./shared/collection-art/corn.svg",
+
     "games/deck/",
     "games/deck/index.html",
     "games/deck/assets/teak-v1.webp",

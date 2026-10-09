@@ -75,7 +75,7 @@ html.gg-fs-over .toolbar .tool:not(.red) { background: rgba(255,255,255,.92); co
 .card .btn small { display: block; font-size: 12px; font-weight: 700; opacity: .8; }
 </style>
 <link rel="stylesheet" href="studio.css">
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><script defer src="../../shared/collection-ui.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="ss-logo" viewBox="0 0 100 100"><defs><linearGradient id="ssbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ec8ff"/><stop offset="1" stop-color="#3a6ef0"/></linearGradient></defs>
@@ -440,7 +440,7 @@ var SSSound = (function () {
   // ================= helpers =================
   function $(id) { return document.getElementById(id); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); } // no pouring while the Menu is open either
+  function sheetOpen() { return document.documentElement.classList.contains('collection-open') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); } // no pouring while the Menu is open either
   function fmt(n) { return (n || 0).toLocaleString(); }
   // a level: [level string, solver's water moves, solver's ball moves] (1.2.0); past the list it is made on the phone
   var beyond = {};

@@ -1,0 +1,96 @@
+GOOBS GAMES — CONSISTENCY BATCH TRACKER
+
+Scope: navigation, game selectors, readable text, colors and orientation layouts.
+Rules, physics, levels, scoring, difficulty and save formats remain unchanged.
+Batch 1 delivered; remaining batches planned. 6 / 66 collections complete.
+
+BATCH 1 — COMPLETE (6 collections)
+  Castle Havoc — games/castle
+  War Games — games/outpost
+  Game Chest — games/board
+  Number Nook — games/merge
+  Lido Deck — games/deck
+  Splash Sort — games/sort
+
+BATCH 2 — PLANNED (10 collections)
+  Captain's Casino — games/casino
+  Card Table — games/solitaire
+  Farkle — games/farkle
+  Block Party — games/blockparty
+  Screwball — games/screwball
+  Goober Ball — games/pinball
+  Neon Siege — games/siege
+  Bridge Works — games/bridge
+  Hex Slide — games/hexslide
+  Yacht! — games/dice
+
+BATCH 3 — PLANNED (10 collections)
+  Ninefold — games/sudoku
+  Pixel Pier — games/nonogram
+  Mine Meadow — games/mines
+  Color Link — games/links
+  Woodpile — games/woodpile
+  Zoodoku — games/zoodoku
+  Huddle — games/huddle
+  Lettermind — games/daily
+  Picture Perfect — games/patchwork
+  Double Take — games/spotdiff
+
+BATCH 4 — PLANNED (10 collections)
+  Get Out! — games/getout
+  Get Out 2! — games/getout2
+  Perch Pals — games/perch
+  Lost & Found — games/hidden
+  Knotty — games/knotty
+  Shelf Life — games/shelf
+  Lot Escape — games/parking
+  Cube Pop — games/cubecorral
+  Fly Away — games/tapaway
+  Garden Swap — games/match3
+
+BATCH 5 — PLANNED (10 collections)
+  Ball Barrage — games/barrage
+  Brickyard — games/bricks
+  Fizz Pop — games/bubbles
+  Peg Lagoon — games/pegs
+  Tumbledown — games/blocks
+  Star Siege — games/aliens
+  Tunnel Pop — games/digger
+  Cheese Chase — games/maze
+  Noodle — games/snake
+  Triple Treat — games/triple
+
+BATCH 6 — PLANNED (10 collections)
+  Moonshot — games/homerun
+  Mean Birds — games/meanbirds
+  Beacon Bound — games/beacon
+  Stranded — games/stranded
+  Containment — games/containment
+  Strike Alley — games/bowling
+  Pin High — games/golf
+  Seaside Putt — games/minigolf
+  Pool Party Hoops — games/hoops
+  Skee-Hop — games/skeehop
+
+BATCH 7 — PLANNED (10 collections)
+  Buzz Off! — games/buzz
+  Case Closed — games/cases
+  Tile Temple — games/mahjong
+  Spin & Solve — games/spin
+  Topple Fair — games/topple
+  Quiz Cove — games/trivia
+  Wick's Way — games/wickway
+  Tile Tide — games/wordboard
+  Word Rattle — games/worddice
+  Letter Loop — games/wordwheel
+
+INSTALL BATCH 1
+Extract this ZIP into the existing site root, merging folders and replacing the included files. Do not replace or delete the entire games or shared folder. Upload sw.js too. Open the site online and accept its Update available prompt. Existing saved games remain in the browser.
+
+This is an update package, not a standalone copy of the site.
+
+CHECKS
+Browser checks at 390x844 portrait and 844x390 landscape, small-phone selectors at 320x568, and simulated safe-area insets. All six collection launchers and their subgames checked. Physical iPhone/Safari verification is still recommended.
+
+IMPLEMENTATION NOTE
+The presentation layer is opt-in for these six collections only. Future shared-layer changes must update cache versions for every collection that loads that layer (or use newly versioned filenames).

@@ -72,7 +72,7 @@ html.gg-fs .modes button { font-size: 14px; }
 .promo button { box-shadow:inset 0 1px #ffffff40,0 2px 4px #0002; }
 
 </style>
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><script defer src="../../shared/collection-ui.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="gc-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#3f7d5a"/>
@@ -748,7 +748,7 @@ var GCSound = (function () {
 
   function $(id) { return document.getElementById(id); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovNew') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function sheetOpen() { return document.documentElement.classList.contains('collection-open') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovNew') || isOpen('ggMenu') || GoobsAds.isOpen(); }
   function sum(a) { return a[0] + a[1] + a[2]; }
 
   // ================= the three rule books behind one face =================

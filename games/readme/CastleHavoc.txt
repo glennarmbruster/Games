@@ -1,0 +1,6 @@
+CastleHavoc — Version 3.3.0
+Consistency batch 1
+
+Illustrated three-game selector. Blue/gold panels, brighter 3D presentation and larger text. Consistent Exit Game and Choose Game across Crumble, Sling and Fortress Feud.
+
+Presentation/navigation changes only. Original game engines, rules, levels, scoring and save keys retained. Version appears in How to Play. Install together with shared/collection-ui.css, shared/collection-ui.js, shared/collection-art and the included sw.js.

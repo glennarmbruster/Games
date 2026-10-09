@@ -125,7 +125,7 @@ html.gg-fs .spacer { display: none; }
 html.gg-fs .app.chainmode .toolbar { display: none; }
 </style>
 <link rel="stylesheet" href="studio.css">
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><script defer src="../../shared/collection-ui.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="nn-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#5a54f0"/>
@@ -765,7 +765,7 @@ var NNChain = (function () {
   function $(id) { return document.getElementById(id); }
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function locked() { return isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || GoobsAds.isOpen(); }
+  function locked() { return document.documentElement.classList.contains('collection-open') || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || GoobsAds.isOpen(); }
 
   // ================= game =================
   // game: { mode, size, g (engine state), undos, snaps, moves, done, won (2048 card shown) }
