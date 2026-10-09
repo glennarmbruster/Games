@@ -1,6 +1,6 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.7.3",
+  "shell": "3.7.4",
   "handheld": "1.1.3",
   "zoodoku": "1.12.5",
   "woodpile": "1.7.1",
@@ -22,7 +22,7 @@ const VERSIONS = {
   "maze": "1.4.5",
   "mahjong": "1.4.3",
   "dice": "1.4.6",
-  "daily": "1.4.5",
+  "daily": "1.4.6",
   "mines": "1.4.5",
   "bubbles": "1.5.3",
   "bricks": "1.5.5",

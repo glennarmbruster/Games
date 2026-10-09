@@ -486,7 +486,7 @@ var LMSound = (function () {
       else st.streak = 0;
     }
     saveStats(); meta.finished++; saveMeta(); renderInfo();
-    setTimeout(function () { showResult(true); }, g.won ? 1900 : 2700);
+    if (!isDaily(meta.mode)) setTimeout(function () { showResult(true); }, g.won ? 1900 : 2700);
   }
 
   // ================= drawing =================
@@ -570,7 +570,11 @@ var LMSound = (function () {
     }
     $('info').innerHTML = h;
     Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === m); });
-    $('btnShare').disabled = !g.done; $('btnEnter').disabled = g.done;
+    $('btnShare').disabled = !g.done;
+    var completedDaily = g.done && isDaily(m);
+    $('btnEnter').disabled = g.done && !completedDaily;
+    $('btnEnter').innerHTML = completedDaily ? '<span>' + g.answer.toUpperCase() + ' · Stats</span>' : '<svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span>';
+    $('btnEnter').setAttribute('aria-label', completedDaily ? 'Stats for completed word ' + g.answer.toUpperCase() : 'Enter');
   }
   function countdown() {
     var n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
@@ -602,6 +606,7 @@ var LMSound = (function () {
       b.push({ label: 'Practice words', go: function () { switchMode('practice'); } });
     }
     else b.push({ label: 'Next word', red: true, go: function () { between(function () { open('practice', true); }); } }, { label: 'Share', go: share }, { label: 'Today’s words', go: function () { switchMode(otherDaily('daily2').done ? 'daily2' : 'daily'); } });
+    if (daily) b.push({ label: 'Back to word', go: function () {} });
     showCard(title, html, b);
   }
   function shareText() {
@@ -639,7 +644,7 @@ var LMSound = (function () {
     }
     next();
   }
-  function switchMode(m) { if (m === meta.mode) return; open(m, false); if (g.done) setTimeout(function () { showResult(false); }, 300); }
+  function switchMode(m) { if (m === meta.mode) return; open(m, false); $('ovEnd').classList.remove('show'); }
   function openHelp() {
     $('helpTitle').textContent = 'How to play Lettermind';
     $('helpList').innerHTML = [
@@ -689,7 +694,7 @@ var LMSound = (function () {
       between(function () { open('practice', true); });
     });
     $('btnShare').addEventListener('click', share);
-    $('btnEnter').addEventListener('click', function () { type('enter'); });
+    $('btnEnter').addEventListener('click', function () { if (g.done && isDaily(meta.mode)) showResult(false); else type('enter'); });
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
     $('btnHelp').addEventListener('click', openHelp);
@@ -720,7 +725,7 @@ var LMSound = (function () {
     syncSound(); syncAds(); syncLook();
     open(meta.mode === 'practice' || meta.mode === 'daily2' ? meta.mode : 'daily', false);
     if (!meta.seen) openHelp();
-    else if (g.done && isDaily(meta.mode)) setTimeout(function () { showResult(false); }, 400);
+
     Goobs.markPlayed('daily');
     Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Lettermind ' + (v.daily || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });
   }

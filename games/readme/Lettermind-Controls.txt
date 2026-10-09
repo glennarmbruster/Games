@@ -5,3 +5,5 @@ Upload after the Menus-and-Collection update, keeping the folders intact and rep
 Exit and How to Play now sit at the top, left of Sound and Menu. Enter is restored to its original full-width layout below the keyboard. Checked in portrait and landscape.
 
 Mode selection now uses a flat darker box with blue lettering, without shadow or underline. This ZIP includes the earlier Lettermind control fix; use it instead of that ZIP.
+
+Completed Word 1 and Word 2 remain visible when reopened. The bottom button shows the answer and Stats; tap it for the existing results/share/practice screen. Back to word closes results. Practice Enter remains unchanged.
