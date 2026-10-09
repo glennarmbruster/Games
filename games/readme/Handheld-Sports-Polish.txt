@@ -1,0 +1,18 @@
+HANDHELD SPORTS 1.1.0 — FOOTBALL & BASEBALL POLISH
+
+Upload over the first Handheld Sports update. Preserve the games/ folder paths and replace sw.js. Tap Update available when offered.
+
+FOOTBALL
+Green LEDs, scoreboard, field markings and opening-card display.
+Wider landscape field: the narrower control column gives the screen more horizontal space.
+Snap and Punt/Field Goal above the directional pad.
+New Game / How to Play and Sound / Exit arranged in two rows.
+Tackles play an original synthesized retro buzzer/trill, inspired by vintage handheld sounds. This includes first-down tackles and turnovers; mute silences it.
+
+BASEBALL
+Animated bat swing, ball flight with a short trail, fielders reacting to hits, runners travelling around the diamond, and a subtle home-run glow. Forced runners also animate on walks. Pause freezes animations. Scores, base advancement, swing timing and game rules remain unchanged.
+
+VERIFIED
+Touch controls, keyboard, save/resume, game rules, multiple portrait and landscape sizes, including 568x320 landscape. Checked tackle sound events and mute, four-runner home-run animation, animation pause/resume and unchanged scoring.
+
+Handheld Sports 1.1.0 / shell cache 3.5.1.
