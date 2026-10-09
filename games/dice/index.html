@@ -149,7 +149,17 @@ button:focus-visible { outline:2px solid var(--y-accent); outline-offset:2px; }
 
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script><link rel="stylesheet" href="../../shared/corrections-1.css">
-</head>
+<style>
+html.correction-ui .collection-page[data-collection=dice] .die .pip{fill:#111!important}
+html.correction-ui .collection-page[data-collection=dice] .top{padding-left:0!important}
+html.correction-ui .collection-page[data-collection=dice] #diceExitSlot{display:flex;justify-content:center;align-items:center;flex:none;min-height:44px;width:100%}
+html.correction-ui .collection-page[data-collection=dice] #diceExitSlot .collection-nav{position:static!important;inset:auto!important;transform:none!important;margin:0!important}
+@media(orientation:landscape) and (min-width:600px){
+html.correction-ui .collection-page[data-collection=dice] .app{grid-template-rows:44px minmax(0,1fr) 74px 44px 44px!important;gap:6px 14px!important}
+html.correction-ui .collection-page[data-collection=dice] .card5{grid-row:1/6!important}
+html.correction-ui .collection-page[data-collection=dice] #diceExitSlot{grid-column:2;grid-row:5}
+}
+</style><link rel="stylesheet" href="../../shared/portrait-safe.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="rc-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#ffe9d6"/>
@@ -190,6 +200,7 @@ button:focus-visible { outline:2px solid var(--y-accent); outline-offset:2px; }
 
   <button class="btn red rollbtn" id="btnRoll"></button>
 
+  <div id="diceExitSlot"></div>
   <div class="toolbar">
     <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
     <button class="tool red" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg><span>New game</span></button>
@@ -527,7 +538,7 @@ var RCSound = (function () {
 
   // ================= drawing =================
   function dieSvg(v) {
-    var red = v === 1 || v === 4 ? ' r' : '';
+    var red = ''; // Dot color is uniform; held dice retain their separate highlight.
     return '<svg viewBox="0 0 100 100" aria-hidden="true">' + PIPS[v].map(function (p) { return '<circle class="pip' + red + '" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (v === 1 ? 12 : 9.5) + '"/>'; }).join('') + '</svg>';
   }
   function renderTray() {
@@ -726,5 +737,7 @@ var RCSound = (function () {
 })();
 </script>
 <script src="../../shared/corrections-1.js"></script>
-</body>
+<script>
+document.addEventListener('DOMContentLoaded',function(){const nav=document.querySelector('.collection-nav');if(nav)document.getElementById('diceExitSlot').append(nav);document.querySelectorAll('.collection-build').forEach(e=>e.textContent=e.textContent.replace(/Version [0-9.]+/,'Version 1.4.2'));});
+</script><script src="../../shared/control-rows.js"></script></body>
 </html>
