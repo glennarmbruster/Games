@@ -134,7 +134,7 @@ html, body { background: #8fd6ff; }
 <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
 </defs></svg>
 
-<canvas id="cv"></canvas><button id="mbLaunchPad" type="button" hidden aria-label="Drag back and release to launch the bird">↖ Drag back to launch</button>
+<canvas id="cv"></canvas>
 
 <!-- in-game buttons -->
 <div class="hud" id="hud">
@@ -1548,7 +1548,6 @@ var MBSound = (function () {
     c.restore();
   }
   function renderHUD() {
-    var pad=$('mbLaunchPad');if(pad)pad.hidden=paused()||phase!=='aim';
     if (!S) return;
     shownScore += (S.score - shownScore) * 0.25; if (Math.abs(S.score - shownScore) < 10) shownScore = S.score;
     $('score').textContent = fmt(shownScore);
@@ -1801,11 +1800,6 @@ var MBSound = (function () {
   }
 
   function init() {
-    var launchPad=$('mbLaunchPad'), padDrag=null;
-    launchPad.addEventListener('pointerdown',function(e){if(paused()||phase!=='aim')return;e.preventDefault();e.stopPropagation();SND.unlock();camMode='auto';snapCam();padDrag={id:e.pointerId,x:e.clientX,y:e.clientY};dragging=true;pull={x:0,y:0};launchPad.setPointerCapture(e.pointerId);launchPad.textContent='Release to launch';});
-    launchPad.addEventListener('pointermove',function(e){if(!padDrag||e.pointerId!==padDrag.id)return;e.preventDefault();pull=MB.clampPull({x:(e.clientX-padDrag.x)/cam.z,y:-(e.clientY-padDrag.y)/cam.z});});
-    launchPad.addEventListener('pointerup',function(e){if(!padDrag||e.pointerId!==padDrag.id)return;e.preventDefault();padDrag=null;dragging=false;if(pull&&Math.hypot(pull.x,pull.y)>.35)doLaunch(pull);else pull=null;launchPad.textContent='↖ Drag back to launch';});
-    launchPad.addEventListener('pointercancel',function(){padDrag=null;dragging=false;pull=null;launchPad.textContent='↖ Drag back to launch';});
     cv.addEventListener('pointerdown', onDown);
     cv.addEventListener('pointermove', onMove);
     cv.addEventListener('pointerup', onUp);

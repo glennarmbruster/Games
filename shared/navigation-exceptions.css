@@ -91,3 +91,15 @@ html.bottom-navigation .navigation-exception[data-collection=woodpile] .shapeAct
 #portraitPause{position:absolute;top:calc(var(--portrait-safe-top,56px) + 8px);right:16px;z-index:60}
 .navigation-exception[data-collection=woodpile] #shapeModeShortcut{display:none}
 html.bottom-navigation .navigation-exception[data-collection=bridge] #gameBottomNav>#bottomHelp{background:#26465e!important;color:#f5f7ff!important;border-color:#8aafc588!important}
+/* A scrolling pause card gets an obvious Exit first. Non-scrolling cards stay unchanged. */
+html.bottom-navigation .pause-navigation .pause-exit-top{position:sticky;top:0;z-index:10;display:flex;align-items:center;margin:0 0 8px;padding:0;min-height:44px;pointer-events:auto}
+html.bottom-navigation .pause-navigation .pause-exit-top>#collectionExit{display:inline-flex!important;align-items:center;justify-content:center;position:static!important;width:auto!important;min-width:90px!important;min-height:44px!important;height:44px!important;margin:0!important;padding:8px 18px!important;border:1px solid #9dbbd6!important;border-radius:9px!important;background:#eaf3ff!important;color:#234466!important;box-shadow:0 2px 8px #10283b30!important;font:800 15px/1.2 system-ui!important;cursor:pointer;touch-action:manipulation}
+html.bottom-navigation .navigation-exception[data-collection=skeehop] .topbtns>.scorepill{position:static!important;flex:none;margin:0!important;min-width:0!important;padding:7px 9px;font-size:12px;white-space:nowrap}
+@media(orientation:portrait){
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] .top{top:calc(var(--portrait-safe-top,56px) + 20px)!important}
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] .topbtns{gap:4px!important}
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] #gameBottomNav{gap:4px!important}
+ html.bottom-navigation .navigation-exception[data-collection=skeehop] .stage .hud{top:calc(var(--portrait-safe-top,56px) + 76px)!important}
+}
+html.bottom-navigation .navigation-exception[data-collection=skeehop] .topbtns{align-items:center!important}
+html.bottom-navigation .navigation-exception[data-collection=skeehop] .topbtns>.scorepill{transform:none!important;inset:auto!important;display:flex;align-items:center;gap:5px}

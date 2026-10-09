@@ -1,0 +1,11 @@
+FOLLOW-UP: VISIBLE PAUSE EXIT AND MEAN BIRDS
+
+Install both parts over the Pause / Integrated Controls release (23-file and 22-file ZIPs). Upload Part 1 first, then Part 2, which includes sw.js. Merge and replace files; do not delete anything. Open online and accept Update available.
+
+Mean Birds: removed the on-screen Drag back to launch helper/control. Direct bird dragging remains, verified with touch emulation.
+
+Pause menus: Exit moves to the top only when the menu needs scrolling, and remains visible while scrolling. Non-scrolling menus keep the existing location, following the approved Containment layout. Applies to the eight pause-only games.
+
+Checked immediate Exit visibility and pointer access across the eight pause menus, Beacon resizing from a scrolling to a non-scrolling menu, and direct Mean Birds touch launch. Please test on physical iOS.
+
+Skee-Hop: score moved into the Sound / Menu / Exit / How to Play row, with the combined portrait row slightly raised.

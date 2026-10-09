@@ -6,6 +6,8 @@ Use "Exit", not "Exit Game", everywhere. The label change applies to the full co
 
 PAUSE-ONLY NAVIGATION
 Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Stranded, Get Out!, and Get Out 2!: show Exit and How to Play only in the paused interface. Keep a small accessible Pause button. Do not add an always-visible bottom navigation strip or reserve space for one during play.
+- If a pause menu requires scrolling, Exit must appear at the top and be immediately visible. If no scrolling is needed, retain the existing placement. Containment is the approved no-scroll reference.
+- Mean Birds: do not show the on-screen "Drag back to launch" helper/control. Keep direct bird dragging to launch.
 - Neon Siege: retain Pause at the top.
 - Stranded: true fullscreen gameplay; fullscreen Return immediately to the right of Pause.
 - Get Out! and Get Out 2!: Pause stops elapsed time; Get Out 2! also stops hazard time.
@@ -13,7 +15,7 @@ Containment, Beacon Bound, Mean Birds, Moonshot, Neon Siege, Stranded, Get Out!,
 - A Pause menu remains reachable from opening screens and portrait rotate prompts.
 
 INTEGRATED NAVIGATION
-- Skee-Hop: Exit and How to Play in the top row with Sound; style them as game controls, not a yellow collection Exit.
+- Skee-Hop: Score, Sound, Menu, Exit and How to Play share one top row; style them as game controls, not a yellow collection Exit.
 - Tunnel Pop: Exit and How to Play in the top Sound/Menu row, preserving more board space.
 - Bridge Works: Exit and How to Play beside Construction Budget, styled with the game's controls.
 - Perch Pals: Exit and How to Play directly below Restart, Undo, Shuffle, Branch.
