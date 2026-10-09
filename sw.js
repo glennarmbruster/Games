@@ -1,8 +1,9 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.4.6",
+  "shell": "3.5.0",
+  "handheld": "1.0.0",
   "zoodoku": "1.12.4",
-  "woodpile": "1.6.2",
+  "woodpile": "1.7.0",
   "patchwork": "3.2.4",
   "cubecorral": "4.1.1",
   "screwball": "4.4.4",
@@ -13,7 +14,7 @@ const VERSIONS = {
   "match3": "2.2.4",
   "snake": "1.4.4",
   "solitaire": "1.2.1",
-  "meanbirds": "1.4.4",
+  "meanbirds": "1.4.5",
   "aliens": "1.3.1",
   "worddice": "1.3.1",
   "digger": "1.4.4",
@@ -72,6 +73,7 @@ const VERSIONS = {
   "cannon": "0.20.0"
 };
 const GROUPS = {
+  "handheld": ["games/handheld/", "games/handheld/index.html", "games/handheld/engine.js", "games/handheld/sports.js", "games/handheld/sports.css", "shared/goobs.js"],
   "containment": [
     "games/containment/",
     "games/containment/index.html",
@@ -105,6 +107,9 @@ const GROUPS = {
     "shared/navigation-exceptions.css"
   ],
   "shell": [
+    "shared/corrections-1.js",
+    "shared/bottom-navigation.js",
+    "shared/navigation-exceptions.js",
     "./",
     "index.html",
     "manifest.json",
@@ -2078,6 +2083,10 @@ self.addEventListener('message', (event) => {
 });
 
 async function fromCache(req) {
+  // Current shared UI overrides older copies retained inside individual game caches.
+  const shell = await caches.open(cacheName('shell'));
+  const sharedHit = await shell.match(req, { ignoreSearch: true });
+  if (sharedHit) return sharedHit;
   for (const name of CURRENT) {
     const cache = await caches.open(name);
     const hit = await cache.match(req, { ignoreSearch: true });

@@ -186,6 +186,12 @@
   }
   var GAMES = [
     {
+      id: 'handheld', name: 'Handheld Sports', blurb: 'Retro LED football & baseball', path: 'games/handheld/',
+      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="hhbg" x2="1" y2="1"><stop stop-color="#376e9e"/><stop offset="1" stop-color="#15314c"/></linearGradient></defs><rect width="100" height="100" fill="url(#hhbg)"/><g transform="rotate(-8 50 50)"><rect x="18" y="9" width="65" height="84" rx="13" fill="#b9a47c"/><rect x="16" y="6" width="65" height="83" rx="13" fill="#efe2bf"/><rect x="23" y="18" width="51" height="36" rx="5" fill="#291018" stroke="#786245" stroke-width="3"/><g fill="#ff5342"><path d="M30 26h7v4h-7zM47 26h7v4h-7zM61 26h7v4h-7zM40 35h7v4h-7zM56 44h7v4h-7z"/><path d="M31 43h8v4h-8z" fill="#ffccab"/></g><path d="M30 64h7v-6h7v6h7v7h-7v7h-7v-7h-7z" fill="#39434a"/><circle cx="64" cy="68" r="9" fill="#cf3828"/><path d="M26 83h42" stroke="#b2a17e" stroke-width="2"/></g></svg>',
+      status: function () { var r = readLS('handheld.records') || {}; var wins = (r.football && r.football.wins || 0) + (r.baseball && r.baseball.wins || 0); return wins ? wins + ' wins · two classic sports' : 'Two sports. Little red lights.'; }
+    },
+
+    {
       id: 'containment', name: 'Containment', blurb: 'Divide, adapt, escape the deep-sea lab', path: 'games/containment/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#102934"/><rect x="13" y="10" width="74" height="80" rx="9" fill="#1d4950"/><path d="M25 70C8 65 10 38 26 35M26 58C8 48 12 25 34 26M26 48C19 16 42 15 48 28" stroke="#8eead4" fill="none" stroke-width="2"/><path d="M28 33C39 15 64 23 75 45S72 78 51 78 16 56 28 33Z" fill="#78cdb5"/><circle cx="52" cy="50" r="14" fill="#205660"/><circle cx="54" cy="48" r="7" fill="#c6ffe6"/></svg>',
       status: function () { var m = readLS('containment.meta'); return m && m.unlocked ? (m.unlocked + 1) + ' / 12 chambers unlocked' : 'Twelve chambers. One organism.'; }
@@ -1101,7 +1107,7 @@
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
     { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
-    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
+    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'handheld containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
     { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
@@ -1135,7 +1141,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'farkle' || g.id === 'bridge' || g.id === 'hexslide') return;
+    if (g.id === 'handheld' || g.id === 'farkle' || g.id === 'bridge' || g.id === 'hexslide') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
   document.addEventListener('error', function (e) {

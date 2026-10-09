@@ -1342,10 +1342,23 @@ var MBSound = (function () {
     p.remove();
   }
   function fitTo(b) {
-    var avail = Math.max(100, W - insetL - insetR), z = Math.min(avail / (b.x1 - b.x0), (H - 10) / (b.y1 - b.y0));
+    var avail = Math.max(100, W - insetL - insetR), z = Math.min(avail / (b.x1 - b.x0), (H - 68) / (b.y1 - b.y0));
     return { x: b.x0 + (W / 2 - insetL) / z, y: b.y0 + H / (2 * z), z: z };
   }
-  function levelView() { var b = MB.bounds(lv); return b; }
+  function levelView() {
+    var b = MB.bounds(lv), sling = lv.sling || 0;
+    // Frame the playable area closely, while preserving the full pull and every target.
+    b.x0 = sling - 2.9;
+    b.x1 -= 1.2;
+    var top = 4.2;
+    (lv.blocks || []).forEach(function (o) { top = Math.max(top, o.y + o.h / 2); });
+    (lv.grubs || []).forEach(function (o) { top = Math.max(top, o.y + 0.8); });
+    (lv.terrain || []).forEach(function (o) { top = Math.max(top, o.y + o.h / 2); });
+    (lv.boulders || []).forEach(function (o) { top = Math.max(top, o.y + o.r); });
+    (lv.tnt || []).forEach(function (o) { top = Math.max(top, o.y + 0.5); });
+    b.y1 = top + 0.8;
+    return b;
+  }
   function target() {
     var b = levelView();
     fitZ = fitTo(b).z;
@@ -1414,7 +1427,7 @@ var MBSound = (function () {
     }
   }
   function setPhase(p) { phase = p; phaseT = 0; }
-  function queuePos(i) { var r = MB.BIRDS[S.queue[i] || 'rocco'].r; return { x: S.pouch.x - 1.2 - i * 0.85, y: r }; }
+  function queuePos(i) { var r = MB.BIRDS[S.queue[i] || 'rocco'].r; return { x: S.pouch.x - 1.05 - (i % 2) * 0.85, y: r + Math.floor(i / 2) * 0.9 }; }
 
   // ================= effects from the physics =================
   var MATCOL = { wood: ['#d39a5a', '#8a5a2b'], glass: ['#bfe6ff', '#ffffff'], stone: ['#a3abb5', '#6b737c'], tnt: ['#e8453c', '#ffd23c'] };
@@ -1807,7 +1820,7 @@ var MBSound = (function () {
     document.addEventListener('touchmove', function (e) { if (e.target === cv) e.preventDefault(); }, { passive: false });
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { SND.unlock(); }, { passive: true }); });
     window.addEventListener('resize', resize);
-    if (window.ResizeObserver) new ResizeObserver(resize).observe(document.documentElement);
+    if (window.ResizeObserver) { var canvasSizeObserver = new ResizeObserver(resize); canvasSizeObserver.observe(document.documentElement); canvasSizeObserver.observe(cv); }
     $('btnHome').addEventListener('click', function () { Goobs.home(); });
     $('btnSettings').addEventListener('click', function () { openPause(true); });
     $('btnPause').addEventListener('click', function () { openPause(false); });

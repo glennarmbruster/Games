@@ -1,0 +1,16 @@
+GOOBS GAMES — WOODPILE + MEAN BIRDS
+October 9, 2026
+
+Upload this ZIP's contents into the site root, preserving games/ and shared/ paths and replacing matching files. This is an incremental update over the Visible Pause Exit update. The ZIP contains only changed files.
+
+WOODPILE 1.7.0
+Larger Shapes board in portrait and landscape. Four larger tray pieces at a time; use the arrows for more. Integrated Undo, Hint, Restart, Exit and How to Play remain visible.
+24 introductory silhouettes progress from 4 to 24 pieces. Complete a puzzle to unlock the next. Endless levels follow, with new deterministic cuts and up to 32 pieces. Silhouettes repeat; the piece arrangements change. No rotation required.
+Previous completed Shapes puzzles remain recorded; the revised puzzles use new piece cuts. Recent in-progress puzzles are saved (30 runs retained to avoid filling device storage). Classic, Daily and Levels are unchanged.
+
+MEAN BIRDS 1.4.5
+Closer camera framing enlarges the action while keeping the slingshot's full pull and targets on screen. Waiting birds sit in compact rows. Canvas resizing tracks its actual displayed size to avoid stretched rendering. Bird physics, damage and level layouts are unchanged. Direct drag-to-launch and pause-only Exit/How to Play remain.
+
+CHECKED
+Portrait and landscape Woodpile layouts, 4- and 24-piece drag completion, touch placement at 32 pieces, level unlock/reload, old completion migration, Undo/Restart, tray paging and Hint. Generated levels 25, 67, 100 and 1000. Mean Birds direct drag launch and camera framing.
+Shell cache version 3.4.7.

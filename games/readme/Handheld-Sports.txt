@@ -1,0 +1,31 @@
+GOOBS GAMES — HANDHELD SPORTS 1.0.0
+October 9, 2026
+
+INSTALL
+Upload the ZIP contents into the site root, preserving games/ paths and replacing index.html and sw.js. Apply after the Woodpile Endless and Mean Birds update. When the site offers Update available, tap it to load the new cached version. Let the initial update finish online before going offline.
+
+WHERE TO FIND IT
+Arcade > Handheld Sports > Football or Baseball.
+One icon, two original games inspired by vintage LED handheld sports.
+Blue opening selector; both portrait and landscape layouts.
+Exit, How to Play, Sound and New Game are integrated into the handheld.
+
+FOOTBALL
+Move the bright LED with the arrows. Hold an arrow to keep running. SNAP starts each play. Ten yards earns a first down; four downs per series. Touchdowns score 7 including the extra point. KICK attempts a field goal when the kick distance is 55 yards or less; otherwise it punts. Shorter field goals are more reliable.
+Computer possessions are simulated. Four 45-second quarters. Clock runs during live plays and advances during computer drives; finish a live play when time expires. Pro defenders move faster.
+Keyboard: arrows, Space to snap/run right, K to kick, P to pause.
+
+BASEBALL
+You are the home team: pitch in the top half, bat in the bottom.
+Choose Fastball or Curve, then PITCH. Mix pitches to keep the computer guessing.
+While batting, press PITCH when ready, then SWING as the moving light reaches home plate. Better timing hits farther. Let pitches outside the plate go by for a ball.
+Three strikes/out, four balls/walk, three outs/half-inning. Fouls do not count as a third strike. Base runners and fielding are automatic. Choose 3 or 9 innings on the opening selector. Ties continue into extra innings; walk-off wins are supported. Pro uses faster pitches and tighter swing timing.
+Keyboard: Space to pitch/swing, C to change pitch, P to pause.
+
+SAVES AND SOUND
+Each sport saves separately. Reopening a sport resumes its unfinished game. New-game settings take effect on a fresh game, not a resumed one. New Game asks before replacing a save. Pause > Choose Sport returns to the two-mode selector. Exit returns to the main collection.
+Sound uses synthesized electronic beeps; no audio downloads. Leaving the tab automatically pauses. Saved games and win records use the handheld namespace and are included in the collection's existing backup system.
+
+VALIDATION
+Rule checks for downs, touchdowns, turnovers, field goals, runner advancement, forced walks, fouls, inning transitions, walk-off wins and extra innings, plus complete simulated games. Browser checks for touch and keyboard inputs, pause, independent saves/reload and multiple portrait/landscape viewport sizes. All game assets are local and included in the offline cache group.
+Shell version: 3.5.0. No other game rules or layouts changed.
