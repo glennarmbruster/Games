@@ -1,0 +1,95 @@
+/* Match Roll Call: navigation below the play controls, never above the board. */
+html.bottom-navigation{--bottom-nav-height:44px;--bottom-nav-safe:max(8px,env(safe-area-inset-bottom,0px));--bottom-nav-space:calc(var(--bottom-nav-height) + var(--bottom-nav-safe) + 8px)}
+@media(orientation:portrait){html.bottom-navigation{--bottom-nav-safe:max(12px,env(safe-area-inset-bottom,0px))}}
+#gameBottomNav{position:fixed;left:50%;bottom:var(--bottom-nav-safe);transform:translateX(-50%);width:min(420px,calc(100% - 24px));height:44px;display:grid;grid-template-columns:1fr 1fr;gap:8px;z-index:5000;box-sizing:border-box;pointer-events:auto}
+#gameBottomNav>*{display:flex!important;align-items:center;justify-content:center;position:static!important;inset:auto!important;width:100%!important;min-width:0!important;max-width:none!important;height:44px!important;min-height:44px!important;margin:0!important;padding:6px 10px!important;border-radius:12px!important;font:750 14px/1.2 system-ui!important;text-decoration:none;white-space:normal!important;box-sizing:border-box;cursor:pointer;touch-action:manipulation}
+#gameBottomNav>.bottom-exit{background:linear-gradient(#ffe9aa,#ffd37a)!important;color:#332a18!important;border:1px solid #fff0bd!important;box-shadow:0 3px 10px #132a4528}
+#gameBottomNav>#bottomHelp{background:#fffaf1!important;color:#243950!important;border:1px solid #d6dfeb!important;box-shadow:0 3px 10px #132a451c}
+html.bottom-navigation .collection-nav{display:none!important}
+html.bottom-navigation .bottom-navigation-page .top{padding-left:10px!important}
+html.bottom-navigation .bottom-navigation-page :is(.hudl,#hud){padding-left:10px!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] header,html.bottom-navigation .bottom-navigation-page:is([data-collection=bridge],[data-collection=hexslide]) header{padding-left:0!important}
+html.bottom-navigation .bottom-navigation-page>.app,html.bottom-navigation .bottom-navigation-page>#app{height:calc(100dvh - var(--bottom-nav-space))!important;min-height:0!important;padding-bottom:8px!important}
+html.bottom-navigation .bottom-fit{bottom:var(--bottom-nav-space)!important;height:calc(100dvh - var(--bottom-surface-top,0px) - var(--bottom-nav-space))!important;min-height:0!important}
+html.bottom-navigation .bottom-raised{bottom:calc(var(--bottom-original-bottom,8px) + var(--bottom-nav-space))!important}
+html.bottom-navigation .bottom-navigation-page>.overlay{height:calc(100dvh - var(--bottom-nav-space))!important;bottom:var(--bottom-nav-space)!important}
+html.bottom-navigation .overlay :is(.card,.sheet,.startcard,.endcard,.roundcard){max-height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-space) - 80px)!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] header a.exitGame,html.bottom-navigation .bottom-navigation-page[data-collection=farkle] .bottomExit{display:none!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] #sheet,html.bottom-navigation .bottom-navigation-page:is([data-collection=bridge],[data-collection=hexslide]) :is(#sheet,#modal){bottom:var(--bottom-nav-space)!important;height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-space))!important}
+html.bottom-navigation .bottom-navigation-page:is([data-collection=bridge],[data-collection=hexslide]) #game{height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-space))!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=screwball] :is(.collection-main,.workshop){height:calc(100dvh - var(--bottom-nav-space))!important;min-height:0!important;padding-bottom:8px!important}
+html.bottom-navigation #shapeMode{bottom:var(--bottom-nav-space);height:auto}
+html.bottom-navigation #shapeExit{display:none}
+html.bottom-navigation .bottom-navigation-page[data-collection=spin] .stage{padding-bottom:8px!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] #frame{width:min(100vw,calc((100dvh - var(--bottom-nav-space))*1.77778))!important;height:min(56.25vw,calc(100dvh - var(--bottom-nav-space)))!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - var(--bottom-nav-space) - 62px)*1.77778))!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] .focus-toggle{bottom:calc(var(--bottom-nav-space) + 6px)!important}
+html.bottom-navigation #frame:fullscreen,html.bottom-navigation #frame:-webkit-full-screen{width:100vw!important;height:100dvh!important;padding-bottom:var(--bottom-nav-space);box-sizing:border-box}
+html.bottom-navigation #frame.with-bottom-navigation #game{height:calc(100% - var(--bottom-nav-space))}
+html.bottom-navigation .golf-lobby{padding-bottom:calc(var(--bottom-nav-space) + 20px)!important;padding-top:max(20px,var(--portrait-safe-top,20px))!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=beacon] #tc{height:calc(100dvh - var(--bottom-nav-space))!important;bottom:var(--bottom-nav-space)!important}
+html.bottom-navigation .beacon-full-title{margin:0;white-space:nowrap;color:#153452;font:800 22px/1.2 system-ui;flex:none}
+html.bottom-navigation .bottom-navigation-page[data-collection=beacon] .mtop{gap:12px}
+html.bottom-navigation .beacon-map-navigation{--bottom-nav-space:0px}
+html.bottom-navigation .beacon-map-navigation #gameBottomNav{position:static;transform:none;width:auto;height:48px;display:contents}
+html.bottom-navigation .beacon-map-navigation .mfoot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:center}
+html.bottom-navigation .beacon-map-navigation .mfoot>button{width:100%;min-width:0;min-height:44px;font-size:14px}
+#bottomInstructions{z-index:6000;background:#17385b;color:#f4f8ff;border:1px solid #85a7ca;border-radius:18px;padding:22px;max-width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 100px);overflow:auto;font:16px/1.55 system-ui}
+#bottomInstructions::backdrop{background:#0c203bc9}#bottomInstructions h2{margin-top:0}#bottomInstructions button{min-height:44px;padding:8px 24px;border-radius:10px;border:0;font:750 15px system-ui;background:#ffdc86;color:#20354b}
+@media(orientation:landscape) and (max-height:600px){
+ html.bottom-navigation .bottom-navigation-page[data-collection=screwball] .stage{height:calc(100dvh - var(--collection-top,0px) - 50px - var(--bottom-nav-space))!important}
+ html.bottom-navigation .bottom-navigation-page[data-collection=woodpile] #shapeBoard{width:min(100%,calc((100dvh - 135px - var(--bottom-nav-space))*9/var(--rows)))}
+ html.bottom-navigation .bottom-navigation-page[data-collection=woodpile] .shapeSide{max-height:calc(100dvh - 135px - var(--bottom-nav-space))}
+}
+html.bottom-navigation .golf-lobby{height:calc(100dvh - var(--bottom-nav-space));min-height:0;overflow-y:auto;box-sizing:border-box}
+html.bottom-navigation .bottom-navigation-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:calc(var(--collection-top,0px) + 18px)!important;padding-bottom:12px!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=screwball] .collection-main{padding-top:calc(var(--collection-top,0px) + 20px)!important}
+@media(orientation:landscape) and (max-height:600px){html.correction-ui .collection-page[data-collection=patchwork] .game-controls{position:absolute;left:12px;bottom:8px;width:228px}}
+html.bottom-navigation .beacon-full-title{color:#f4f8ff}
+html.bottom-navigation .bottom-navigation-page:is([data-collection=farkle],[data-collection=bridge],[data-collection=hexslide]) :is(#panel,#sheet #card){max-height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-space) - 32px)!important;overflow-y:auto;min-height:0}
+html.bottom-navigation .bottom-navigation-page[data-collection=screwball] dialog{max-height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-space) - 28px)!important}
+/* Farkle already allocates a footer row: use it rather than add a second row. */
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle]{--bottom-nav-space:var(--bottom-nav-safe)}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] #app{padding-bottom:0!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] footer>*{visibility:hidden}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] header #sound{min-height:44px;font-size:12px;padding:6px 8px;letter-spacing:0}
+html.bottom-navigation .bottom-navigation-page[data-collection=hexslide] footer #help{display:none}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] #sheet{bottom:calc(var(--bottom-nav-safe) + 52px)!important;height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-safe) - 52px)!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=farkle] #panel{max-height:calc(100dvh - var(--collection-top,0px) - var(--bottom-nav-safe) - 84px)!important}
+/* Override earlier per-game fixed geometry after reserving the navigation row. */
+html.collection-ui.correction-ui.bottom-navigation .bottom-navigation-page .bottom-fit{bottom:var(--bottom-nav-space)!important;height:calc(100dvh - var(--bottom-surface-top,0px) - var(--bottom-nav-space))!important;min-height:0!important}
+html.collection-ui.correction-ui.bottom-navigation .bottom-navigation-page .bottom-raised{bottom:calc(var(--bottom-original-bottom,8px) + var(--bottom-nav-space))!important}
+/* Per-game placement requested during testing. */
+html.bottom-navigation .bottom-navigation-page[data-collection=buzz]{--bottom-nav-space:0px}
+html.bottom-navigation .bottom-navigation-page[data-collection=buzz] .bottom-inline-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+html.bottom-navigation .bottom-inline-row>#gameBottomNav,html.bottom-navigation #actions>#gameBottomNav{display:contents;position:static;transform:none;width:auto}
+html.bottom-navigation .bottom-inline-row>#gameBottomNav>*,html.bottom-navigation .bottom-inline-row>.tool{min-width:0!important;width:100%!important;height:50px!important;font-size:12px!important;padding:5px 3px!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment].containment-game-navigation{--bottom-nav-space:0px}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #controls{height:auto;min-height:58px;position:relative;z-index:20}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #actions{display:flex;gap:6px;align-items:center}
+html.bottom-navigation #actions>#gameBottomNav>*{width:auto!important;min-width:80px!important;font-size:12px!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #actions>button{min-height:44px}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #hint{max-width:23%}
+html.bottom-navigation .bottom-navigation-page[data-collection=containment] #hud{padding-left:2.7%!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] #hud{padding-left:2.5%!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] .hudRight{align-items:center;flex-wrap:nowrap}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] #pause{min-height:36px}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded] #pause+.fullscreen-return,html.bottom-navigation .bottom-navigation-page[data-collection=stranded] #pause+.focus-toggle{position:static!important;inset:auto!important;transform:none!important;min-height:36px;height:36px;min-width:0;padding:5px 10px;font-size:12px;white-space:nowrap;pointer-events:auto}
+html.bottom-navigation #frame:fullscreen,html.bottom-navigation #frame:-webkit-full-screen{padding-bottom:0!important}
+html.bottom-navigation #frame.with-bottom-navigation #game{height:calc(100% - var(--bottom-nav-space))}
+html.bottom-navigation #frame.with-bottom-navigation #touch{bottom:var(--bottom-nav-space)}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-expanded #frame{width:100vw!important;height:100dvh!important;padding-bottom:var(--bottom-nav-space)}
+#mbLaunchPad{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(var(--bottom-nav-space,0px) + 8px);z-index:10;width:180px;min-height:48px;padding:8px 12px;background:#ffdc86;color:#2b3547;border:2px solid #fff3d0;border-radius:14px;box-shadow:0 3px 12px #12274066;font:800 14px/1.3 system-ui;touch-action:none;user-select:none;-webkit-user-select:none}
+#mbLaunchPad[hidden]{display:none!important}
+@media(orientation:portrait){html.bottom-navigation .bottom-navigation-page[data-collection=containment] #controls{min-height:106px;justify-content:center}html.bottom-navigation .bottom-navigation-page[data-collection=containment] #actions{flex-wrap:wrap;justify-content:center}html.bottom-navigation .bottom-navigation-page[data-collection=containment] #hint{max-width:100%}}
+@media(orientation:landscape) and (max-height:600px){html.bottom-navigation .bottom-navigation-page[data-collection=buzz] .bottom-inline-row{position:absolute;left:12px;bottom:8px;width:228px;grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Lost & Found full view shows the whole scene below the safe top boundary. */
+html.correction-ui .focus-view[data-collection=hidden] .stagewrap{top:max(12px,env(safe-area-inset-top,0px))!important;height:auto!important}
+@media(orientation:portrait){html.correction-ui .focus-view[data-collection=hidden] .stagewrap{top:var(--portrait-safe-top,56px)!important}}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-native-full #hud,html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-expanded #hud{display:flex!important}
+html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-expanded #touch{bottom:var(--bottom-nav-space)}
+@media(orientation:landscape) and (max-height:600px){html.bottom-navigation .bottom-navigation-page[data-collection=buzz] .bottom-inline-row{grid-template-columns:repeat(4,minmax(0,1fr))}html.bottom-navigation .bottom-navigation-page[data-collection=buzz] .bottom-inline-row :is(button,.tool){font-size:11px!important}}
+/* Picture Perfect keeps its frame in regular view; fullscreen is only the puzzle. */
+html.correction-ui .focus-view[data-collection=patchwork] .boardwrap{padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.correction-ui .focus-view[data-collection=patchwork] .board{border:0!important;outline:0!important;box-shadow:none!important;border-radius:0!important;background:transparent!important}
+@media(orientation:portrait){html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-native-full #hud,html.bottom-navigation .bottom-navigation-page[data-collection=stranded].stranded-expanded #hud{top:var(--portrait-safe-top,56px)!important}}

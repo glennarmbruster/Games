@@ -1,53 +1,53 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.4.2",
-  "zoodoku": "1.12.1",
-  "woodpile": "1.5.1",
-  "patchwork": "3.2.1",
+  "shell": "3.4.4",
+  "zoodoku": "1.12.2",
+  "woodpile": "1.6.0",
+  "patchwork": "3.2.2",
   "cubecorral": "4.1.0",
-  "screwball": "4.4.1",
-  "skeehop": "1.6.1",
+  "screwball": "4.4.2",
+  "skeehop": "1.6.2",
   "merge": "2.1.0",
   "tapaway": "2.1.0",
-  "homerun": "1.9.1",
-  "match3": "2.2.1",
-  "snake": "1.4.1",
+  "homerun": "1.9.2",
+  "match3": "2.2.2",
+  "snake": "1.4.2",
   "solitaire": "1.2.0",
-  "meanbirds": "1.4.1",
+  "meanbirds": "1.4.2",
   "aliens": "1.3.0",
   "worddice": "1.3.0",
-  "digger": "1.4.1",
+  "digger": "1.4.2",
   "blocks": "1.4.0",
-  "maze": "1.4.1",
+  "maze": "1.4.2",
   "mahjong": "1.4.0",
-  "dice": "1.4.2",
+  "dice": "1.4.3",
   "daily": "1.4.0",
-  "mines": "1.4.1",
+  "mines": "1.4.2",
   "bubbles": "1.5.0",
-  "bricks": "1.5.1",
-  "topple": "1.11.1",
-  "barrage": "1.8.1",
-  "siege": "1.5.1",
+  "bricks": "1.5.2",
+  "topple": "1.11.2",
+  "barrage": "1.8.2",
+  "siege": "1.5.2",
   "hoops": "1.4.0",
-  "beacon": "0.7.1",
+  "beacon": "0.7.2",
   "sort": "2.2.0",
-  "triple": "2.2.1",
+  "triple": "2.2.2",
   "pinball": "2.2.0",
   "parking": "2.1.0",
-  "minigolf": "2.3.1",
+  "minigolf": "2.3.2",
   "board": "1.2.0",
-  "buzz": "2.4.1",
-  "golf": "0.7.1",
-  "shelf": "2.2.1",
+  "buzz": "2.4.2",
+  "golf": "0.7.2",
+  "shelf": "2.2.2",
   "castle": "3.3.0",
-  "hexslide": "1.4.1",
-  "farkle": "1.6.1",
+  "hexslide": "1.4.2",
+  "farkle": "1.6.2",
   "blockparty": "1.5.0",
-  "bridge": "1.5.1",
+  "bridge": "1.5.2",
   "outpost": "3.1.0",
-  "getout": "0.24.1",
-  "stranded": "1.2.1",
-  "containment": "1.2.1",
+  "getout": "0.24.2",
+  "stranded": "1.2.2",
+  "containment": "1.2.2",
   "sudoku": "0.3.0",
   "wordwheel": "0.4.0",
   "trivia": "0.4.0",
@@ -56,17 +56,17 @@ const VERSIONS = {
   "deck": "0.4.0",
   "wordboard": "0.2.0",
   "nonogram": "0.3.0",
-  "getout2": "1.6.1",
-  "huddle": "0.4.1",
+  "getout2": "1.6.2",
+  "huddle": "0.4.2",
   "wickway": "1.2.0",
   "pegs": "0.4.0",
-  "perch": "1.2.1",
+  "perch": "1.2.2",
   "knotty": "1.1.0",
   "casino": "0.2.0",
-  "spotdiff": "0.6.1",
-  "hidden": "1.2.1",
+  "spotdiff": "0.6.2",
+  "hidden": "1.2.2",
   "cases": "1.1.0",
-  "spin": "0.3.1",
+  "spin": "0.3.2",
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0"
@@ -82,7 +82,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "stranded": [
     "games/stranded/",
@@ -94,7 +96,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "shell": [
     "./",
@@ -182,7 +186,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "woodpile": [
     "games/woodpile/modern.css",
@@ -194,7 +200,10 @@ const GROUPS = {
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "games/woodpile/shapes.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js",
+    "games/woodpile/shapes.css"
   ],
   "patchwork": [
     "games/patchwork/",
@@ -211,7 +220,9 @@ const GROUPS = {
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
-    "shared/control-rows.js"
+    "shared/control-rows.js",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "cubecorral": [
     "games/cubecorral/",
@@ -242,7 +253,9 @@ const GROUPS = {
     "games/screwball/timber.html",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "skeehop": [
     "games/skeehop/",
@@ -252,7 +265,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "merge": [
     "./shared/collection-ui.css",
@@ -291,7 +306,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "match3": [
     "games/match3/",
@@ -307,7 +324,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "snake": [
     "games/snake/",
@@ -317,7 +336,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "solitaire": [
     "shared/collection-ui.css",
@@ -346,7 +367,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "aliens": [
     "games/aliens/",
@@ -372,7 +395,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "blocks": [
     "games/blocks/",
@@ -390,7 +415,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "mahjong": [
     "games/mahjong/",
@@ -409,7 +436,9 @@ const GROUPS = {
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
-    "shared/control-rows.js"
+    "shared/control-rows.js",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "daily": [
     "games/daily/",
@@ -427,7 +456,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "bubbles": [
     "games/bubbles/",
@@ -444,7 +475,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "topple": [
     "games/topple/",
@@ -460,7 +493,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "games/topple/assets/oak-v2.webp",
     "games/topple/assets/pine-v2.webp",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "barrage": [
     "games/barrage/",
@@ -470,7 +505,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "siege": [
     "shared/collection-ui.css",
@@ -480,7 +517,9 @@ const GROUPS = {
     "games/siege/index.html",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "hoops": [
     "games/hoops/",
@@ -500,7 +539,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "sort": [
     "./shared/collection-ui.css",
@@ -524,7 +565,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "pinball": [
     "shared/collection-ui.css",
@@ -561,7 +604,9 @@ const GROUPS = {
     "shared/collection-batch4.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "board": [
     "./shared/collection-ui.css",
@@ -587,7 +632,9 @@ const GROUPS = {
     "shared/collection-batch5.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "golf": [
     "games/golf/",
@@ -604,7 +651,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "games/golf/eighteen.html",
     "games/minigolf/assets/coastal-garden-v1.webp",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "shelf": [
     "games/shelf/",
@@ -657,7 +706,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "castle": [
     "./shared/collection-ui.css",
@@ -707,7 +758,9 @@ const GROUPS = {
     "games/farkle/game.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "hexslide": [
     "shared/collection-ui.css",
@@ -721,7 +774,9 @@ const GROUPS = {
     "games/hexslide/style.css",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "bridge": [
     "shared/collection-ui.css",
@@ -742,7 +797,9 @@ const GROUPS = {
     "games/bridge/scene.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "outpost": [
     "./shared/collection-ui.css",
@@ -1271,7 +1328,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "sudoku": [
     "games/sudoku/modern.css",
@@ -1651,7 +1710,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "huddle": [
     "games/huddle/modern.css",
@@ -1662,7 +1723,9 @@ const GROUPS = {
     "shared/collection-batch3.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "wickway": [
     "games/wickway/modern.css",
@@ -1750,7 +1813,9 @@ const GROUPS = {
     "shared/corrections-1.js",
     "games/perch/assets/owl-v1.png",
     "games/perch/assets/squirrel-v1.png",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "knotty": [
     "games/knotty/",
@@ -1857,7 +1922,9 @@ const GROUPS = {
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
-    "shared/control-rows.js"
+    "shared/control-rows.js",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "hidden": [
     "games/hidden/",
@@ -1899,7 +1966,9 @@ const GROUPS = {
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
-    "shared/control-rows.js"
+    "shared/control-rows.js",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "cases": [
     "games/cases/",
@@ -1924,7 +1993,9 @@ const GROUPS = {
     "shared/collection-batch5.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
-    "shared/portrait-safe.css"
+    "shared/portrait-safe.css",
+    "shared/bottom-navigation.css",
+    "shared/bottom-navigation.js"
   ],
   "three": [
     "shared/three.module.min.js"
