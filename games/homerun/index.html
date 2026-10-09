@@ -383,7 +383,7 @@ var MS = (function () {
   function exitVelocity(pitch, swing, skills) {
     var p = PITCHES[pitch.kind];
     var sp = Math.max(0, Math.min(1.15, swing.speed / 2.2));
-    var v = (50 + 0.75 * (skills.power || 0)) * (0.62 + 0.38 * sp) * (0.72 + 0.28 * swing.quality) * (p.heavy || 1);
+    var v = (54 + 0.81 * (skills.power || 0)) * (0.62 + 0.38 * sp) * (0.72 + 0.28 * swing.quality) * (p.heavy || 1);
     var up = Math.max(-0.4, Math.min(1, -swing.dirY));
     var launch = 12 + 24 * up + 16 * swing.off; // under the ball = higher, over it = a grounder
     launch = Math.max(-15, Math.min(62, launch));
@@ -466,7 +466,7 @@ var MS = (function () {
   }
 
   // ---------- experience and upgrades ----------
-  // Experience = points scored. Each level up gives one upgrade point for Power, Contact or Batting Eye.
+  // Experience = points scored. Each level up gives three upgrade points for Power, Contact or Batting Eye.
   function xpForLevel(lv) { return Math.round(1500 * lv + 350 * lv * lv); } // total experience to reach level lv+1
   function levelFromXp(xp) { var lv = 0; while (xp >= xpForLevel(lv + 1) && lv < 99) lv++; return lv; }
   var MAX_SKILL = 45;

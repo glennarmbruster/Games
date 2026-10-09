@@ -1,0 +1,3 @@
+Moonshot power update: +8% hit speed at every Power level. 135 available upgrades (45 per skill), three points per player level-up.
+
+Only Moonshot gameplay is changed. Upload games/homerun/index.html and sw.js after your latest updates. The files in games/readme are review notes; no fixes from that review have been applied.

@@ -1,0 +1,171 @@
+GOOBS GAMES — COLLECTION REVIEW (RECOMMENDATIONS ONLY)
+October 9, 2026
+
+SCOPE AND LIMITS
+All 65 game icons were opened and sampled at 390x740 portrait and 844x390 landscape. Opening screens, sampled game boards, visible navigation and runtime page errors were checked. No JavaScript page errors were recorded in this sweep. Selected pause routes were additionally probed. This is not a full playthrough of every mode/level, a native iOS test, or an offline persistence certification. Some screenshots caught opening transitions; transient transparency was not counted as a defect. Hidden Exit during active play is intentional for the approved pause-only games.
+
+Only Moonshot gameplay was changed. Other findings below are recommendations, not fixes. Prior claims that all navigation was fully consistent were too broad: the sweep still shows legacy bottom bars, a few overlaps, and opening-screen navigation gaps.
+
+FIX NEXT, IN ORDER
+1. Quiz Cove: portrait score badge covers Exit lettering.
+2. Containment: landscape opening panel intercepts the lobby Pause control. Inspect the corresponding Stranded opening route too. Preserve in-game pause exceptions.
+3. Bridge Works: opening panel covers Exit/How to Play; landscape Start is below the initial visible area.
+4. Triple Treat and Shelf Life: level indicator clips at the left edge in landscape.
+5. Opening prompts: Zoodoku and Moonshot recovery need a clearly visible way out without entering gameplay/restoring progress.
+6. Compact toolbars: Ninefold, Card Table, Word Rattle and Lot Escape deserve selective readability improvements.
+7. Header wrapping: Cube Pop, Tumbledown, Fizz Pop and Pool Party Hoops should allocate deliberate space for status and navigation.
+8. Optional visual cleanup: unify remaining bottom-bar treatments; remove Peg Lagoon's duplicate help button. Preserve Garden Swap and Roll Call as approved.
+9. Goober Ball: portrait is much more usable; landscape leaves a narrow table and substantial empty space.
+
+MOONSHOT CHANGE
+Exit velocity increased by exactly 8%: base 50 -> 54; each Power level 0.75 -> 0.81. Launch angle, timing/spray, scoring, fences and upgrade limits unchanged. Controlled identical-swing checks at Power 0, 10, 20, 45 confirmed the multiplier and unchanged angle/spray. At Power 10, the sample flight increased from 510 to 560 feet. Results vary with swing and pitch.
+Upgrade availability: Power 45 + Contact 45 + Batting Eye 45 = 135 total upgrade levels. Each player level-up gives three spendable points. This is the game's capacity; your device's owned/unspent count was not read. The recovery screen's lower limits apply to its restoration workflow, not normal earning.
+
+GAME-BY-GAME REVIEW
+
+TABLETOP
+
+Captain's Casino: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Card Table: RECOMMENDATION: compact landscape tools are readable but small; selectively enlarge touch targets, preserving the five-game selector.
+
+Farkle: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Game Chest: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Huddle: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Letter Loop: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Lettermind: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Ninefold: RECOMMENDATION: tiny landscape tool/number labels and portrait How to Play on a separate row. Review touch readability without reducing the board.
+
+Pixel Pier: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Quiz Cove: PRIORITY: portrait score badge visually overlaps Exit. Give score/progress a dedicated left header area.
+
+Roll Call: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Spin & Solve: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Tile Temple: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Tile Tide: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Word Rattle: RECOMMENDATION: compact landscape tools and small labels merit a physical-phone touch check.
+
+ARCADE
+
+Ball Barrage: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Beacon Bound: VERIFY ON DEVICE: opening map uses a settings gear to access options rather than an obvious Pause; confirm the paused Exit path from the map. Keep landscape gameplay and approved pause-only navigation.
+
+Brickyard: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Buzz Off!: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Castle Havoc: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Cheese Chase: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Containment: PRIORITY: landscape opening panel intercepts taps on the lobby Pause button (reproduced). Raise/move opening Pause only; preserve the approved in-game pause layout.
+
+Fizz Pop: RECOMMENDATION: portrait header wraps navigation; consolidate status and actions and preserve shooting area.
+
+Golf: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Goober Ball: RECOMMENDATION: landscape table stays very narrow with substantial unused space. Prefer portrait or offer a clearly designed landscape table/camera arrangement; avoid stretching physics.
+
+Handheld Sports: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Lido Deck: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Mean Birds: VERIFY ON DEVICE: landscape-only by design. Retest direct slingshot dragging after navigation updates; a layout/launch review alone does not validate every shot.
+
+Moonshot: POWER FIXED ONLY: +8% exit velocity at all Power levels. Recommendation: recovery panel appears on a fresh profile, blocks access to normal navigation, and advertises a recovery limit of 18/15 although earnable upgrades allow 45 in each skill. Clarify recovery versus normal upgrades and make dismissal/navigation obvious.
+
+Neon Siege: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Noodle: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Peg Lagoon: COSMETIC: opening panel contains both integrated How to Play and its original How to play button. Keep one.
+
+Pool Party Hoops: RECOMMENDATION: portrait header wraps navigation close to distance/location labels. Reserve separate space for both.
+
+Skee-Hop: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Star Siege: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Stranded: FOLLOW-UP: opening panel and upper-right Pause compete for space; sampled opening Pause route did not expose Exit. Verify and apply the same opening-screen treatment as Containment. Preserve Return beside in-game Pause.
+
+Strike Alley: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Topple Fair: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Tumbledown: RECOMMENDATION: portrait header wraps Exit/How to Play below status; reserve this space explicitly rather than allowing it to intrude on upper game content.
+
+Tunnel Pop: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+War Games: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+PUZZLES
+
+Bridge Works: PRIORITY: opening panel covers the integrated Exit/How to Play; landscape launch actions require scrolling. Put an immediately visible Exit inside the opening panel and compact the introduction.
+
+Case Closed: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Color Link: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Cube Pop: RECOMMENDATION: portrait header wraps navigation to a second row; group status left and navigation right with a deliberate reserved header height.
+
+Double Take: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Fly Away: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Garden Swap: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass. Garden Swap is an explicit exception: keep its approved buttons unless Glenn requests otherwise.
+
+Get Out 2!: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Get Out!: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Hex Slide: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Knotty: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Lost & Found: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Lot Escape: RECOMMENDATION: landscape How to Play wraps onto a separate row; consolidate sidebar actions when practical.
+
+Mine Meadow: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Number Nook: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Perch Pals: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Picture Perfect: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Screwball: COSMETIC: separate bottom Exit/How to Play row remains, often with yellow Exit. Consider integrating into native controls on a future pass; do not shrink the board.
+
+Shelf Life: PRIORITY: landscape level pill clips at the left edge. Board controls remain visible; repair status alignment only.
+
+Splash Sort: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Triple Treat: PRIORITY: landscape level pill clips at the left edge. Keep status within the sidebar. Action labels are small.
+
+Wick’s Way: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Woodpile: Opening/layout samples reviewed; no additional specific issue flagged in those samples. Continue device testing of later levels and modes.
+
+Zoodoku: FOLLOW-UP: starting-level prompt covers the usual Exit controls. Offer an obvious way out of that prompt. Do not alter the accepted board/action arrangement.
+
+POTENTIAL ADDITIONS — ONLY FOUR RECOMMENDED
+1. Pool (8-ball / later 9-ball): strongest missing sports/table game. Aim the cue, set power and pocket your group; finish with the 8-ball. Suggested offline AI and pass-and-play.
+Reference: https://miniclip.com/games/8-ball-pool
+2. Subway route planner: a distinct planning game. Connect stations with lines and manage limited trains as passenger demand grows. An original game in this genre would add more variety than another matching puzzle.
+Reference: https://dinopoloclub.com/games/mini-metro/
+3. Reversi: place a disc to sandwich the opponent's discs and flip them. Most discs at the end wins. Simple to learn; a natural fourth Game Chest mode.
+Rules: https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english
+4. Mexican Train dominoes: match numbered ends on your train or eligible shared trains; shed tiles and avoid leftover points. Suggested legal-move highlights and automatic doubles handling.
+Rules: https://www.pagat.com/domino/star/mextrain.html
+Backgammon is optional, not a necessary gap. It combines dice-based movement, racing pieces home and sending exposed opponents back to restart. I would prioritize the four above unless that sounds appealing.

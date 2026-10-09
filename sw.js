@@ -1,6 +1,6 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.7.4",
+  "shell": "3.7.5",
   "handheld": "1.1.3",
   "zoodoku": "1.12.5",
   "woodpile": "1.7.1",
@@ -10,7 +10,7 @@ const VERSIONS = {
   "skeehop": "1.6.5",
   "merge": "2.1.3",
   "tapaway": "2.1.3",
-  "homerun": "1.9.5",
+  "homerun": "1.9.6",
   "match3": "2.2.5",
   "snake": "1.4.5",
   "solitaire": "1.2.3",
