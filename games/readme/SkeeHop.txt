@@ -6,3 +6,8 @@ Consistent exit, corrected score/ball-counter spacing and readable mode controls
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.6.0
+Brighter machine colors and backgrounds.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

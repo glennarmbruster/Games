@@ -146,7 +146,8 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 /* 1.2.0: the "Show earlier" card in the level grid (made levels far back) */
 .lv.more { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border-style: dashed; }
 </style>
-<link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script></head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script><link rel="stylesheet" href="../../shared/corrections-1.css">
+</head>
 <body>
 <canvas id="cv"></canvas>
 
@@ -1746,5 +1747,6 @@ var SGAudio = (function () {
   window.__ns = { get g() { return g; }, start: start, play: play, levelOf: levelOf, need: need, GEN: GEN, get cur() { return cur; }, get jobs() { return { busy: busy, jobs: jobs.length, worker: !!worker, workerBad: workerBad }; }, renderLevels: renderLevels, showFrom: showFrom, SG: SG, tap: tap, toScreen: function (x, y) { return toScreen(x, y); }, get view() { return view; }, fit: fit, setSpeed: function (s) { speed = s; }, get preview() { return preview; }, get sel() { return sel; }, P: P, prog: function () { return prog; } };
 })();
 </script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

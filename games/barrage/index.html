@@ -138,6 +138,7 @@ html.gg-fs-over .top .iconbtn,html.gg-fs-over .top .brand {background:#172c39;co
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1179,21 +1180,8 @@ var BBSound = (function () {
     var key=[w,h,color,dpr].join(':'),tile=enamelCache.get(key);
     if(!tile){
       if(enamelCache.size>=128)enamelCache.clear();tile=document.createElement('canvas');tile.width=Math.ceil(w*dpr);tile.height=Math.ceil(h*dpr);
-      var q=tile.getContext('2d');q.scale(dpr,dpr);var d=Math.max(2,Math.min(w,h)*.14),b=Math.max(2,Math.min(w,h)*.14),fh=h-d;
-      function cut(X,Y,W,H,B){q.beginPath();q.moveTo(X+B,Y);q.lineTo(X+W-B,Y);q.lineTo(X+W,Y+B);q.lineTo(X+W,Y+H-B);q.lineTo(X+W-B,Y+H);q.lineTo(X+B,Y+H);q.lineTo(X,Y+H-B);q.lineTo(X,Y+B);q.closePath();}
-      cut(0,d,w,fh,b);q.fillStyle='#02080d';q.fill();
-      cut(.5,d*.7,w-1,fh,b);q.fillStyle=color;q.fill();q.fillStyle='#0009';q.fill();
-      cut(0,0,w,fh,b);q.fillStyle=color;q.fill();
-      var g=q.createLinearGradient(0,0,w*.6,fh);g.addColorStop(0,'#ffffff77');g.addColorStop(.18,'#ffffff11');g.addColorStop(.52,'#ffffff00');g.addColorStop(1,'#00132599');q.fillStyle=g;q.fill();
-      // Distinct bevel planes, not a milky white overlay over the entire face.
-      q.beginPath();q.moveTo(b,0);q.lineTo(w-b,0);q.lineTo(w-b*1.4,b);q.lineTo(b*1.4,b);q.closePath();q.fillStyle='#ffffffbb';q.fill();
-      q.beginPath();q.moveTo(0,b);q.lineTo(b,b*1.5);q.lineTo(b,fh-b*1.5);q.lineTo(0,fh-b);q.closePath();q.fillStyle='#ffffff44';q.fill();
-      q.beginPath();q.moveTo(w,b);q.lineTo(w-b,b*1.5);q.lineTo(w-b,fh-b*1.5);q.lineTo(w,fh-b);q.closePath();q.fillStyle='#00122688';q.fill();
-      q.beginPath();q.moveTo(b,fh);q.lineTo(w-b,fh);q.lineTo(w-b*1.4,fh-b);q.lineTo(b*1.4,fh-b);q.closePath();q.fillStyle='#00132688';q.fill();
-      cut(b*.9,b*.9,w-b*1.8,fh-b*1.8,b*.5);q.lineWidth=.65;q.strokeStyle='#ffffff55';q.stroke();
-      // Narrow diagonal studio reflection plus small, fixed corner glint.
-      q.save();cut(b,b,w-b*2,fh-b*2,b*.5);q.clip();var shine=q.createLinearGradient(0,0,w,fh);shine.addColorStop(0,'#ffffff00');shine.addColorStop(.23,'#ffffff00');shine.addColorStop(.27,'#ffffff22');shine.addColorStop(.33,'#ffffff00');shine.addColorStop(1,'#ffffff00');q.fillStyle=shine;q.fillRect(0,0,w,fh);q.restore();
-      q.fillStyle='#ffffffcc';q.fillRect(b,1,Math.max(3,w*.18),.65);enamelCache.set(key,tile);
+      var q=tile.getContext('2d');q.scale(dpr,dpr);
+      q.fillStyle=color;q.beginPath();q.roundRect(1,1,w-2,h-2,Math.min(w,h)*.09);q.fill();q.strokeStyle='#ffffff70';q.lineWidth=1;q.stroke();enamelCache.set(key,tile);
     }
     cx.drawImage(tile,x,y,w,h);
   }
@@ -1285,7 +1273,7 @@ var BBSound = (function () {
       var bw = cell.w || 1, bh = cell.h || 1, sw = bw * k - p * 2, sh = bh * k - p * 2, rad = k * (bw * bh > 1 ? 0.2 : 0.14);
       y = (r - bh + 1) * k;
       var col = hue(cell.hp);
-      cx.save();cx.shadowColor='#000b';cx.shadowBlur=k*.12;cx.shadowOffsetY=k*.09;cx.fillStyle='#03080e';rr(x+p,y+p,sw,sh,rad);cx.fill();cx.restore();
+      cx.save();cx.shadowColor='#000b';cx.shadowBlur=0;cx.shadowOffsetY=0;cx.fillStyle='#03080e';rr(x+p,y+p,sw,sh,rad);cx.fill();cx.restore();
       enamel(x + p, y + p, sw, sh, rad, col);
       if (bw * bh > 1) { cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.lineWidth = Math.max(1, k * 0.045); rr(x + p * 2.2, y + p * 2.2, sw - p * 2.4, sh - p * 2.4, rad * 0.8); cx.stroke(); }
       if (cell.flash) { cx.fillStyle = 'rgba(255,255,255,' + (cell.flash / 10).toFixed(2) + ')'; rr(x + p, y + p, sw, sh, rad); cx.fill(); }
@@ -1672,5 +1660,6 @@ var BBSound = (function () {
 })();
 </script>
 <script src="../../shared/collection-batch4.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

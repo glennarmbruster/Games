@@ -73,6 +73,7 @@ html, body { height: 100%; overflow: hidden; background: #8fd3ff; }
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch5.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body class="collection-page" data-collection="topple">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1038,26 +1039,17 @@ var TFScene = (function () {
     var leafM = ['#7fbf5e', '#93cc6a', '#6aae52', '#a3d27a'].map(function (c) { return std({ color: c, map: leafTex, vertexColors: true, roughness: 0.9 }); });
     var barkTex = tex(64, 256, function (x, w, h) { x.fillStyle = '#6b4a2e'; x.fillRect(0, 0, w, h); for (var i = 0; i < 90; i++) { x.fillStyle = R() < 0.5 ? 'rgba(40,25,12,.45)' : 'rgba(150,110,70,.3)'; x.fillRect(rnd(0, w), rnd(0, h), rnd(1, 3), rnd(10, 40)); } });
     var barkM = std({ map: barkTex, roughness: 1 });
-    function tree(x, z, s) {
-      var g = new T.Group();
-      var tr = new T.Mesh(new T.CylinderGeometry(0.16 * s, 0.3 * s, 2.6 * s, 10), barkM); tr.position.y = 1.3 * s; g.add(tr);
-      [[-0.6, 1.9, 0.9], [0.7, 2.1, -0.8], [0.1, 2.3, 0.2]].forEach(function (b) { var br = new T.Mesh(new T.CylinderGeometry(0.05 * s, 0.1 * s, 1.1 * s, 6), barkM); br.position.set(b[0] * s * 0.45, b[1] * s, 0); br.rotation.z = b[2]; g.add(br); });
-      var blobs = 7 + Math.floor(R() * 4), lm = leafM[Math.floor(R() * leafM.length)];
-      for (var i = 0; i < blobs; i++) {
-        var a = i / blobs * Math.PI * 2 + rnd(0, 0.6), d = rnd(0.5, 1.1) * s, y = rnd(2.6, 3.9) * s;
-        var b = new T.Mesh(leafTpl[i % 3], R() < 0.3 ? leafM[Math.floor(R() * leafM.length)] : lm); var r = rnd(0.75, 1.15) * s;
-        b.scale.set(r, r * rnd(0.8, 1), r); b.position.set(Math.cos(a) * d, y, Math.sin(a) * d * 0.8); b.rotation.set(rnd(0, 3), rnd(0, 3), 0); b.castShadow = fancy; g.add(b);
-      }
-      var top = new T.Mesh(leafTpl[0], lm); top.scale.setScalar(1.05 * s); top.position.y = 4.3 * s; top.castShadow = fancy; g.add(top);
-      tr.castShadow = fancy; g.position.set(x, G, z); g.rotation.y = rnd(0, 6); scene.add(g);
+    var treeMaps = {};
+    function photoTree(kind,x,z,s){
+      if(!treeMaps[kind]){treeMaps[kind]=new T.TextureLoader().load('assets/'+kind+'-v2.webp');treeMaps[kind].colorSpace=T.SRGBColorSpace;}
+      var mat=new T.MeshBasicMaterial({map:treeMaps[kind],transparent:true,alphaTest:.25,side:T.DoubleSide,depthWrite:true});
+      var h=(kind==='oak'?5.3:5.6)*s,w=h*(kind==='oak'?.94:.58),mesh=new T.Mesh(new T.PlaneGeometry(w,h),mat);
+      mesh.position.set(x,G+h/2,z);mesh.rotation.y=Math.atan2(-x,20-z);scene.add(mesh);
     }
+    function tree(x,z,s){photoTree('oak',x,z,s);}
     var pineM = std({ color: '#2b6b34', vertexColors: true, roughness: 0.95 });
     var pineTpl = (function () { var g = new T.ConeGeometry(1, 1.6, 12, 3), p = g.attributes.position, cols = []; for (var i = 0; i < p.count; i++) { var vy = p.getY(i), k = 0.6 + 0.4 * (vy / 1.6 + 0.5); p.setX(i, p.getX(i) * (1 + rnd(-0.08, 0.08))); p.setZ(i, p.getZ(i) * (1 + rnd(-0.08, 0.08))); cols.push(k, k, k); } g.setAttribute('color', new T.Float32BufferAttribute(cols, 3)); g.computeVertexNormals(); return g; })();
-    function pine(x, z, s) {
-      var g = new T.Group(); var tr = new T.Mesh(new T.CylinderGeometry(0.12 * s, 0.22 * s, 1.4 * s, 8), barkM); tr.position.y = 0.7 * s; g.add(tr);
-      for (var i = 0; i < 4; i++) { var c = new T.Mesh(pineTpl, pineM), w = (1.25 - i * 0.24) * s; c.scale.set(w, s, w); c.position.y = (1.4 + i * 0.95) * s; c.castShadow = fancy; g.add(c); }
-      g.position.set(x, G, z); scene.add(g);
-    }
+    function pine(x,z,s){photoTree('pine',x,z,s);}
     [[-9.5, -9, 1.05], [10.5, -11, 1.2], [-15, -16, 1.35], [16, -20, 1.4], [-6, -30, 1.5], [6, -34, 1.6], [-22, -30, 1.7], [24, -34, 1.7], [-13, -44, 1.8], [15, -50, 1.9]].forEach(function (t) { tree(t[0], t[1], t[2]); });
     [[-12.5, -13, 1.1], [13.5, -15, 1.0], [-19, -22, 1.3], [20, -26, 1.3], [0, -46, 1.6], [-30, -40, 1.8], [31, -44, 1.9]].forEach(function (t) { pine(t[0], t[1], t[2]); });
     // a hedge along the back fence
@@ -1080,7 +1072,7 @@ var TFScene = (function () {
       var g = new T.Group(), st = stripeTex(c1, '#fbf6ea', 24), m = std({ map: st, roughness: 0.85, side: T.DoubleSide });
       surface(st, 'fabric', 0.55);
       var body = new T.Mesh(new T.CylinderGeometry(r, r, r * 1.1, 32, 1, true), m); body.position.y = r * 0.55; body.castShadow = fancy; body.receiveShadow = fancy; g.add(body);
-      var roof = new T.Mesh(new T.ConeGeometry(r * 1.18, r * 1.25, 32, 1, true), m); roof.position.y = r * 1.1 + r * 0.62; roof.castShadow = fancy; g.add(roof);
+      var roof = new T.Mesh(new T.ConeGeometry(r * 1.18, r * 1.25, 64, 8, true), m); var rp=roof.geometry.attributes.position;for(var ri=0;ri<rp.count;ri++){var ry=rp.getY(ri),rad=Math.hypot(rp.getX(ri),rp.getZ(ri)),ang=Math.atan2(rp.getZ(ri),rp.getX(ri));rp.setY(ri,ry-r*.075*Math.sin(Math.PI*rad/(r*1.18))*(.65+.35*Math.cos(ang*12)));}roof.geometry.computeVertexNormals(); roof.position.y = r * 1.1 + r * 0.62; roof.castShadow = fancy; g.add(roof);
       var val = new T.Mesh(new T.CylinderGeometry(r * 1.18, r * 1.18, r * 0.3, 32, 1, true), std({ map: scallop, transparent: true, alphaTest: 0.5, side: T.DoubleSide, roughness: 0.8 })); val.position.y = r * 1.1 - r * 0.15 + 0.02; g.add(val);
       var door = new T.Mesh(new T.PlaneGeometry(r * 0.55, r * 0.8), std({ color: 0x2b1d33, roughness: 1 })); door.position.set(0, r * 0.4, r + 0.02); g.add(door);
       var pole = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, r * 0.7, 6), std({ color: 0xffffff })); pole.position.y = r * 2.35 + r * 0.3; g.add(pole);
@@ -1936,5 +1928,6 @@ var TFScene = (function () {
 })();
 </script>
 <script src="../../shared/collection-batch5.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

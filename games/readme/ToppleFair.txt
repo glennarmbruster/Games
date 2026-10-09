@@ -10,3 +10,8 @@ No gameplay, rules, physics, scoring, levels, save formats or artwork assets cha
 Install after Batches 1–4: merge this update into the existing site root, including sw.js. Accept the Update available prompt while online. Do not replace whole games/shared folders.
 
 Browser layouts checked at 390x844, 844x390 and 320x568. Physical iPhone/Safari testing remains useful.
+
+
+REQUESTED CORRECTIONS 1 — 1.11.0
+More realistic tree silhouettes and rounded, sagging fabric tent roofs.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

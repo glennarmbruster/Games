@@ -7,3 +7,8 @@ Shared changes: consistent gold Exit Game button, navy navigation bar, clearer l
 
 Presentation only. Rules, difficulty, scoring, level data, artwork and save formats are preserved.
 Install with the Batch 3 ZIP after Batches 1 and 2, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.12.0
+Brighter interface and deeper red full hearts; board retained.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

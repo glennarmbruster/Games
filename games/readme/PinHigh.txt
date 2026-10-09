@@ -6,3 +6,8 @@ New Round, Practice Hole and Driving Range use clear matching selection cards. C
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 0.7.0
+Golf launcher combines 18 Holes (formerly Pin High) and Seaside Putt. Optional blue target-power guide, off by default, for putting and regular shots. Perfect-shot zone 30% wider. Guide estimates distance; wind and terrain affect results.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

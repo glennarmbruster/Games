@@ -1,0 +1,83 @@
+GOOBS GAMES — REQUESTED CORRECTIONS 1
+
+INSTALL
+Install after Consistency Batch 5. Extract into the existing site root, merge folders and replace included files. Do not delete entire folders. Upload sw.js and all included assets. Open online and accept Update available. This is a changed-files update, not a standalone site.
+
+SCOPE
+35 underlying games. The broader remaining-game blue-menu/fullscreen rollout and main-menu redesign are deferred. The main menu only changes as needed to combine the two golf games under Golf. Existing save keys remain; Woodpile Shapes has separate storage.
+
+GAME-BY-GAME TEST CHECKLIST
+Get Out (getout, 0.24.0): Blue menu; Choose Room inside menu; floating Exit.
+
+Get Out 2 (getout2, 1.6.0): Blue menu; Choose Room inside menu; floating Exit.
+
+Farkle (farkle, 1.6.0): Removed Next Computer and Next You; turns advance automatically.
+
+Screwball (screwball, 4.4.0): Brighter blue, purple and warm accent colors across modes.
+
+Neon Siege (siege, 1.5.0): Consistent blue mode/menu presentation.
+
+Bridge Works (bridge, 1.5.0): Brighter blue and cream interface; natural scenery retained.
+
+Hex Slide (hexslide, 1.4.0): Sapphire blue and lilac default palette.
+
+Yacht! (dice, 1.4.0): Vibrant scoring accents, player rows and dice controls.
+
+Mine Meadow (mines, 1.4.0): Blue minefield and brighter interface replacing sage green.
+
+Woodpile (woodpile, 1.5.0): New separately saved Shapes mode: Bird, House, Sailboat, Butterfly, Cat and Rocket. Tap or drag pieces; Undo and Restart available.
+
+Zoodoku (zoodoku, 1.12.0): Brighter interface and deeper red full hearts; board retained.
+
+Huddle (huddle, 0.4.0): Brighter blue, gold, pink and purple palette.
+
+Picture Perfect (patchwork, 3.2.0): Puzzle fullscreen button with X return and Escape support.
+
+Double Take (spotdiff, 0.6.0): Puzzle fullscreen button with X return and Escape support.
+
+Perch Pals (perch, 1.2.0): Added great horned owls and Eastern gray squirrels to visiting wildlife.
+
+Lost & Found (hidden, 1.2.0): Fullscreen scene with X return; target list stays visible across bottom in both views.
+
+Shelf Life (shelf, 2.2.0): Blue wall treatment and brighter interface; shelf objects retained.
+
+Garden Swap (match3, 2.2.0): Blue/violet interface and brighter garden treatment.
+
+Ball Barrage (barrage, 1.8.0): Flat colored blocks with light outlines, removing heavy bevel/shadow appearance.
+
+Brickyard (bricks, 1.5.0): More saturated, brighter game artwork.
+
+Tunnel Pop (digger, 1.4.0): Controls moved to lower area; larger game window, with lower-right controls in landscape.
+
+Cheese Chase (maze, 1.4.0): Controls moved to lower area; larger game window, with lower-right controls in landscape.
+
+Noodle (snake, 1.4.0): Lavender board, purple snake and brighter blue/violet walls.
+
+Triple Treat (triple, 2.2.0): Purple background/tray with existing colorful tiles.
+
+Moonshot (homerun, 1.9.0): More attainable home runs; skill caps increased from 15 to 45; three upgrade points per level; one-time catch-up grant of two points per earned level.
+
+Mean Birds (meanbirds, 1.4.0): Restored usable full game canvas and shooting input; drag-to-launch checked.
+
+Beacon Bound (beacon, 0.7.0): Floating Exit and reclaimed game height.
+
+Stranded (stranded, 1.2.0): Explicit fullscreen control and X return; Exit remains inside fullscreen.
+
+Containment (containment, 1.2.0): Exit overlays game instead of reserving a menu strip.
+
+Golf / 18 Holes (golf, 0.7.0): Golf launcher combines 18 Holes (formerly Pin High) and Seaside Putt. Optional blue target-power guide, off by default, for putting and regular shots. Perfect-shot zone 30% wider. Guide estimates distance; wind and terrain affect results.
+
+Seaside Putt (minigolf, 2.3.0): Included under Golf; menu links back to Golf chooser.
+
+Skee-Hop (skeehop, 1.6.0): Brighter machine colors and backgrounds.
+
+Buzz Off! (buzz, 2.4.0): Floating Exit/fullscreen navigation consistency; no extra gameplay change inferred.
+
+Spin & Solve (spin, 0.3.0): Brighter, more saturated wheel.
+
+Topple Fair (topple, 1.11.0): More realistic tree silhouettes and rounded, sagging fabric tent roofs.
+
+CHECKS COMPLETED
+All 35 game pages loaded at 390x844 and 844x390 without browser script errors or horizontal body overflow. Existing landscape-only gameplay requirements remain where applicable. Focused checks: Mean Birds drag launches a shot; Farkle advances without Next buttons; Lost & Found keeps its bottom list visible; Stranded enters native fullscreen and X returns; Woodpile shape partitions, placement, Undo and save/reload; Golf target toggle defaults off and perfect-shot zone is 30% larger; Moonshot catch-up grant runs once. Simulated good swing: Power 10 clears the fence; Power 0 stays inside.
+
+Please test on your actual devices after upload, especially touch shooting, portrait/landscape rotation, fullscreen return, Golf target guide and Moonshot balance. Physical iPhone/Safari has not been tested here.

@@ -22,7 +22,7 @@
     if (shown || window.__mmReady) return; shown = true;
     function put() {
       var d = document.createElement('div');
-      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#eef7e6;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
+      d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#edf3ff;color:#1b1f33;font:600 16px -apple-system,system-ui,sans-serif;text-align:center';
       d.innerHTML = '<b style="font-size:21px">Mine Meadow didn\u2019t open</b><div style="max-width:320px;opacity:.75;font-size:13px">' + String(msg).replace(/[<>&]/g, '') + '</div>';
       function btn(t, bg, go) { var b = document.createElement('button'); b.textContent = t; b.style.cssText = 'font:800 17px -apple-system,system-ui,sans-serif;padding:13px 24px;border-radius:14px;border:0;color:#fff;background:' + bg; b.onclick = go; d.appendChild(b); }
       btn('Start fresh', '#5a54f0', function () { try { localStorage.removeItem('mines.game'); localStorage.removeItem('mines.meta'); } catch (e) { /* ignore */ } location.reload(); });
@@ -43,7 +43,7 @@
 .modes button { font-size: 15px; }
 .info .big small { font-size: 16px; color: var(--muted); }
 .stagewrap { flex: 1 1 auto; min-height: 0; width: calc(100% + 20px); margin: 0 -10px; display: flex; align-items: center; justify-content: center; }
-.stage { position: relative; border-radius: 14px; overflow: hidden; background: #cfe9b8; box-shadow: var(--shadow); touch-action: none; }
+.stage { position: relative; border-radius: 14px; overflow: hidden; background: #c9d9ff; box-shadow: var(--shadow); touch-action: none; }
 .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .toast { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); max-width: 90%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
   background: rgba(20,24,36,.8); color: #fff; font-weight: 700; font-size: 14px; padding: 7px 13px; border-radius: 14px; white-space: nowrap; }
@@ -62,13 +62,14 @@ html.gg-fs .stagewrap { width: calc(100% + 12px); margin: 0 -6px; }
 <link rel="stylesheet" href="modern.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<symbol id="mm-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#e8f6e0"/>
-<g><rect x="12" y="12" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/>
-<rect x="12" y="38" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="38" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="38" width="24" height="24" rx="5" fill="#6cc24a"/>
-<rect x="12" y="64" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="38" y="64" width="24" height="24" rx="5" fill="#6cc24a"/><rect x="64" y="64" width="24" height="24" rx="5" fill="#6cc24a"/></g>
+<symbol id="mm-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#e0edff"/>
+<g><rect x="12" y="12" width="24" height="24" rx="5" fill="#54a5ed"/><rect x="38" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="12" width="24" height="24" rx="5" fill="#f1e2c4"/>
+<rect x="12" y="38" width="24" height="24" rx="5" fill="#54a5ed"/><rect x="38" y="38" width="24" height="24" rx="5" fill="#f1e2c4"/><rect x="64" y="38" width="24" height="24" rx="5" fill="#54a5ed"/>
+<rect x="12" y="64" width="24" height="24" rx="5" fill="#54a5ed"/><rect x="38" y="64" width="24" height="24" rx="5" fill="#54a5ed"/><rect x="64" y="64" width="24" height="24" rx="5" fill="#54a5ed"/></g>
 <g font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="17" text-anchor="middle"><text x="50" y="30" fill="#2459c4">1</text><text x="76" y="30" fill="#15905c">2</text><text x="50" y="56" fill="#d6283a">3</text></g>
 <path d="M72 44 v14 M72 44 l9 4 -9 4" stroke="#7a4a1a" stroke-width="2" fill="#e8354a" stroke-linejoin="round"/></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4"/><path d="M6 4h11l-2.5 4L17 12H6" fill="currentColor" fill-opacity=".25"/></g></symbol>
@@ -514,7 +515,7 @@ var MMSound = (function () {
     var now = performance.now(), c = cell, pad = Math.max(.75, c * .025), r = c * .11;
     var theme = document.documentElement.dataset.theme || 'light';
     var night = theme === 'dark' || theme === 'blue';
-    var pal = theme === 'blue' ? {base:'#183747',a:'#396b73',b:'#305b65',top:'#538994',soil:'#203548',soil2:'#243e52',edge:'#355164'} : night ? {base:'#1b342e',a:'#426f5a',b:'#385f4e',top:'#608b70',soil:'#263730',soil2:'#2d4037',edge:'#415a4e'} : {base:'#bfd0bc',a:'#79a985',b:'#699978',top:'#9cc39d',soil:'#f4efdf',soil2:'#eae6d5',edge:'#c6cdb8'};
+    var pal = theme === 'blue' ? {base:'#183747',a:'#396b73',b:'#305b65',top:'#538994',soil:'#203548',soil2:'#243e52',edge:'#355164'} : night ? {base:'#182b4b',a:'#3d64a1',b:'#30548c',top:'#6e92c3',soil:'#25354e',soil2:'#30405d',edge:'#4c6083'} : {base:'#b8cce9',a:'#659fe1',b:'#4b83d2',top:'#9dc7ff',soil:'#f4efdf',soil2:'#eae6d5',edge:'#b8c9df'};
     var numberColors = night ? ['', '#9ec5ff','#94e0ae','#ffa6a0','#c5b8ff','#f1b98f','#89dcd7','#e9f3ec','#cad2d2'] : ['', '#275a9c','#276b45','#a43f38','#5a4388','#894626','#256c71','#263d37','#55635c'];
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
     cx.fillStyle = pal.base; cx.fillRect(0, 0, VW, VH);
@@ -759,5 +760,6 @@ var MMSound = (function () {
 })();
 </script>
 <script src="../../shared/collection-batch3.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

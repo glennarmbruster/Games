@@ -1,5 +1,5 @@
 /* Screwball 3 — warm workshop, next-box planning, named removable parts. */
-:root{--sb-stage:radial-gradient(ellipse at 50% 52%,#fff9e9,#e5dfcf 55%,#b5c6c7)}
+:root{--sb-stage:radial-gradient(ellipse at 50% 52%,#fff9e9,#e5dfcf 55%,#b4c7f1)}
 :root[data-theme="dark"]{--sb-stage:radial-gradient(ellipse at 50% 50%,#465057,#202b35 75%)}
 :root[data-theme="blue"]{--sb-stage:radial-gradient(ellipse at 50% 50%,#426d80,#193647 75%)}
 .detail-entry{height:44px;padding:0 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-family:inherit;font-weight:800;font-size:12px;box-shadow:var(--shadow-sm);cursor:pointer;flex:none}

@@ -97,4 +97,4 @@ IMPLEMENTATION NOTE
 Batch 5 uses a new opt-in presentation extension. Shared Batch 1–4 assets and cache versions remain unchanged. Future shared-file changes must bump cache versions for every collection using them, or use new filenames.
 
 CORRECTION PASS
-Glenn is collecting minor corrections for one pass after the final batch. Those notes are not yet applied here.
+Requested Corrections 1 is complete for the 35 games listed in Corrections1.txt. The remaining global blue-menu/fullscreen/Exit pass and main-menu redesign are deferred. The collection still contains 66 underlying games, with both golf games now sharing the Golf icon.

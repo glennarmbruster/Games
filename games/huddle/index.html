@@ -41,7 +41,7 @@
    goobs.css) plus Huddle's own tier palette: seafoam, sunset, coral and deep sea. Each tier also has a shape (circle,
    triangle, square, diamond) so the groups can be told apart without color. The board is capped at 520 px (iPad). */
 :root {
-  --t1: #6fd3c0; --t2: #ffb766; --t3: #ff8a80; --t4: #5d7cf0;
+  --t1: #58b9f0; --t2: #ffb766; --t3: #ff8a80; --t4: #5d7cf0;
   --t1-ink: #0f3a33; --t2-ink: #4a2800; --t3-ink: #4f1310; --t4-ink: #ffffff;
   --tile: #fffdf8; --tile-ink: #1b2130; --tile-edge: #e2dccd; --tile-sel: #1f3b5c; --tile-sel-ink: #ffffff;
   --sea: #8fd0e6; --sea-a: .32;
@@ -221,12 +221,13 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0; ali
 <link rel="stylesheet" href="modern.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="hdLg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f7fb5"/><stop offset="1" stop-color="#1d4e86"/></linearGradient>
 <symbol id="hd-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="url(#hdLg)"/>
-<rect x="14" y="14" width="72" height="17" rx="5" fill="#6fd3c0"/><circle cx="23" cy="22.5" r="3.4" fill="#16404a"/>
+<rect x="14" y="14" width="72" height="17" rx="5" fill="#58b9f0"/><circle cx="23" cy="22.5" r="3.4" fill="#16404a"/>
 <g fill="#fff"><rect x="14" y="36" width="16" height="15" rx="4"/><rect x="33" y="36" width="16" height="15" rx="4"/><rect x="52" y="36" width="16" height="15" rx="4"/><rect x="71" y="36" width="15" height="15" rx="4"/>
 <rect x="14" y="55" width="16" height="15" rx="4"/><rect x="33" y="55" width="16" height="15" rx="4" fill="#ffd27a"/><rect x="52" y="55" width="16" height="15" rx="4"/><rect x="71" y="55" width="15" height="15" rx="4" fill="#ffd27a"/>
 <rect x="14" y="74" width="16" height="12" rx="4"/><rect x="33" y="74" width="16" height="12" rx="4"/><rect x="52" y="74" width="16" height="12" rx="4" fill="#ffd27a"/><rect x="71" y="74" width="15" height="12" rx="4"/></g></symbol>
@@ -2030,5 +2031,6 @@ var HDSound = (function () {
 })();
 </script>
 <script src="../../shared/collection-batch3.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

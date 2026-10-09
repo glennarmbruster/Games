@@ -18,10 +18,10 @@
 <style>
 /* Noodle styles (themes, UI kit and ad cards come from /shared/goobs.css) */
 :root {
-  --nd-board: #e7f3ea; --nd-board-2: #dcecdf; --nd-wall: #5b6b8c; --nd-wall-top: #7485a8; --nd-edge: #cfe2d4;
-  --nd-snake: #22b573; --nd-snake-2: #0f8a55; --nd-food: #ff4d5e;
+  --nd-board: #e8eeff; --nd-board-2: #d8e3ff; --nd-wall: #5b6b8c; --nd-wall-top: #7485a8; --nd-edge: #bdcfff;
+  --nd-snake: #8051ea; --nd-snake-2: #5428b8; --nd-food: #ff4d5e;
 }
-:root[data-theme="dark"] { --nd-board: #18221c; --nd-board-2: #1c2821; --nd-wall: #56617a; --nd-wall-top: #6c7894; --nd-edge: #26352b; }
+:root[data-theme="dark"] { --nd-board: #1d2040; --nd-board-2: #252a50; --nd-wall: #56617a; --nd-wall-top: #6c7894; --nd-edge: #26352b; }
 :root[data-theme="blue"] { --nd-board: #10283f; --nd-board-2: #132e47; --nd-wall: #4d6a92; --nd-wall-top: #6583ad; --nd-edge: #1b3a58; }
 
 .brand svg { border-radius: 10px; }
@@ -85,12 +85,13 @@ html.gg-fs .top #btnPause:disabled { opacity: .4; }
 /* tall phones: the board is limited by the width, so the arrows (when on) get the spare height */
 @media (min-height: 780px) { html.gg-fs .dpad { grid-template-rows: 60px 60px; max-width: 360px; } }
 /* Botanical board materials; dark/blue themes retain their own palettes. */
-:root:not([data-theme="dark"]):not([data-theme="blue"]) {--nd-board:#dfe6c9;--nd-board-2:#d5dfbf;--nd-wall:#657864;--nd-wall-top:#a5b093;--nd-snake:#45ad62;--nd-snake-2:#176448;--nd-food:#e94e52;}
+:root:not([data-theme="dark"]):not([data-theme="blue"]) {--nd-board:#e1e4ff;--nd-board-2:#d1d7f8;--nd-wall:#676bb0;--nd-wall-top:#a4a8ed;--nd-snake:#a453e7;--nd-snake-2:#6230af;--nd-food:#e94e52;}
 .stage {border-radius:12px;box-shadow:0 0 0 1px #6d886688,0 0 0 4px #52694733,0 10px 24px #18352433;}
 .ready {background:color-mix(in srgb,var(--surface) 87%,transparent);}
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -542,7 +543,7 @@ var NDSound = (function () {
     q.fillStyle=colors['--nd-board-2'];for(var y=0;y<H;y++)for(var x=y%2;x<W;x+=2)q.fillRect(x*c,y*c,c,c);
     var seed=825;function r(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
     for(var i=0;i<W*H*14;i++){q.fillStyle=i%2?'#ffffff0e':'#09221b09';q.fillRect(r()*W*c,r()*H*c,.6,.7+r()*1.1);}
-    for(var y=0;y<H;y++)for(var x=0;x<W;x++)if(s.walls[y*W+x]){var px=x*c+.5,py=y*c+.5;q.fillStyle='#13292255';q.beginPath();q.roundRect(px+1,py+1,c-1,c-1,c*.13);q.fill();var g=q.createLinearGradient(px,py,px+c,py+c);g.addColorStop(0,colors['--nd-wall-top']);g.addColorStop(.5,colors['--nd-wall']);g.addColorStop(1,'#273c37');q.fillStyle=g;q.beginPath();q.roundRect(px,py,c-1,c-2,c*.13);q.fill();q.strokeStyle='#eff6dc55';q.lineWidth=.7;q.beginPath();q.moveTo(px+c*.18,py+1);q.lineTo(px+c*.82,py+1);q.stroke();q.fillStyle='#162b2544';q.fillRect(px+c*.18,py+c*.75,c*.55,.5);}
+    for(var y=0;y<H;y++)for(var x=0;x<W;x++)if(s.walls[y*W+x]){var px=x*c+.5,py=y*c+.5;q.fillStyle='#13292255';q.beginPath();q.roundRect(px+1,py+1,c-1,c-1,c*.13);q.fill();var g=q.createLinearGradient(px,py,px+c,py+c);g.addColorStop(0,colors['--nd-wall-top']);g.addColorStop(.5,colors['--nd-wall']);g.addColorStop(1,'#343867');q.fillStyle=g;q.beginPath();q.roundRect(px,py,c-1,c-2,c*.13);q.fill();q.strokeStyle='#eff6dc55';q.lineWidth=.7;q.beginPath();q.moveTo(px+c*.18,py+1);q.lineTo(px+c*.82,py+1);q.stroke();q.fillStyle='#162b2544';q.fillRect(px+c*.18,py+c*.75,c*.55,.5);}
     var v=q.createRadialGradient(W*c*.5,H*c*.4,0,W*c*.5,H*c*.5,Math.max(W,H)*c*.7);v.addColorStop(0,'transparent');v.addColorStop(1,'#153b2726');q.fillStyle=v;q.fillRect(0,0,W*c,H*c);gardenCache=a;return a;
   }
   function draw(f) {
@@ -940,5 +941,6 @@ var NDSound = (function () {
 })();
 </script>
 <script src="../../shared/collection-batch4.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

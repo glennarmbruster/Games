@@ -7,3 +7,11 @@ Shared changes: consistent gold Exit Game button, navy navigation bar, clearer l
 
 Presentation only. Rules, difficulty, scoring, level data, artwork and save formats are preserved.
 Install with the Batch 3 ZIP after Batches 1 and 2, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.2.0
+Added great horned owls and Eastern gray squirrels to visiting wildlife.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.
+
+ART PROVENANCE
+New transparent sprites generated with the built-in image generation tool: owl-v1.png (realistic great horned owl, full body, three-quarter right, daylight, transparent background, no objects); squirrel-v1.png (realistic Eastern gray squirrel, full body including tail, three-quarter right, transparent background). Existing bird sprites retained.

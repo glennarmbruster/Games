@@ -21,7 +21,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 /* Huddle: substantial word cards, editorial type, quiet teal details. */
-:root{--accent:#236a79;--accent-2:#194e68;--tile:#fffefa;--tile-ink:#253544;--tile-edge:#d3dcdf;--tile-sel:#234f63;--tile-sel-ink:#fff;--t1:#a5dccb;--t1-ink:#163f35;--t2:#efca8c;--t2-ink:#483619;--t3:#e9b0a4;--t3-ink:#502b25;--t4:#50618e;--t4-ink:#fff;--sea-a:.14;--polish-bg:#edf3f3}
+:root{--accent:#236a79;--accent-2:#194e68;--tile:#fffefa;--tile-ink:#253544;--tile-edge:#d3dcdf;--tile-sel:#4348a3;--tile-sel-ink:#fff;--t1:#84c6f5;--t1-ink:#193e6b;--t2:#ffd26c;--t2-ink:#483619;--t3:#fa9ab4;--t3-ink:#502b25;--t4:#7957bf;--t4-ink:#fff;--sea-a:.14;--polish-bg:#edf3f3}
 :root[data-theme="dark"]{--accent:#8ac5cd;--accent-2:#60a9ba;--tile:#283543;--tile-ink:#f2f5f6;--tile-edge:#15202e;--tile-sel:#b6dce0;--tile-sel-ink:#132d39;--polish-bg:#141e29}
 :root[data-theme="blue"]{--accent:#9bcadf;--tile:#203c59;--tile-ink:#eff6ff;--tile-edge:#0d2339;--tile-sel:#c1e0f0;--tile-sel-ink:#152f46;--polish-bg:#10243b}
 .wt .face{border-radius:12px;border:1px solid var(--polish-line);background:linear-gradient(155deg,var(--polish-glint),transparent 80%),var(--tile);box-shadow:0 3px 0 var(--tile-edge),0 6px 14px -6px rgba(16,35,54,.2);font-weight:720;letter-spacing:.2px}
@@ -31,7 +31,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .bar{border:1px solid rgba(20,40,55,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 12px -7px rgba(12,35,49,.25)}
 .bar b{font-weight:750;letter-spacing:.65px}.bar span{font-weight:550;opacity:1}
 .prompt{font-weight:500;letter-spacing:.1px}.lives i{width:10px;height:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
-.cbtn{border-radius:13px}.cbtn.submit{background:linear-gradient(135deg,#2b7281,#234f63);font-weight:700;box-shadow:0 5px 14px -8px #173747}
+.cbtn{border-radius:13px}.cbtn.submit{background:linear-gradient(135deg,#2b7281,#4348a3);font-weight:700;box-shadow:0 5px 14px -8px #173747}
 .cbtn.submit:disabled{background:var(--surface-2)}
 .hdhud .ggpill{font-weight:650}.seabg{opacity:.15}
 

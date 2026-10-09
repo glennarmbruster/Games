@@ -89,6 +89,7 @@ html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 150
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -506,17 +507,17 @@ var SH = (function () {
 
   // ---------- themes (all original) ----------
   var THEMES = [
-    { id: 'classic', name: 'Arcade Classic', sky: ['#1b1f33', '#2c3252'], cab: '#8a2a2a', trim: '#f2c14e', lane: '#c98d4d', laneB: '#a86e37', board: '#23283d',
+    { id: 'classic', name: 'Arcade Classic', sky: ['#254783', '#7942ad'], cab: '#e34767', trim: '#f2c14e', lane: '#c98d4d', laneB: '#a86e37', board: '#244c9c',
       rings: ['#ffd23f', '#ff8a3d', '#ff4d6d', '#b86bff', '#4dd4ff'], pocket: '#ff4d6d', ball: '#f4f1ea', glow: '#ffd23f' },
-    { id: 'midway', name: 'Midway Lights', sky: ['#2a1036', '#5b2150'], cab: '#c0392b', trim: '#ffe066', lane: '#d9a45f', laneB: '#b67d3c', board: '#2b1733',
+    { id: 'midway', name: 'Midway Lights', sky: ['#483291', '#be407d'], cab: '#e85335', trim: '#ffe066', lane: '#d9a45f', laneB: '#b67d3c', board: '#2b1733',
       rings: ['#ffe066', '#ffb03a', '#ff5e5b', '#ff8fd8', '#7ef0c9'], pocket: '#ffe066', ball: '#ffffff', glow: '#ffb03a' },
-    { id: 'neon', name: 'Neon Night', sky: ['#07061a', '#1a1047'], cab: '#141432', trim: '#39f3ff', lane: '#6b4b8a', laneB: '#4c3368', board: '#0c0b24',
+    { id: 'neon', name: 'Neon Night', sky: ['#07061a', '#1a1047'], cab: '#323b8e', trim: '#39f3ff', lane: '#6b4b8a', laneB: '#4c3368', board: '#0c0b24',
       rings: ['#39f3ff', '#ff3df2', '#8b5bff', '#3dff8b', '#fff23d'], pocket: '#ff3df2', ball: '#e9f9ff', glow: '#39f3ff' },
     { id: 'pier', name: 'Beach Pier', sky: ['#5ec8f2', '#ffd9a0'], cab: '#1f8fb3', trim: '#ffffff', lane: '#e2c18f', laneB: '#c9a36b', board: '#15506b',
       rings: ['#ffffff', '#ffd166', '#ff8c61', '#4ee1c1', '#ffe8b0'], pocket: '#ff8c61', ball: '#ffef9e', glow: '#ffd166' },
-    { id: 'lodge', name: 'Ski Lodge', sky: ['#8fb4d9', '#e8f1fb'], cab: '#3c5a3a', trim: '#e8e1d0', lane: '#b88457', laneB: '#8f5e36', board: '#1d3040',
+    { id: 'lodge', name: 'Ski Lodge', sky: ['#8fb4d9', '#e8f1fb'], cab: '#375bab', trim: '#e8e1d0', lane: '#b88457', laneB: '#8f5e36', board: '#1d3040',
       rings: ['#e8f7ff', '#9ad7ff', '#ff6b6b', '#ffd36b', '#9cf0c0'], pocket: '#ff6b6b', ball: '#ffffff', glow: '#9ad7ff' },
-    { id: 'space', name: 'Space Deck', sky: ['#020410', '#0d1638'], cab: '#2a3148', trim: '#8fe3ff', lane: '#5b6378', laneB: '#434a5c', board: '#0a1022',
+    { id: 'space', name: 'Space Deck', sky: ['#18265c', '#51358e'], cab: '#2a3148', trim: '#8fe3ff', lane: '#5b6378', laneB: '#434a5c', board: '#0a1022',
       rings: ['#8fe3ff', '#b28bff', '#ff7ad9', '#7affc1', '#ffe27a'], pocket: '#7affc1', ball: '#dfe8ff', glow: '#8fe3ff' },
     { id: 'candy', name: 'Candy Shop', sky: ['#ffd1e8', '#fff0c9'], cab: '#ff6fa8', trim: '#ffffff', lane: '#f0c89a', laneB: '#dca774', board: '#6b2e5a',
       rings: ['#ffffff', '#ffe36e', '#7fe3c5', '#8fc6ff', '#ffb0d9'], pocket: '#7fe3c5', ball: '#fff4fb', glow: '#ffe36e' }
@@ -1629,5 +1630,6 @@ SHApp.start(THREE);
 setTimeout(function () { if (!window.SHApp || !SHApp.started()) { var l = document.getElementById('loading'); if (l) l.textContent = 'Couldn\u2019t load the 3D lanes. Connect to the internet once and reopen.'; } }, 6000);
 </script>
 <script src="../../shared/collection-batch4.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

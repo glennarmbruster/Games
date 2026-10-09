@@ -702,18 +702,7 @@
         return (m.level - 1) + ' lots cleared';
       }
     },
-    {
-      id: 'minigolf', name: 'Seaside Putt', blurb: 'Two courses. 36 seaside holes.', path: 'games/minigolf/',
-      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#2fb4e0"/><path d="M0 84c12-6 22-6 34 0s22 6 34 0 22-6 32-1V100H0z" fill="#1d8fd0" opacity=".6"/>' +
-        '<rect x="12" y="10" width="76" height="72" rx="16" fill="#e8b36a"/><rect x="17" y="15" width="66" height="62" rx="12" fill="#4cc25a"/><path d="M17 33h66M17 55h66" stroke="#5fd06b" stroke-width="9" opacity=".7"/>' +
-        '<rect x="40" y="44" width="30" height="8" rx="2" fill="#e8505b"/><g transform="rotate(30 55 48)" fill="#fffaf0" stroke="#8a5a2b" stroke-width="1"><rect x="55" y="45.5" width="16" height="5"/><rect x="39" y="45.5" width="16" height="5"/></g><circle cx="55" cy="48" r="3" fill="#5b3a1e"/>' +
-        '<ellipse cx="62" cy="27" rx="5" ry="4" fill="#16211a"/><path d="M62 27V8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M63 8l13 5-13 5z" fill="#ff4d5e"/>' +
-        '<circle cx="34" cy="66" r="5.5" fill="#fff" stroke="#1f2a44" stroke-width="1.6"/><circle cx="32.5" cy="64.5" r="1.6" fill="#e8eef8"/></svg>',
-      status: function () {
-        var course=readLS('minigolf.course')||'adventure';var m = readLS(course==='classic'?'minigolf.meta':'minigolf.adventure.meta'); if (!m || !(m.reached > 0 || m.best)) return 'Coastal Adventure + Classic · 36 holes';
-        return m.best ? 'Best round ' + m.best : 'On hole ' + ((m.hole || 0) + 1);
-      }
-    },
+
     {
       id: 'board', name: 'Game Chest', blurb: 'Checkers, chess and four in a row', path: 'games/board/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#3f7d5a"/><rect x="10" y="10" width="80" height="80" rx="8" fill="#f3e9d2"/>' +
@@ -739,7 +728,7 @@
       }
     },
     {
-      id: 'golf', name: 'Pin High', blurb: '3D golf for 1-4 players', path: 'games/golf/',
+      id: 'golf', name: 'Golf', blurb: '18 Holes + Seaside Putt', path: 'games/golf/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#8fd0ff"/><path d="M0 62 Q30 50 55 58 T100 54 V100 H0Z" fill="#5fc84b"/><path d="M0 74 Q40 64 100 72 V100 H0Z" fill="#4bab3f"/>' +
         '<ellipse cx="62" cy="62" rx="20" ry="6" fill="#7de96b"/><ellipse cx="62" cy="62" rx="2.6" ry="1.2" fill="#0c140c"/><path d="M62 62V22" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M63 22 L82 28 L63 34Z" fill="#ff3d4f"/>' +
         '<path d="M22 70 Q38 28 60 36" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="3 4" stroke-linecap="round"/><circle cx="22" cy="72" r="5" fill="#fff" stroke="#9aa6c0" stroke-width="1.5"/>' +
@@ -774,16 +763,6 @@
         if (!c && !s) return 'Two ways to bring it down';
         return 'Crumble ' + (c && c.level || 1) + ' · Sling ' + (s && s.level || 1);
       }
-    },
-    {
-      id: 'blockparty', name: 'Block Party', blurb: 'Color Rush & Shape Escape. Two ways to untangle the grid.', path: 'games/blockparty/',
-      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#ffe0bb"/><rect x="12" y="13" width="76" height="76" rx="18" fill="#fff7e7"/><rect x="20" y="22" width="26" height="54" rx="7" fill="#eb7770"/><path d="M51 22H78V48H65V61H51Z" fill="#6eafe8"/><rect x="51" y="67" width="27" height="12" rx="5" fill="#e9b844"/><path d="M6 35H13M87 58H95" stroke="#ea8177" stroke-width="7" stroke-linecap="round"/></svg>',
-      status: function () { var m=readLS('blockparty.meta'); return m ? 'Color '+(m.color||1)+' · Shape '+(m.shape||1) : '96 boards · Endless play'; }
-    },
-    {
-      id: 'farkle', name: 'Farkle', blurb: 'Six dice. Keep, bank, or risk one more roll.', path: 'games/farkle/',
-      art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#28543e"/><g fill="#f3e8cf" stroke="#c4a76d" stroke-width="2"><rect x="12" y="16" width="46" height="46" rx="10" transform="rotate(-12 35 39)"/><rect x="43" y="43" width="46" height="46" rx="10" transform="rotate(12 66 66)"/></g><g fill="#294c3c"><circle cx="24" cy="29" r="4"/><circle cx="35" cy="39" r="4"/><circle cx="46" cy="49" r="4"/><circle cx="56" cy="54" r="4"/><circle cx="76" cy="58" r="4"/><circle cx="66" cy="66" r="4"/><circle cx="56" cy="74" r="4"/><circle cx="76" cy="78" r="4"/></g></svg>',
-      status: function () { var m=readLS('farkle.meta'); return m ? m.games+' games played · '+m.wins+' wins vs computer' : 'Vs computer · 2–6 players'; }
     },
     {
       id: 'hexslide', name: 'Hex Slide', blurb: 'Slide matching colors together. Ten tiles clear the stack.', path: 'games/hexslide/',
@@ -1116,9 +1095,9 @@
 
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
-    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'blockparty hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
-    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong farkle dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
+    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
   var TAB_KEY = 'goobs.menuTab';
@@ -1151,7 +1130,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'bridge' || g.id === 'hexslide' || g.id === 'farkle' || g.id === 'blockparty') return;
+    if (g.id === 'bridge' || g.id === 'hexslide') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
   document.addEventListener('error', function (e) {

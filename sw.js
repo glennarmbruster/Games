@@ -1,53 +1,53 @@
-/* Goobs Games — Consistency Batch 4. Earlier caches retained. */
+/* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.3.0",
-  "zoodoku": "1.11.0",
-  "woodpile": "1.4.0",
-  "patchwork": "3.1.0",
+  "shell": "3.4.0",
+  "zoodoku": "1.12.0",
+  "woodpile": "1.5.0",
+  "patchwork": "3.2.0",
   "cubecorral": "4.1.0",
-  "screwball": "4.3.0",
-  "skeehop": "1.5.0",
+  "screwball": "4.4.0",
+  "skeehop": "1.6.0",
   "merge": "2.1.0",
   "tapaway": "2.1.0",
-  "homerun": "1.8.0",
-  "match3": "2.1.0",
-  "snake": "1.3.0",
+  "homerun": "1.9.0",
+  "match3": "2.2.0",
+  "snake": "1.4.0",
   "solitaire": "1.2.0",
-  "meanbirds": "1.3.0",
+  "meanbirds": "1.4.0",
   "aliens": "1.3.0",
   "worddice": "1.3.0",
-  "digger": "1.3.0",
+  "digger": "1.4.0",
   "blocks": "1.4.0",
-  "maze": "1.3.0",
+  "maze": "1.4.0",
   "mahjong": "1.4.0",
-  "dice": "1.3.0",
+  "dice": "1.4.0",
   "daily": "1.4.0",
-  "mines": "1.3.0",
+  "mines": "1.4.0",
   "bubbles": "1.5.0",
-  "bricks": "1.4.0",
-  "topple": "1.10.0",
-  "barrage": "1.7.0",
-  "siege": "1.4.0",
+  "bricks": "1.5.0",
+  "topple": "1.11.0",
+  "barrage": "1.8.0",
+  "siege": "1.5.0",
   "hoops": "1.4.0",
-  "beacon": "0.6.0",
+  "beacon": "0.7.0",
   "sort": "2.2.0",
-  "triple": "2.1.0",
+  "triple": "2.2.0",
   "pinball": "2.2.0",
   "parking": "2.1.0",
-  "minigolf": "2.2.0",
+  "minigolf": "2.3.0",
   "board": "1.2.0",
-  "buzz": "2.3.0",
-  "golf": "0.6.0",
-  "shelf": "2.1.0",
+  "buzz": "2.4.0",
+  "golf": "0.7.0",
+  "shelf": "2.2.0",
   "castle": "3.3.0",
-  "hexslide": "1.3.0",
-  "farkle": "1.5.0",
+  "hexslide": "1.4.0",
+  "farkle": "1.6.0",
   "blockparty": "1.5.0",
-  "bridge": "1.4.0",
+  "bridge": "1.5.0",
   "outpost": "3.1.0",
-  "getout": "0.23.0",
-  "stranded": "1.1.0",
-  "containment": "1.1.0",
+  "getout": "0.24.0",
+  "stranded": "1.2.0",
+  "containment": "1.2.0",
   "sudoku": "0.3.0",
   "wordwheel": "0.4.0",
   "trivia": "0.4.0",
@@ -56,17 +56,17 @@ const VERSIONS = {
   "deck": "0.4.0",
   "wordboard": "0.2.0",
   "nonogram": "0.3.0",
-  "getout2": "1.5.0",
-  "huddle": "0.3.0",
+  "getout2": "1.6.0",
+  "huddle": "0.4.0",
   "wickway": "1.2.0",
   "pegs": "0.4.0",
-  "perch": "1.1.0",
+  "perch": "1.2.0",
   "knotty": "1.1.0",
   "casino": "0.2.0",
-  "spotdiff": "0.5.0",
-  "hidden": "1.1.0",
+  "spotdiff": "0.6.0",
+  "hidden": "1.2.0",
   "cases": "1.1.0",
-  "spin": "0.2.0",
+  "spin": "0.3.0",
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0"
@@ -79,7 +79,9 @@ const GROUPS = {
     "games/containment/game.js",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "stranded": [
     "games/stranded/",
@@ -88,7 +90,9 @@ const GROUPS = {
     "games/stranded/game.js",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "shell": [
     "./",
@@ -173,7 +177,9 @@ const GROUPS = {
     "games/zoodoku/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "woodpile": [
     "games/woodpile/modern.css",
@@ -181,7 +187,10 @@ const GROUPS = {
     "games/woodpile/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js",
+    "games/woodpile/shapes.js"
   ],
   "patchwork": [
     "games/patchwork/",
@@ -194,7 +203,9 @@ const GROUPS = {
     "games/patchwork/studio.css",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "cubecorral": [
     "games/cubecorral/",
@@ -222,14 +233,18 @@ const GROUPS = {
     "games/screwball/timber-rules.js",
     "games/screwball/timber-worker.js",
     "games/screwball/timber.css",
-    "games/screwball/timber.html"
+    "games/screwball/timber.html",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "skeehop": [
     "games/skeehop/",
     "games/skeehop/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "merge": [
     "./shared/collection-ui.css",
@@ -265,7 +280,9 @@ const GROUPS = {
     "games/homerun/assets/batting-close-night-v3.webp",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "match3": [
     "games/match3/",
@@ -278,14 +295,18 @@ const GROUPS = {
     "games/match3/assets/tokens.webp",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "snake": [
     "games/snake/",
     "games/snake/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "solitaire": [
     "shared/collection-ui.css",
@@ -311,7 +332,9 @@ const GROUPS = {
     "games/meanbirds/assets/fair-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "aliens": [
     "games/aliens/",
@@ -334,7 +357,9 @@ const GROUPS = {
     "games/digger/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "blocks": [
     "games/blocks/",
@@ -349,7 +374,9 @@ const GROUPS = {
     "games/maze/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "mahjong": [
     "games/mahjong/",
@@ -364,7 +391,9 @@ const GROUPS = {
     "shared/collection-batch2.css",
     "shared/collection-batch2.js",
     "games/dice/",
-    "games/dice/index.html"
+    "games/dice/index.html",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "daily": [
     "games/daily/",
@@ -379,7 +408,9 @@ const GROUPS = {
     "games/mines/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "bubbles": [
     "games/bubbles/",
@@ -393,7 +424,9 @@ const GROUPS = {
     "games/bricks/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "topple": [
     "games/topple/",
@@ -404,21 +437,29 @@ const GROUPS = {
     "games/topple/assets/metal-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch5.css",
-    "shared/collection-batch5.js"
+    "shared/collection-batch5.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js",
+    "games/topple/assets/oak-v2.webp",
+    "games/topple/assets/pine-v2.webp"
   ],
   "barrage": [
     "games/barrage/",
     "games/barrage/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "siege": [
     "shared/collection-ui.css",
     "shared/collection-batch2.css",
     "shared/collection-batch2.js",
     "games/siege/",
-    "games/siege/index.html"
+    "games/siege/index.html",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "hoops": [
     "games/hoops/",
@@ -435,7 +476,9 @@ const GROUPS = {
     "games/beacon/modern.css",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "sort": [
     "./shared/collection-ui.css",
@@ -456,7 +499,9 @@ const GROUPS = {
     "games/triple/patisserie.js",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "pinball": [
     "shared/collection-ui.css",
@@ -490,7 +535,9 @@ const GROUPS = {
     "games/minigolf/assets/coastal-garden-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "board": [
     "./shared/collection-ui.css",
@@ -513,7 +560,9 @@ const GROUPS = {
     "games/buzz/assets/bee-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch5.css",
-    "shared/collection-batch5.js"
+    "shared/collection-batch5.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "golf": [
     "games/golf/",
@@ -525,7 +574,11 @@ const GROUPS = {
     "games/golf/assets/canopy-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch4.css",
-    "shared/collection-batch4.js"
+    "shared/collection-batch4.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js",
+    "games/golf/eighteen.html",
+    "games/minigolf/assets/coastal-garden-v1.webp"
   ],
   "shelf": [
     "games/shelf/",
@@ -575,7 +628,9 @@ const GROUPS = {
     "games/shelf/store-studio.js",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "castle": [
     "./shared/collection-ui.css",
@@ -622,7 +677,9 @@ const GROUPS = {
     "games/farkle/index.html",
     "games/farkle/style.css",
     "games/farkle/rules.js",
-    "games/farkle/game.js"
+    "games/farkle/game.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "hexslide": [
     "shared/collection-ui.css",
@@ -633,7 +690,9 @@ const GROUPS = {
     "games/hexslide/index.html",
     "games/hexslide/render.js",
     "games/hexslide/rules.js",
-    "games/hexslide/style.css"
+    "games/hexslide/style.css",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "bridge": [
     "shared/collection-ui.css",
@@ -651,7 +710,9 @@ const GROUPS = {
     "games/bridge/game.js",
     "games/bridge/index.html",
     "games/bridge/levels.js",
-    "games/bridge/scene.js"
+    "games/bridge/scene.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "outpost": [
     "./shared/collection-ui.css",
@@ -1177,7 +1238,9 @@ const GROUPS = {
     "games/getout/assets/finale-room21-chartz-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "sudoku": [
     "games/sudoku/modern.css",
@@ -1554,7 +1617,9 @@ const GROUPS = {
     "games/getout2/assets/finale-room10-esign-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "huddle": [
     "games/huddle/modern.css",
@@ -1562,7 +1627,9 @@ const GROUPS = {
     "games/huddle/index.html",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "wickway": [
     "games/wickway/modern.css",
@@ -1645,7 +1712,11 @@ const GROUPS = {
     "games/perch/wildlife.js",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js",
+    "games/perch/assets/owl-v1.png",
+    "games/perch/assets/squirrel-v1.png"
   ],
   "knotty": [
     "games/knotty/",
@@ -1748,7 +1819,9 @@ const GROUPS = {
     "games/spotdiff/assets/photo-cruise/paper-color-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "hidden": [
     "games/hidden/",
@@ -1786,7 +1859,9 @@ const GROUPS = {
     "games/hidden/photo-hunt.js",
     "shared/collection-ui.css",
     "shared/collection-batch3.css",
-    "shared/collection-batch3.js"
+    "shared/collection-batch3.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "cases": [
     "games/cases/",
@@ -1808,7 +1883,9 @@ const GROUPS = {
     "games/spin/assets/cloth-v1.webp",
     "shared/collection-ui.css",
     "shared/collection-batch5.css",
-    "shared/collection-batch5.js"
+    "shared/collection-batch5.js",
+    "shared/corrections-1.css",
+    "shared/corrections-1.js"
   ],
   "three": [
     "shared/three.module.min.js"

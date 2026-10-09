@@ -21,11 +21,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .toast{border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 26px rgba(7,20,38,.22)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 /* Mine Meadow: jade turf, slate controls and legible excavated cells. */
-:root{--accent:#267665;--accent-2:#205c51;--polish-bg:#edf3ee}
+:root{--accent:#386cd5;--accent-2:#3854a8;--polish-bg:#ecf0ff}
 :root[data-theme="dark"]{--accent:#98d4bd;--accent-2:#65b199;--polish-bg:#142320}
 :root[data-theme="blue"]{--accent:#9bdbd6;--accent-2:#66b5bd;--polish-bg:#102a37}
-.stage{border-radius:14px;background:#c2d7c8;box-shadow:0 14px 30px -15px rgba(16,48,33,.45),0 0 0 4px var(--surface),0 0 0 5px var(--polish-line)}
-.tool.red{background:linear-gradient(135deg,#32806b,#205c51);color:#fff}.tool.mode.flag{background:linear-gradient(135deg,#cf6358,#a94443);color:#fff;border-color:transparent}
+.stage{border-radius:14px;background:#b9cfee;box-shadow:0 14px 30px -15px rgba(16,48,33,.45),0 0 0 4px var(--surface),0 0 0 5px var(--polish-line)}
+.tool.red{background:linear-gradient(135deg,#4779d9,#3854a8);color:#fff}.tool.mode.flag{background:linear-gradient(135deg,#cf6358,#a94443);color:#fff;border-color:transparent}
 .zoomhint{background:rgba(17,47,39,.86);border:1px solid rgba(255,255,255,.2)}
 
 /* Keep text on pale theme accents readable. */

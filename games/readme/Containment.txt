@@ -6,3 +6,8 @@ Full-size phone menus with readable text, larger actions and a landscape two-col
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.2.0
+Exit overlays game instead of reserving a menu strip.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

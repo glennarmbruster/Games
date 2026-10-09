@@ -141,6 +141,7 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
+<link rel="stylesheet" href="../../shared/corrections-1.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -382,9 +383,9 @@ var MS = (function () {
   function exitVelocity(pitch, swing, skills) {
     var p = PITCHES[pitch.kind];
     var sp = Math.max(0, Math.min(1.15, swing.speed / 2.2));
-    var v = (43 + 1.1 * (skills.power || 0)) * (0.5 + 0.5 * sp) * (0.62 + 0.38 * swing.quality) * (p.heavy || 1);
+    var v = (50 + 0.75 * (skills.power || 0)) * (0.62 + 0.38 * sp) * (0.72 + 0.28 * swing.quality) * (p.heavy || 1);
     var up = Math.max(-0.4, Math.min(1, -swing.dirY));
-    var launch = 8 + 36 * up + 22 * swing.off; // under the ball = higher, over it = a grounder
+    var launch = 12 + 24 * up + 16 * swing.off; // under the ball = higher, over it = a grounder
     launch = Math.max(-15, Math.min(62, launch));
     // timing: meeting the ball early (still in front of the plate) pulls it to left field
     var timing = Math.max(-1, Math.min(1, (swing.z - (HOME_Z + 0.15)) / 1.2));
@@ -468,7 +469,7 @@ var MS = (function () {
   // Experience = points scored. Each level up gives one upgrade point for Power, Contact or Batting Eye.
   function xpForLevel(lv) { return Math.round(1500 * lv + 350 * lv * lv); } // total experience to reach level lv+1
   function levelFromXp(xp) { var lv = 0; while (xp >= xpForLevel(lv + 1) && lv < 99) lv++; return lv; }
-  var MAX_SKILL = 15;
+  var MAX_SKILL = 45;
   function contactRadius(skills) { return 40 + 3 * (skills.contact || 0); } // px, on a 390 px wide screen
   function previews(skills) { return 3 + (skills.eye || 0); }                 // sunglasses uses per step
 
@@ -1246,7 +1247,7 @@ var MSSound = (function () {
     store.del('run.' + run.mode);
     var mode = run.mode, lvBefore = level(), html = '', btns = [];
     meta.xp += run.score; meta.finished++;
-    var gained = level() - lvBefore; if (gained > 0) meta.pts += gained;
+    var gained = level() - lvBefore; if (gained > 0) meta.pts += gained * 3;
     if (mode === 'minor' || mode === 'major') {
       var k = run.step, tg = MS.stepTargets(k), stars = cleared ? 1 + (run.score >= tg[1] ? 1 : 0) + (run.score >= tg[2] ? 1 : 0) : 0;
       if (cleared) {
@@ -1331,7 +1332,7 @@ var MSSound = (function () {
     $('btnSteps').classList.toggle('hide', run.mode !== 'minor' && run.mode !== 'major');
     Array.prototype.forEach.call($('chips').children, function (b) { b.classList.toggle('on', b.dataset.kind === meta.train); });
   }
-  function renderTools() { $('skillsLabel').textContent = 'Level ' + (level() + 1) + (meta.pts ? ' ·' + meta.pts : ''); }
+  function renderTools() { if (!meta.threePointUpgradeV1) { meta.pts += level() * 2; meta.threePointUpgradeV1 = true; saveMeta(); } $('skillsLabel').textContent = 'Level ' + (level() + 1) + (meta.pts ? ' ·' + meta.pts : ''); }
   function renderAll() { renderModes(); renderInfo(); renderShades(); renderTools(); }
   function renderChips() {
     $('chips').innerHTML = MS.PITCH_LIST.map(function (k) { var p = MS.PITCHES[k]; return '<button data-kind="' + k + '"><i style="background:' + p.color + '"></i>' + p.name + '</button>'; }).join('');
@@ -1342,7 +1343,7 @@ var MSSound = (function () {
     var lv = level(), cur = MS.xpForLevel(lv), next = MS.xpForLevel(lv + 1), pct = Math.round(100 * (meta.xp - (lv ? cur : 0)) / (next - (lv ? cur : 0)));
     var rows = [['power', 'Power', 'Hit it farther.'], ['contact', 'Contact', 'A bigger sweet spot on the bat.'], ['eye', 'Batting Eye', 'One more look with the sunglasses per step.']];
     var h = '<p class="lvnext"><b>Level ' + (lv + 1) + '</b> · ' + fmt(meta.xp) + ' experience · next level at ' + fmt(next) + '</p><div class="xpbar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>' +
-      '<p class="lvnext">' + (meta.pts ? 'You have <b>' + meta.pts + '</b> upgrade point' + (meta.pts === 1 ? '' : 's') + ' to spend.' : 'Every level up gives one upgrade point. Points you score are your experience.') + '</p>';
+      '<p class="lvnext">' + (meta.pts ? 'You have <b>' + meta.pts + '</b> upgrade point' + (meta.pts === 1 ? '' : 's') + ' to spend.' : 'Every level up gives three upgrade points. Points you score are your experience.') + '</p>';
     rows.forEach(function (r) {
       var v = meta.skills[r[0]], pips = '';
       for (var i = 0; i < MS.MAX_SKILL; i++) pips += '<i class="' + (i < v ? 'on' : '') + '"></i>';
@@ -1399,7 +1400,7 @@ var MSSound = (function () {
     ['power','contact','eye'].forEach(function(k) {
       $('restore-'+k).textContent = recoveryDraft[k];
       $('minus-'+k).disabled = recoveryDraft[k] <= 0;
-      $('plus-'+k).disabled = total >= 18 || recoveryDraft[k] >= MS.MAX_SKILL;
+      $('plus-'+k).disabled = total >= 18 || recoveryDraft[k] >= 15;
     });
     $('recoveryApply').textContent = 'Restore progress · ' + total + ' upgrades';
   }
@@ -1416,7 +1417,7 @@ var MSSound = (function () {
   function commitRecovery(restore) {
     if (meta.recoveryChoiceV1) return;
     var lv=Number($('recoveryLevel').value),step=Number($('recoveryStep').value),mode=$('recoveryMode').value,total=recoveryTotal();
-    if (restore && (!Number.isInteger(lv)||lv<1||lv>100||!Number.isInteger(step)||step<1||step>999||(mode!=='minor'&&mode!=='major')||total>18||['power','contact','eye'].some(function(k){return !Number.isInteger(recoveryDraft[k])||recoveryDraft[k]<0||recoveryDraft[k]>MS.MAX_SKILL;}))) {
+    if (restore && (!Number.isInteger(lv)||lv<1||lv>100||!Number.isInteger(step)||step<1||step>999||(mode!=='minor'&&mode!=='major')||total>18||['power','contact','eye'].some(function(k){return !Number.isInteger(recoveryDraft[k])||recoveryDraft[k]<0||recoveryDraft[k]>15;}))) {
       $('recoveryStatus').textContent='Choose player level 1–100, league step 1–999, and no more than 18 upgrades.';return;
     }
     var next=JSON.parse(JSON.stringify(meta));
@@ -1444,7 +1445,7 @@ var MSSound = (function () {
     SV = MSSide.create($('side'),R3);window.addEventListener('moonartready',kickSide);
     if (window.ResizeObserver) new ResizeObserver(function () { SV.resize(); kickSide(); }).observe($('side'));
     window.addEventListener('resize', function () { SV.resize(); kickSide(); });
-    $('ovRecovery').addEventListener('click',function(e){var b=e.target.closest('[data-recover]');if(!b||!recoveryDraft)return;var k=b.dataset.recover,d=+b.dataset.delta,v=recoveryDraft[k]+d;if(v>=0&&v<=MS.MAX_SKILL&&(d<0||recoveryTotal()<18)){recoveryDraft[k]=v;renderRecovery();}});
+    $('ovRecovery').addEventListener('click',function(e){var b=e.target.closest('[data-recover]');if(!b||!recoveryDraft)return;var k=b.dataset.recover,d=+b.dataset.delta,v=recoveryDraft[k]+d;if(v>=0&&v<=15&&(d<0||recoveryTotal()<18)){recoveryDraft[k]=v;renderRecovery();}});
     $('recoveryApply').onclick=function(){commitRecovery(true);};$('recoverySkip').onclick=function(){commitRecovery(false);};
     $('ovRecovery').addEventListener('keydown',function(e){if(e.key==='Tab'){var nodes=Array.prototype.filter.call(this.querySelectorAll('input,select,button'),function(n){return !n.disabled;}),first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
     renderChips();
@@ -1533,5 +1534,6 @@ MSApp.start(THREE);
 setTimeout(function () { if (!window.MSApp || !MSApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
 </script>
 <script src="../../shared/collection-batch4.js"></script>
+<script src="../../shared/corrections-1.js"></script>
 </body>
 </html>

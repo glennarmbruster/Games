@@ -6,3 +6,8 @@ Consistent exit and map/menu spacing. The game viewport fits below navigation. P
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 0.7.0
+Floating Exit and reclaimed game height.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

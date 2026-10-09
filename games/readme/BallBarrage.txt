@@ -6,3 +6,8 @@ Consistent exit and readable setup/help panels. Existing booster choices, low-an
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.8.0
+Flat colored blocks with light outlines, removing heavy bevel/shadow appearance.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

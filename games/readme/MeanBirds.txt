@@ -6,3 +6,8 @@ Consistent exit and level-selection spacing. The camera viewport fits below the 
 Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
 Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
 Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
+
+
+REQUESTED CORRECTIONS 1 — 1.4.0
+Restored usable full game canvas and shooting input; drag-to-launch checked.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.

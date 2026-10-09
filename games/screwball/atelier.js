@@ -1,7 +1,7 @@
 /* Furnished houses: every visible component is a separately screwed, removable part. */
 (function(){'use strict';
 function house(R,d){
- var p=[],oak='#b78b57',dark='#644730',brass='#bc914b',cream='#eee3c9',wall=R.pick(['#94b5ae','#c2a7a2','#a9b7cd']),cloth=R.pick(['#436c75','#8d5260','#758658']);
+ var p=[],oak='#b78b57',dark='#644730',brass='#bc914b',cream='#eee3c9',wall=R.pick(['#82b6e4','#e2b5ca','#b1a7e2']),cloth=R.pick(['#426db9','#b9467b','#9160b9']);
  function part(shape,pos,size,color,name,mat,s,rot){p.push({shape:shape,pos:pos,size:size,color:color,name:name,mat:mat||'paint',s:s||['y+1'],rot:rot||[0,0,0],opt:0});}
  function box(x,y,z,w,h,l,c,n,m,s,r){part('box',[x,y,z],[w,h,l],c,n,m,s,r);}
  function round(x,y,z,w,h,l,c,n,m,s){part('rbox',[x,y,z],[w,h,l],c,n,m,s);}
@@ -66,7 +66,7 @@ function house(R,d){
  // Kitchen: worktop, two cabinet doors, faucet and kettle.
  box(-2.72,.82,-2.16,1.8,1.08,.93,cream,'Kitchen cabinet','wood',['z+2']);
  box(-2.72,1.41,-2.16,1.98,.12,1.05,'#d9d4c7','Kitchen countertop','stone',['y+2']);
- for(i=0;i<2;i++)box(-3.19+i*.9,.87,-1.65,.82,.9,.09,'#748e84','Kitchen door '+(i+1),'wood',['z+1']);
+ for(i=0;i<2;i++)box(-3.19+i*.9,.87,-1.65,.82,.9,.09,'#627fb0','Kitchen door '+(i+1),'wood',['z+1']);
  cyl(-2.45,1.74,-2.42,.055,.51,brass,'Kitchen faucet','metal',['a0']);
  part('ball',[-3.15,1.68,-2.1],[.23,.23,.23],'#d4b878','Kettle','metal',['d0,1,0']);
  // Loft bed, mattress, pillow and bedside lamp.

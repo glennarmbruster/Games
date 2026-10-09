@@ -1,0 +1,104 @@
+/* Requested correction pass only. Exit floats over the game; no reserved header strip. */
+html.collection-ui.correction-ui{--collection-nav-h:0px;--collection-top:0px}
+.correction-ui .collection-nav{inset:max(8px,env(safe-area-inset-top)) auto auto max(8px,env(safe-area-inset-left))!important;width:auto!important;height:44px!important;padding:0!important;background:none!important;box-shadow:none!important;pointer-events:none;z-index:200!important}
+.correction-ui .collection-nav>button{pointer-events:auto;box-shadow:0 3px 12px #051a3b40}
+.correction-ui .collection-nav-title,.correction-ui #collectionChoose{display:none!important}
+.correction-ui .ggmenu{background:linear-gradient(140deg,#244971,#112942)!important;color:#f3f7ff!important;border-color:#6594c466}
+.correction-ui .ggmenu button{color:#f3f7ff!important;background:#ffffff12}
+.correction-ui .ggmenu button:hover{background:#ffffff25}
+.correction-ui .ggmenu-top{color:#fff}
+.correction-ui .top{padding-left:150px!important;min-height:56px!important}
+.correction-ui .top .ggpill{font-size:14px}
+.correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) #collectionChoose{display:none!important}
+.correction-ui .collection-page:is([data-collection=meanbirds],[data-collection=beacon],[data-collection=homerun]) .hudl{padding-left:142px}
+.correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #app{padding-top:0!important}
+.correction-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,177.778dvh);height:min(56.25vw,100dvh)}
+.correction-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - 62px)*1.77778))}
+.correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .go-lane{background:linear-gradient(140deg,#244971,#112942)}
+.correction-ui .focus-toggle,.correction-ui .fullscreen-return{position:fixed;right:12px;top:max(8px,env(safe-area-inset-top));z-index:210;min-width:44px;min-height:44px;border-radius:12px;border:1px solid #ffffff88;background:#17385b;color:white;font:700 15px system-ui;padding:8px 12px}
+.correction-ui .focus-toggle{top:auto;bottom:max(8px,env(safe-area-inset-bottom))}
+.correction-ui .focus-view .focus-toggle{top:max(8px,env(safe-area-inset-top));bottom:auto}
+.correction-ui .focus-view .collection-nav,.correction-ui .focus-view .top,.correction-ui .focus-view .info,.correction-ui .focus-view .modes,.correction-ui .focus-view>.app>.toolbar{display:none!important}
+.correction-ui .focus-view .app{padding:0!important;gap:0!important}
+.correction-ui .focus-view[data-collection=patchwork] .boardwrap,.correction-ui .focus-view[data-collection=spotdiff] .stagewrap{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;max-width:none!important;max-height:none!important}
+.correction-ui .focus-view[data-collection=hidden] .stagewrap{position:fixed!important;inset:0 0 var(--focus-tray,150px)!important;width:100%!important;height:auto!important;margin:0!important}
+.correction-ui .collection-page[data-collection=hidden] .tray{flex-shrink:0;display:flex!important}
+.correction-ui .focus-view[data-collection=hidden] .tray{position:fixed;bottom:0;left:0;right:0;z-index:20}
+.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .app{padding:58px 8px 8px!important;align-items:center}
+.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .stagewrap{position:relative!important;inset:auto!important;flex:1 1 auto;width:100%!important;min-height:0;margin:0!important}
+.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .top{position:absolute!important;inset:0 0 auto!important}
+.correction-ui .collection-page:is([data-collection=digger],[data-collection=maze]) :is(.pad,.dpad){margin:0!important;flex:none}
+/* Bright blue chrome with distinct warm, blue and berry accents; boards retain their own materials. */
+.correction-ui .collection-page:is([data-collection=screwball],[data-collection=bridge],[data-collection=hexslide],[data-collection=dice],[data-collection=mines],[data-collection=zoodoku],[data-collection=huddle],[data-collection=shelf],[data-collection=match3],[data-collection=snake],[data-collection=triple],[data-collection=bricks]){--accent:#246fce;--accent-2:#7847d9;--accent-ink:#fff;--polish-bg:#e9f2ff;--surface:#fffaf2;--surface-2:#e2ebff;--muted:#526583;background:radial-gradient(ellipse at top left,#c9e8ff,transparent 65%),linear-gradient(140deg,#f3e7ff,#dbeaff)!important}
+.correction-ui .collection-page:is([data-collection=zoodoku],[data-collection=huddle]) :is(.heart,.hearts){color:#d91c45!important}
+.correction-ui .collection-page[data-collection=spin] .wheel{filter:saturate(1.4) brightness(1.12)!important}
+.correction-ui .collection-page[data-collection=skeehop] canvas{filter:saturate(1.35) brightness(1.1)}
+.correction-ui .collection-page[data-collection=bricks] canvas{filter:saturate(1.45) brightness(1.08)}
+.correction-ui .collection-page:is([data-collection=snake],[data-collection=triple],[data-collection=hexslide]) canvas{filter:saturate(1.3)}
+.correction-ui .collection-page[data-collection=siege] #menu{background:radial-gradient(ellipse at top left,#356598,#10253f 75%)}
+.correction-ui .collection-page[data-collection=siege] #segMode{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:12px;background:none}
+.correction-ui .collection-page[data-collection=siege] #segMode button{padding:18px;min-height:110px;border:2px solid #86b8e1;border-radius:15px;background:linear-gradient(120deg,#fff9e9,#e3efff);color:#203953;font-size:24px;text-align:left}
+.correction-ui .collection-page[data-collection=siege] #segMode button.on{border-color:#ffca62;box-shadow:0 0 0 2px #ffca6266}
+.correction-ui .collection-page[data-collection=siege] #segMode small{display:block;font:500 14px/1.4 system-ui;margin-top:8px;color:#506584}
+.shape-open>.app{visibility:hidden}.shape-open .collection-nav{display:none!important}
+#shapeMode{position:fixed;inset:0;z-index:130;background:linear-gradient(135deg,#193b60,#10243e);color:white;overflow:auto;padding:12px;font-family:system-ui}
+#shapeMode[hidden]{display:none}#shapeMode header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}#shapeMode h2{margin:0;flex:1}#shapeMode button,#shapeMode select{font:700 14px system-ui;min-height:44px;border-radius:10px;border:1px solid #8cb1d066;padding:8px 12px;background:#f7f0df;color:#213e5d}
+#shapeMode p{font-size:15px;line-height:1.4}#shapeInstruction{color:#d3e5f6}.shapeLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);gap:20px;max-width:1000px;margin:auto}
+#shapeBoard{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:9/var(--rows);width:100%;gap:3px;align-self:start}
+#shapeBoard .shapeCell{padding:0;min-height:0;border:1px solid #a7cde188;background:#e5efff55;border-radius:5px}#shapeBoard .shapeCell:disabled{visibility:hidden}.shapeCell.filled{box-shadow:inset 0 2px #ffffff66,inset 0 -2px #0003}
+#shapePieces{display:flex;flex-wrap:wrap;gap:12px;align-content:start}#shapePieces .shapePiece{position:relative;flex:none;padding:0;min-height:0;touch-action:none;background:#ffffff18;border:2px solid transparent}#shapePieces .shapePiece.selected{border-color:#ffda7b;background:#ffffff33}.shapePiece i{position:absolute;width:21px;height:21px;border-radius:3px;box-shadow:inset 0 2px #fff5;pointer-events:none}.shapeActions{display:flex;flex-wrap:wrap;gap:8px}
+@media(orientation:portrait){.shapeLayout{display:flex;flex-direction:column}#shapeBoard{max-width:520px;margin:auto}}
+.correction-ui .ggmenu .sheet{background:linear-gradient(145deg,#284e7c,#152d4b)!important;color:#fff!important;--ink:#fff;--muted:#c8def3;--surface:#284a70;--surface-2:#31587d}
+.correction-ui .ggmenu .ggmenu-info{color:#c8def3!important}
+.correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .lanein{padding-top:65px!important}
+.correction-ui .collection-page[data-collection=dice] .tray{background:radial-gradient(ellipse at top,#367dd2,#42339a)!important;border-color:#ffc758!important}
+.correction-ui .collection-page[data-collection=dice] .players .pl.on,.correction-ui .collection-page[data-collection=dice] .cat.pick{background:#6a43ce!important}
+.correction-ui .collection-page[data-collection=dice] .rollbtn.btn.red{background:linear-gradient(110deg,#ed7440,#db416c)!important}
+.correction-ui .collection-page[data-collection=dice] .cat:nth-child(3n+1){border-left:4px solid #fa9561}.correction-ui .collection-page[data-collection=dice] .cat:nth-child(3n+2){border-left:4px solid #5596ed}.correction-ui .collection-page[data-collection=dice] .cat:nth-child(3n){border-left:4px solid #ae6de0}
+.correction-ui .collection-page[data-collection=shelf] .stage{background:#d8e7ff!important}
+.correction-ui .collection-page[data-collection=triple] .stagewrap{background:linear-gradient(145deg,#e1d1fb,#ffd9c2)!important}
+.correction-ui .collection-page[data-collection=huddle] .tile{background:#fff8e9;color:#313d75}.correction-ui .collection-page[data-collection=huddle] .tile.sel{background:#6654c6;color:white}
+.correction-ui .collection-page[data-collection=bridge] #panel,.correction-ui .collection-page[data-collection=hexslide] #panel{background:linear-gradient(145deg,#fff6e7,#e5edff)!important;color:#294470}
+.correction-ui .collection-page[data-collection=screwball] .collection-card,.correction-ui .collection-page[data-collection=screwball] .choice{background:linear-gradient(135deg,#fff1d5,#e8e1ff)!important;color:#293a65}
+.correction-ui .collection-page[data-collection=zoodoku] .hearts svg.full{color:#d71c42!important;fill:#d71c42}
+.correction-ui .collection-page[data-collection=meanbirds] #cv{pointer-events:auto}
+.correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #panel{padding-top:45px}
+.correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #hud{padding-left:150px}
+@media(orientation:landscape){#shapeBoard{width:min(100%,calc((100dvh - 135px)*9/var(--rows)));justify-self:center}.shapeSide{max-height:calc(100dvh - 135px);overflow-y:auto}}
+.correction-ui .collection-page[data-collection=golf] .collection-build{font-size:14px}
+.correction-ui .collection-page[data-collection=hidden] .tray{display:block!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;height:auto!important;max-height:45dvh;overflow-y:auto}
+.correction-ui .collection-page[data-collection=hidden] .tray .toolbar{flex-wrap:nowrap!important}.correction-ui .collection-page[data-collection=hidden] .tray .tool{min-width:0!important}
+.correction-ui .collection-page[data-collection=hidden] .stagewrap{left:0!important;right:0!important;bottom:var(--trayh,160px)!important}
+.correction-ui .focus-view[data-collection=hidden] .stagewrap{inset:0 0 var(--trayh,160px)!important}
+.correction-ui .focus-view[data-collection=patchwork] .studio-controls{display:none!important}
+.correction-ui .collection-page[data-collection=hidden] .focus-toggle:not(:is(.focus-view *)){bottom:calc(var(--trayh,160px) + 8px)}
+.correction-ui .focus-view[data-collection=hidden] .focus-toggle{bottom:auto}
+html.correction-ui.batch4-ui.gg-fs:not(.gg-fs-over) .collection-page:is([data-collection=digger],[data-collection=maze]) .app{padding:58px 8px 8px!important;align-items:center!important}
+html.correction-ui.batch4-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .stagewrap{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;flex:1 1 auto!important;width:100%!important;height:auto!important;margin:0!important}
+@media(orientation:landscape) and (max-height:600px){
+ html.correction-ui.batch4-ui .collection-page:is([data-collection=digger],[data-collection=maze]) .stagewrap{position:fixed!important;left:8px!important;right:132px!important;top:56px!important;bottom:8px!important;width:auto!important}
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .pad{position:fixed;right:8px;bottom:8px;width:112px;display:flex;flex-direction:column;gap:8px;align-items:center}
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .dpad{width:110px;height:110px}
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .padmid{display:none}
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .pb.fire{width:72px;height:72px}
+ html.correction-ui.batch4-ui .collection-page[data-collection=maze] .dpad{position:fixed;right:8px;bottom:8px;width:112px;height:112px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .padmid{display:flex;flex-direction:row;gap:6px;flex:none}
+ html.correction-ui.batch4-ui .collection-page[data-collection=digger] .padmid button{width:44px;height:44px}
+ html.correction-ui.batch4-ui .collection-page[data-collection=maze] .joy{position:fixed;right:8px;bottom:8px;width:112px;height:112px;margin:0!important}
+}
+.correction-ui.collection-ui .overlay{padding-top:max(60px,calc(env(safe-area-inset-top) + 56px))}
+.correction-ui.collection-ui .overlay :is(.card,.sheet,.endcard,.startcard){max-height:calc(100dvh - 76px - env(safe-area-inset-bottom));overflow-y:auto}
+.correction-ui .collection-page[data-collection=topple] .hudl{padding-left:140px}
+html.correction-ui[data-theme=dark] .collection-page:is([data-collection=screwball],[data-collection=bridge],[data-collection=hexslide],[data-collection=dice],[data-collection=mines],[data-collection=zoodoku],[data-collection=huddle],[data-collection=shelf],[data-collection=match3],[data-collection=snake],[data-collection=triple],[data-collection=bricks]),html.correction-ui[data-theme=blue] .collection-page:is([data-collection=screwball],[data-collection=bridge],[data-collection=hexslide],[data-collection=dice],[data-collection=mines],[data-collection=zoodoku],[data-collection=huddle],[data-collection=shelf],[data-collection=match3],[data-collection=snake],[data-collection=triple],[data-collection=bricks]){--ink:#f3f7ff;--surface:#284568;--surface-2:#304f7b;--muted:#ccddf4;background:linear-gradient(140deg,#283d70,#152c4b)!important}
+.correction-ui .collection-page[data-collection=homerun] .skill .pips{flex-wrap:wrap;max-width:260px}.correction-ui .collection-page[data-collection=homerun] .skill .pips i{width:6px;flex:none}
+.correction-ui .collection-page[data-collection=siege] #segMode button::before{content:'♜';display:block;font-size:40px;color:#3877af;margin-bottom:4px}.correction-ui .collection-page[data-collection=siege] #segMode button[data-v=swarm]::before{content:'⬡';color:#8756c1}
+.correction-ui .stranded-expanded #frame{position:fixed;inset:0;width:100vw!important;height:100dvh!important}
+.correction-ui .collection-page[data-collection=stranded] .focus-toggle{right:12px;bottom:42px}
+.correction-ui .collection-page[data-collection=screwball].collection{background:radial-gradient(ellipse at top,#365587,#15284b)!important;color:#fff3d7}
+.correction-ui .collection-page[data-collection=screwball] .collection-title p,.correction-ui .collection-page[data-collection=screwball] .collection-foot{color:#d0e0f5}
+.correction-ui .collection-page[data-collection=screwball] .classic-art{background:linear-gradient(145deg,#4e86c2,#524384)}
+.correction-ui .collection-page[data-collection=screwball] .timber-art{background:linear-gradient(145deg,#e9b96d,#ba668b)}
+.correction-ui .collection-page[data-collection=triple] .tray{background:#57428a!important}
+.correction-ui .collection-page[data-collection=bridge] #title{color:#2e548b}
