@@ -136,7 +136,7 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
 .classic-nav a:first-child{background:#efc16b;color:#302714;}
 body .app{position:relative; margin-top:calc(env(safe-area-inset-top,0px) + 65px); height:calc(100% - env(safe-area-inset-top,0px) - 65px);padding-top:58px!important;}
 html.gg-fs-over .top{top:calc(env(safe-area-inset-top,0px) + 65px);padding-top:6px;}
-</style></head>
+</style><link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script></head>
 <body><nav class="classic-nav"><a href="../../index.html" id="classicExit">‹ Exit Game</a><a href="index.html" id="classicCollection">Screwball menu →</a></nav>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="sb-logo" viewBox="0 0 100 100"><defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#7a5cff"/></linearGradient></defs>
@@ -2051,7 +2051,7 @@ var SBSound = (function () {
     if (meta.turned) $('turnHint').classList.add('hide');
     $('boxes').addEventListener('click', function (e) { if (e.target.closest('#btnAddBox')) addBox(); });
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
-    $('btnHome').addEventListener('click', function () { saveGame(); location.href='index.html'; });
+    $('btnHome').addEventListener('click', function () { saveGame(); Goobs.home(); });
     $('classicExit').addEventListener('click', saveGame);
     $('classicCollection').addEventListener('click', saveGame);
     $('btnStudio').addEventListener('click',function(){if(paused())return;saveGame();startStudio(meta.studio||1);});
@@ -2098,7 +2098,7 @@ var SBSound = (function () {
       fitRq = requestAnimationFrame(function () {
         fitRq = 0;
         var cr = $('cv').getBoundingClientRect(), tr = document.querySelector('.traywrap').getBoundingClientRect(), sb = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 8;
-        R3.margins({ top: Math.max(100, tr.bottom - cr.top + 10), bottom: sb + 42, side: 8 });
+        R3.margins({ top: innerWidth > innerHeight && innerHeight <= 600 ? 8 : Math.max(100, tr.bottom - cr.top + 10), bottom: sb + 42, side: 8 });
       });
     };
     window.addEventListener('resize', refit);

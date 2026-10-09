@@ -1,18 +1,18 @@
-/* Goobs Games — Screwball collection + Timber Tumble. Existing game caches retained. */
+/* Goobs Games — Consistency Batch 2. Batch 1 and other game caches retained. */
 const VERSIONS = {
   "shell": "3.3.0",
   "zoodoku": "1.10.0",
   "woodpile": "1.3.0",
   "patchwork": "3.0.1",
   "cubecorral": "4.0.0",
-  "screwball": "4.2.0",
+  "screwball": "4.3.0",
   "skeehop": "1.4.0",
   "merge": "2.1.0",
   "tapaway": "2.0.0",
   "homerun": "1.7.1",
   "match3": "2.0.0",
   "snake": "1.2.0",
-  "solitaire": "1.1.1",
+  "solitaire": "1.2.0",
   "meanbirds": "1.2.0",
   "aliens": "1.2.0",
   "worddice": "1.2.0",
@@ -20,19 +20,19 @@ const VERSIONS = {
   "blocks": "1.3.0",
   "maze": "1.2.1",
   "mahjong": "1.3.1",
-  "dice": "1.2.0",
+  "dice": "1.3.0",
   "daily": "1.3.3",
   "mines": "1.2.0",
   "bubbles": "1.4.0",
   "bricks": "1.3.2",
   "topple": "1.9.0",
   "barrage": "1.6.1",
-  "siege": "1.3.0",
+  "siege": "1.4.0",
   "hoops": "1.3.1",
   "beacon": "0.5.1",
   "sort": "2.2.0",
   "triple": "2.0.0",
-  "pinball": "2.1.0",
+  "pinball": "2.2.0",
   "parking": "2.0.0",
   "minigolf": "2.1.0",
   "board": "1.2.0",
@@ -40,10 +40,10 @@ const VERSIONS = {
   "golf": "0.5.1",
   "shelf": "2.0.1",
   "castle": "3.3.0",
-  "hexslide": "1.2.0",
-  "farkle": "1.4.0",
-  "blockparty": "1.4.0",
-  "bridge": "1.3.0",
+  "hexslide": "1.3.0",
+  "farkle": "1.5.0",
+  "blockparty": "1.5.0",
+  "bridge": "1.4.0",
   "outpost": "3.1.0",
   "getout": "0.22.0",
   "stranded": "1.0.0",
@@ -62,7 +62,7 @@ const VERSIONS = {
   "pegs": "0.3.0",
   "perch": "1.0.0",
   "knotty": "1.0.0",
-  "casino": "0.1.1",
+  "casino": "0.2.0",
   "spotdiff": "0.4.0",
   "hidden": "1.0.0",
   "cases": "1.0.0",
@@ -190,6 +190,10 @@ const GROUPS = {
     "games/cubecorral/details.css"
   ],
   "screwball": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/screwball/",
     "games/screwball/atelier.js",
     "games/screwball/classic.html",
@@ -251,6 +255,15 @@ const GROUPS = {
     "games/snake/index.html"
   ],
   "solitaire": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+    "shared/collection-art-b2/klondike.svg",
+    "shared/collection-art-b2/spider.svg",
+    "shared/collection-art-b2/freecell.svg",
+    "shared/collection-art-b2/tripeaks.svg",
+    "shared/collection-art-b2/pyramid.svg",
+
     "games/solitaire/",
     "games/solitaire/index.html",
     "games/solitaire/assets/cloth-v1.webp"
@@ -294,6 +307,10 @@ const GROUPS = {
     "games/mahjong/assets/cloth-v1.webp"
   ],
   "dice": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/dice/",
     "games/dice/index.html"
   ],
@@ -327,6 +344,10 @@ const GROUPS = {
     "games/barrage/index.html"
   ],
   "siege": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/siege/",
     "games/siege/index.html"
   ],
@@ -361,6 +382,12 @@ const GROUPS = {
     "games/triple/patisserie.js"
   ],
   "pinball": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+    "shared/collection-art-b2/goober.svg",
+    "shared/collection-art-b2/harbor.svg",
+
     "games/pinball/",
     "games/pinball/index.html",
     "games/pinball/cabinet.js",
@@ -488,6 +515,10 @@ const GROUPS = {
     "shared/cannon-es.min.js"
   ],
   "blockparty": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/blockparty/",
     "games/blockparty/index.html",
     "games/blockparty/style.css",
@@ -496,6 +527,10 @@ const GROUPS = {
     "games/blockparty/game.js"
   ],
   "farkle": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/farkle/",
     "games/farkle/index.html",
     "games/farkle/style.css",
@@ -503,6 +538,10 @@ const GROUPS = {
     "games/farkle/game.js"
   ],
   "hexslide": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/hexslide/",
     "games/hexslide/game.js",
     "games/hexslide/index.html",
@@ -511,6 +550,10 @@ const GROUPS = {
     "games/hexslide/style.css"
   ],
   "bridge": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/bridge/auto.js",
     "games/bridge/",
     "games/bridge/assets/alpine.webp",
@@ -1493,6 +1536,10 @@ const GROUPS = {
     "games/knotty/workshop.js"
   ],
   "casino": [
+    "shared/collection-ui.css",
+    "shared/collection-batch2.css",
+    "shared/collection-batch2.js",
+
     "games/casino/",
     "games/casino/index.html",
     "games/casino/assets/cloth-v1.webp"

@@ -152,7 +152,7 @@ html.gg-fs .table { width: auto; align-self: stretch; margin: 0 calc(-8px - env(
 .slot { border-color:#ffffff38; box-shadow:inset 0 1px 5px #0002; }
 
 </style>
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="ct-logo" viewBox="0 0 100 100"><defs><linearGradient id="ctg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27a567"/><stop offset="1" stop-color="#157a48"/></linearGradient></defs>
@@ -895,7 +895,7 @@ var CTSound = (function () {
   function $(id) { return document.getElementById(id); }
   function fmt(n) { return (n < 0 ? '-' : '') + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function locked() { return busy || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovOpts') || GoobsAds.isOpen(); }
+  function locked() { return document.documentElement.classList.contains('collection-open') || busy || isOpen('ggMenu') || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ovOpts') || GoobsAds.isOpen(); }
   function fmtTime(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
   function dayNum(d) { d = d || new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2020, 0, 1)) / 86400000); }
   function dayLabel(n) { var d = new Date(Date.UTC(2020, 0, 1) + n * 86400000); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }); }

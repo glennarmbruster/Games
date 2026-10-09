@@ -1,0 +1,6 @@
+NeonSiege — Version 1.4.0
+Consistency Batch 2
+
+Shared top-left Exit Game and larger Tower/Swarm choices. Choose Game opens the existing pause menu; its selection action explicitly says it ends the current battle. Existing level progress, rules, wave logic and difficulty unchanged.
+
+Install the complete Batch 2 ZIP after Batch 1, merging into the existing site root. Include sw.js and the shared presentation files. No save-key migrations, level changes or balance changes. The version is available in How to Play.

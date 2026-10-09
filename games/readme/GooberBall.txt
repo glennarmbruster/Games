@@ -1,0 +1,6 @@
+GooberBall — Version 2.2.0
+Consistency Batch 2
+
+Illustrated Goober Ball/Harbor Lights table choices. Shared navigation and room for both tables below the header. Tall table proportions retained. Switching machines still starts a new game, as before; high scores stay separate.
+
+Install the complete Batch 2 ZIP after Batch 1, merging into the existing site root. Include sw.js and the shared presentation files. No save-key migrations, level changes or balance changes. The version is available in How to Play.

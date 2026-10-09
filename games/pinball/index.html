@@ -87,7 +87,7 @@ body.pb { background:#0b0e13; }
 #ovPause .card { max-height:calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px); overflow-y:auto; overscroll-behavior:contain; }
 .cardicon img { width:72px; height:72px; object-fit:cover; border-radius:14px; }
 </style>
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script></head>
 <body class="pb">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="hl-logo" viewBox="0 0 100 100"><defs><linearGradient id="hlbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2a6b"/><stop offset="1" stop-color="#0a5c7a"/></linearGradient><radialGradient id="hlbeam"><stop offset="0" stop-color="#fff6b0"/><stop offset="1" stop-color="#fff6b0" stop-opacity="0"/></radialGradient></defs>
@@ -533,7 +533,7 @@ var HLSound = (function () {
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
   function saveMeta() { store.set(metaKey(), meta); }
   var artImages={};['goober','harbor'].forEach(function(id){var im=new Image();im.onload=function(){artImages[id]=im;bg=null;};im.src='assets/'+id+'-playfield-'+(id==='goober'?'v2':'v1')+'.webp';});
-  function machineUi(){document.querySelectorAll('[data-machine]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.machine===machine));});$('pauseTitle').textContent=machineTitle();document.querySelectorAll('.cardicon').forEach(function(e){e.innerHTML='<img src="../../icons/games/pinball-'+(machine==='harbor'?'v1':'v2')+'.webp" alt="">';});}
+  function machineUi(){document.querySelectorAll('[data-machine]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.machine===machine));});$('pauseTitle').textContent=machineTitle();document.querySelectorAll('.cardicon').forEach(function(e){e.innerHTML='<img src="../../shared/collection-art-b2/'+(machine==='harbor'?'harbor':'goober')+'.svg" alt="">';});}
   function rebuildCabinet(){if(cabinet){cabinet.dispose();cabinet=null;}if(cabinetFactory){try{cabinet=cabinetFactory($('stage'),PB,machine);fit();}catch(e){cabinet=null;}}}
   function selectMachine(id){
     if(id!=='goober'&&id!=='harbor')return;

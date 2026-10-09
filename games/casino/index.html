@@ -364,7 +364,7 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
 .vp .cab { background:linear-gradient(145deg,#2b3545,#101721); box-shadow:inset 0 0 0 2px #080d17,0 0 0 4px var(--brass2),0 12px 24px #0006; }
 
 </style>
-</head>
+<link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="cc-logo" viewBox="0 0 100 100"><defs><linearGradient id="ccbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a6e"/><stop offset="1" stop-color="#0b0f2e"/></linearGradient>
@@ -2063,7 +2063,7 @@ var CS = (function () {
   // the table, upright: zero(s) on top, 12 rows of 3 numbers, the column bets under them; dozens and the even-money
   // bets down the left side
   function rouLayout() {
-    var wrap = $('rouWrap'), W = wrap.clientWidth - 16, H = wrap.clientHeight - 16, L = $('rouLayout');
+    var wrap = $('rouWrap'), W = wrap.clientWidth - 16, H = (innerWidth > innerHeight && innerHeight <= 600 ? Math.max(480, wrap.clientHeight) : wrap.clientHeight) - 16, L = $('rouLayout');
     if (W < 50 || H < 50) return;
     var r = H / 14.3, c = Math.min(W / 4.3, r * 2.6), a = c * 0.62, b = c * 0.62;
     r = Math.min(r, c * 1.0);
@@ -2675,7 +2675,6 @@ var CS = (function () {
     $('bankChip').innerHTML = CA.chip(1000, '');
     ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, function () { S.unlock(); }, { passive: true }); });
     $('btnHome').addEventListener('click', function () {
-      if (view !== 'lobby' && !sheetOpen() && !isOpen('ovEnd')) { if (busy() || rouSpinning || slSpinning) return; S.button(); show('lobby'); return; }
       commit(); Goobs.home();
     });
     $('btnLobby').addEventListener('click', function () { if (busy() || rouSpinning || slSpinning) return; show('lobby'); });

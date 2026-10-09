@@ -1,0 +1,6 @@
+Yacht — Version 1.3.0
+Consistency Batch 2
+
+Shared Exit Game. Landscape scorecard retains readable rows in a scrollable panel beside the dice and Roll button. Rules, scoring and saves unchanged.
+
+Install the complete Batch 2 ZIP after Batch 1, merging into the existing site root. Include sw.js and the shared presentation files. No save-key migrations, level changes or balance changes. The version is available in How to Play.

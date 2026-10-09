@@ -2,7 +2,7 @@ GOOBS GAMES — CONSISTENCY BATCH TRACKER
 
 Scope: navigation, game selectors, readable text, colors and orientation layouts.
 Rules, physics, levels, scoring, difficulty and save formats remain unchanged.
-Batch 1 delivered; remaining batches planned. 6 / 66 collections complete.
+Batches 1 and 2 delivered; remaining batches planned. 16 / 66 collections complete.
 
 BATCH 1 — COMPLETE (6 collections)
   Castle Havoc — games/castle
@@ -12,7 +12,7 @@ BATCH 1 — COMPLETE (6 collections)
   Lido Deck — games/deck
   Splash Sort — games/sort
 
-BATCH 2 — PLANNED (10 collections)
+BATCH 2 — COMPLETE (10 collections)
   Captain's Casino — games/casino
   Card Table — games/solitaire
   Farkle — games/farkle
@@ -84,13 +84,16 @@ BATCH 7 — PLANNED (10 collections)
   Word Rattle — games/worddice
   Letter Loop — games/wordwheel
 
-INSTALL BATCH 1
+INSTALL BATCH 2
 Extract this ZIP into the existing site root, merging folders and replacing the included files. Do not replace or delete the entire games or shared folder. Upload sw.js too. Open the site online and accept its Update available prompt. Existing saved games remain in the browser.
 
-This is an update package, not a standalone copy of the site.
+Install after Batch 1. This is an update package, not a standalone copy of the site.
+
+LANDSCAPE DETAILS
+Card Table, Yacht! and Screwball Classic place controls beside the play area. Casino uses side controls; roulette, craps and video-poker payouts scroll within their panels to keep targets readable. Pinball keeps the tall table shape, so portrait gives the largest playfield.
 
 CHECKS
-Browser checks at 390x844 portrait and 844x390 landscape, small-phone selectors at 320x568, and simulated safe-area insets. All six collection launchers and their subgames checked. Physical iPhone/Safari verification is still recommended.
+Browser checks at 390x844 portrait and 844x390 landscape, small-phone selectors at 320x568, and simulated safe-area insets. All ten Batch 2 collections and their subgames/modes checked. Physical iPhone/Safari verification is still recommended.
 
 IMPLEMENTATION NOTE
-The presentation layer is opt-in for these six collections only. Future shared-layer changes must update cache versions for every collection that loads that layer (or use newly versioned filenames).
+The Batch 2 presentation extension is opt-in for its ten collections. Batch 1 presentation assets are unchanged. Future shared-layer changes must update cache versions for every collection that loads that layer (or use newly versioned filenames).
