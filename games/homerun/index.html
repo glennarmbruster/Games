@@ -139,6 +139,8 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
 @media(max-height:450px){.recovery-card{padding:12px 16px}.recovery-card h2{font-size:20px}.recovery-row{padding:6px 0}.recovery-fields{margin:8px 0}.recovery-actions{padding-top:7px}}
 
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch4.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -275,13 +277,13 @@ html, body { height: 100%; overflow: hidden; background: #5fc9d8; }
         <li>Hold your phone sideways. The machine pitches. <b>Flick your finger up through the ball</b> as it reaches the <b>dotted line</b>, like swinging a bat.</li>
         <li><b>Timing</b> aims it: early pulls it to left field, late pushes it to right. <b>Flick faster</b> to hit harder. A <b>steep</b> flick lifts it higher; a flatter one hits a line drive. (From behind the plate, a flick just <b>under</b> the ball lifts it too.)</li>
         <li>Every ball that goes <b>100 ft</b> or more scores its distance in points; a <b>home run</b> scores double. Balloons are 50 more.</li>
-        <li>Balls with faces do tricks: some curve, drop, stop in mid-air, wobble, or come three at once (only one is real; the fakes fade just before the line). Heavy grey balls don&rsquo;t go far. A <b>gold ball</b> multiplies the distance.</li>
+        <li>Balls with faces do tricks: some curve, drop, wobble, or come three at once (only one is real; the fakes fade just before the line). Yellow Gliders travel smoothly without stopping. Heavy grey balls don&rsquo;t go far. A <b>gold ball</b> multiplies the distance.</li>
         <li><b>Minor</b> and <b>Major</b>: each step has more balls. A miss, a foul or a short hit costs one bar of health; lose all five and the step is over.</li>
         <li><b>Moon-Star</b>: 9 balls for a record. Hit the moon or the stars for big bonuses. <b>Training</b>: pick a pitch and practice.</li>
         <li>The <b>camera</b> button switches between the side view and the view from behind the plate. The <b>sunglasses</b> show the next pitches (a few uses per step). Points earn experience; each level up gives an upgrade: <b>Power</b>, <b>Contact</b> (a bigger sweet spot) or <b>Batting Eye</b> (more sunglasses).</li>
       </ol>
     </div>
-    <div class="actions"><button class="btn red" id="btnCloseHelp">Play ball!</button></div><p style="font-size:11px;opacity:.7;text-align:center">Moonshot · Version 1.7.0</p>
+    <div class="actions"><button class="btn red" id="btnCloseHelp">Play ball!</button></div><p style="font-size:11px;opacity:.7;text-align:center">Moonshot · Version 1.7.1</p>
   </div>
 </div>
 
@@ -319,8 +321,9 @@ var MS = (function () {
     };
   }
   var FT = 3.28084, G = 9.8, DRAG = 0.0042;
+  var HOME_Z = -1.65;                  // plate moved back about 5.4 ft; machine stays fixed
   var RELEASE = [0, 1.55, 17.8];        // where the machine lets go
-  var ZONE = { near: -0.9, far: 2.4 };   // the ball can be hit while its z is in here (1.4.0: wider, about 0.1 s for a Straight)
+  var ZONE = { near: HOME_Z - 0.9, far: HOME_Z + 2.4 };   // the ball can be hit while its z is in here (1.4.0: wider, about 0.1 s for a Straight)
   var BALL_R = 0.085;                    // drawn a little big, like the original, so it's easy to follow
 
   // ---------- the field ----------
@@ -336,7 +339,7 @@ var MS = (function () {
     slow: { name: 'Floater', speed: 17, face: 'sleepy', color: '#bfe3ff' },
     curve: { name: 'Hook', speed: 25, face: 'wink', color: '#7bd88f', curve: 1.1 },
     drop: { name: 'Dropper', speed: 26, face: 'frown', color: '#b58cff', dropY: 0.7 },
-    stop: { name: 'Stopper', speed: 26, face: 'shock', color: '#ffe066', stop: 0.55 },
+    stop: { name: 'Glider', speed: 26, face: 'plain', color: '#ffe066' },
     loopy: { name: 'Wobbler', speed: 22, face: 'dizzy', color: '#ff9ed1', loopy: 0.45 },
     heavy: { name: 'Anvil', speed: 24, face: 'grumpy', color: '#8a8f9e', heavy: 0.6, size: 1.25 },
     ninja: { name: 'Triplet', speed: 26, face: 'mask', color: '#3b3f73', ninja: true },
@@ -347,36 +350,27 @@ var MS = (function () {
   // A pitch: { kind, T (seconds to the plate), target [x, y] at the plate, c (curve side), m (gold multiplier), fakes }
   function makePitch(kind, R, speedMul) {
     var p = PITCHES[kind], sp = p.speed * (speedMul || 1) * (0.94 + R() * 0.12);
-    var pitch = { kind: kind, T: RELEASE[2] / sp, target: [(R() - 0.5) * 0.3, 0.88 + R() * 0.3], c: R() < 0.5 ? -1 : 1 }; // 1.4.0: always about waist high
+    var pitch = { kind: kind, T: (RELEASE[2] - HOME_Z) / sp, target: [(R() - 0.5) * 0.3, 0.88 + R() * 0.3], c: R() < 0.5 ? -1 : 1 }; // 1.4.0: always about waist high
     if (p.gold) pitch.m = 2 + Math.floor(R() * 4);
     if (p.ninja) pitch.fakes = [[pitch.target[0] - 0.55, pitch.target[1] + 0.2], [pitch.target[0] + 0.55, pitch.target[1] - 0.1]];
     if (R() < 0.5 && p.ninja) { var t = pitch.fakes[0]; pitch.fakes[0] = pitch.target; pitch.target = t; }
     return pitch;
   }
-  // time along the path (0..1 = release..plate), with the Stopper's pause
-  function progress(pitch, t) {
-    var p = PITCHES[pitch.kind], T = pitch.T;
-    if (p.stop) {
-      var u0 = 0.45, t0 = u0 * T, hold = p.stop;
-      if (t < t0) return t / T;
-      if (t < t0 + hold) return u0;
-      return (t - hold) / T;
-    }
-    return t / T;
-  }
-  function pitchDuration(pitch) { var p = PITCHES[pitch.kind]; return pitch.T + (p.stop || 0); }
+  // All pitches travel continuously; retain the saved 'stop' kind as Glider.
+  function progress(pitch,t) { return t / pitch.T; }
+  function pitchDuration(pitch) { return pitch.T; }
   // where the ball is at time t since release (after the plate it keeps going the same way)
   function pitchPos(pitch, t, target) {
     var p = PITCHES[pitch.kind], tg = target || pitch.target, u = progress(pitch, t);
     var ext = u > 1 ? u - 1 : 0, uu = Math.min(1, u);
-    var x = RELEASE[0] + (tg[0] - RELEASE[0]) * uu, y = RELEASE[1] + (tg[1] - RELEASE[1]) * uu, z = RELEASE[2] * (1 - uu);
+    var x = RELEASE[0] + (tg[0] - RELEASE[0]) * uu, y = RELEASE[1] + (tg[1] - RELEASE[1]) * uu, z = RELEASE[2] + (HOME_Z - RELEASE[2]) * uu;
     var arc = 4 * uu * (1 - uu);
     if (p.curve) x += -pitch.c * p.curve * arc * (1 - uu * 0.3);
     if (p.dropY) y += p.dropY * arc * (1 - uu);
     if (p.loopy) { x += p.loopy * Math.sin(uu * Math.PI * 3) * (1 - uu) * pitch.c; y += p.loopy * 0.35 * Math.sin(uu * Math.PI * 4) * (1 - uu); }
     if (ext) { // past the plate: carry on toward the backstop
       var dx = (tg[0] - RELEASE[0]), dy = (tg[1] - RELEASE[1]) - (p.dropY ? p.dropY * 0 : 0);
-      x = tg[0] + dx * ext; y = Math.max(0.05, tg[1] + dy * ext); z = -RELEASE[2] * ext;
+      x = tg[0] + dx * ext; y = Math.max(0.05, tg[1] + dy * ext); z = HOME_Z - (RELEASE[2] - HOME_Z) * ext;
     }
     return [x, y, z];
   }
@@ -393,7 +387,7 @@ var MS = (function () {
     var launch = 8 + 36 * up + 22 * swing.off; // under the ball = higher, over it = a grounder
     launch = Math.max(-15, Math.min(62, launch));
     // timing: meeting the ball early (still in front of the plate) pulls it to left field
-    var timing = Math.max(-1, Math.min(1, (swing.z - 0.15) / 1.2));
+    var timing = Math.max(-1, Math.min(1, (swing.z - (HOME_Z + 0.15)) / 1.2));
     var spray = -timing * 38 + swing.dirX * 8;
     return { v: v, launch: launch, spray: spray };
   }
@@ -401,7 +395,7 @@ var MS = (function () {
   function fly(hit, balloons) {
     var la = hit.launch * Math.PI / 180, sa = hit.spray * Math.PI / 180;
     var vx = hit.v * Math.cos(la) * Math.sin(sa), vy = hit.v * Math.sin(la), vz = hit.v * Math.cos(la) * Math.cos(sa);
-    var x = 0, y = 1.0, z = 0.3, dt = 1 / 240, t = 0, path = [[x, y, z]], popped = [], hr = false, crossed = false;
+    var x = 0, y = 1.0, z = HOME_Z + 0.3, dt = 1 / 240, t = 0, path = [[x, y, z]], popped = [], hr = false, crossed = false;
     for (var k = 0; k < 240 * 12; k++) {
       var sp = Math.sqrt(vx * vx + vy * vy + vz * vz);
       vx -= DRAG * sp * vx * dt; vy -= (G + DRAG * sp * vy) * dt; vz -= DRAG * sp * vz * dt;
@@ -422,8 +416,8 @@ var MS = (function () {
       if (k % 8 === 0) path.push([x, y, z]);
       if (y <= 0 && t > 0.05) { path.push([x, 0, z]); break; }
     }
-    var dist = Math.sqrt(x * x + z * z), angle = Math.atan2(x, z);
-    return { path: path, feet: Math.round(dist * FT), landed: [x, z], hr: hr, foul: Math.abs(angle) > Math.PI / 4 || z < 0, balloons: popped, t: t };
+    var dist = Math.sqrt(x * x + (z-HOME_Z) * (z-HOME_Z)), angle = Math.atan2(x, z-HOME_Z);
+    return { path: path, feet: Math.round(dist * FT), landed: [x, z], hr: hr, foul: Math.abs(angle) > Math.PI / 4 || z < HOME_Z, balloons: popped, t: t };
   }
   // points for one ball (as the original: distance counts; home runs count more; balloons 50 each)
   function scoreBall(res, pitch) {
@@ -479,7 +473,7 @@ var MS = (function () {
   function previews(skills) { return 3 + (skills.eye || 0); }                 // sunglasses uses per step
 
   return {
-    FT: FT, RELEASE: RELEASE, ZONE: ZONE, BALL_R: BALL_R, PITCHES: PITCHES, PITCH_LIST: PITCH_LIST, FENCE_H: FENCE_H, HEALTH: HEALTH, MAX_SKILL: MAX_SKILL,
+    FT: FT, HOME_Z: HOME_Z, RELEASE: RELEASE, ZONE: ZONE, BALL_R: BALL_R, PITCHES: PITCHES, PITCH_LIST: PITCH_LIST, FENCE_H: FENCE_H, HEALTH: HEALTH, MAX_SKILL: MAX_SKILL,
     mix32: mix32, rng: rng, fenceAt: fenceAt, makePitch: makePitch, pitchPos: pitchPos, pitchDuration: pitchDuration, progress: progress,
     exitVelocity: exitVelocity, fly: fly, scoreBall: scoreBall, stepBalls: stepBalls, stepPitches: stepPitches, stepTargets: stepTargets,
     moonStarPitches: moonStarPitches, balloonsFor: balloonsFor, xpForLevel: xpForLevel, levelFromXp: levelFromXp, contactRadius: contactRadius, previews: previews
@@ -555,12 +549,12 @@ var MSRender = (function () {
     turfShape.lineTo(-2,6);turfShape.quadraticCurveTo(-1,5,0,5);
     var inGrass=fieldShape(turfShape,new THREE.MeshLambertMaterial({map:grass}),.022,'infield-turf');
     var mound = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.25, 32), dirtMat); mound.name='pitching-mound'; mound.position.set(0, 0.12, 18.4); scene.add(mound);
-    var homeDirt = new THREE.Mesh(new THREE.CircleGeometry(3.6, 32), dirtMat); homeDirt.rotation.x = -Math.PI / 2; homeDirt.position.set(0, 0.015, 0); scene.add(homeDirt);
+    var homeDirt = new THREE.Mesh(new THREE.CircleGeometry(3.6, 32), dirtMat); homeDirt.rotation.x = -Math.PI / 2; homeDirt.position.set(0, 0.015, MS.HOME_Z); scene.add(homeDirt);
     var plate = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.02, 5), new THREE.MeshLambertMaterial({ color: 0xffffff }));
-    plate.rotation.y = Math.PI / 5 + Math.PI; plate.position.set(0, 0.03, 0.15); scene.add(plate);
+    plate.rotation.y = Math.PI / 5 + Math.PI; plate.position.set(0, 0.03, MS.HOME_Z + 0.15); scene.add(plate);
     [-1, 1].forEach(function (s) { // foul lines
       var ln = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 100), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      ln.rotation.x = -Math.PI / 2; ln.rotation.z = s * Math.PI / 4; ln.position.set(s * Math.sin(Math.PI / 4) * 50, 0.03, Math.cos(Math.PI / 4) * 50); scene.add(ln);
+      ln.rotation.x = -Math.PI / 2; ln.rotation.z = s * Math.PI / 4; ln.position.set(s * Math.sin(Math.PI / 4) * 50, 0.03, MS.HOME_Z + Math.cos(Math.PI / 4) * 50); scene.add(ln);
     });
     for (var bI = 0; bI < 3; bI++) { // bases
       var ang = (bI - 1) * Math.PI / 2, base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), new THREE.MeshLambertMaterial({ color: 0xffffff }));
@@ -850,7 +844,7 @@ var MSRender = (function () {
    Artwork and live pitch share normalized muzzle/contact coordinates. */
 var MSSide = (function () {
   'use strict';
-  var LINE_Z = 0.15; // the dotted line: a ball met here goes straight out to centre field
+  var LINE_Z = MS.HOME_Z + 0.15; // the dotted line: a ball met here goes straight out to centre field
   function create(canvas,park) {
     var ctx = canvas.getContext('2d'), W = 1, H = 1, dpr = 1, sky = 'day', bgCache = null;
     var lastRevision=-1,sidePhotos={};
@@ -907,6 +901,10 @@ var MSSide = (function () {
       if (!bgCache || lastRevision!==park.sceneryRevision()) bgCache = drawBackdrop();
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bgCache, 0, 0);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // A small grounded home plate follows the same world coordinate as the guide.
+      var px=project([0,0,LINE_Z])[0],pw=Math.max(15,H*.065),py=L.groundY;
+      ctx.fillStyle='rgba(30,25,15,.3)';ctx.beginPath();ctx.ellipse(px,py+3,pw*.75,pw*.17,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.moveTo(px-pw*.55,py);ctx.lineTo(px-pw*.18,py-pw*.16);ctx.lineTo(px+pw*.52,py-pw*.16);ctx.lineTo(px+pw*.52,py+pw*.12);ctx.lineTo(px-pw*.18,py+pw*.12);ctx.closePath();ctx.fillStyle='#f5eed9';ctx.fill();ctx.strokeStyle='#ada58c';ctx.lineWidth=1;ctx.stroke();
       // the dotted hitting line
       ctx.fillStyle = 'rgba(255,255,255,.8)';
       for (var y = H * 0.06; y < L.groundY - 4; y += H * 0.055) { ctx.beginPath(); ctx.arc(L.lineX, y, Math.max(2.5, H * 0.009), 0, Math.PI * 2); ctx.fill(); }
@@ -1534,5 +1532,6 @@ MSApp.start(THREE);
 <script>
 setTimeout(function () { if (!window.MSApp || !MSApp.started()) { var b = document.getElementById('building'); if (b) { b.textContent = 'Couldn\u2019t load the 3D view. Connect to the internet once and reopen.'; b.classList.add('show'); } } }, 6000);
 </script>
+<script src="../../shared/collection-batch4.js"></script>
 </body>
 </html>

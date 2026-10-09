@@ -1,0 +1,8 @@
+FIZZ POP — CONSISTENCY BATCH 4
+Version 1.5.0
+
+Consistent exit and readable mode buttons and help. The existing bubble field fits below navigation in either orientation; portrait gives the largest field.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

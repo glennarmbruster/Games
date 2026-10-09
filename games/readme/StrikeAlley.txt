@@ -1,0 +1,8 @@
+STRIKE ALLEY — CONSISTENCY BATCH 4
+Version 0.4.0
+
+Consistent exit and scoreboard/status spacing below the navigation bar. Existing alley choices, ball appearance, swipe input and pin physics are unchanged.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

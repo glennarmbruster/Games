@@ -1,0 +1,8 @@
+NOODLE — CONSISTENCY BATCH 4
+Version 1.3.0
+
+Readable mode buttons and speed controls; landscape places status and optional direction buttons alongside the playfield. All four modes, mazes and movement rules are preserved.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

@@ -1,0 +1,8 @@
+CONTAINMENT — CONSISTENCY BATCH 4
+Version 1.1.0
+
+Full-size phone menus with readable text, larger actions and a landscape two-column arrangement. Exit uses the original pause/save path before returning home. Original chamber layouts, paths, dash rules and artwork are retained; landscape is recommended.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

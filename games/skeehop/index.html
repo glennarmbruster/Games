@@ -87,6 +87,8 @@ html.gg-fs-over .flickhint { bottom: calc(env(safe-area-inset-bottom, 0px) + 150
 /* the mode tabs live in the Menu sheet */
 .ggmenu .modes { margin: 4px 0 2px; }
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch4.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1626,5 +1628,6 @@ SHApp.start(THREE);
 // if the 3D library can't load (first visit while offline), say so instead of showing a blank lane
 setTimeout(function () { if (!window.SHApp || !SHApp.started()) { var l = document.getElementById('loading'); if (l) l.textContent = 'Couldn\u2019t load the 3D lanes. Connect to the internet once and reopen.'; } }, 6000);
 </script>
+<script src="../../shared/collection-batch4.js"></script>
 </body>
 </html>

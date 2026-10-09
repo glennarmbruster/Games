@@ -2,7 +2,7 @@ GOOBS GAMES — CONSISTENCY BATCH TRACKER
 
 Scope: navigation, game selectors, readable text, colors and orientation layouts.
 Rules, physics, levels, scoring, difficulty and save formats remain unchanged.
-Batches 1–3 delivered; remaining batches planned. 36 / 66 collections complete.
+Batches 1–4 delivered; final batch planned. 56 / 66 collections complete.
 
 BATCH 1 — COMPLETE (6 collections)
   Castle Havoc — games/castle
@@ -47,7 +47,7 @@ BATCH 3 — COMPLETE (20 collections)
   Fly Away — games/tapaway
   Garden Swap — games/match3
 
-BATCH 4 — PLANNED (10 collections)
+BATCH 4 — COMPLETE (20 collections)
   Ball Barrage — games/barrage
   Brickyard — games/bricks
   Fizz Pop — games/bubbles
@@ -59,7 +59,6 @@ BATCH 4 — PLANNED (10 collections)
   Noodle — games/snake
   Triple Treat — games/triple
 
-BATCH 5 — PLANNED (10 collections)
   Moonshot — games/homerun
   Mean Birds — games/meanbirds
   Beacon Bound — games/beacon
@@ -71,7 +70,7 @@ BATCH 5 — PLANNED (10 collections)
   Pool Party Hoops — games/hoops
   Skee-Hop — games/skeehop
 
-BATCH 6 — PLANNED (10 collections)
+BATCH 5 — PLANNED (10 collections)
   Buzz Off! — games/buzz
   Case Closed — games/cases
   Tile Temple — games/mahjong
@@ -83,16 +82,19 @@ BATCH 6 — PLANNED (10 collections)
   Word Rattle — games/worddice
   Letter Loop — games/wordwheel
 
-INSTALL BATCH 3
+INSTALL BATCH 4
 Extract this ZIP into the existing site root, merging folders and replacing the included files. Do not replace or delete the entire games or shared folder. Upload sw.js too. Open the site online and accept its Update available prompt. Existing saved games remain in the browser.
 
-Install after Batches 1 and 2. This is an update package, not a standalone copy of the site.
+Install after Batches 1–3. This is an update package, not a standalone site.
 
-LANDSCAPE DETAILS
-Square puzzle boards and Lettermind use side controls. Double Take places pictures side by side. Lost & Found moves its object list to a scrollable side panel. Cube Pop and Fly Away reserve separate space for the sculpture and controls. Get Out's tall room scenes and Knotty's tall peg boards remain largest in portrait; their navigation and panels also fit landscape.
+ORIENTATION DETAILS
+Arcade games use landscape side controls where appropriate. Moonshot, Mean Birds and Beacon Bound retain their existing landscape requirement. Stranded and Containment keep their fixed-aspect game views and recommend landscape, while their menus now read comfortably in portrait. Tall fields such as Fizz Pop, Seaside Putt and Skee-Hop are largest in portrait.
 
 CHECKS
-All 20 collections opened in browser checks at 390x844 portrait and 844x390 landscape without page errors. Smaller phone checks use 320x568. Exit navigation, room return and selector paths checked. Existing artwork and non-presentation source files are unchanged. This is browser testing, not physical iPhone/Safari certification.
+Browser checks cover all 20 collections at 390x844 portrait and 844x390 landscape, plus 320x568 small-phone layouts. Gameplay launch and exit paths checked. Original artwork and gameplay-engine files are unchanged. Mean Birds and Beacon Bound have display-viewport adjustments; Mean Birds pointer coordinates follow that viewport. Physical iPhone/Safari testing remains useful.
 
 IMPLEMENTATION NOTE
-Batch 3 uses a new opt-in presentation extension. Shared Batch 1 and Batch 2 assets and their cache versions are unchanged. Future changes to shared presentation files must bump cache versions for every collection using them, or use new filenames.
+Batch 4 uses a new opt-in presentation extension. Shared Batch 1–3 assets and their cache versions remain unchanged. Future shared-file changes must bump cache versions for every collection using them, or use new filenames.
+
+CORRECTION PASS
+Glenn is collecting minor corrections for one pass after the final batch. Those notes are not yet applied here.

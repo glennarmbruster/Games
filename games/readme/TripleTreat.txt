@@ -1,0 +1,8 @@
+TRIPLE TREAT — CONSISTENCY BATCH 4
+Version 2.1.0
+
+Landscape places status and tools beside the tile field. Existing pastry artwork, tray, matching rules, hints and levels are unchanged.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

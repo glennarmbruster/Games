@@ -1,0 +1,8 @@
+TUMBLEDOWN — CONSISTENCY BATCH 4
+Version 1.4.0
+
+Brighter, wider start/pause panels and consistent mode buttons. The original hold/next arrangement and touch controls remain available. Falling speed, scoring and piece rules are unchanged.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

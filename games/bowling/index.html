@@ -108,6 +108,8 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .alleybtn.neon { background: linear-gradient(135deg, #07020e, #ff2fa8 70%, #4dff9a); }
 .alleybtn.mix { background: linear-gradient(135deg, #2a1240, #2668d6 35%, #ff8648 65%, #ff2fa8); }
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch4.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1458,5 +1460,6 @@ var BWScene = (function () {
     screen: function (x, y, z) { return SC.toScreen(x, y, z, W, H); }, newGame: newGame, setAlley: function (id) { SC.setAlley(id); }, event: function (k, t) { SC.event(k, t); }, turbo: function (v) { turbo = !!v; } };
 })();
 </script>
+<script src="../../shared/collection-batch4.js"></script>
 </body>
 </html>

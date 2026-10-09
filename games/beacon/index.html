@@ -147,6 +147,8 @@ html, body { background: #7fc6f5; overflow: hidden; overscroll-behavior: none; -
 .screen .trail { position: relative; }
 </style>
 <link rel="stylesheet" href="modern.css">
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch4.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -3445,7 +3447,7 @@ var BMus = (function () {
   var tmp = document.createElement('canvas'), tctx = tmp.getContext('2d');
   function resize() {
     DPR = Math.min(3, window.devicePixelRatio || 1);
-    var w = window.innerWidth, h = window.innerHeight;
+    var w = cv.clientWidth, h = cv.clientHeight;
     CW = Math.round(w * DPR); CH = Math.round(h * DPR);
     cv.width = CW; cv.height = CH;
     var s = CH / (240 - VTOP);
@@ -4282,5 +4284,6 @@ var BMus = (function () {
   init();
 })();
 </script>
+<script src="../../shared/collection-batch4.js"></script>
 </body>
 </html>

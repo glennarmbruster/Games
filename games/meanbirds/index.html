@@ -112,6 +112,8 @@ html, body { background: #8fd6ff; }
 .mlv { border-radius:12px; box-shadow:inset 0 1px #fff,0 3px 0 #617d7b44; }
 .mlv.cur { background:linear-gradient(#397d74,#246358); }
 </style>
+<link rel="stylesheet" href="../../shared/collection-ui.css">
+<link rel="stylesheet" href="../../shared/collection-batch4.css">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1323,7 +1325,7 @@ var MBSound = (function () {
   // cam: center (x, y) in meters and zoom z in pixels per meter
   var W = 0, H = 0, dpr = 1, cv = $('cv'), ctx = cv.getContext('2d'), cam = { x: 0, y: 5, z: 20 }, camMode = 'auto', fitZ = 20;
   function resize() {
-    W = window.innerWidth; H = window.innerHeight; dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    W = cv.clientWidth; H = cv.clientHeight; dpr = Math.min(2.5, window.devicePixelRatio || 1);
     readInsets();
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1560,20 +1562,20 @@ var MBSound = (function () {
   function onDown(e) {
     if (paused()) return;
     SND.unlock();
-    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    pts[e.pointerId] = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top) };
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     var n = Object.keys(pts).length;
-    tapStart = n === 1 ? { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, used: false } : null;
-    if (n === 1 && nearBird(e.clientX, e.clientY)) { dragging = true; pull = { x: 0, y: 0 }; SND.stretch(); return; }
+    tapStart = n === 1 ? { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top), t: performance.now(), id: e.pointerId, used: false } : null;
+    if (n === 1 && nearBird(e.clientX, (e.clientY - cv.getBoundingClientRect().top))) { dragging = true; pull = { x: 0, y: 0 }; SND.stretch(); return; }
     if (n === 1 && phase === 'flight' && S.ability) { if (MB.useAbility(S)) { tapStart.used = true; return; } }
     if (n === 2) { dragging = false; pull = null; var k = Object.keys(pts), a = pts[k[0]], b = pts[k[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, wx: wx((a.x + b.x) / 2), wy: wy((a.y + b.y) / 2) }; pan = null; camMode = 'manual'; return; }
-    if (n === 1) pan = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
+    if (n === 1) pan = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top), cx: cam.x, cy: cam.y };
   }
   function onMove(e) {
     if (!pts[e.pointerId]) return;
-    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    pts[e.pointerId] = { x: e.clientX, y: (e.clientY - cv.getBoundingClientRect().top) };
     if (dragging) {
-      var p = MB.clampPull({ x: wx(e.clientX) - S.pouch.x, y: wy(e.clientY) - S.pouch.y });
+      var p = MB.clampPull({ x: wx(e.clientX) - S.pouch.x, y: wy((e.clientY - cv.getBoundingClientRect().top)) - S.pouch.y });
       var was = pull ? Math.hypot(pull.x, pull.y) : 0, now = Math.hypot(p.x, p.y);
       if (Math.floor(now * 3) > Math.floor(was * 3)) SND.stretch();
       pull = p; return;
@@ -1586,7 +1588,7 @@ var MBSound = (function () {
       return;
     }
     if (pan) {
-      var dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+      var dx = e.clientX - pan.x, dy = (e.clientY - cv.getBoundingClientRect().top) - pan.y;
       if (Math.abs(dx) + Math.abs(dy) > 6) camMode = 'manual';
       if (camMode === 'manual') { cam.x = pan.cx - dx / cam.z; cam.y = pan.cy + dy / cam.z; clampCam(); }
     }
@@ -1594,7 +1596,7 @@ var MBSound = (function () {
   function onUp(e) {
     delete pts[e.pointerId];
     var ts = tapStart; tapStart = null;
-    if (ts && ts.id === e.pointerId && !ts.used && !dragging && !pinch && Math.hypot(e.clientX - ts.x, e.clientY - ts.y) < 12 && performance.now() - ts.t < 450) { skipAhead(); }
+    if (ts && ts.id === e.pointerId && !ts.used && !dragging && !pinch && Math.hypot(e.clientX - ts.x, (e.clientY - cv.getBoundingClientRect().top) - ts.y) < 12 && performance.now() - ts.t < 450) { skipAhead(); }
     if (dragging) {
       dragging = false;
       if (pull && Math.hypot(pull.x, pull.y) > 0.35) doLaunch(pull); else pull = null;
@@ -1843,5 +1845,6 @@ var MBSound = (function () {
   init();
 })();
 </script>
+<script src="../../shared/collection-batch4.js"></script>
 </body>
 </html>

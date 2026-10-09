@@ -1,0 +1,8 @@
+PEG LAGOON — CONSISTENCY BATCH 4
+Version 0.4.0
+
+Consistent exit, readable menus and map spacing beneath navigation. The island artwork, aim dial, peg layouts and bounce physics are preserved.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.

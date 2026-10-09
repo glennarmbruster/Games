@@ -1,0 +1,8 @@
+POOL PARTY HOOPS — CONSISTENCY BATCH 4
+Version 1.4.0
+
+Consistent exit and space for player, wind and location labels below navigation. Existing camera views, pool artwork, modes and shooting physics are preserved.
+
+Shared changes: gold Exit Game button, navy navigation bar, readable labels and safe-area-aware help panels.
+Presentation only: no changes to rules, difficulty, scoring, level data or save formats.
+Install with the Batch 4 ZIP after Batches 1–3, merging into the existing site root and including sw.js.
