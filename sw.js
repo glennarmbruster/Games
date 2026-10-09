@@ -1,6 +1,6 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.7.5",
+  "shell": "3.8.0",
   "handheld": "1.1.3",
   "zoodoku": "1.12.5",
   "woodpile": "1.7.1",
@@ -36,7 +36,7 @@ const VERSIONS = {
   "pinball": "2.2.3",
   "parking": "2.1.3",
   "minigolf": "2.3.4",
-  "board": "1.2.3",
+  "board": "1.3.0",
   "buzz": "2.4.5",
   "golf": "0.7.5",
   "shelf": "2.2.5",
@@ -70,7 +70,9 @@ const VERSIONS = {
   "spin": "0.3.5",
   "three": "0.186.1",
   "planck": "1.5.0",
-  "cannon": "0.20.0"
+  "cannon": "0.20.0",
+  "pool": "1.0.0",
+  "metro": "1.0.0"
 };
 const GROUPS = {
   "handheld": [
@@ -197,7 +199,9 @@ const GROUPS = {
     "shared/animals.svg",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "shared/new-games.css",
+    "shared/new-games.js"
   ],
   "zoodoku": [
     "games/zoodoku/modern.css",
@@ -722,7 +726,16 @@ const GROUPS = {
     "games/board/assets/wood-v1.webp",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
-    "shared/menu-polish.css"
+    "shared/menu-polish.css",
+    "games/board/reversi-menu.js",
+    "games/reversi/",
+    "games/reversi/index.html",
+    "games/reversi/engine.js",
+    "games/reversi/game.js",
+    "games/reversi/icon.svg",
+    "shared/new-games.css",
+    "shared/new-games.js",
+    "shared/goobs.js"
   ],
   "buzz": [
     "games/buzz/",
@@ -2181,6 +2194,24 @@ const GROUPS = {
   ],
   "cannon": [
     "shared/cannon-es.min.js"
+  ],
+  "pool": [
+    "games/pool/",
+    "games/pool/index.html",
+    "games/pool/engine.js",
+    "games/pool/game.js",
+    "shared/new-games.css",
+    "shared/new-games.js",
+    "shared/goobs.js"
+  ],
+  "metro": [
+    "games/metro/",
+    "games/metro/index.html",
+    "games/metro/engine.js",
+    "games/metro/game.js",
+    "shared/new-games.css",
+    "shared/new-games.js",
+    "shared/goobs.js"
   ]
 };
 const PREFIX = 'goobs-';

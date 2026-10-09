@@ -185,6 +185,8 @@
     return p([[x - s, y], [x, y + s / 2], [x, y + 1.5 * s], [x - s, y + s]], .82) + p([[x + s, y], [x, y + s / 2], [x, y + 1.5 * s], [x + s, y + s]], .66) + p([[x, y - s / 2], [x + s, y], [x, y + s / 2], [x - s, y]]);
   }
   var GAMES = [
+{id:"pool",name:"Pocket Club",blurb:"8-ball pool \u00b7 solo or with a friend",path:"games/pool/",art:"<svg viewBox=\"0 0 100 100\" aria-hidden=\"true\"><rect width=\"100\" height=\"100\" fill=\"#173e62\"/><rect x=\"8\" y=\"14\" width=\"84\" height=\"72\" rx=\"12\" fill=\"#9a6039\"/><rect x=\"15\" y=\"21\" width=\"70\" height=\"58\" rx=\"8\" fill=\"#237f9d\"/><path d=\"M20 77L64 29\" stroke=\"#efd9a9\" stroke-width=\"3\"/><circle cx=\"39\" cy=\"53\" r=\"10\" fill=\"#fff9e9\"/><circle cx=\"64\" cy=\"38\" r=\"12\" fill=\"#121e2b\"/><circle cx=\"64\" cy=\"38\" r=\"6\" fill=\"white\"/><text x=\"64\" y=\"42\" text-anchor=\"middle\" font-size=\"11\">8</text><circle cx=\"72\" cy=\"63\" r=\"10\" fill=\"#f1bb45\"/></svg>",status:function(){return "8-ball pool \u00b7 solo or with a friend";}},
+{id:"metro",name:"Metro Lines",blurb:"Build routes. Keep your city moving.",path:"games/metro/",art:"<svg viewBox=\"0 0 100 100\" aria-hidden=\"true\"><rect width=\"100\" height=\"100\" fill=\"#eeeae0\"/><path d=\"M-5 75Q40 22 105 60\" stroke=\"#b4d8e4\" stroke-width=\"18\" fill=\"none\"/><path d=\"M15 20L47 45 82 20M47 45L24 80\" stroke=\"#ee7354\" stroke-width=\"7\" fill=\"none\"/><path d=\"M18 54L47 45 78 78\" stroke=\"#2398c5\" stroke-width=\"7\" fill=\"none\"/><g fill=\"white\" stroke=\"#213e54\" stroke-width=\"3\"><circle cx=\"15\" cy=\"20\" r=\"7\"/><circle cx=\"47\" cy=\"45\" r=\"8\"/><rect x=\"72\" y=\"13\" width=\"14\" height=\"14\"/><rect x=\"17\" y=\"73\" width=\"14\" height=\"14\"/><path d=\"M78 69L87 85H69Z\"/></g></svg>",status:function(){return "Build routes. Keep your city moving.";}},
     {
       id: 'handheld', name: 'Handheld Sports', blurb: 'Retro LED football & baseball', path: 'games/handheld/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="hhbg" x2="1" y2="1"><stop stop-color="#376e9e"/><stop offset="1" stop-color="#15314c"/></linearGradient></defs><rect width="100" height="100" fill="url(#hhbg)"/><g transform="rotate(-8 50 50)"><rect x="18" y="9" width="65" height="84" rx="13" fill="#b9a47c"/><rect x="16" y="6" width="65" height="83" rx="13" fill="#efe2bf"/><rect x="23" y="18" width="51" height="36" rx="5" fill="#291018" stroke="#786245" stroke-width="3"/><g fill="#ff5342"><path d="M30 26h7v4h-7zM47 26h7v4h-7zM61 26h7v4h-7zM40 35h7v4h-7zM56 44h7v4h-7z"/><path d="M31 43h8v4h-8z" fill="#ffccab"/></g><path d="M30 64h7v-6h7v6h7v7h-7v7h-7v-7h-7z" fill="#39434a"/><circle cx="64" cy="68" r="9" fill="#cf3828"/><path d="M26 83h42" stroke="#b2a17e" stroke-width="2"/></g></svg>',
@@ -715,13 +717,13 @@
     },
 
     {
-      id: 'board', name: 'Game Chest', blurb: 'Checkers, chess and four in a row', path: 'games/board/',
+      id: 'board', name: 'Game Chest', blurb: 'Checkers, chess, four in a row & Reversi', path: 'games/board/',
       art: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#3f7d5a"/><rect x="10" y="10" width="80" height="80" rx="8" fill="#f3e9d2"/>' +
         '<g fill="#6f9e84"><rect x="10" y="10" width="20" height="20"/><rect x="50" y="10" width="20" height="20"/><rect x="30" y="30" width="20" height="20"/><rect x="70" y="30" width="20" height="20"/><rect x="10" y="50" width="20" height="20"/><rect x="50" y="50" width="20" height="20"/><rect x="30" y="70" width="20" height="20"/><rect x="70" y="70" width="20" height="20"/></g>' +
         '<circle cx="30" cy="70" r="16" fill="#a8232e"/><circle cx="30" cy="68" r="15" fill="#e8434f"/><circle cx="30" cy="68" r="10" fill="none" stroke="#ff7a82" stroke-width="2.2"/><circle cx="73" cy="74" r="13" fill="#d19b00"/><circle cx="73" cy="73" r="12" fill="#ffd21e"/>' +
         '<path d="M50 62 L53 50 C48 46 49 41 53 37 L46 41 C43 42 40 39 42 36 L54 23 C56 19 59 17 63 16 L65 10 L68 16 C79 19 84 31 81 45 C80 52 77 57 78 62 Z" fill="#fdfbf4" stroke="#2b2f3a" stroke-width="3" stroke-linejoin="round"/><circle cx="57" cy="28" r="2.2" fill="#2b2f3a"/></svg>',
       status: function () {
-        var m = readLS('board.meta'); if (!m || !m.finished) return 'Checkers, chess and four in a row';
+        var m = readLS('board.meta'); if (!m || !m.finished) return 'Checkers, chess, four in a row & Reversi';
         return (m.wins || 0) + ' win' + (m.wins === 1 ? '' : 's') + ' vs the phone';
       }
     },
@@ -1106,8 +1108,8 @@
 
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
-    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
-    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'handheld containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'metro hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
+    { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'pool handheld containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
     { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
@@ -1141,6 +1143,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
+    if (g.id === 'pool' || g.id === 'metro') return;
     if (g.id === 'handheld' || g.id === 'farkle' || g.id === 'bridge' || g.id === 'hexslide') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='pinball'?'-v2.webp':'-v1.webp') + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
@@ -1217,7 +1220,7 @@
   // blobs turned into data URLs. Nothing from other sites on the same address. The file is plain JSON:
   // { format: 'goobs-games-backup', version: 1, shell, created, local: { key: text }, idb: [ { name, version, stores } ] }.
   var BK_FORMAT = 'goobs-games-backup', BK_VERSION = 1, BK_LAST = 'goobs.lastBackup';
-  var BK_EXTRA = ['goobs', 'zoodoku', 'neonsiege', 'frontline'];
+  var BK_EXTRA = ['goobs', 'zoodoku', 'neonsiege', 'frontline', 'reversi'];
   function bkNamespaces() { var ns = {}; GAMES.forEach(function (g) { ns[g.id] = 1; }); BK_EXTRA.forEach(function (n) { ns[n] = 1; }); return ns; }
   function bkKeys() {
     var ns = bkNamespaces(), out = [];
