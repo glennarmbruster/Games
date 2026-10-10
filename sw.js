@@ -72,7 +72,8 @@ const VERSIONS = {
   "planck": "1.5.0",
   "cannon": "0.20.0",
   "pool": "1.0.5",
-  "metro": "1.0.3"
+  "metro": "1.0.3",
+  "contraption": "1.0.1"
 };
 const GROUPS = {
   "handheld": [
