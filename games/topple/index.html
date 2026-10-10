@@ -1426,6 +1426,12 @@ var TFScene = (function () {
         if (tanV > tanMax) back *= 1 + (tanV / tanMax - 1) * 0.9;
       }
       camera.fov = 2 * Math.atan(Math.min(tanV, tanMax * 1.02)) * 180 / Math.PI; camera.aspect = aspectNow; camera.updateProjectionMatrix();
+      // Give tablets a more distant view without changing phone framing (including landscape).
+      // Apply after auto-fit so its FOV calculation cannot zoom back into the table.
+      if (Math.min(window.innerWidth, window.innerHeight) >= 600) {
+        v3.copy(camera.position).sub(look);
+        camera.position.copy(look).addScaledVector(v3, 1.45);
+      }
       camera.lookAt(look);
     }
     function fit(pts) { fitPts = pts; frameCam(); }

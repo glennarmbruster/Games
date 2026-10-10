@@ -1,0 +1,5 @@
+Topple Fair 1.11.10
+
+Tablet camera pulls back 45% after automatic framing in portrait and landscape. Phone framing is unchanged. Aiming still uses the active camera. No gameplay or physics changes.
+
+Upload the ZIP contents to the repository root, preserving folders, then accept the game update. Includes sw.js to refresh the offline Topple Fair cache.
