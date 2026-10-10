@@ -1,6 +1,6 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.3",
+  "shell": "3.8.4",
   "handheld": "1.1.5",
   "zoodoku": "1.12.8",
   "woodpile": "1.7.3",

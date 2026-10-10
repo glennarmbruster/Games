@@ -1,0 +1,5 @@
+Goobs Games — Game Vault icon
+
+Upload manifest.json and sw.js to the main repository directory. Upload all four PNG files into icons/. Keep the folder structure. No index.html replacement is needed.
+
+Accept update 3.8.4. If an existing iPhone/iPad Home Screen shortcut keeps the previous icon, export a progress backup before removing and re-adding the shortcut using Safari > Share > Add to Home Screen. Do not clear Safari website data.
