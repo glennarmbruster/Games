@@ -1,78 +1,78 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.2",
-  "handheld": "1.1.4",
-  "zoodoku": "1.12.7",
-  "woodpile": "1.7.2",
-  "patchwork": "3.2.6",
-  "cubecorral": "4.1.5",
-  "screwball": "4.4.7",
-  "skeehop": "1.6.6",
-  "merge": "2.1.4",
-  "tapaway": "2.1.4",
-  "homerun": "1.9.8",
-  "match3": "2.2.6",
-  "snake": "1.4.7",
-  "solitaire": "1.2.5",
-  "meanbirds": "1.4.7",
-  "aliens": "1.3.4",
-  "worddice": "1.3.5",
-  "digger": "1.4.6",
-  "blocks": "1.4.5",
-  "maze": "1.4.7",
-  "mahjong": "1.4.4",
-  "dice": "1.4.7",
-  "daily": "1.4.7",
-  "mines": "1.4.7",
-  "bubbles": "1.5.5",
-  "bricks": "1.5.7",
-  "topple": "1.11.8",
-  "barrage": "1.8.7",
-  "siege": "1.5.6",
-  "hoops": "1.4.5",
-  "beacon": "0.7.6",
-  "sort": "2.2.4",
-  "triple": "2.2.7",
-  "pinball": "2.2.5",
-  "parking": "2.1.5",
-  "minigolf": "2.3.5",
-  "board": "1.3.1",
-  "buzz": "2.4.6",
-  "golf": "0.7.6",
-  "shelf": "2.2.7",
-  "castle": "3.3.4",
-  "hexslide": "1.4.7",
-  "farkle": "1.6.7",
-  "blockparty": "1.5.2",
-  "bridge": "1.5.7",
-  "outpost": "3.1.4",
-  "getout": "0.24.6",
-  "stranded": "1.2.7",
-  "containment": "1.2.7",
-  "sudoku": "0.3.5",
-  "wordwheel": "0.4.5",
-  "trivia": "0.4.5",
-  "links": "0.4.4",
-  "bowling": "0.4.5",
-  "deck": "0.4.4",
-  "wordboard": "0.2.4",
-  "nonogram": "0.3.4",
-  "getout2": "1.6.6",
-  "huddle": "0.4.7",
-  "wickway": "1.2.4",
-  "pegs": "0.4.5",
-  "perch": "1.2.6",
-  "knotty": "1.1.4",
-  "casino": "0.2.4",
-  "spotdiff": "0.6.6",
-  "hidden": "1.2.6",
-  "cases": "1.1.4",
-  "spin": "0.3.7",
-  "three": "0.186.2",
+  "shell": "3.8.3",
+  "handheld": "1.1.5",
+  "zoodoku": "1.12.8",
+  "woodpile": "1.7.3",
+  "patchwork": "3.2.7",
+  "cubecorral": "4.1.6",
+  "screwball": "4.4.8",
+  "skeehop": "1.6.7",
+  "merge": "2.1.5",
+  "tapaway": "2.1.5",
+  "homerun": "1.9.9",
+  "match3": "2.2.7",
+  "snake": "1.4.8",
+  "solitaire": "1.2.6",
+  "meanbirds": "1.4.8",
+  "aliens": "1.3.5",
+  "worddice": "1.3.6",
+  "digger": "1.4.7",
+  "blocks": "1.4.6",
+  "maze": "1.4.8",
+  "mahjong": "1.4.5",
+  "dice": "1.4.8",
+  "daily": "1.4.8",
+  "mines": "1.4.8",
+  "bubbles": "1.5.6",
+  "bricks": "1.5.8",
+  "topple": "1.11.9",
+  "barrage": "1.8.8",
+  "siege": "1.5.7",
+  "hoops": "1.4.6",
+  "beacon": "0.7.7",
+  "sort": "2.2.5",
+  "triple": "2.2.8",
+  "pinball": "2.2.6",
+  "parking": "2.1.6",
+  "minigolf": "2.3.6",
+  "board": "1.3.2",
+  "buzz": "2.4.7",
+  "golf": "0.7.7",
+  "shelf": "2.2.8",
+  "castle": "3.3.5",
+  "hexslide": "1.4.8",
+  "farkle": "1.6.8",
+  "blockparty": "1.5.3",
+  "bridge": "1.5.8",
+  "outpost": "3.1.5",
+  "getout": "0.24.7",
+  "stranded": "1.2.8",
+  "containment": "1.2.8",
+  "sudoku": "0.3.6",
+  "wordwheel": "0.4.6",
+  "trivia": "0.4.6",
+  "links": "0.4.5",
+  "bowling": "0.4.6",
+  "deck": "0.4.5",
+  "wordboard": "0.2.5",
+  "nonogram": "0.3.5",
+  "getout2": "1.6.7",
+  "huddle": "0.4.8",
+  "wickway": "1.2.5",
+  "pegs": "0.4.6",
+  "perch": "1.2.7",
+  "knotty": "1.1.5",
+  "casino": "0.2.5",
+  "spotdiff": "0.6.7",
+  "hidden": "1.2.7",
+  "cases": "1.1.5",
+  "spin": "0.3.8",
+  "three": "0.186.3",
   "planck": "1.5.0",
   "cannon": "0.20.0",
-  "pool": "1.0.2",
-  "metro": "1.0.1"
+  "pool": "1.0.3",
+  "metro": "1.0.2"
 };
 const GROUPS = {
   "handheld": [
@@ -2278,20 +2278,27 @@ const PREFIX = 'goobs-';
 const cacheName = (g) => PREFIX + g + '-' + VERSIONS[g];
 const CURRENT = Object.keys(GROUPS).map(cacheName);
 
+// Bound simultaneous downloads: older iPads should not receive thousands of
+// parallel asset requests during a collection update.
+async function inBatches(items, size, work) {
+  for (let i = 0; i < items.length; i += size) {
+    await Promise.all(items.slice(i, i + size).map(work));
+  }
+}
 self.addEventListener('install', (event) => {
-  event.waitUntil(Promise.all(Object.keys(GROUPS).map(async (g) => {
+  event.waitUntil(inBatches(Object.keys(GROUPS), 3, async (g) => {
     const cache = await caches.open(cacheName(g));
     const missing = [];
     for (const url of GROUPS[g]) if (!(await cache.match(url))) missing.push(url);
     // Fetch each file fresh: cache: 'reload' skips the phone's HTTP cache, and the ?v= query skips GitHub's web cache,
     // which can hand out the old copy of a file for a few minutes after an upload (that once left a phone with a new
     // menu and an old goobs.js stored together). Stored under the plain address. Any failure = try again next time.
-    if (missing.length) await Promise.all(missing.map(async (u) => {
+    if (missing.length) await inBatches(missing, 6, async (u) => {
       const res = await fetch(new Request(u + (u.indexOf('?') < 0 ? '?' : '&') + 'v=' + VERSIONS[g] + '-' + Date.now(), { cache: 'reload' }));
       if (!res.ok) throw new Error('fetch ' + u + ' ' + res.status);
       await cache.put(u, res);
-    }));
-  })));
+    });
+  }));
   // no skipWaiting: the page shows "Update available" and the player chooses when to reload
 });
 
@@ -2309,6 +2316,15 @@ self.addEventListener('message', (event) => {
 });
 
 async function fromCache(req) {
+  // Engine bundles also occur in older per-game caches. Their dedicated version
+  // must win, or an updated game can still receive the unpatched older bundle.
+  const pathname = new URL(req.url, self.registration.scope).pathname;
+  const engines = { 'three.module.min.js': 'three', 'cannon-es.min.js': 'cannon', 'planck.min.js': 'planck' };
+  const engine = pathname.indexOf('/shared/') >= 0 && engines[pathname.split('/').pop()];
+  if (engine) {
+    const currentEngine = await caches.open(cacheName(engine));
+    return (await currentEngine.match(req, { ignoreSearch: true })) || null;
+  }
   // Current shared UI overrides older copies retained inside individual game caches.
   const shell = await caches.open(cacheName('shell'));
   const sharedHit = await shell.match(req, { ignoreSearch: true });

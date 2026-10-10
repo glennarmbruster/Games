@@ -197,7 +197,7 @@ html.gg-fs-over .spinpad { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px
 .sctable sup { font-size: 8px; }
 .cstat { display: block; font-weight: 800; color: var(--ink); font-size: 15px; margin: 4px 0 6px; }
 .bests { display: block; margin-top: 6px; font-size: 12.5px; }
-#ovEnd .card { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#ovEnd .card { max-height: calc(100vh - 24px); max-height: calc(100vh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; }@supports(height:100dvh){#ovEnd .card{max-height: calc(100dvh - 24px);}}
 .card .sctable.multi { font-size: 11px; }
 .card .sctable.multi .sc-n { min-width: 18px; height: 18px; }
 .seg[hidden], .optlbl[hidden] { display: none; }

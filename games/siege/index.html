@@ -20,7 +20,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; overscroll-behavior: none;
   font-family: -apple-system, system-ui, "Segoe UI", sans-serif; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-canvas#cv { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; }
+canvas#cv { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100vh; display: block; touch-action: none; }@supports(height:100dvh){canvas#cv{height: 100dvh;}}
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
 .hidden { display: none !important; }
 

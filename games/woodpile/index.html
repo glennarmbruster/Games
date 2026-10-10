@@ -35,7 +35,7 @@
 
 /* board */
 .boardwrap { position: relative; width: min(calc(100vw - 28px), calc(100vh - 380px), 560px); aspect-ratio: 1 / 1; flex: none; }
-@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100dvh - 380px), 560px); } }
+@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100vh - 380px), 560px); }@supports(height:100dvh){.boardwrap{width: min(calc(100vw - 28px), calc(100dvh - 380px), 560px);}} }
 .board {
   position: absolute; inset: 0; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
   border-radius: 16px; overflow: hidden; background: var(--wp-frame); border: 5px solid var(--wp-frame);

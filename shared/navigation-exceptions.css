@@ -1,6 +1,6 @@
 /* Explicit per-game exceptions. Keep these when applying collection-wide styling. */
 html.bottom-navigation .navigation-exception{--bottom-nav-space:0px}
-html.bottom-navigation .navigation-exception>.app,html.bottom-navigation .navigation-exception>#app{height:100dvh!important;padding-bottom:max(0px,env(safe-area-inset-bottom))!important}
+html.bottom-navigation .navigation-exception>.app,html.bottom-navigation .navigation-exception>#app{height:100vh!important;padding-bottom:max(0px,env(safe-area-inset-bottom))!important}@supports(height:100dvh){html.bottom-navigation .navigation-exception>.app,html.bottom-navigation .navigation-exception>#app{height:100dvh!important;}}
 html.bottom-navigation .navigation-exception .collection-nav{display:none!important}
 html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigation{position:static;inset:auto;transform:none;width:auto;height:auto;display:flex;gap:7px;flex:none;z-index:auto;margin:0;pointer-events:auto}
 html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigation[hidden]{display:none!important}
@@ -8,13 +8,13 @@ html.bottom-navigation .navigation-exception #gameBottomNav.integrated-navigatio
 html.bottom-navigation .pause-navigation #gameBottomNav.integrated-navigation{margin-top:12px;justify-content:flex-start;flex-wrap:wrap}
 .integrated-pause{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;min-height:40px;padding:0;border-radius:10px;border:1px solid #93b2ca88;background:#193c5ee8;color:#fff;font:800 18px system-ui;pointer-events:auto;touch-action:manipulation;cursor:pointer}
 .integrated-pause[hidden]{display:none!important}#lobbyPause{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:40}
-.navigation-dialog{box-sizing:border-box;max-width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 36px);padding:24px;border-radius:18px;border:1px solid #7399bd;background:linear-gradient(140deg,#254d75,#122e4c);color:#f6f9ff;box-shadow:0 16px 70px #0006;overflow:auto;font:15px/1.55 system-ui;z-index:6000}
+.navigation-dialog{box-sizing:border-box;max-width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 36px);padding:24px;border-radius:18px;border:1px solid #7399bd;background:linear-gradient(140deg,#254d75,#122e4c);color:#f6f9ff;box-shadow:0 16px 70px #0006;overflow:auto;font:15px/1.55 system-ui;z-index:6000}@supports(height:100dvh){.navigation-dialog{max-height:calc(100dvh - 36px);}}
 .navigation-dialog::backdrop{background:#071728ae}.navigation-dialog h2{color:inherit;margin:0 0 10px;font:800 25px system-ui;letter-spacing:0}.navigation-dialog p,.navigation-dialog .navigation-guide{color:#e2edfa;white-space:pre-line}.navigation-dialog button{min-height:44px;border:1px solid #a4bed7;border-radius:9px;background:#eaf3ff;color:#234466;font:750 14px system-ui;padding:9px 18px;margin-top:12px}
-html.bottom-navigation .navigation-exception[data-collection=containment] #shell{width:min(100%,calc((100dvh - 58px)*1.77778))!important}
+html.bottom-navigation .navigation-exception[data-collection=containment] #shell{width:min(100%,calc((100vh - 58px)*1.77778))!important;}@supports(height:100dvh){html.bottom-navigation .navigation-exception[data-collection=containment] #shell{width:min(100%,calc((100dvh - 58px)*1.77778))!important;}}
 html.bottom-navigation .navigation-exception[data-collection=containment] #controls{height:58px;min-height:58px}
 html.bottom-navigation .navigation-exception[data-collection=containment] #hint{max-width:35%}
-html.bottom-navigation .navigation-exception[data-collection=stranded] #frame{width:min(100vw,177.778dvh)!important;height:min(56.25vw,100dvh)!important}
-html.bottom-navigation .navigation-exception[data-collection=stranded].stranded-expanded #frame,html.bottom-navigation .navigation-exception[data-collection=stranded] #frame:fullscreen{width:100vw!important;height:100dvh!important;padding:0!important}
+html.bottom-navigation .navigation-exception[data-collection=stranded] #frame{width:min(100vw,177.778vh)!important;height:min(56.25vw,100vh)!important;}@supports(height:100dvh){html.bottom-navigation .navigation-exception[data-collection=stranded] #frame{width:min(100vw,177.778dvh)!important;height:min(56.25vw,100dvh)!important;}}
+html.bottom-navigation .navigation-exception[data-collection=stranded].stranded-expanded #frame,html.bottom-navigation .navigation-exception[data-collection=stranded] #frame:fullscreen{width:100vw!important;height:100vh!important;padding:0!important}@supports(height:100dvh){html.bottom-navigation .navigation-exception[data-collection=stranded].stranded-expanded #frame,html.bottom-navigation .navigation-exception[data-collection=stranded] #frame:fullscreen{height:100dvh!important;}}
 html.bottom-navigation .navigation-exception[data-collection=stranded] #frame #game{height:100%!important}
 html.bottom-navigation .navigation-exception[data-collection=stranded] #frame #touch{bottom:0!important}
 html.bottom-navigation .pause-navigation:is([data-collection=stranded],[data-collection=containment]) #panel{max-height:100%!important;overflow:auto}
@@ -44,7 +44,7 @@ html.bottom-navigation .collection-page[data-collection=hexslide] footer button{
 html.bottom-navigation .collection-page[data-collection=hexslide] .progress{top:76px!important}
 html.bottom-navigation .collection-page[data-collection=hexslide] header{top:10px!important}
 @media(orientation:portrait){
- .navigation-dialog{max-height:calc(100dvh - var(--portrait-safe-top,56px) - 30px);margin-top:calc(var(--portrait-safe-top,56px) + 12px)}
+ .navigation-dialog{max-height:calc(100vh - var(--portrait-safe-top,56px) - 30px);margin-top:calc(var(--portrait-safe-top,56px) + 12px)}@supports(height:100dvh){.navigation-dialog{max-height:calc(100dvh - var(--portrait-safe-top,56px) - 30px);}}
  #lobbyPause{top:calc(var(--portrait-safe-top,56px) + 8px)}
  html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .top{display:grid!important;grid-template-columns:1fr;gap:4px!important;padding:4px 8px!important;min-height:0!important}
  html.bottom-navigation .navigation-exception:is([data-collection=skeehop],[data-collection=digger]) .top>.brand{display:none!important}

@@ -108,7 +108,7 @@ html.go-lane .lane { display: block; }
 .hintlist { display: flex; flex-direction: column; gap: 8px; }
 .hintlist .h { border-radius: 14px; padding: 12px 14px; background: var(--surface-2); font-size: 17px; line-height: 1.4; }
 .hintlist .h b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 3px; }
-.hintlist .h.t3 { background: color-mix(in srgb, var(--gold) 22%, var(--surface)); }
+.hintlist .h.t3 { background: var(--surface);background: color-mix(in srgb, var(--gold) 22%, var(--surface)); }
 .hintinfo { color: var(--muted); font-size: 14px; margin: 10px 2px 0; }
 .sheet .actions { display: flex; gap: 8px; }
 .sheet .actions .btn { flex: 1; }
@@ -192,7 +192,7 @@ html.go-hz .toast { top: calc(env(safe-area-inset-top, 0px) + 92px); }
 html.go-lane .crushpill { display: none; }
 
 /* hints: a trap warning (Easy, Medium) */
-.hintlist .h.warn { background: color-mix(in srgb, #ff5a3c 18%, var(--surface)); border: 2px solid #ff5a3c; }
+.hintlist .h.warn { background: var(--surface);background: color-mix(in srgb, #ff5a3c 18%, var(--surface)); border: 2px solid #ff5a3c; }
 .hintlist .h.warn b { color: #d8312b; }
 
 /* You didn't make it: the cartoon canvas, then the card over the black */

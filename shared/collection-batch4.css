@@ -8,7 +8,7 @@
 .batch4-ui .sheet p,.batch4-ui .sheet li{font-size:15px;line-height:1.5}
 .batch4-ui .collection-build{font-size:14px;color:var(--muted,#62738b)}
 .batch4-ui[data-theme=dark],.batch4-ui[data-theme=blue]{--muted:#bfd0e4}
-.batch4-ui .overlay .endcard{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 24px);overflow-y:auto}
+.batch4-ui .overlay .endcard{max-height:calc(100vh - var(--collection-top) - var(--collection-safe-bottom) - 24px);overflow-y:auto}@supports(height:100dvh){.batch4-ui .overlay .endcard{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 24px);}}
 .batch4-ui .collection-page[data-collection=bricks] .hud{top:calc(var(--collection-top) + 56px)}
 .batch4-ui .collection-page[data-collection=bricks] .playarea{top:calc(var(--collection-top) + 92px)}
 .batch4-ui .collection-page[data-collection=blocks] .stagewrap{top:calc(var(--collection-top) + 56px)}
@@ -26,8 +26,8 @@
 /* Standalone adventure menus: readable at phone size, with checkpoint-saving exits. */
 .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #home{display:none!important}
 .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #app{padding-top:var(--collection-top);padding-bottom:var(--collection-safe-bottom);min-height:0}
-.batch4-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,calc((100dvh - var(--collection-top) - var(--collection-safe-bottom))*1.77778));height:min(56.25vw,calc(100dvh - var(--collection-top) - var(--collection-safe-bottom)))}
-.batch4-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - var(--collection-top) - var(--collection-safe-bottom) - 62px)*1.77778))}
+.batch4-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,calc((100vh - var(--collection-top) - var(--collection-safe-bottom))*1.77778));height:min(56.25vw,calc(100vh - var(--collection-top) - var(--collection-safe-bottom)));}@supports(height:100dvh){.batch4-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,calc((100dvh - var(--collection-top) - var(--collection-safe-bottom))*1.77778));height:min(56.25vw,calc(100dvh - var(--collection-top) - var(--collection-safe-bottom)));}}
+.batch4-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100vh - var(--collection-top) - var(--collection-safe-bottom) - 62px)*1.77778));}@supports(height:100dvh){.batch4-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - var(--collection-top) - var(--collection-safe-bottom) - 62px)*1.77778));}}
 .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #overlay{position:fixed;inset:var(--collection-top) 0 var(--collection-safe-bottom);z-index:50;overflow:auto;align-items:center;padding:22px max(22px,env(safe-area-inset-left));background:linear-gradient(105deg,#142b40f5,#142b40db 55%,#203d5366)}
 .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #overlay.hidden{display:none}
 .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #panel{width:100%;max-width:680px;max-height:100%;overflow-y:auto;margin:auto}
@@ -44,7 +44,7 @@
 .batch4-ui .collection-page[data-collection=containment] #controls{min-height:62px}
 .batch4-ui .collection-page[data-collection=containment] #actions button,.batch4-ui .collection-page[data-collection=containment] #cells button{min-height:44px;min-width:44px;font-size:12px}
 @media(orientation:portrait){.batch4-ui .collection-page[data-collection=containment] #shell{width:100%}.batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #panel{padding-bottom:45px}}
-@media(max-width:360px){.batch4-ui .collection-nav-title{display:block;font-size:13px}.batch4-ui .collection-nav:has(.collection-choose:not([hidden])) .collection-nav-title{display:none}}
+@media(max-width:360px){.batch4-ui .collection-nav-title{display:block;font-size:13px}.batch4-ui .collection-nav.goobs-has-choose .collection-nav-title{display:none}.batch4-ui .collection-nav:has(.collection-choose:not([hidden])) .collection-nav-title{display:none}}
 @media(orientation:landscape) and (max-height:600px){
  .batch4-ui.gg-fs:not(.gg-fs-over) .collection-page:is([data-collection=aliens],[data-collection=digger],[data-collection=maze],[data-collection=snake],[data-collection=triple]) .app{position:relative;display:flex;flex-direction:column;align-items:stretch;padding:calc(var(--collection-top) + 6px) calc(100% - 240px) max(8px,var(--collection-safe-bottom)) 12px!important;gap:6px}
  .batch4-ui .collection-page:is([data-collection=aliens],[data-collection=digger],[data-collection=maze],[data-collection=snake],[data-collection=triple]) .stagewrap{position:absolute;left:258px;right:12px;top:calc(var(--collection-top) + 8px);bottom:max(8px,var(--collection-safe-bottom));width:auto!important;height:auto!important;margin:0!important;min-height:0}
@@ -64,13 +64,13 @@
 .batch4-ui .collection-page[data-collection=homerun] #ovRecovery{top:var(--collection-top);padding-top:12px}
 .batch4-ui .collection-page[data-collection=homerun] .recovery-card p{font-size:14px}
 .batch4-ui .collection-page[data-collection=pegs] .mapwrap{top:var(--collection-top)}
-.batch4-ui .collection-page:is([data-collection=meanbirds],[data-collection=beacon]) #cv{top:var(--collection-top);height:calc(100dvh - var(--collection-top))}
+.batch4-ui .collection-page:is([data-collection=meanbirds],[data-collection=beacon]) #cv{top:var(--collection-top);height:calc(100vh - var(--collection-top));}@supports(height:100dvh){.batch4-ui .collection-page:is([data-collection=meanbirds],[data-collection=beacon]) #cv{height:calc(100dvh - var(--collection-top));}}
 .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze]) .ready{background:#20364ff0;color:#fff;border:1px solid #9ab5d054;border-radius:16px}
 .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze]) .ready p{color:#e0eaf4}
 .batch4-ui .collection-page[data-collection=snake] .modes{flex-wrap:wrap}
 .batch4-ui .collection-page[data-collection=snake] .modes button{flex:1 0 40%;white-space:nowrap}
 @media(orientation:landscape) and (max-height:600px){
- .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready{position:fixed;left:50%!important;right:auto!important;top:calc(var(--collection-top) + 58px)!important;bottom:12px!important;transform:translateX(-50%);width:min(420px,calc(100vw - 32px))!important;height:auto!important;max-height:calc(100dvh - var(--collection-top) - 70px);overflow:auto;z-index:8;gap:8px;padding:12px 18px;justify-content:flex-start}
+ .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready{position:fixed;left:50%!important;right:auto!important;top:calc(var(--collection-top) + 58px)!important;bottom:12px!important;transform:translateX(-50%);width:min(420px,calc(100vw - 32px))!important;height:auto!important;max-height:calc(100vh - var(--collection-top) - 70px);overflow:auto;z-index:8;gap:8px;padding:12px 18px;justify-content:flex-start}@supports(height:100dvh){.batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready{max-height:calc(100dvh - var(--collection-top) - 70px);}}
  .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready h2{font-size:24px}
  .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready p{font-size:15px;max-width:360px}
  .batch4-ui .collection-page:is([data-collection=bricks],[data-collection=blocks],[data-collection=maze],[data-collection=snake]) .ready .go{min-height:44px}
@@ -95,7 +95,7 @@
  .batch4-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) :is(#small,#footnote,.collection-build,#chambergrid){grid-column:1/-1}
 }
 @media(orientation:portrait) and (max-height:650px){
- .batch4-ui .collection-page[data-collection=maze] .ready{position:fixed;left:12px;right:12px;top:calc(var(--collection-top) + 58px);bottom:max(12px,var(--collection-safe-bottom));width:auto;height:auto;max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 70px);overflow-y:auto;z-index:8;padding:20px;justify-content:flex-start}
+ .batch4-ui .collection-page[data-collection=maze] .ready{position:fixed;left:12px;right:12px;top:calc(var(--collection-top) + 58px);bottom:max(12px,var(--collection-safe-bottom));width:auto;height:auto;max-height:calc(100vh - var(--collection-top) - var(--collection-safe-bottom) - 70px);overflow-y:auto;z-index:8;padding:20px;justify-content:flex-start}@supports(height:100dvh){.batch4-ui .collection-page[data-collection=maze] .ready{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 70px);}}
  .batch4-ui .collection-page[data-collection=maze] .ready h2{font-size:26px}
  .batch4-ui .collection-page[data-collection=maze] .ready p{font-size:16px;max-width:300px}
 }

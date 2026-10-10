@@ -1,3 +1,57 @@
+/* Fit fullscreen square boards without container units on iPadOS 15. */
+(function () {
+  var key = (location.pathname.split('/games/')[1] || '').split('/')[0];
+  if (['merge','woodpile','zoodoku','worddice'].indexOf(key) < 0 || (window.CSS && CSS.supports && CSS.supports('width','1cqw'))) return;
+  function start() {
+    var root = document.documentElement, wraps = document.querySelectorAll('.ggfit .boardwrap'), originals = [], pending = false;
+    Array.prototype.forEach.call(wraps, function (el) { originals.push({el:el,width:el.style.width,height:el.style.height}); });
+    function fit() {
+      pending = false;
+      originals.forEach(function (o) {
+        if (!root.classList.contains('gg-fs')) { o.el.style.width=o.width; o.el.style.height=o.height; return; }
+        var parent=o.el.closest('.ggfit');
+        if (!parent || !parent.getClientRects().length) return;
+        var side=Math.floor(Math.min(parent.clientWidth-(key==='merge'?12:0),parent.clientHeight-(key==='merge'?20:0),key==='merge'?650:720));
+        if (side>0) { o.el.style.width=side+'px'; o.el.style.height=side+'px'; }
+      });
+    }
+    function schedule() { if (!pending) { pending=true;requestAnimationFrame(fit); } }
+    new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['class']});
+    if (window.ResizeObserver) { var observer=new ResizeObserver(schedule);originals.forEach(function(o){observer.observe(o.el.closest('.ggfit'));}); }
+    window.addEventListener('resize',schedule);fit();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+
+/* Older Safari ignores :has selectors. Mirror only the collection's existing
+   layout conditions with classes, leaving current browsers on native CSS. */
+(function () {
+  if (window.CSS && CSS.supports && CSS.supports('selector(:has(*))')) return;
+  function start() {
+    function flag(el, name, yes) {
+      if (el && el.classList.contains(name) !== !!yes) el.classList.toggle(name, !!yes);
+    }
+    function update() {
+      pending = false;
+      var body = document.body, root = document.documentElement;
+      flag(root, 'goobs-has-collection-page', root.querySelector('.collection-page'));
+      flag(body, 'goobs-has-classic-nav', body.querySelector('.classic-nav'));
+      flag(body, 'goobs-has-golf-lobby', body.querySelector('.golf-lobby'));
+      flag(body, 'goobs-has-battle', body.querySelector('#battle'));
+      flag(body, 'goobs-has-open-dialog', body.querySelector('dialog[open]'));
+      flag(document.getElementById('panel'), 'goobs-has-color-mode', document.querySelector('#panel #colorMode'));
+      Array.prototype.forEach.call(document.querySelectorAll('.collection-nav'), function (nav) {
+        flag(nav, 'goobs-has-choose', nav.querySelector('.collection-choose:not([hidden])'));
+      });
+    }
+    var pending = false;
+    function schedule() { if (!pending) { pending = true; requestAnimationFrame(update); } }
+    new MutationObserver(schedule).observe(document.body, {subtree:true,childList:true,attributes:true,attributeFilter:['class','open','hidden']});
+    update();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
 /* Native dialogs arrived after many still-used iPads. Keep menus usable there. */
 var GoobsDialog = (function () {
   var nativeDialogs = !!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal);

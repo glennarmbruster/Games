@@ -193,7 +193,7 @@ button { font-family: inherit; color: inherit; cursor: pointer; -webkit-tap-high
   display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font-weight: 800; font-size: 19px; line-height: 1.1;
 }
 .lv small { font-size: 10px; font-weight: 600; color: var(--muted); text-align: center; padding: 0 2px; }
-.lv.done { background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--ink); }
+.lv.done { background: var(--surface);background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--ink); }
 .lv.done::after { content: "\2713"; position: absolute; top: 3px; right: 7px; font-size: 12px; color: var(--ok); font-weight: 900; }
 .lv.cur { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 6px 14px -6px var(--accent); }
 .lv.cur small { color: rgba(255,255,255,.8); }

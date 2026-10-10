@@ -1,22 +1,305 @@
-(function(){'use strict';const $=id=>document.getElementById(id),B=FR,store=Goobs.store('frontline');const meta=Object.assign({open:1,level:1,stars:{},difficulty:'normal',sound:true,seen:false},store.get('meta',{}));let s=store.get('battle',null);if(!s||s.version!==1||!Array.isArray(s.cells)||s.status!=='playing')s=B.create(meta.level,meta.difficulty);s.events=[];const canvas=$('battle'),scene=FRScene.create(canvas);let sources=[],target=-1,effects=[],pointer=null,last=0,speed=1,fraction=.75,ac=null,saveClock=0,resultShown=false,toastTimer=0,oldFocus=null;const typeName={tank:'TANK DEPOT',heli:'HELICOPTER BASE',artillery:'ARTILLERY POST'};
-function save(){store.set('meta',meta);store.set('battle',s);}function tone(hz=400){if(!meta.sound)return;try{ac||=new(window.AudioContext||window.webkitAudioContext)();ac.resume();const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=hz;g.gain.setValueAtTime(.035,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.08);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.08);}catch{}}
-function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3200);}
-function button(id,text,cls=''){return `<button id="${id}" class="${cls}">${text}</button>`;}function bind(id,fn){$(id)?.addEventListener('click',fn);}function exit(){return '<a class="back" href="../index.html">← Back to War Games</a>';}function closeButton(){return button('close','×','close');}
-function modal(html){save();pointer=null;oldFocus=document.activeElement;$('panel').innerHTML=html;$('sheet').hidden=false;$('panel').querySelector('button,a,select')?.focus();}function close(){$('sheet').hidden=true;last=0;oldFocus?.focus?.();}
-function refresh(){const counts=B.summary(s);$('you').textContent=counts[0].bases;$('enemy').textContent=counts[1].bases;$('mission').textContent='Operation '+String(s.level).padStart(2,'0');$('region').textContent=scene.themes[Math.floor((s.level-1)/10)%3].name.toUpperCase();$('speed').textContent=speed+'×';if(sources.length){const c=s.cells[sources[0]];$('kind').textContent=sources.length>1?'COMBINED ORDER':typeName[c.type];$('baseName').textContent=sources.length>1?sources.length+' bases selected':Math.floor(c.n)+' units ready';$('baseDetail').textContent=c.type==='heli'?'Helicopters can fly up to 3 hexes, including across water.':c.type==='artillery'?'Adjacent: capture or reinforce. Two hexes away: bombard only.':'Capture neighboring land. Move through friendly regions to reach the front.';}else{$('kind').textContent='FIELD COMMAND';$('baseName').textContent='Take the next region.';$('baseDetail').textContent='Drag from blue bases to a target. Pass through more blue bases to combine forces.';}}
-function start(n){s=B.create(n,meta.difficulty);sources=[];target=-1;effects=[];pointer=null;resultShown=false;speed=1;meta.level=n;save();scene.fit(s);refresh();close();toast(n===1?'Drag from your blue tank depot to a neighboring region.':'Capture every red region to win.');}
-function menu(welcome=false){modal(`${welcome?'':closeButton()}<div class="eyebrow">WAR GAMES · HEX CONQUEST</div><h1 id="title">FRONTLINE<br><em>REGIONS.</em></h1><p>Build your strength. Choose your route.<br>Take the ground that matters.</p><div class="stats"><div><strong>30</strong>OPERATIONS</div><div><strong>3</strong>LANDSCAPES</div><div><strong>3</strong>UNIT TYPES</div></div><div class="actions">${button('resume',meta.seen?'Resume operation →':'Take command →','primary')}<div class="row">${button('missions','Operations')}${button('guide','How to Play')}</div><div class="row">${button('settings','Settings')}${button('restart','Restart')}</div></div>${exit()}<p class="tiny">No ads. Offline play. · Frontline Regions 1.0</p>`);bind('close',close);bind('resume',()=>{meta.seen=true;save();close();if(s.status!=='playing')result();});bind('missions',missions);bind('guide',guide);bind('settings',settings);bind('restart',restart);}
-function missions(){modal(`${closeButton()}<div class="eyebrow">THE CAMPAIGN</div><h2 id="title">Choose your front.</h2>${scene.themes.map((t,r)=>`<p><b>${t.name}</b></p><div class="levels">${Array.from({length:10},(_,i)=>r*10+i+1).map(n=>`<button data-level="${n}" ${n>meta.open?'disabled':''}>${n}<small>${meta.stars[n]?'★'.repeat(meta.stars[n]):'·'}</small></button>`).join('')}</div>`).join('')}`);bind('close',close);$('panel').querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>start(+b.dataset.level));}
-function restart(){modal(`${closeButton()}<h2 id="title">Restart the operation?</h2><p>Your completed missions remain saved. This battle starts over.</p><div class="actions">${button('confirmRestart','Restart','primary')}${button('keep','Keep playing')}</div>`);bind('close',close);bind('keep',close);bind('confirmRestart',()=>start(s.level));}
-function guide(){modal(`${closeButton()}<div class="eyebrow">FIELD MANUAL</div><h2 id="title">A plan beats a rush.</h2><div class="guide"><div><b>Draw an order</b><p>Drag from a blue base to a target. Sweep through several blue bases before releasing to send a combined attack. You can also tap a blue base, then tap its destination. Gold outlines show reachable targets.</p></div><div><b>Choose how much to send</b><p>Send 50%, 75%, or all of a base’s current units. Orders send a single convoy. Every owned base replenishes its garrison; leaving some defenders behind protects it.</p></div><div><b>Tanks take ground</b><p>Tanks move to adjacent regions or along a chain of friendly regions. Neutral and enemy territory blocks a route until captured. Friendly destinations receive reinforcements.</p></div><div><b>Helicopters cross gaps</b><p>Helicopters reach any land base within three hexes, flying over water and hostile territory. They travel faster but arrive with 90% combat strength.</p></div><div><b>Artillery softens targets</b><p>At two hexes, artillery bombards and reduces enemy strength without capturing. At adjacent targets it sends a ground convoy that can capture. Distant friendly routes use ground convoys.</p></div><div><b>Watch the numbers</b><p>An attacking force subtracts from the defenders. If it exceeds them, the survivors capture the region. Capture every red region and defeat any remaining red convoys to win. Both sides use the same production and combat rules.</p></div></div><div class="actions">${button('ready','Ready to command','primary')}</div><p class="collection-build">War Games · Version 3.1.0</p>`);bind('close',close);bind('ready',close);}
-function settings(){modal(`${closeButton()}<h2 id="title">Your command style.</h2><label class="setting">Enemy pace<select id="difficulty"><option value="normal">Standard</option><option value="relaxed">Relaxed</option></select></label><p>Relaxed gives the enemy more time between orders. Unit strength and production stay the same.</p><div class="actions">${button('sound',meta.sound?'Sound: On':'Sound: Off')}${button('done','Done','primary')}</div>`);$('difficulty').value=meta.difficulty;bind('close',close);bind('done',close);$('difficulty').onchange=()=>{meta.difficulty=$('difficulty').value;s.difficulty=meta.difficulty;save();};bind('sound',()=>{meta.sound=!meta.sound;save();$('sound').textContent=meta.sound?'Sound: On':'Sound: Off';tone();});}
-function result(){resultShown=true;sources=[];target=-1;const win=s.status==='won',stars=s.stats.lost===0?3:s.stats.lost<3?2:1;if(win){meta.stars[s.level]=Math.max(meta.stars[s.level]||0,stars);meta.open=Math.max(meta.open,Math.min(30,s.level+1));save();}modal(`<div class="eyebrow">${win?'REGION SECURED':'REGROUP AND RETURN'}</div><h2 id="title">${win?'The front is yours.':'A new plan awaits.'}</h2><p>${win?'All rival forces have been defeated.':'Your last base and convoy were lost. Try a different route or keep more defenders in reserve.'}</p><div class="stats"><div><strong>${Math.floor(s.time/60)}:${String(Math.floor(s.time%60)).padStart(2,'0')}</strong>BATTLE TIME</div><div><strong>${s.stats.captured}</strong>CAPTURES</div><div><strong>${win?'★'.repeat(stars):s.stats.lost}</strong>${win?'MISSION RATING':'BASES LOST'}</div></div><div class="actions">${win&&s.level<30?button('next','Next operation →','primary'):button('retry','Try again','primary')}${button('choose','Choose operation')}${button('inspect','View battlefield')}</div>${exit()}`);bind('next',()=>start(s.level+1));bind('retry',()=>start(s.level));bind('choose',missions);bind('inspect',close);tone(win?700:190);}
-function send(to){const list=sources.slice();let count=0,error='Choose a destination.';for(const from of list){if(from===to)continue;const r=B.command(s,from,to,fraction,1);if(r.order)count++;else error=r.error;}sources=[];target=-1;refresh();save();if(count){tone(530);toast(count>1?count+' bases advancing.':'Order sent.');}else toast(error);}
-function point(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
-canvas.addEventListener('pointerdown',e=>{if(!$('sheet').hidden||s.status!=='playing'||pointer)return;e.preventDefault();const p=point(e),i=scene.hit(p.x,p.y),prior=sources.slice();pointer={id:e.pointerId,p,start:i,prior,moved:false};canvas.setPointerCapture(e.pointerId);if(i>=0&&s.cells[i].owner===1&&!prior.length){sources=[i];target=-1;tone(350);refresh();}});
-canvas.addEventListener('pointermove',e=>{if(!pointer||pointer.id!==e.pointerId)return;const p=point(e);if(Math.hypot(p.x-pointer.p.x,p.y-pointer.p.y)>9)pointer.moved=true;if(!pointer.moved)return;const i=scene.hit(p.x,p.y);if(i>=0){if(s.cells[i].owner===1&&!sources.includes(i))sources.push(i);target=i;refresh();}});
-canvas.addEventListener('pointerup',e=>{if(!pointer||pointer.id!==e.pointerId)return;const g=pointer,p=point(e),i=scene.hit(p.x,p.y);pointer=null;if(i<0){target=-1;return;}if(g.moved&&sources.length){send(i);return;}if(g.prior.length){if(g.prior.length===1&&g.prior[0]===i){sources=[];target=-1;refresh();}else{sources=g.prior;send(i);}}else if(s.cells[i].owner!==1)toast('Start from a blue base.');});
-canvas.addEventListener('pointercancel',()=>{pointer=null;target=-1;sources=[];refresh();});bind('menu',()=>menu());bind('help',guide);bind('cancel',()=>{sources=[];target=-1;refresh();});bind('speed',()=>{speed=speed===1?2:1;refresh();});document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>{fraction=+b.dataset.send;document.querySelectorAll('[data-send]').forEach(x=>x.classList.toggle('active',x===b));});
-function frame(ms){requestAnimationFrame(frame);const dt=Math.min(.05,last?(ms-last)/1000:0);last=ms;if($('sheet').hidden&&!document.hidden&&s.status==='playing'){for(let i=0;i<speed;i++)B.step(s,dt);for(const e of s.events)effects.push({...e,start:ms});s.events=[];sources=sources.filter(i=>s.cells[i].owner===1);saveClock+=dt;if(saveClock>2){saveClock=0;save();}refresh();if(s.status!=='playing'&&!resultShown)result();}effects=effects.filter(e=>ms-e.start<650);scene.draw(s,{sources,target,effects},ms);}
-window.addEventListener('resize',()=>{scene.fit(s);pointer=null;target=-1;});document.addEventListener('visibilitychange',()=>{last=0;pointer=null;if(document.hidden)save();});window.addEventListener('pagehide',save);scene.fit(s);refresh();$('loading').hidden=true;menu(true);requestAnimationFrame(frame);Goobs.markPlayed('outpost');Goobs.initUpdates();window.__frontline={B,get state(){return s},get sources(){return sources},scene,start,send,close,setSources(a){sources=a;refresh();},setState(next){s=B.clone(next);sources=[];target=-1;resultShown=false;scene.fit(s);refresh();save();}};
+(function() {
+  "use strict";
+  const $ = (id) => document.getElementById(id), B = FR, store = Goobs.store("frontline");
+  const meta = Object.assign({ open: 1, level: 1, stars: {}, difficulty: "normal", sound: true, seen: false }, store.get("meta", {}));
+  let s = store.get("battle", null);
+  if (!s || s.version !== 1 || !Array.isArray(s.cells) || s.status !== "playing") s = B.create(meta.level, meta.difficulty);
+  s.events = [];
+  const canvas = $("battle"), scene = FRScene.create(canvas);
+  let sources = [], target = -1, effects = [], pointer = null, last = 0, speed = 1, fraction = 0.75, ac = null, saveClock = 0, resultShown = false, toastTimer = 0, oldFocus = null;
+  const typeName = { tank: "TANK DEPOT", heli: "HELICOPTER BASE", artillery: "ARTILLERY POST" };
+  function save() {
+    store.set("meta", meta);
+    store.set("battle", s);
+  }
+  function tone(hz = 400) {
+    if (!meta.sound) return;
+    try {
+      ac || (ac = new (window.AudioContext || window.webkitAudioContext)());
+      ac.resume();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "triangle";
+      o.frequency.value = hz;
+      g.gain.setValueAtTime(0.035, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(1e-3, ac.currentTime + 0.08);
+      o.connect(g);
+      g.connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + 0.08);
+    } catch {
+    }
+  }
+  function toast(t) {
+    $("toast").textContent = t;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 3200);
+  }
+  function button(id, text, cls = "") {
+    return `<button id="${id}" class="${cls}">${text}</button>`;
+  }
+  function bind(id, fn) {
+    $(id)?.addEventListener("click", fn);
+  }
+  function exit() {
+    return '<a class="back" href="../index.html">\u2190 Back to War Games</a>';
+  }
+  function closeButton() {
+    return button("close", "\xD7", "close");
+  }
+  function modal(html) {
+    save();
+    pointer = null;
+    oldFocus = document.activeElement;
+    $("panel").innerHTML = html;
+    $("sheet").hidden = false;
+    $("panel").querySelector("button,a,select")?.focus();
+  }
+  function close() {
+    $("sheet").hidden = true;
+    last = 0;
+    oldFocus?.focus?.();
+  }
+  function refresh() {
+    const counts = B.summary(s);
+    $("you").textContent = counts[0].bases;
+    $("enemy").textContent = counts[1].bases;
+    $("mission").textContent = "Operation " + String(s.level).padStart(2, "0");
+    $("region").textContent = scene.themes[Math.floor((s.level - 1) / 10) % 3].name.toUpperCase();
+    $("speed").textContent = speed + "\xD7";
+    if (sources.length) {
+      const c = s.cells[sources[0]];
+      $("kind").textContent = sources.length > 1 ? "COMBINED ORDER" : typeName[c.type];
+      $("baseName").textContent = sources.length > 1 ? sources.length + " bases selected" : Math.floor(c.n) + " units ready";
+      $("baseDetail").textContent = c.type === "heli" ? "Helicopters can fly up to 3 hexes, including across water." : c.type === "artillery" ? "Adjacent: capture or reinforce. Two hexes away: bombard only." : "Capture neighboring land. Move through friendly regions to reach the front.";
+    } else {
+      $("kind").textContent = "FIELD COMMAND";
+      $("baseName").textContent = "Take the next region.";
+      $("baseDetail").textContent = "Drag from blue bases to a target. Pass through more blue bases to combine forces.";
+    }
+  }
+  function start(n) {
+    s = B.create(n, meta.difficulty);
+    sources = [];
+    target = -1;
+    effects = [];
+    pointer = null;
+    resultShown = false;
+    speed = 1;
+    meta.level = n;
+    save();
+    scene.fit(s);
+    refresh();
+    close();
+    toast(n === 1 ? "Drag from your blue tank depot to a neighboring region." : "Capture every red region to win.");
+  }
+  function menu(welcome = false) {
+    modal(`${welcome ? "" : closeButton()}<div class="eyebrow">WAR GAMES \xB7 HEX CONQUEST</div><h1 id="title">FRONTLINE<br><em>REGIONS.</em></h1><p>Build your strength. Choose your route.<br>Take the ground that matters.</p><div class="stats"><div><strong>30</strong>OPERATIONS</div><div><strong>3</strong>LANDSCAPES</div><div><strong>3</strong>UNIT TYPES</div></div><div class="actions">${button("resume", meta.seen ? "Resume operation \u2192" : "Take command \u2192", "primary")}<div class="row">${button("missions", "Operations")}${button("guide", "How to Play")}</div><div class="row">${button("settings", "Settings")}${button("restart", "Restart")}</div></div>${exit()}<p class="tiny">No ads. Offline play. \xB7 Frontline Regions 1.0</p>`);
+    bind("close", close);
+    bind("resume", () => {
+      meta.seen = true;
+      save();
+      close();
+      if (s.status !== "playing") result();
+    });
+    bind("missions", missions);
+    bind("guide", guide);
+    bind("settings", settings);
+    bind("restart", restart);
+  }
+  function missions() {
+    modal(`${closeButton()}<div class="eyebrow">THE CAMPAIGN</div><h2 id="title">Choose your front.</h2>${scene.themes.map((t, r) => `<p><b>${t.name}</b></p><div class="levels">${Array.from({ length: 10 }, (_, i) => r * 10 + i + 1).map((n) => `<button data-level="${n}" ${n > meta.open ? "disabled" : ""}>${n}<small>${meta.stars[n] ? "\u2605".repeat(meta.stars[n]) : "\xB7"}</small></button>`).join("")}</div>`).join("")}`);
+    bind("close", close);
+    $("panel").querySelectorAll("[data-level]").forEach((b) => b.onclick = () => start(+b.dataset.level));
+  }
+  function restart() {
+    modal(`${closeButton()}<h2 id="title">Restart the operation?</h2><p>Your completed missions remain saved. This battle starts over.</p><div class="actions">${button("confirmRestart", "Restart", "primary")}${button("keep", "Keep playing")}</div>`);
+    bind("close", close);
+    bind("keep", close);
+    bind("confirmRestart", () => start(s.level));
+  }
+  function guide() {
+    modal(`${closeButton()}<div class="eyebrow">FIELD MANUAL</div><h2 id="title">A plan beats a rush.</h2><div class="guide"><div><b>Draw an order</b><p>Drag from a blue base to a target. Sweep through several blue bases before releasing to send a combined attack. You can also tap a blue base, then tap its destination. Gold outlines show reachable targets.</p></div><div><b>Choose how much to send</b><p>Send 50%, 75%, or all of a base\u2019s current units. Orders send a single convoy. Every owned base replenishes its garrison; leaving some defenders behind protects it.</p></div><div><b>Tanks take ground</b><p>Tanks move to adjacent regions or along a chain of friendly regions. Neutral and enemy territory blocks a route until captured. Friendly destinations receive reinforcements.</p></div><div><b>Helicopters cross gaps</b><p>Helicopters reach any land base within three hexes, flying over water and hostile territory. They travel faster but arrive with 90% combat strength.</p></div><div><b>Artillery softens targets</b><p>At two hexes, artillery bombards and reduces enemy strength without capturing. At adjacent targets it sends a ground convoy that can capture. Distant friendly routes use ground convoys.</p></div><div><b>Watch the numbers</b><p>An attacking force subtracts from the defenders. If it exceeds them, the survivors capture the region. Capture every red region and defeat any remaining red convoys to win. Both sides use the same production and combat rules.</p></div></div><div class="actions">${button("ready", "Ready to command", "primary")}</div><p class="collection-build">War Games \xB7 Version 3.1.0</p>`);
+    bind("close", close);
+    bind("ready", close);
+  }
+  function settings() {
+    modal(`${closeButton()}<h2 id="title">Your command style.</h2><label class="setting">Enemy pace<select id="difficulty"><option value="normal">Standard</option><option value="relaxed">Relaxed</option></select></label><p>Relaxed gives the enemy more time between orders. Unit strength and production stay the same.</p><div class="actions">${button("sound", meta.sound ? "Sound: On" : "Sound: Off")}${button("done", "Done", "primary")}</div>`);
+    $("difficulty").value = meta.difficulty;
+    bind("close", close);
+    bind("done", close);
+    $("difficulty").onchange = () => {
+      meta.difficulty = $("difficulty").value;
+      s.difficulty = meta.difficulty;
+      save();
+    };
+    bind("sound", () => {
+      meta.sound = !meta.sound;
+      save();
+      $("sound").textContent = meta.sound ? "Sound: On" : "Sound: Off";
+      tone();
+    });
+  }
+  function result() {
+    resultShown = true;
+    sources = [];
+    target = -1;
+    const win = s.status === "won", stars = s.stats.lost === 0 ? 3 : s.stats.lost < 3 ? 2 : 1;
+    if (win) {
+      meta.stars[s.level] = Math.max(meta.stars[s.level] || 0, stars);
+      meta.open = Math.max(meta.open, Math.min(30, s.level + 1));
+      save();
+    }
+    modal(`<div class="eyebrow">${win ? "REGION SECURED" : "REGROUP AND RETURN"}</div><h2 id="title">${win ? "The front is yours." : "A new plan awaits."}</h2><p>${win ? "All rival forces have been defeated." : "Your last base and convoy were lost. Try a different route or keep more defenders in reserve."}</p><div class="stats"><div><strong>${Math.floor(s.time / 60)}:${String(Math.floor(s.time % 60)).padStart(2, "0")}</strong>BATTLE TIME</div><div><strong>${s.stats.captured}</strong>CAPTURES</div><div><strong>${win ? "\u2605".repeat(stars) : s.stats.lost}</strong>${win ? "MISSION RATING" : "BASES LOST"}</div></div><div class="actions">${win && s.level < 30 ? button("next", "Next operation \u2192", "primary") : button("retry", "Try again", "primary")}${button("choose", "Choose operation")}${button("inspect", "View battlefield")}</div>${exit()}`);
+    bind("next", () => start(s.level + 1));
+    bind("retry", () => start(s.level));
+    bind("choose", missions);
+    bind("inspect", close);
+    tone(win ? 700 : 190);
+  }
+  function send(to) {
+    const list = sources.slice();
+    let count = 0, error = "Choose a destination.";
+    for (const from of list) {
+      if (from === to) continue;
+      const r = B.command(s, from, to, fraction, 1);
+      if (r.order) count++;
+      else error = r.error;
+    }
+    sources = [];
+    target = -1;
+    refresh();
+    save();
+    if (count) {
+      tone(530);
+      toast(count > 1 ? count + " bases advancing." : "Order sent.");
+    } else toast(error);
+  }
+  function point(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  canvas.addEventListener("pointerdown", (e) => {
+    if (!$("sheet").hidden || s.status !== "playing" || pointer) return;
+    e.preventDefault();
+    const p = point(e), i = scene.hit(p.x, p.y), prior = sources.slice();
+    pointer = { id: e.pointerId, p, start: i, prior, moved: false };
+    canvas.setPointerCapture(e.pointerId);
+    if (i >= 0 && s.cells[i].owner === 1 && !prior.length) {
+      sources = [i];
+      target = -1;
+      tone(350);
+      refresh();
+    }
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!pointer || pointer.id !== e.pointerId) return;
+    const p = point(e);
+    if (Math.hypot(p.x - pointer.p.x, p.y - pointer.p.y) > 9) pointer.moved = true;
+    if (!pointer.moved) return;
+    const i = scene.hit(p.x, p.y);
+    if (i >= 0) {
+      if (s.cells[i].owner === 1 && !sources.includes(i)) sources.push(i);
+      target = i;
+      refresh();
+    }
+  });
+  canvas.addEventListener("pointerup", (e) => {
+    if (!pointer || pointer.id !== e.pointerId) return;
+    const g = pointer, p = point(e), i = scene.hit(p.x, p.y);
+    pointer = null;
+    if (i < 0) {
+      target = -1;
+      return;
+    }
+    if (g.moved && sources.length) {
+      send(i);
+      return;
+    }
+    if (g.prior.length) {
+      if (g.prior.length === 1 && g.prior[0] === i) {
+        sources = [];
+        target = -1;
+        refresh();
+      } else {
+        sources = g.prior;
+        send(i);
+      }
+    } else if (s.cells[i].owner !== 1) toast("Start from a blue base.");
+  });
+  canvas.addEventListener("pointercancel", () => {
+    pointer = null;
+    target = -1;
+    sources = [];
+    refresh();
+  });
+  bind("menu", () => menu());
+  bind("help", guide);
+  bind("cancel", () => {
+    sources = [];
+    target = -1;
+    refresh();
+  });
+  bind("speed", () => {
+    speed = speed === 1 ? 2 : 1;
+    refresh();
+  });
+  document.querySelectorAll("[data-send]").forEach((b) => b.onclick = () => {
+    fraction = +b.dataset.send;
+    document.querySelectorAll("[data-send]").forEach((x) => x.classList.toggle("active", x === b));
+  });
+  function frame(ms) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, last ? (ms - last) / 1e3 : 0);
+    last = ms;
+    if ($("sheet").hidden && !document.hidden && s.status === "playing") {
+      for (let i = 0; i < speed; i++) B.step(s, dt);
+      for (const e of s.events) effects.push({ ...e, start: ms });
+      s.events = [];
+      sources = sources.filter((i) => s.cells[i].owner === 1);
+      saveClock += dt;
+      if (saveClock > 2) {
+        saveClock = 0;
+        save();
+      }
+      refresh();
+      if (s.status !== "playing" && !resultShown) result();
+    }
+    effects = effects.filter((e) => ms - e.start < 650);
+    scene.draw(s, { sources, target, effects }, ms);
+  }
+  window.addEventListener("resize", () => {
+    scene.fit(s);
+    pointer = null;
+    target = -1;
+  });
+  document.addEventListener("visibilitychange", () => {
+    last = 0;
+    pointer = null;
+    if (document.hidden) save();
+  });
+  window.addEventListener("pagehide", save);
+  scene.fit(s);
+  refresh();
+  $("loading").hidden = true;
+  menu(true);
+  requestAnimationFrame(frame);
+  Goobs.markPlayed("outpost");
+  Goobs.initUpdates();
+  window.__frontline = { B, get state() {
+    return s;
+  }, get sources() {
+    return sources;
+  }, scene, start, send, close, setSources(a) {
+    sources = a;
+    refresh();
+  }, setState(next) {
+    s = B.clone(next);
+    sources = [];
+    target = -1;
+    resultShown = false;
+    scene.fit(s);
+    refresh();
+    save();
+  } };
 })();

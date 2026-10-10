@@ -48,7 +48,7 @@
 
 /* board */
 .boardwrap { position: relative; width: min(calc(100vw - 28px), calc(100vh - 330px), 540px); aspect-ratio: 1 / 1; flex: none; }
-@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100dvh - 330px), 540px); } }
+@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100vh - 330px), 540px); }@supports(height:100dvh){.boardwrap{width: min(calc(100vw - 28px), calc(100dvh - 330px), 540px);}} }
 .board { position: absolute; inset: 0; border-radius: 16px; background: var(--nn-board); box-shadow: var(--shadow); touch-action: none; overflow: hidden; }
 .board.trios { background: var(--tr-board); }
 .bg, .layer { position: absolute; inset: 0; }

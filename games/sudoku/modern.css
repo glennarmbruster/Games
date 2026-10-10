@@ -39,3 +39,5 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 :root[data-theme="dark"],:root[data-theme="blue"]{--accent-ink:#13293c}
 :root[data-theme="blue"]{--accent-2:var(--accent)}
 .lv.cur,.notes i.on,.stool.on .onoff{color:var(--accent-ink)}
+
+@supports not (color:color-mix(in srgb,red,blue)){:root{--sd-bad-bg:rgba(239,68,68,.18);--sd-hint:rgba(255,196,56,.38);--sd-elim:rgba(239,68,68,.14)}}

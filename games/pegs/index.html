@@ -20,7 +20,7 @@
 /* Peg Lagoon styles (themes, UI kit and ad cards come from /shared/goobs.css). The lagoon itself is drawn on the canvas
    edge to edge; the kit floats the back / sound / Menu buttons over it; the shot controls float at the bottom. */
 html.gg-fs-over, html.gg-fs-over body { background: #0b4f86; }
-#cv { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; }
+#cv { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; height: 100vh; display: block; touch-action: none; }@supports(height:100dvh){#cv{height: 100dvh;}}
 .app { touch-action: none; }
 .brand svg { border-radius: 10px; }
 

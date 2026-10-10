@@ -7,7 +7,7 @@
 .upnext .head{width:17px;height:17px;flex:none}.upnext small{font-size:10px}
 .partnote{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 13px);transform:translateX(-50%);max-width:90%;width:max-content;box-sizing:border-box;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);border:1px solid var(--line);padding:8px 13px;border-radius:12px;font-size:12px;font-weight:800;text-align:center;pointer-events:none}
 html.gg-fs-over .turnhint{bottom:calc(env(safe-area-inset-bottom,0px) + 59px)}
-.box{border:1px solid #0002}.tray{background:color-mix(in srgb,var(--surface) 90%,transparent)}
+.box{border:1px solid #0002}.tray{background:var(--surface);background:color-mix(in srgb,var(--surface) 90%,transparent)}
 @media(max-height:650px){html.gg-fs-over .app{gap:5px}.box,.addbox{height:47px}.partnote{font-size:11px;padding:6px 10px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .upnext i{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;border:1px solid #0003;box-shadow:inset 0 2px #fff4;flex:none}.upnext .mark{width:16px;height:16px;fill:#fff;stroke:#263044;stroke-width:1.5;paint-order:stroke}.upnext .mark.dark{fill:#263044;stroke:#fff}

@@ -141,7 +141,8 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .vs td:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
 @media (max-width: 380px) { .scorebd .pts { font-size: 21px; } .scorebd .nm { font-size: 12px; } .msg { font-size: 38px; } }
 /* the New game card on short phones: tighter, and it scrolls if it still doesn't fit */
-#ovStart .card { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#ovStart .card { max-height: calc(100vh - 20px); max-height: calc(100vh - 20px); overflow-y: auto; -webkit-overflow-scrolling: touch; }@supports(height:100dvh){/* the New game card on short phones: tighter, and it scrolls if it still doesn't fit */
+#ovStart .card{max-height: calc(100dvh - 20px);}}
 @media (max-height: 720px) {
   #ovStart .card { padding: 14px 14px 12px; }
   .opps { gap: 6px; }

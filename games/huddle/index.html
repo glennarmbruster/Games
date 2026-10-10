@@ -153,7 +153,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0; ali
 .lv { font-size: 16px; border-radius: 12px; }
 .lv.long { font-size: 13px; letter-spacing: -.3px; }
 .lv small { color: #f5a300; font-size: 10px; letter-spacing: .5px; line-height: 1; margin-top: 1px; }
-.lv.fail { background: color-mix(in srgb, var(--bad) 12%, var(--surface)); }
+.lv.fail { background: var(--surface);background: color-mix(in srgb, var(--bad) 12%, var(--surface)); }
 .lv.cur small { color: #ffe08a; }
 
 .daytoday { width: 100%; margin: 4px 0 12px; }
@@ -163,7 +163,7 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0; ali
 .cal button { position: relative; aspect-ratio: 1; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 800; font-size: 15px; padding: 0; }
 .cal button:disabled { opacity: .35; }
 .cal button.today { box-shadow: inset 0 0 0 3px var(--accent); }
-.cal button.won { background: color-mix(in srgb, var(--ok) 20%, var(--surface)); }
+.cal button.won { background: var(--surface);background: color-mix(in srgb, var(--ok) 20%, var(--surface)); }
 .cal button.won::after { content: "\2713"; position: absolute; top: 1px; right: 4px; font-size: 10px; color: var(--ok); font-weight: 900; }
 .cal button.tried::after { content: ""; position: absolute; bottom: 5px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--muted); }
 

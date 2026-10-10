@@ -93,7 +93,7 @@
  .batch3-ui .collection-page[data-collection=huddle] .play{max-width:none;grid-template-columns:200px minmax(0,1fr);gap:16px}
  .batch3-ui .collection-page[data-collection=huddle] #boardWrap{min-width:0;max-width:none;justify-content:flex-start}
 }
-.batch3-ui .overlay .letter,.batch3-ui .overlay .endcard{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 24px);overflow-y:auto}
+.batch3-ui .overlay .letter,.batch3-ui .overlay .endcard{max-height:calc(100vh - var(--collection-top) - var(--collection-safe-bottom) - 24px);overflow-y:auto}@supports(height:100dvh){.batch3-ui .overlay .letter,.batch3-ui .overlay .endcard{max-height:calc(100dvh - var(--collection-top) - var(--collection-safe-bottom) - 24px);}}
 @media(orientation:landscape) and (max-height:600px){
  .batch3-ui .collection-page[data-collection=cubecorral] .stage{width:auto!important}
  .batch3-ui .collection-page[data-collection=huddle] #boardHead{position:absolute;left:-216px;top:0;width:200px}
@@ -106,6 +106,7 @@
 }
 @media(max-width:360px){
  .batch3-ui .collection-nav-title{display:block;font-size:13px}
+ .batch3-ui .collection-nav.goobs-has-choose .collection-nav-title{display:none}
  .batch3-ui .collection-nav:has(.collection-choose:not([hidden])) .collection-nav-title{display:none}
  .batch3-ui .collection-page[data-collection=parking] .lot-modes{gap:4px;min-width:0}
  .batch3-ui .collection-page[data-collection=parking] .lot-modes button,.batch3-ui .collection-page[data-collection=parking] .lot-modes select{font-size:13px;padding:6px 8px;min-width:0}

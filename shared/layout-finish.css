@@ -15,7 +15,7 @@ html.layout-finish body[data-layout-game=pegs] #integratedHelp{min-width:80px!im
  html.layout-finish body:is([data-layout-game=cubecorral],[data-layout-game=blocks],[data-layout-game=bubbles],[data-layout-game=hoops]) .top #integratedGameNav{flex-basis:100%;justify-content:flex-end;margin:0}
  html.layout-finish body:is([data-layout-game=cubecorral],[data-layout-game=blocks],[data-layout-game=bubbles],[data-layout-game=hoops]) .top #info{position:static!important;transform:none!important;min-width:0;max-width:calc(100% - 98px)}
  html.layout-finish body:is([data-layout-game=cubecorral],[data-layout-game=blocks],[data-layout-game=bubbles],[data-layout-game=hoops]) .stagewrap{margin-top:8px!important}
- html.layout-finish body[data-layout-game=blocks] .ready{top:calc(var(--collection-top,56px) + 106px)!important;max-height:calc(100dvh - var(--collection-top,56px) - 118px)!important}
+ html.layout-finish body[data-layout-game=blocks] .ready{top:calc(var(--collection-top,56px) + 106px)!important;max-height:calc(100vh - var(--collection-top,56px) - 118px)!important;}@supports(height:100dvh){html.layout-finish body[data-layout-game=blocks] .ready{max-height:calc(100dvh - var(--collection-top,56px) - 118px)!important;}}
  html.layout-finish body[data-layout-game=hoops] .wind,html.layout-finish body[data-layout-game=hoops] .spotname{top:calc(var(--collection-top,56px) + 106px)!important}
  html.layout-finish body[data-layout-game=hoops] .label{top:calc(var(--collection-top,56px) + 140px)!important}
 }
@@ -31,7 +31,8 @@ html.layout-finish body[data-layout-game=pegs] #integratedHelp{min-width:80px!im
  html.layout-finish body:is([data-layout-game=parking],[data-layout-game=worddice]) .toolbar #integratedGameNav{display:contents!important}
  html.layout-finish body:is([data-layout-game=parking],[data-layout-game=worddice],[data-layout-game=solitaire]) .toolbar button{height:44px!important;min-height:44px!important;font-size:13px!important;line-height:1.15!important}
  /* Center the whole cabinet-and-controls group, and use the full viewport height. */
- html.layout-finish body[data-layout-game=pinball] .pbapp{display:grid!important;grid-template-columns:158px minmax(0,calc((100dvh - 16px)/1.84))!important;justify-content:center;align-items:stretch;column-gap:16px;padding:8px!important}
+ html.layout-finish body[data-layout-game=pinball] .pbapp{display:grid!important;grid-template-columns:158px minmax(0,calc((100vh - 16px)/1.84))!important;justify-content:center;align-items:stretch;column-gap:16px;padding:8px!important}@supports(height:100dvh){/* Center the whole cabinet-and-controls group, and use the full viewport height. */
+ html.layout-finish body[data-layout-game=pinball] .pbapp{grid-template-columns:158px minmax(0,calc((100dvh - 16px)/1.84))!important;}}
  html.layout-finish body[data-layout-game=pinball] .dmdrow{width:158px!important;align-self:stretch!important;display:flex;flex-direction:column;justify-content:center;gap:12px}
  html.layout-finish body[data-layout-game=pinball] .dmd{flex:none!important;min-height:64px}
  html.layout-finish body[data-layout-game=pinball] #integratedGameNav{width:100%!important;max-width:none!important;display:grid!important;grid-template-columns:1fr 1fr;gap:6px}

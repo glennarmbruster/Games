@@ -45,7 +45,7 @@
 
 /* ---------- board ---------- */
 .boardwrap { position: relative; width: min(calc(100vw - 28px), calc(100vh - 336px), 600px); aspect-ratio: 1 / 1; flex: none; }
-@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100dvh - 336px), 600px); } }
+@supports (height: 100dvh) { .boardwrap { width: min(calc(100vw - 28px), calc(100vh - 336px), 600px); }@supports(height:100dvh){.boardwrap{width: min(calc(100vw - 28px), calc(100dvh - 336px), 600px);}} }
 .board {
   position: absolute; inset: 0; display: grid; border-radius: 16px; overflow: hidden; gap: 2.5px; padding: 2.5px;
   background: var(--grid); touch-action: none; box-shadow: var(--shadow);
@@ -164,15 +164,15 @@
 .xpreview svg.a { width: 66%; height: 66%; }
 /* a free animal that starts in place: a gold ring, can't be moved */
 .cell.given::after { content: ""; position: absolute; inset: 7%; border-radius: 22%; box-shadow: 0 0 0 2.5px #ffc53d, 0 0 10px rgba(255,197,61,.7); pointer-events: none; }
-.msg.gift { color: var(--ink); background: color-mix(in srgb, #ffc53d 22%, var(--surface)); border-radius: 14px; padding: 8px 12px; box-sizing: border-box; }
+.msg.gift { color: var(--ink); background: var(--surface);background: color-mix(in srgb, #ffc53d 22%, var(--surface)); border-radius: 14px; padding: 8px 12px; box-sizing: border-box; }
 .lv.skip { background: var(--surface-2); color: var(--muted); }
 .startinput { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 12px; font-size: 30px; font-weight: 800; text-align: center; padding: 10px;
   border-radius: 14px; border: 2px solid var(--line-strong); background: var(--surface-2); color: var(--ink); font-variant-numeric: tabular-nums; }
 .startinput:focus { outline: none; border-color: var(--accent); }
 .btn.small { width: auto; min-height: 38px; padding: 0 16px; font-size: 15px; flex: none; }
 .lvtag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: .3px; vertical-align: 3px;
-  background: color-mix(in srgb, var(--bad) 16%, var(--surface)); color: var(--bad); }
-.lvtag.gift { background: color-mix(in srgb, #ffc53d 30%, var(--surface)); color: #8a5a00; }
+  background: var(--surface);background: color-mix(in srgb, var(--bad) 16%, var(--surface)); color: var(--bad); }
+.lvtag.gift { background: var(--surface);background: color-mix(in srgb, #ffc53d 30%, var(--surface)); color: #8a5a00; }
 
 /* ---------- full screen (1.9.0; Glenn: "I would like all the games full screen") ----------
    Goobs.fullscreen() puts the page edge to edge; the board sits in a .ggfit box (the space left between the level bar and

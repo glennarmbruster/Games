@@ -132,7 +132,7 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
 .pod .rg { position: absolute; top: -6px; right: -4px; width: 18px; height: 18px; display: none; }
 .pod .rg svg { width: 100%; height: 100%; display: block; }
 .pod.ring .rg { display: block; }
-.pod.on { transform: translateY(-2px); border-color: var(--sc); box-shadow: 0 0 0 2px var(--sc), 0 0 18px var(--sc); background: linear-gradient(180deg, color-mix(in srgb, var(--sc) 40%, transparent), rgba(255,255,255,.05)); }
+.pod.on { transform: translateY(-2px); border-color: var(--sc); box-shadow: 0 0 0 2px var(--sc), 0 0 18px var(--sc); background: linear-gradient(180deg, rgba(100,150,220,.25), rgba(255,255,255,.05));background: linear-gradient(180deg, color-mix(in srgb, var(--sc) 40%, transparent), rgba(255,255,255,.05)); }
 .pod.out { opacity: .45; }
 .pod.buzz { animation: buzz .5s ease-out; }
 @keyframes buzz { 0%, 100% { transform: none; } 25% { transform: translateY(-4px) scale(1.04); } 60% { transform: translateY(-1px); } }
@@ -275,8 +275,8 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
 .endtext b { color: var(--ink); }
 .endtext .big { display: block; font: 900 40px/1.1 -apple-system, system-ui, sans-serif; letter-spacing: -1px; color: var(--ink); margin: 2px 0 6px; }
 .endtext .verdict { display: inline-block; margin: 6px 0 4px; padding: 4px 12px; border-radius: 10px; font-weight: 800; font-size: 14.5px; }
-.endtext .verdict.good { background: color-mix(in srgb, var(--ok) 18%, var(--surface)); color: var(--ok); }
-.endtext .verdict.bad { background: color-mix(in srgb, var(--bad) 15%, var(--surface)); color: var(--bad); }
+.endtext .verdict.good { background: var(--surface);background: color-mix(in srgb, var(--ok) 18%, var(--surface)); color: var(--ok); }
+.endtext .verdict.bad { background: var(--surface);background: color-mix(in srgb, var(--bad) 15%, var(--surface)); color: var(--bad); }
 .endtext .play { font-size: 12px; margin-top: 8px; }
 .card .actions .btn small { display: block; font-size: 12px; font-weight: 600; opacity: .8; }
 

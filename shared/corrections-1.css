@@ -12,8 +12,8 @@ html.collection-ui.correction-ui{--collection-nav-h:0px;--collection-top:0px}
 .correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) #collectionChoose{display:none!important}
 .correction-ui .collection-page:is([data-collection=meanbirds],[data-collection=beacon],[data-collection=homerun]) .hudl{padding-left:142px}
 .correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #app{padding-top:0!important}
-.correction-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,177.778dvh);height:min(56.25vw,100dvh)}
-.correction-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - 62px)*1.77778))}
+.correction-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,177.778vh);height:min(56.25vw,100vh);}@supports(height:100dvh){.correction-ui .collection-page[data-collection=stranded] #frame{width:min(100vw,177.778dvh);height:min(56.25vw,100dvh);}}
+.correction-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100vh - 62px)*1.77778));}@supports(height:100dvh){.correction-ui .collection-page[data-collection=containment] #shell{width:min(100%,calc((100dvh - 62px)*1.77778));}}
 .correction-ui .collection-page:is([data-collection=getout],[data-collection=getout2]) .go-lane{background:linear-gradient(140deg,#244971,#112942)}
 .correction-ui .focus-toggle,.correction-ui .fullscreen-return{position:fixed;right:12px;top:max(8px,env(safe-area-inset-top));z-index:210;min-width:44px;min-height:44px;border-radius:12px;border:1px solid #ffffff88;background:#17385b;color:white;font:700 15px system-ui;padding:8px 12px}
 .correction-ui .focus-toggle{top:auto;bottom:max(8px,env(safe-area-inset-bottom))}
@@ -64,9 +64,9 @@ html.collection-ui.correction-ui{--collection-nav-h:0px;--collection-top:0px}
 .correction-ui .collection-page[data-collection=meanbirds] #cv{pointer-events:auto}
 .correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #panel{padding-top:45px}
 .correction-ui .collection-page:is([data-collection=stranded],[data-collection=containment]) #hud{padding-left:150px}
-@media(orientation:landscape){#shapeBoard{width:min(100%,calc((100dvh - 135px)*9/var(--rows)));justify-self:center}.shapeSide{max-height:calc(100dvh - 135px);overflow-y:auto}}
+@media(orientation:landscape){#shapeBoard{width:min(100%,calc((100vh - 135px)*9/var(--rows)));justify-self:center}@supports(height:100dvh){#shapeBoard{width:min(100%,calc((100dvh - 135px)*9/var(--rows)));}}.shapeSide{max-height:calc(100vh - 135px);overflow-y:auto}@supports(height:100dvh){.shapeSide{max-height:calc(100dvh - 135px);}}}
 .correction-ui .collection-page[data-collection=golf] .collection-build{font-size:14px}
-.correction-ui .collection-page[data-collection=hidden] .tray{display:block!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;height:auto!important;max-height:45dvh;overflow-y:auto}
+.correction-ui .collection-page[data-collection=hidden] .tray{display:block!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;height:auto!important;max-height:45vh;overflow-y:auto}@supports(height:100dvh){.correction-ui .collection-page[data-collection=hidden] .tray{max-height:45dvh;}}
 .correction-ui .collection-page[data-collection=hidden] .tray .toolbar{flex-wrap:nowrap!important}.correction-ui .collection-page[data-collection=hidden] .tray .tool{min-width:0!important}
 .correction-ui .collection-page[data-collection=hidden] .stagewrap{left:0!important;right:0!important;bottom:var(--trayh,160px)!important}
 .correction-ui .focus-view[data-collection=hidden] .stagewrap{inset:0 0 var(--trayh,160px)!important}
@@ -89,12 +89,12 @@ html.correction-ui.batch4-ui .collection-page:is([data-collection=digger],[data-
  html.correction-ui.batch4-ui .collection-page[data-collection=maze] .joy{position:fixed;right:8px;bottom:8px;width:112px;height:112px;margin:0!important}
 }
 .correction-ui.collection-ui .overlay{padding-top:max(60px,calc(env(safe-area-inset-top) + 56px))}
-.correction-ui.collection-ui .overlay :is(.card,.sheet,.endcard,.startcard){max-height:calc(100dvh - 76px - env(safe-area-inset-bottom));overflow-y:auto}
+.correction-ui.collection-ui .overlay :is(.card,.sheet,.endcard,.startcard){max-height:calc(100vh - 76px - env(safe-area-inset-bottom));overflow-y:auto}@supports(height:100dvh){.correction-ui.collection-ui .overlay :is(.card,.sheet,.endcard,.startcard){max-height:calc(100dvh - 76px - env(safe-area-inset-bottom));}}
 .correction-ui .collection-page[data-collection=topple] .hudl{padding-left:140px}
 html.correction-ui[data-theme=dark] .collection-page:is([data-collection=screwball],[data-collection=bridge],[data-collection=hexslide],[data-collection=dice],[data-collection=mines],[data-collection=zoodoku],[data-collection=huddle],[data-collection=shelf],[data-collection=match3],[data-collection=snake],[data-collection=triple],[data-collection=bricks]),html.correction-ui[data-theme=blue] .collection-page:is([data-collection=screwball],[data-collection=bridge],[data-collection=hexslide],[data-collection=dice],[data-collection=mines],[data-collection=zoodoku],[data-collection=huddle],[data-collection=shelf],[data-collection=match3],[data-collection=snake],[data-collection=triple],[data-collection=bricks]){--ink:#f3f7ff;--surface:#284568;--surface-2:#304f7b;--muted:#ccddf4;background:linear-gradient(140deg,#283d70,#152c4b)!important}
 .correction-ui .collection-page[data-collection=homerun] .skill .pips{flex-wrap:wrap;max-width:260px}.correction-ui .collection-page[data-collection=homerun] .skill .pips i{width:6px;flex:none}
 .correction-ui .collection-page[data-collection=siege] #segMode button::before{content:'♜';display:block;font-size:40px;color:#3877af;margin-bottom:4px}.correction-ui .collection-page[data-collection=siege] #segMode button[data-v=swarm]::before{content:'⬡';color:#8756c1}
-.correction-ui .stranded-expanded #frame{position:fixed;inset:0;width:100vw!important;height:100dvh!important}
+.correction-ui .stranded-expanded #frame{position:fixed;inset:0;width:100vw!important;height:100vh!important;}@supports(height:100dvh){.correction-ui .stranded-expanded #frame{height:100dvh!important;}}
 .correction-ui .collection-page[data-collection=stranded] .focus-toggle{right:12px;bottom:42px}
 .correction-ui .collection-page[data-collection=screwball].collection{background:radial-gradient(ellipse at top,#365587,#15284b)!important;color:#fff3d7}
 .correction-ui .collection-page[data-collection=screwball] .collection-title p,.correction-ui .collection-page[data-collection=screwball] .collection-foot{color:#d0e0f5}

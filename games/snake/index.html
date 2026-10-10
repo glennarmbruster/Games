@@ -40,7 +40,7 @@
 /* start / pause panel inside the board */
 .ready {
   position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-  background: color-mix(in srgb, var(--surface) 72%, transparent); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  background: var(--surface);background: color-mix(in srgb, var(--surface) 72%, transparent); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   text-align: center; padding: 18px;
 }
 .ready.show { display: flex; }
@@ -87,7 +87,7 @@ html.gg-fs .top #btnPause:disabled { opacity: .4; }
 /* Botanical board materials; dark/blue themes retain their own palettes. */
 :root:not([data-theme="dark"]):not([data-theme="blue"]) {--nd-board:#e1e4ff;--nd-board-2:#d1d7f8;--nd-wall:#676bb0;--nd-wall-top:#a4a8ed;--nd-snake:#a453e7;--nd-snake-2:#6230af;--nd-food:#e94e52;}
 .stage {border-radius:12px;box-shadow:0 0 0 1px #6d886688,0 0 0 4px #52694733,0 10px 24px #18352433;}
-.ready {background:color-mix(in srgb,var(--surface) 87%,transparent);}
+.ready {background:var(--surface);background:color-mix(in srgb,var(--surface) 87%,transparent);}
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
