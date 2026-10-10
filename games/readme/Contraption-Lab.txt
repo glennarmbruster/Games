@@ -1,4 +1,4 @@
-CONTRAPTION LAB — VERSION 1.0.1
+CONTRAPTION LAB — VERSION 1.0.2
 
 Upload all ZIP contents to the repository root, preserving games/contraption/.
 This update adds one game to the Puzzles tab and its dedicated offline cache group.
@@ -18,3 +18,6 @@ The offline cache is explicitly versioned at 1.0.1.
 
 The mechanics are an authored chain-reaction puzzle. Ball travel and part
 activation are deterministic animation, not a general-purpose physics sandbox.
+
+1.0.2: Smoother continuous animation on the display clock and a new
+full-bleed workshop icon. No puzzle rules or saved progress changed.
