@@ -73,7 +73,7 @@ const VERSIONS = {
   "cannon": "0.20.0",
   "pool": "1.0.5",
   "metro": "1.0.3",
-  "contraption": "1.0.3"
+  "contraption": "1.1.0"
 };
 const GROUPS = {
   "handheld": [
@@ -2277,6 +2277,7 @@ const GROUPS = {
   "contraption": [
     "games/contraption/",
     "games/contraption/index.html",
+    "games/contraption/free.html",
     "games/contraption/workshop.webp"
   ],
   "metro": [

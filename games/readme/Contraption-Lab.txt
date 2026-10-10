@@ -1,26 +1,41 @@
-CONTRAPTION LAB — VERSION 1.0.3
+CONTRAPTION LAB — VERSION 1.1.0
 
 Upload all ZIP contents to the repository root, preserving games/contraption/.
-This update adds one game to the Puzzles tab and its dedicated offline cache group.
-12 authored challenges are followed by deterministic generated workshop levels.
+This update adds a Guided and Free Build choice when opening the game.
+Guided has 12 authored challenges followed by generated workshop levels.
+Free Build is an open workshop with movable, rotatable parts and a ball
+simulation. Its layout saves separately as contraption.free.v1.
 The workshop art and game code are local; no network or third-party scripts are required.
 Saved progress uses localStorage key contraption.lab.v1.
 
 PLAY
+Choose Guided or Free Build when Contraption Lab opens.
+
+GUIDED
 Drag a part from the tray to a numbered mount, or tap part then mount.
 Tap a mounted part to turn it. Drag a mounted part to another mount to swap.
 Run checks the chain, stopping at the first failed link.
 Use Hint for the next missing/incorrect component.
 
+FREE BUILD
+Tap a part, then tap the board, or drag directly from the tray.
+Drag a placed part to move it. Tap it to rotate. Drag it off to remove.
+Move the Ball and Goal markers by dragging them or using their buttons.
+Run tests the machine; Example loads a small working arrangement.
+Undo restores the prior layout after moves, rotations, Example, or Clear.
+
 VERSION NOTE
 Run advances each link on an independent timer and displays the ball in a
 separate animated layer. A canvas frame cannot stall the result.
-The offline cache is explicitly versioned at 1.0.3.
+The offline cache is explicitly versioned at 1.1.0 and includes free.html.
 
-The mechanics are an authored chain-reaction puzzle. Ball travel and part
-activation are deterministic animation, not a general-purpose physics sandbox.
+Guided uses authored chain-reaction puzzles and deterministic animation.
+Free Build uses a simplified 2D ball simulation with part forces and collisions.
 
 1.0.2: Smoother continuous animation on the display clock and a new
 full-bleed workshop icon. No puzzle rules or saved progress changed.
 1.0.3: Rebuilt Run progression to finish even when canvas animation stalls.
 This package contains Contraption Lab only; Pool is not included.
+1.1.0: Added Free Build with arbitrary placement, move/rotate, Ball and Goal
+markers, Run/Stop, Undo, Clear, and a working example for both orientations.
+Guided puzzles and saved progress remain intact.
