@@ -62,8 +62,8 @@ function render(t=1){
 function say(s){$('message').textContent=s;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify({version:2,level,state,history,moves,unlocked,best,sound}));}catch(e){say('Progress could not be saved on this device.');}}
 function ping(f=340){if(!sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=ping.ctx||(ping.ctx=new C());c.resume();const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(f,c.currentTime);o.frequency.exponentialRampToValueAtTime(f*.55,c.currentTime+.15);g.gain.setValueAtTime(.065,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.2);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.22);}catch(e){}}
-function dialog(html){$('dialogContent').innerHTML=html;if(!$('dialog').open)$('dialog').showModal();}
-function close(){$('dialog').close();}
+function dialog(html){$('dialogContent').innerHTML=html;if(!$('dialog').open)GoobsDialog.open($('dialog'));}
+function close(){GoobsDialog.close($('dialog'));}
 function reset(l){request++;clearTimeout(workerTimer);if(worker){worker.terminate();worker=null;}level=JSON.parse(JSON.stringify(l));state=R.initial(level);history=[];moves=0;selected=-1;hintPair=null;busy=false;anim=null;drag=null;render();save();say(level.level<=4?'Tap a brass screw, then an exposed empty hole.':'Plan ahead: swinging planks can cover your next hole.');}
 function askWorker(data,callback){
  if(worker)worker.terminate();clearTimeout(workerTimer);worker=new Worker('timber-worker.js');const id=++request;

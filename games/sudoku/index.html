@@ -70,11 +70,11 @@ html.gg-fs .app { gap: 6px; }
 
 /* the grid */
 .ggfit { display: flex; align-items: flex-start; justify-content: center; }
-.boardwrap { position: relative; width: min(100cqw, 100cqh, 620px); aspect-ratio: 1; }
+.boardwrap { position: relative; width: var(--sd-board-size, 300px); height: var(--sd-board-size, 300px); flex: none; }
 .board { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
   background: var(--surface); border: 3px solid var(--sd-thick); border-radius: 10px; overflow: hidden; touch-action: manipulation; }
 .cell { position: relative; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--sd-thin); border-bottom: 1px solid var(--sd-thin);
-  font-family: var(--round); font-weight: 700; font-size: calc(min(100cqw, 100cqh, 620px) / 9 * .62); line-height: 1; color: var(--sd-user);
+  font-family: var(--round); font-weight: 700; font-size: calc(var(--sd-board-size, 300px) / 9 * .62); line-height: 1; color: var(--sd-user);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color .12s; }
 .cell.c8 { border-right: 0; } .cell.r8 { border-bottom: 0; }
 .cell.c2, .cell.c5 { border-right: 2.5px solid var(--sd-thick); }
@@ -90,7 +90,7 @@ html.gg-fs .app { gap: 6px; }
 .cell.ht { box-shadow: inset 0 0 0 3px var(--gold); }
 .notes { position: absolute; inset: 2px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
 .notes i { font-style: normal; display: flex; align-items: center; justify-content: center; font-family: var(--font); font-weight: 600;
-  font-size: calc(min(100cqw, 100cqh, 620px) / 9 * .27); color: var(--muted); border-radius: 4px; }
+  font-size: calc(var(--sd-board-size, 300px) / 9 * .27); color: var(--muted); border-radius: 4px; }
 .notes i.on { color: #fff; background: var(--accent); }
 .notes i.gone { color: var(--bad); text-decoration: line-through; }
 .cell.pop { animation: pop .45s ease-out both; }
@@ -1320,13 +1320,23 @@ var SD_BANK = {"e":"20,V-9L4I@FDE&;H_)o;hsI+Kms$r$aW.4&%%:D>c$(%9-qUep&HnWrd01#/
     $('btnHint').disabled = !!g.over; $('btnFill').disabled = !!g.over; $('btnErase').disabled = !!g.over;
   }
   // On tall phones the grid is limited by the width; give some of the spare height to the number pad.
+  // Measure the available space instead of relying on container-query units (iPadOS 16+).
+  // Explicit height also works on Safari versions without aspect-ratio support.
+  function fitBoard() {
+    var fit = document.querySelector('.ggfit');
+    if (!fit) return;
+    var side = Math.floor(Math.min(fit.clientWidth, fit.clientHeight, 620));
+    if (side > 0) document.documentElement.style.setProperty('--sd-board-size', side + 'px');
+  }
   function fitPad() {
+    fitBoard();
     var fit = document.querySelector('.ggfit'), wrap = $('boardwrap');
     if (!fit || !wrap) return;
     var base = Math.max(54, Math.min(76, window.innerHeight * 0.084));
     var spare = fit.clientHeight - wrap.offsetHeight + ((parseFloat(getComputedStyle($('pad')).getPropertyValue('--padh')) || base) - base);
     var h = Math.round(base + Math.max(0, Math.min(18, (spare - 40) * 0.25)));
     document.documentElement.style.setProperty('--padh', h + 'px');
+    fitBoard();
   }
   function popCell(i) { var el = cellEls[i]; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); setTimeout(function () { el.classList.remove('pop'); }, 500); }
   function popDigit(d) { for (var i = 0; i < 81; i++) if (g.v[i] === d) (function (k, delay) { setTimeout(function () { popCell(k); }, delay); })(i, 40 * (SD.R[i] + SD.C[i]) / 2); }
@@ -1449,7 +1459,9 @@ var SD_BANK = {"e":"20,V-9L4I@FDE&;H_)o;hsI+Kms$r$aW.4&%%:D>c$(%9-qUep&HnWrd01#/
       if (mv) { if (sel < 0) sel = 40; else { var r = SD.R[sel], c = SD.C[sel]; if (mv === -9) r = (r + 8) % 9; if (mv === 9) r = (r + 1) % 9; if (mv === -1) c = (c + 8) % 9; if (mv === 1) c = (c + 1) % 9; sel = r * 9 + c; } renderAll(); e.preventDefault(); }
     });
     var fq = 0, refit = function () { if (fq) return; fq = requestAnimationFrame(function () { fq = 0; fitPad(); }); };
-    window.addEventListener('resize', refit); setTimeout(refit, 50);
+    window.addEventListener('resize', refit);
+    if (window.ResizeObserver) new ResizeObserver(refit).observe(document.querySelector('.ggfit'));
+    fitPad(); setTimeout(refit, 50);
     document.addEventListener('visibilitychange', function () { tick(); if (document.hidden) save(); });
     window.addEventListener('pagehide', function () { tick(); save(); });
     try { if (!load()) newPuzzle(); else renderAll(); }

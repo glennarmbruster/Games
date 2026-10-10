@@ -1,3 +1,65 @@
+/* Native dialogs arrived after many still-used iPads. Keep menus usable there. */
+var GoobsDialog = (function () {
+  var nativeDialogs = !!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal);
+  if (!nativeDialogs) {
+    var css = document.createElement('style');
+    css.textContent = 'dialog:not([open]){display:none!important}dialog[open]{display:block;position:fixed!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;margin:0!important;max-width:calc(100vw - 24px)!important;max-height:calc(100vh - 24px)!important;overflow:auto!important;z-index:10001!important}.goobs-dialog-shade{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.6);z-index:10000;touch-action:none}';
+    document.head.appendChild(css);
+  }
+  function close(d) {
+    if (nativeDialogs) { d.close(); return; }
+    if (!d.open) return;
+    d.open = false; d.removeAttribute('open');
+    if (d._goobsShade) d._goobsShade.remove();
+    document.removeEventListener('keydown', d._goobsKeys, true);
+    if (d._goobsFocus && document.contains(d._goobsFocus)) d._goobsFocus.focus();
+    d.dispatchEvent(new Event('close'));
+  }
+  function open(d) {
+    if (nativeDialogs) { d.showModal(); return; }
+    if (d.open) return;
+    d._goobsFocus = document.activeElement;
+    d.open = true; d.setAttribute('open', ''); d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true');
+    var shade = document.createElement('div'); shade.className = 'goobs-dialog-shade';
+    document.body.appendChild(shade); d._goobsShade = shade;
+    function buttons() { return Array.prototype.filter.call(d.querySelectorAll('button,input,select,textarea,a[href],[tabindex]'), function (e) { return !e.disabled && e.tabIndex >= 0 && e.getClientRects().length; }); }
+    d._goobsKeys = function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); if (d.dispatchEvent(new Event('cancel', {cancelable:true}))) close(d); }
+      if (e.key === 'Tab') { var a = buttons(), i = a.indexOf(document.activeElement); if (!a.length) { e.preventDefault(); return; } if (e.shiftKey && i <= 0) { e.preventDefault(); a[a.length-1].focus(); } else if (!e.shiftKey && (i < 0 || i === a.length-1)) { e.preventDefault(); a[0].focus(); } }
+    };
+    document.addEventListener('keydown', d._goobsKeys, true);
+    var focus = buttons()[0]; if (focus) focus.focus();
+  }
+  return {open:open, close:close};
+})();
+
+/* Older Safari has no Canvas roundRect. The collection uses circular numeric
+   radii; keep native drawing untouched when it is available. */
+(function () {
+  if (!window.CanvasRenderingContext2D || CanvasRenderingContext2D.prototype.roundRect) return;
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+    var r = Array.isArray(radii) ? radii.slice() : [radii == null ? 0 : radii];
+    if (!r.length || r.length > 4) throw new RangeError('Expected one to four corner radii');
+    for (var i = 0; i < r.length; i++) {
+      r[i] = Number(r[i]);
+      if (r[i] < 0) throw new RangeError('Corner radius must not be negative');
+      if (!isFinite(r[i])) return;
+    }
+    if (r.length === 1) r = [r[0], r[0], r[0], r[0]];
+    else if (r.length === 2) r = [r[0], r[1], r[0], r[1]];
+    else if (r.length === 3) r.push(r[1]);
+    if (w < 0) { x += w; w = -w; r = [r[1], r[0], r[3], r[2]]; }
+    if (h < 0) { y += h; h = -h; r = [r[3], r[2], r[1], r[0]]; }
+    var scale = Math.min(1, w / (r[0] + r[1] || 1), w / (r[2] + r[3] || 1), h / (r[0] + r[3] || 1), h / (r[1] + r[2] || 1));
+    r = r.map(function (v) { return v * scale; });
+    this.moveTo(x + r[0], y); this.lineTo(x + w - r[1], y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+    this.lineTo(x + w, y + h - r[2]); this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+    this.lineTo(x + r[3], y + h); this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+    this.lineTo(x, y + r[0]); this.quadraticCurveTo(x, y, x + r[0], y); this.closePath();
+  };
+})();
+
 /* Goobs-Games shared runtime: storage, global settings (theme, ads), recent/favorites,
    service worker + "Update available" bar. Load this in <head> so the theme applies before paint. */
 var Goobs = (function () {

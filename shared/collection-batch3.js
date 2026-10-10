@@ -27,7 +27,7 @@ function setup(){
    const copy=el('span','collection-card-body');copy.append(el('strong','collection-card-title',name),el('span','collection-description',desc),el('span','collection-play','Play / Resume →'));b.append(illustration,copy);b.onclick=()=>{close();document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));$('ggMenu')?.classList.remove('show');$(id).click();};grid.append(b);
   }
   inner.append(grid,el('p','collection-note','Your existing puzzles, levels and progress stay with each mode.'));selector.append(inner);document.body.append(selector);choose.onclick=open;open();
-  document.addEventListener('keydown',e=>{if(selector.hidden)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close();choose.focus();}if(e.key==='Tab'){const a=[exit,...selector.querySelectorAll('button')],i=a.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();a.at(-1).focus();}else if(!e.shiftKey&&i===a.length-1){e.preventDefault();exit.focus();}}},true);
+  document.addEventListener('keydown',e=>{if(selector.hidden)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close();choose.focus();}if(e.key==='Tab'){const a=[exit,...selector.querySelectorAll('button')],i=a.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();a[a.length-1].focus();}else if(!e.shiftKey&&i===a.length-1){e.preventDefault();exit.focus();}}},true);
  }
  const help=document.querySelector('#ovHelp .sheet,#ovHelp .card,#help .sheet,#help .card');if(help)help.append(el('p','collection-build',title+' · Version '+version));
  document.querySelectorAll('.overlay button').forEach(b=>{if(/^(All games|Exit to Games|Exit to main menu)$/i.test(b.textContent.trim()))b.hidden=true;});
