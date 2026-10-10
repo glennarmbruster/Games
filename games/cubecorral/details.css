@@ -12,3 +12,12 @@
 .slots{padding-top:12px}.slot{background:var(--surface);background:color-mix(in srgb,var(--surface) 85%,transparent);box-shadow:inset 0 2px 8px #0001}
 @media(max-height:650px){.slot{height:45px}.lane .front{height:70px}.tactical{padding:4px 8px}.lanes{padding-top:12px}.lane .queue{height:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* Planning text belongs to the same visual scale as the blaster numbers. */
+.tactical{font-size:13px;line-height:1.25}
+.lane .front{height:90px;padding-bottom:32px}
+.lane-read{min-height:28px;display:flex;align-items:center;justify-content:center;padding:3px 4px;font-size:11.5px;line-height:1.1;white-space:normal}
+.lane .queue i{font-size:12px;width:25px;height:24px}
+.lane .queue small{font-size:12px}
+.lane.down .front .blaster{box-shadow:0 0 0 3px #ffcf54,inset 0 3px 0 #fff6,0 3px 0 #0005}
+.lane:focus-visible{outline:3px solid #2f80c0;outline-offset:3px;border-radius:12px}
+@media(max-height:650px){.lane .front{height:75px;padding-bottom:30px}.lane .queue{height:24px}}

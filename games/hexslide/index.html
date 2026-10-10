@@ -1,4 +1,22 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#e9e7ff"><title>Hex Slide · Goobs Games</title><link rel="icon" href="../../icons/icon-192.png"><link rel="stylesheet" href="style.css"><script src="../../shared/goobs.js"></script><link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script><link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/navigation-exceptions.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head><body>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/navigation-exceptions.css"><link rel="stylesheet" href="../../shared/layout-finish.css">
+<style>
+/* Use the full footboard so the four native tools can keep readable labels. */
+html.layout-finish body[data-layout-game=hexslide] footer.finished-controls {width:min(470px,calc(100% - 8px));padding:3px;gap:2px}
+html.layout-finish body[data-layout-game=hexslide] footer.finished-controls>button {font-size:21px;min-height:47px!important}
+html.layout-finish body[data-layout-game=hexslide] footer.finished-controls>button span {font-size:11px;line-height:1.1;margin-top:1px;white-space:normal}
+html.layout-finish body[data-layout-game=hexslide] footer #gameBottomNav {display:contents!important}
+html.layout-finish body[data-layout-game=hexslide] footer #collectionExit {min-width:52px!important;width:52px!important;padding:3px!important;font-size:12px!important}
+html.layout-finish body[data-layout-game=hexslide] footer #bottomHelp {min-width:75px!important;width:75px!important;padding:3px!important;font-size:11px!important}
+@media(orientation:landscape) and (max-height:540px) {
+  html.layout-finish body[data-layout-game=hexslide] #panel {padding:12px 20px;max-height:calc(100vh - 20px)}
+  html.layout-finish body[data-layout-game=hexslide] #panel h1 {font-size:32px;margin:3px 0 5px}
+  html.layout-finish body[data-layout-game=hexslide] #panel .stats {margin:7px 0}
+  html.layout-finish body[data-layout-game=hexslide] #panel .stats>div {padding:6px}
+  html.layout-finish body[data-layout-game=hexslide] #panel .stats strong {font-size:17px;margin:0}
+  html.layout-finish body[data-layout-game=hexslide] #panel .actions {margin-top:9px;gap:6px}
+  html.layout-finish body[data-layout-game=hexslide] #panel p {line-height:1.3;margin:5px 0}
+}
+</style><script defer src="../../shared/layout-finish.js"></script></head><body>
 <main id="game"><canvas id="board" aria-label="Hexagonal stacking board"></canvas><header><a class="back" href="../../index.html">‹ Games</a><div class="brand">HEX <b>SLIDE</b><small id="levelLabel">BOARD 01</small></div><button id="menu" aria-label="Open menu">☰</button></header><section class="progress" aria-label="Board progress"><div><span id="goalLabel">TILES CLEARED</span><strong id="score">0 <small>/ 100</small></strong></div><div class="track"><i id="fill"></i></div><span id="nextLock">Next space · 25</span></section><div id="message" role="status" aria-live="polite">Place a stack. Match the top colors. Clear 10.</div><div id="trayLabel">CHOOSE A STACK</div><footer><button id="undo">↶<span>Undo</span></button><button id="hint">✦<span>Hint</span></button><button id="hammer">⌁<span>Remove · 3</span></button><button id="shuffle">⇄<span>Shuffle · 3</span></button><button id="help">?<span>How to play</span></button></footer><div id="loading">Setting the table…</div></main><div id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden><div id="panel"></div></div><script src="rules.js"></script><script src="render.js"></script><script src="game.js"></script><script src="../../shared/corrections-1.js"></script>
 <script src="../../shared/navigation-exceptions.js"></script><script src="../../shared/bottom-navigation.js"></script></body></html>

@@ -357,7 +357,12 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch5.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css">
+<style>@media (orientation:portrait) and (max-width:600px) {
+  html.layout-finish body[data-layout-game=spin] .top .pills {flex:1 1 auto;min-width:100px}
+  html.layout-finish body[data-layout-game=spin] .top .roundpill {font-size:13px;padding:6px 8px}
+  html.layout-finish body[data-layout-game=spin] .top .brand h1 {display:none}
+}</style><script defer src="../../shared/layout-finish.js"></script></head>
 <body class="collection-page" data-collection="spin">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-sound-on" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" fill-opacity=".15"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.3 5.7a9 9 0 0 1 0 12.6"/></g></symbol>
@@ -385,7 +390,6 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
     <div class="pills"><button class="ggpill roundpill" id="pillRound" aria-label="Round"><b id="roundTxt">Spin &amp; Solve</b></button></div>
     <div class="topbtns">
       <button class="iconbtn" id="btnSound" aria-label="Sound"><svg viewBox="0 0 24 24"><use href="#i-sound-off"/></svg></button>
-      <button class="iconbtn" id="btnHelp" aria-label="How to play"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
       <button class="iconbtn" id="btnNew" aria-label="New game"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg></button>
       <button class="iconbtn" id="btnStats" aria-label="Stats"><svg viewBox="0 0 24 24"><use href="#i-stats"/></svg></button>
       <button class="iconbtn" id="btnSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
@@ -2412,7 +2416,6 @@ var SS = (function () {
     $('btnQuick').addEventListener('click', function () { newGameFlow('quick'); });
     $('btnNew').addEventListener('click', function () { setTimeout(askNew, 50); });
     $('pillRound').addEventListener('click', openHelp);
-    $('btnHelp').addEventListener('click', openHelp);
     sheet(null, 'ovHelp', 'btnCloseHelp');
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);

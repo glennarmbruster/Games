@@ -190,7 +190,13 @@ html.gg-fs-over .app { position: relative; z-index: 1; height: 100%; gap: 0;
 <link rel="stylesheet" href="modern.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-<link rel="stylesheet" href="../../shared/remaining-navigation.css"></head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css">
+<style>
+/* The second tool row needs space above the landscape home indicator. */
+@media (orientation:landscape) and (max-height:600px) {
+  html.remaining-navigation body[data-remaining-game=nonogram] #controls {transform:translateY(-32px)}
+}
+</style></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="ng-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#2f80c0"/><rect width="100" height="58" rx="24" fill="#8fd3f4"/><rect y="34" width="100" height="24" fill="#8fd3f4"/>

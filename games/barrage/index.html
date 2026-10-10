@@ -139,7 +139,25 @@ html.gg-fs-over .top .iconbtn,html.gg-fs-over .top .brand {background:#172c39;co
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch4.css">
 <link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css">
+<style>
+/* Clearer booster names and available counts without changing the shot field. */
+.startsheet .stopt {min-height:66px;padding:8px 9px;gap:10px}
+.startsheet .stopt b {font-size:15px}
+.startsheet .stopt small {font-size:12.5px;line-height:1.18}
+.startsheet .stopt i {min-width:22px;height:21px;line-height:21px;font-size:13px}
+.startsheet .stlabel,.startsheet .stinfo {font-size:15px}
+.bar .boost b {min-width:21px;height:20px;line-height:20px;font-size:13px;right:-1px}
+@media (orientation:portrait) and (max-width:600px) {
+  html.layout-finish body[data-layout-game=barrage] #gameBottomNav:not(.finished-menu)>* {position:fixed!important;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 52px)!important;top:auto!important;z-index:30;width:84px!important;height:42px!important;background:#173a50!important;color:#f7fbff!important;border:1px solid #71a8c3!important}
+  html.layout-finish body[data-layout-game=barrage] #gameBottomNav:not(.finished-menu) #collectionExit {left:calc(50% - 89px)!important}
+  html.layout-finish body[data-layout-game=barrage] #gameBottomNav:not(.finished-menu) #bottomHelp {left:calc(50% + 5px)!important}
+}
+@media (orientation:landscape) and (max-height:520px) {
+  .startsheet .stopt {min-height:56px;padding:5px 8px}
+  .startsheet .stopt small {font-size:12px}
+}
+</style><script defer src="../../shared/layout-finish.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="bb-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#151b3d"/>

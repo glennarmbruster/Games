@@ -164,7 +164,16 @@ html.gg-fs .app { gap: 6px; }
 <link rel="stylesheet" href="modern.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css">
+<style>
+@media (orientation:portrait) and (max-width:600px) {
+  html.layout-finish body[data-layout-game=sudoku] #sdtools {display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important}
+  html.layout-finish body[data-layout-game=sudoku] #sdtools #integratedGameNav {display:contents!important}
+  html.layout-finish body[data-layout-game=sudoku] #sdtools button {min-width:0!important;min-height:48px!important;height:48px!important}
+  html.layout-finish body[data-layout-game=sudoku] #sdtools .stool span {overflow:visible;text-overflow:clip;font-size:12px}
+  html.layout-finish body[data-layout-game=sudoku] #sdtools #integratedGameNav button {padding:4px!important;white-space:normal!important}
+}
+</style><script defer src="../../shared/layout-finish.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="sd-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#5a54f0"/>
