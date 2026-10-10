@@ -124,6 +124,37 @@ body { background-image:radial-gradient(circle at 1px 1px,rgba(20,30,45,.15) .6p
 .kb button.hint.open { box-shadow:inset 0 0 0 2px #3d6fd8; }
 .kb button.off { box-shadow:none; }
 .tool.go { background:#247b59; box-shadow:inset 0 1px #ffffff40,inset 0 -2px #00000020,0 3px 8px #12482d20; }
+.gridwrap.quad-play{flex-direction:column;gap:6px}
+.quad-tabs{display:none;flex:none;gap:6px;width:min(100%,480px);justify-content:center}
+.quad-tabs button{flex:1;min-width:0;min-height:42px;padding:3px 2px;border:1px solid var(--lm-tray-edge);border-radius:9px;background:var(--surface);color:var(--ink);font:700 12px/1.15 system-ui}
+.quad-tabs button.on{background:#c8d9e9;color:#215780;border-color:#4584b0}
+.quad-tabs button.solved{background:var(--lm-c);color:#fff}
+.quad-tabs button span{display:block;font-size:11px;font-weight:600;white-space:nowrap}
+.quad-gallery{display:none;flex:1 1 auto;min-height:0;width:100%;align-items:center;justify-content:center;gap:12px}
+.quad-play .quad-tabs,.quad-play .quad-gallery{display:flex}
+.quad-play #grid{display:none}
+.quad-board{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.quad-board h2{font:750 13px/1.15 system-ui;margin:0;color:var(--ink)}
+.quad-board .grid{flex:none;gap:3px;grid-template-rows:repeat(9,1fr)}
+.quad-board .lrow{gap:3px}
+.quad-board .cell{border-radius:5px}
+.quad-board.done .grid{opacity:.82}
+.quad-board.current h2{color:var(--lm-detail)}
+@media(max-width:699px),(max-height:759px){.quad-board:not(.current){display:none}}
+@media(min-width:700px) and (min-height:760px){
+ .quad-play .quad-tabs{display:none}
+ .quad-play .quad-gallery{display:grid;grid-template-columns:repeat(2,max-content);grid-template-rows:repeat(2,max-content);align-content:center;justify-content:center;gap:12px 24px}
+}
+.quad-play .toast{top:48px}
+.modes{width:100%;max-width:640px;display:flex;gap:2px}
+.modes button{flex:1;min-width:0;padding-left:4px;padding-right:4px}
+@media(max-width:400px){.modes button{font-size:12px!important}}
+@media(max-height:700px) and (orientation:portrait){
+ body.quad-mode .kb{gap:4px}
+ body.quad-mode .kb button{height:39px!important}
+ body.quad-mode .toolbar .tool{height:44px!important;min-height:44px!important}
+ body.quad-mode .quad-tabs button{min-height:38px}
+}
 button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
 @media (prefers-reduced-motion:reduce) { .cell.full, .cell.flip, .cell.win, .lrow.shake { animation:none; } }
 
@@ -175,11 +206,12 @@ button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
     <button data-mode="daily">Word 1</button>
     <button data-mode="daily2">Word 2</button>
     <button data-mode="practice">Practice</button>
+    <button data-mode="quad">Quordle</button>
   </div>
 
   <div class="info" id="info"></div>
 
-  <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div><div class="toast" id="toast"></div></div>
+  <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div><div class="quad-tabs" id="quadTabs" aria-label="Choose a Quordle board"></div><div class="quad-gallery" id="quadGallery"></div><div class="toast" id="toast"></div></div>
 
   <div class="kb" id="kb"></div>
 
@@ -271,6 +303,11 @@ var LM = (function () {
   function answerFor(day) { var i = ((day - 1) % NA + NA) % NA; return A.substr(i * 5, 5); }
   // the second word of the day (Glenn, 2026-10-04): the same list half a cycle on, so it's never the same day's first word
   function answerFor2(day) { return answerFor(day + (NA >> 1)); }
+  function answersForFour(day) {
+    var offsets = [NA >> 3, NA >> 2, NA >> 1, (NA * 3) >> 2], words = [];
+    offsets.forEach(function (offset) { var w = answerFor(day + offset); while (words.indexOf(w) >= 0) w = answerFor(day + ++offset); words.push(w); });
+    return words;
+  }
   function randomAnswer(r) { return A.substr(Math.floor(r * NA) * 5, 5); }
   // marks for a guess: 'c' right letter, right place; 'p' in the word, another place; 'a' not in the word (or no more of it)
   function mark(guess, answer) {
@@ -296,7 +333,7 @@ var LM = (function () {
     rows.forEach(function (r) { for (var i = 0; i < 5; i++) { var ch = r.w[i], m = r.m[i]; if (!k[ch] || rank[m] > rank[k[ch]]) k[ch] = m; } });
     return k;
   }
-  return { valid: valid, dayNumber: dayNumber, answerFor: answerFor, answerFor2: answerFor2, randomAnswer: randomAnswer, mark: mark, hardProblem: hardProblem, keyMarks: keyMarks, counts: function () { return { guesses: NG, answers: NA }; } };
+  return { valid: valid, dayNumber: dayNumber, answerFor: answerFor, answerFor2: answerFor2, answersForFour: answersForFour, randomAnswer: randomAnswer, mark: mark, hardProblem: hardProblem, keyMarks: keyMarks, counts: function () { return { guesses: NG, answers: NA }; } };
 })();
 if (typeof module !== 'undefined') module.exports = LM;
 </script>
@@ -370,10 +407,11 @@ var LMSound = (function () {
   for (var mk in MD) if (meta[mk] === undefined) meta[mk] = MD[mk];
   function saveMeta() { store.set('meta', meta); }
   var stats = store.get('stats', null) || {};
-  ['daily', 'daily2', 'practice'].forEach(function (m) {
+  ['daily', 'daily2', 'practice', 'quad'].forEach(function (m) {
     var o = stats[m] || (stats[m] = {}), d = { played: 0, won: 0, streak: 0, max: 0, lastWonDay: 0 };
     for (var k in d) if (typeof o[k] !== 'number') o[k] = d[k];
-    if (!Array.isArray(o.dist) || o.dist.length !== 6) o.dist = [0, 0, 0, 0, 0, 0];
+    var limit = m === 'quad' ? 9 : 6;
+    if (!Array.isArray(o.dist) || o.dist.length !== limit) o.dist = Array(limit).fill(0);
   });
   function saveStats() { store.set('stats', stats); }
 
@@ -389,13 +427,15 @@ var LMSound = (function () {
   function today() { return LM.dayNumber(new Date()); }
   // two words of the day (1.2.0): 'daily' (word 1, saved as 'day') and 'daily2' (word 2, saved as 'day2'), each with
   // its own streak; both are the same for everyone on the same date
-  function isDaily(m) { return m === 'daily' || m === 'daily2'; }
-  function keyFor(m) { return m === 'daily' ? 'day' : m === 'daily2' ? 'day2' : 'prac'; }
+  function isDaily(m) { return m === 'daily' || m === 'daily2' || m === 'quad'; }
+  function isQuad() { return meta.mode === 'quad'; }
+  function keyFor(m) { return m === 'daily' ? 'day' : m === 'daily2' ? 'day2' : m === 'quad' ? 'quad' : 'prac'; }
   function answerOf(m, d) { return m === 'daily2' ? LM.answerFor2(d) : LM.answerFor(d); }
   function wordNo(m) { return m === 'daily2' ? 2 : 1; }
   function loadDaily(m) {
     var d = today(), s = store.get(keyFor(m), null);
-    if (s && s.day === d && Array.isArray(s.rows)) return s;
+    if (s && s.day === d && Array.isArray(s.rows) && (m !== 'quad' || Array.isArray(s.answers) && s.answers.length === 4)) return s;
+    if (m === 'quad') return { day: d, answers: LM.answersForFour(d), rows: [], cur: '', done: false, won: false, hard: false, active: 0 };
     return { day: d, answer: answerOf(m, d), rows: [], cur: '', done: false, won: false, hard: settings.hard };
   }
   function otherDaily(m) { var o = m === 'daily' ? 'daily2' : 'daily', s = store.get(keyFor(o), null); return { mode: o, done: !!(s && s.day === today() && s.done) }; }
@@ -408,8 +448,10 @@ var LMSound = (function () {
   function open(mode, fresh) {
     meta.mode = mode; saveMeta();
     g = isDaily(mode) ? loadDaily(mode) : loadPractice(fresh);
-    g.answer = isDaily(mode) ? answerOf(mode, g.day) : g.answer;
-    if (!g.rows.length) g.hard = settings.hard;
+    if (mode === 'quad') g.answers = LM.answersForFour(g.day);
+    if (mode === 'quad' && (g.active < 0 || g.active > 3 || typeof g.active !== 'number')) g.active = 0;
+    else g.answer = isDaily(mode) ? answerOf(mode, g.day) : g.answer;
+    if (!g.rows.length) g.hard = mode === 'quad' ? false : settings.hard;
     delete g.hints; delete g.hintN; delete g.locked; delete g.lockOn; // the old Hint (1.0.x-1.2.0); Lock replaced it in 1.3.0
     save(); renderAll();
   }
@@ -421,16 +463,17 @@ var LMSound = (function () {
     S.unlock();
     if (ch === 'enter') { submit(); return; }
     if (ch === 'lock') { toggleLock(); return; }
-    if (ch === 'back') { if (g.cur.length) { g.cur = g.cur.slice(0, -1); S.del(); renderRow(g.rows.length); } return; }
+    if (ch === 'back') { if (g.cur.length) { g.cur = g.cur.slice(0, -1); S.del(); if (isQuad()) renderQuad(); else renderRow(g.rows.length); } return; }
     if (g.cur.length >= 5) return;
     if (lockedLetters().indexOf(ch) >= 0) { toast(ch.toUpperCase() + ' isn’t in it · tap Lock', 1600); return; }
-    g.cur += ch; S.key(); renderRow(g.rows.length, g.cur.length - 1);
+    g.cur += ch; S.key(); if (isQuad()) renderQuad(); else renderRow(g.rows.length, g.cur.length - 1);
   }
   function submit() {
     var w = g.cur;
     if (w.length < 5) { bad('Not enough letters'); return; }
     if (!LM.valid(w)) { bad('Not in the word list'); return; }
-    if (g.hard) { var p = LM.hardProblem(g.rows, w); if (p) { bad(p); return; } }
+    if (g.hard && !isQuad()) { var p = LM.hardProblem(g.rows, w); if (p) { bad(p); return; } }
+    if (isQuad()) { submitFour(w); return; }
     var m = LM.mark(w, g.answer), r = g.rows.length;
     g.rows.push({ w: w, m: m }); g.cur = ''; g.unlocked = false; // Lock comes back on after every guess
     var won = m.join('') === 'ccccc', lost = !won && g.rows.length >= 6;
@@ -449,6 +492,21 @@ var LMSound = (function () {
       else if (lost) { toast(g.answer.toUpperCase(), 2600); S.lose(); finish(); }
     }, 5 * 250 + 300);
   }
+  function fourSolved(index) { return g.rows.some(function (row) { return row.marks[index] && row.marks[index].join('') === 'ccccc'; }); }
+  function submitFour(w) {
+    var marks = g.answers.map(function (answer, i) { return fourSolved(i) ? null : LM.mark(w, answer); });
+    g.rows.push({ w: w, marks: marks }); g.cur = ''; g.unlocked = false;
+    var solved = g.answers.filter(function (_, i) { return fourSolved(i); }).length;
+    g.done = solved === 4 || g.rows.length >= 9; g.won = solved === 4;
+    var revealed = g.active;
+    if (!g.done && fourSolved(g.active)) g.active = g.answers.findIndex(function (_, i) { return !fourSolved(i); });
+    save(); busy = true; renderQuad();
+    for (var i = 0; i < 5; i++) S.reveal(marks[revealed] && marks[revealed][i] || 'a', i);
+    setTimeout(function () { busy = false; renderKeys(); renderInfo(); renderQuad();
+      if (g.done) { if (g.won) { toast('All four found!', 1800); S.win(); } else { toast('Four words revealed', 1800); S.lose(); } finish(); }
+      else toast(solved + ' of 4 solved', 1000);
+    }, 650);
+  }
   var PRAISE = ['Brilliant!', 'Superb!', 'Great!', 'Nice one!', 'Good!', 'Phew!'];
   function celebrate(r) {
     toast(PRAISE[r], 1800); S.win();
@@ -457,7 +515,8 @@ var LMSound = (function () {
   }
   function bad(msg) {
     S.bad(); toast(msg, 1200);
-    var row = $('grid').children[g.rows.length]; row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+    var row = isQuad() ? $('quadGallery').querySelector('.quad-board.current .lrow:last-child') : $('grid').children[g.rows.length];
+    if (row) { row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake'); }
   }
   // ================= Lock =================
   // Lock (1.3.0, was "Hint"; Glenn: "the hint isn't really a hint - and calling it that cheapens the game ... it should
@@ -468,6 +527,10 @@ var LMSound = (function () {
   // switch it off.
   function lockedLetters() {
     if (!settings.lock || g.unlocked) return [];
+    if (isQuad()) {
+      var boards = g.answers.map(function (_, i) { return i; }).filter(function (i) { return !fourSolved(i); });
+      return 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function (ch) { return boards.length && boards.every(function (i) { return fourKeyMarks(i)[ch] === 'a'; }); });
+    }
     var km = LM.keyMarks(g.rows);
     return 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function (ch) { return km[ch] === 'a'; });
   }
@@ -492,6 +555,15 @@ var LMSound = (function () {
   // ================= drawing =================
   function layout() {
     var wrap = $('gridwrap').getBoundingClientRect();
+    if (isQuad()) {
+      var all = matchMedia('(min-width:700px) and (min-height:760px)').matches;
+      var roomW = all ? (wrap.width - 38) / 2 : wrap.width - 24;
+      var roomH = all ? (wrap.height - 55) / 2 : wrap.height - 66;
+      var qsize = Math.max(12, Math.floor(Math.min((roomW - 12) / 5, (roomH - 42) / 9, 58)));
+      $('quadGallery').style.setProperty('--q-size', qsize + 'px');
+      Array.prototype.forEach.call($('quadGallery').querySelectorAll('.grid'), function (board) { board.style.width = (qsize * 5 + 12) + 'px'; board.style.height = (qsize * 9 + 24) + 'px'; board.style.fontSize = Math.round(qsize * .52) + 'px'; });
+      return;
+    }
     // full screen: the grid may use nearly the whole width (5.15 leaves a small margin) and grows past the old 66px cap
     var size = Math.floor(Math.min((wrap.width - 24) / (fs ? 5.15 : 5.3), (wrap.height - 30) / 6, fs ? 110 : 66));
     var grid = $('grid');
@@ -499,6 +571,10 @@ var LMSound = (function () {
     grid.style.fontSize = Math.round(size * 0.52) + 'px';
   }
   function renderGrid() {
+    $('gridwrap').classList.toggle('quad-play', isQuad());
+    document.body.classList.toggle('quad-mode', isQuad());
+    if (isQuad()) { renderQuad(); return; }
+    $('quadGallery').innerHTML = ''; $('quadTabs').innerHTML = '';
     var grid = $('grid'); grid.innerHTML = '';
     for (var r = 0; r < 6; r++) {
       var row = document.createElement('div'); row.className = 'lrow';
@@ -506,6 +582,35 @@ var LMSound = (function () {
       grid.appendChild(row);
     }
     for (var k = 0; k <= g.rows.length && k < 6; k++) renderRow(k);
+  }
+  function fourKeyMarks(i) {
+    return LM.keyMarks(g.rows.filter(function (r) { return r.marks[i]; }).map(function (r) { return { w: r.w, m: r.marks[i] }; }));
+  }
+  function renderQuad() {
+    if (!isQuad()) return;
+    var gal = $('quadGallery'), tabs = $('quadTabs'); gal.innerHTML = ''; tabs.innerHTML = '';
+    for (var i = 0; i < 4; i++) (function (i) {
+      var solved = fourSolved(i), answer = g.answers[i], board = document.createElement('section');
+      board.className = 'quad-board' + (i === g.active ? ' current' : '') + (solved ? ' done' : '');
+      var title = document.createElement('h2'); title.textContent = 'Word ' + (i + 1) + (solved ? ' · ' + answer.toUpperCase() : g.done ? ' · ' + answer.toUpperCase() : ''); board.appendChild(title);
+      var grid = document.createElement('div'); grid.className = 'grid';
+      for (var n = 0; n < 9; n++) {
+        var row = document.createElement('div'); row.className = 'lrow';
+        var data = g.rows[n], m = data && data.marks[i], typing = !solved && !g.done && n === g.rows.length;
+        for (var j = 0; j < 5; j++) {
+          var cell = document.createElement('div'); cell.className = 'cell';
+          if (m) { cell.textContent = data.w[j]; cell.classList.add(m[j]); }
+          else if (typing && j < g.cur.length) { cell.textContent = g.cur[j]; cell.classList.add('full'); }
+          row.appendChild(cell);
+        }
+        grid.appendChild(row);
+      }
+      board.appendChild(grid); gal.appendChild(board);
+      var tab = document.createElement('button'); tab.type = 'button'; tab.className = (i === g.active ? 'on ' : '') + (solved ? 'solved' : '');
+      tab.innerHTML = 'Word ' + (i + 1) + '<span>' + (solved ? 'Solved' : g.done ? answer.toUpperCase() : 'Tap to view') + '</span>';
+      tab.setAttribute('aria-label', 'View word ' + (i + 1) + (solved ? ', solved' : '')); tab.addEventListener('click', function () { g.active = i; save(); renderQuad(); layout(); }); tabs.appendChild(tab);
+    })(i);
+    layout();
   }
   function renderRow(r, typed) {
     var row = $('grid').children[r]; if (!row) return;
@@ -533,7 +638,8 @@ var LMSound = (function () {
     });
   }
   function renderKeys() {
-    var km = LM.keyMarks(g.rows), off = lockedLetters();
+    var km = isQuad() ? {} : LM.keyMarks(g.rows), off = lockedLetters();
+    if (isQuad()) { var rank = { a:1, p:2, c:3 }; g.answers.forEach(function (_, i) { if (fourSolved(i)) return; var marks = fourKeyMarks(i); Object.keys(marks).forEach(function (ch) { if (!km[ch] || rank[marks[ch]] > rank[km[ch]]) km[ch] = marks[ch]; }); }); }
     Array.prototype.forEach.call($('kb').querySelectorAll('button[data-k]'), function (b) {
       var k = b.dataset.k; b.classList.remove('c', 'p', 'a', 'off'); if (km[k]) b.classList.add(km[k]); 
       var out = off.indexOf(k) >= 0; b.classList.toggle('off', out); // faded, not disabled: a tap says how to unlock
@@ -549,6 +655,7 @@ var LMSound = (function () {
   // button in Practice); the rest (word no., next word countdown, guesses, solved) is on the Menu's info line
   function menuInfo() {
     if (!g) return '';
+    if (isQuad()) return 'Four words · <b>9</b> shared guesses · ' + g.answers.filter(function (_, i) { return fourSolved(i); }).length + ' of 4 solved · Next puzzle in <b>' + countdown() + '</b>';
     if (isDaily(meta.mode)) return 'Word no. <b>' + g.day + '</b>, word <b>' + wordNo(meta.mode) + '</b> of 2' + (g.hard ? ' (hard)' : '') + ' · Streak <b>' + streakNow() + '</b> · Next word in <b>' + countdown() + '</b>';
     var st = stats.practice;
     return 'Practice · Guess <b>' + Math.min(6, g.rows.length + (g.done ? 0 : 1)) + '</b> of 6 · Solved <b>' + st.won + ' of ' + st.played + '</b>';
@@ -556,8 +663,12 @@ var LMSound = (function () {
   function renderInfo() {
     var m = meta.mode, h;
     if (fs) {
-      h = isDaily(m) ? '<span class="ggpill">' + (g.hard ? 'Hard · ' : '') + 'Streak ' + streakNow() + '</span>'
+      h = isQuad() ? '<span class="ggpill">' + g.answers.filter(function (_, i) { return fourSolved(i); }).length + '/4 · ' + g.rows.length + '/9</span>'
+        : isDaily(m) ? '<span class="ggpill">' + (g.hard ? 'Hard · ' : '') + 'Streak ' + streakNow() + '</span>'
         : '<button class="newword" id="btnNew"><svg viewBox="0 0 24 24"><use href="#i-new"/></svg>New word</button>';
+    } else if (isQuad()) {
+      h = '<div><div class="lbl">Quordle</div><div class="mid">' + g.rows.length + ' / 9 guesses</div></div>' +
+        '<div class="right"><div class="lbl">Solved</div><div class="mid">' + g.answers.filter(function (_, i) { return fourSolved(i); }).length + ' / 4</div></div>';
     } else if (isDaily(m)) {
       h = '<div><div class="lbl">Word no.</div><div class="mid">' + g.day + (m === 'daily2' ? '·2' : '') + (g.hard ? ' <small class="of">hard</small>' : '') + '</div></div>' +
         '<div style="text-align:center"><div class="lbl">Streak</div><div class="mid">' + streakNow() + '</div></div>' +
@@ -573,8 +684,8 @@ var LMSound = (function () {
     $('btnShare').disabled = !g.done;
     var completedDaily = g.done && isDaily(m);
     $('btnEnter').disabled = g.done && !completedDaily;
-    $('btnEnter').innerHTML = completedDaily ? '<span>' + g.answer.toUpperCase() + ' · Stats</span>' : '<svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span>';
-    $('btnEnter').setAttribute('aria-label', completedDaily ? 'Stats for completed word ' + g.answer.toUpperCase() : 'Enter');
+    $('btnEnter').innerHTML = completedDaily ? '<span>' + (isQuad() ? g.answers.join(' · ').toUpperCase() : g.answer.toUpperCase()) + ' · Stats</span>' : '<svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span>';
+    $('btnEnter').setAttribute('aria-label', completedDaily ? 'Stats for completed ' + (isQuad() ? 'four words' : 'word ' + g.answer.toUpperCase()) : 'Enter');
   }
   function countdown() {
     var n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
@@ -595,6 +706,13 @@ var LMSound = (function () {
   }
   function showResult(justNow) {
     var daily = isDaily(meta.mode), st = stats[meta.mode], n = g.rows.length, title, html;
+    if (isQuad()) {
+      title = g.won ? 'Four words in ' + n + '!' : 'Today’s four words';
+      html = '<div class="nextword">' + g.answers.map(function (word, i) { return (i + 1) + '. <b>' + word.toUpperCase() + '</b>'; }).join(' &nbsp; ') + '</div>' +
+        tilesFor(st, '<div class="tile"><b>' + streakNow('quad') + '</b><span>Streak</span></div>') + distHtml(st, g.won ? n : 0) +
+        '<div class="nextword">Next puzzle in <b id="cd2">' + countdown() + '</b></div>';
+      showCard(title, html, [{ label:'Share', red:true, go:share }, { label:'Back to boards', go:function () {} }]); return;
+    }
     title = g.won ? (daily ? 'Solved in ' + n + '!' : 'Got it in ' + n + '!') : 'The word was ' + g.answer.toUpperCase();
     html = tilesFor(st, daily ? '<div class="tile"><b>' + streakNow() + '</b><span>Streak</span></div><div class="tile"><b>' + st.max + '</b><span>Best streak</span></div>' : '') +
       distHtml(st, g.won ? n : 0) + (daily ? '<div class="nextword">Next word in <b id="cd2">' + countdown() + '</b></div>' : '');
@@ -611,6 +729,8 @@ var LMSound = (function () {
   }
   function shareText() {
     var sym = { c: settings.contrast ? '🟧' : '🟩', p: settings.contrast ? '🟦' : '🟨', a: '⬜' };
+    if (isQuad()) return 'Lettermind Quordle #' + g.day + ' ' + (g.won ? g.rows.length : 'X') + '/9\n\n' +
+      g.answers.map(function (_, i) { return 'Word ' + (i + 1) + '\n' + g.rows.filter(function (r) { return r.marks[i]; }).map(function (r) { return r.marks[i].map(function (x) { return sym[x]; }).join(''); }).join('\n'); }).join('\n\n');
     var head = isDaily(meta.mode) ? 'Lettermind #' + g.day + (meta.mode === 'daily2' ? ' (word 2)' : '') : 'Lettermind practice';
     return head + ' ' + (g.won ? g.rows.length : 'X') + '/6' + (g.hard ? '*' : '') + '\n\n' + g.rows.map(function (r) { return r.m.map(function (x) { return sym[x]; }).join(''); }).join('\n');
   }
@@ -621,10 +741,11 @@ var LMSound = (function () {
     try { navigator.clipboard.writeText(t).then(function () { toast('Copied: paste it in a message'); }, function () { toast('Couldn’t copy'); }); } catch (e) { toast('Couldn’t copy'); }
   }
   function renderStats() {
-    var d = stats.daily, d2 = stats.daily2, p = stats.practice;
+    var d = stats.daily, d2 = stats.daily2, p = stats.practice, q = stats.quad;
     $('statsBody').innerHTML = '<div class="themelabel">Word 1 of the day</div>' + tilesFor(d, '<div class="tile"><b>' + streakNow('daily') + '</b><span>Streak</span></div><div class="tile"><b>' + d.max + '</b><span>Best streak</span></div>') + distHtml(d, 0) +
       '<div class="themelabel">Word 2 of the day</div>' + tilesFor(d2, '<div class="tile"><b>' + streakNow('daily2') + '</b><span>Streak</span></div><div class="tile"><b>' + d2.max + '</b><span>Best streak</span></div>') + distHtml(d2, 0) +
-      '<div class="themelabel">Practice</div>' + tilesFor(p) + distHtml(p, 0);
+      '<div class="themelabel">Practice</div>' + tilesFor(p) + distHtml(p, 0) +
+      '<div class="themelabel">Quordle</div>' + tilesFor(q, '<div class="tile"><b>' + streakNow('quad') + '</b><span>Streak</span></div>') + distHtml(q, 0);
   }
   function showCard(title, html, buttons) {
     $('cardIcon').innerHTML = '<svg viewBox="0 0 100 100"><use href="#lm-logo"/></svg>';
@@ -650,7 +771,8 @@ var LMSound = (function () {
     $('helpList').innerHTML = [
       'Guess the hidden <b>five-letter word</b> in <b>six tries</b>. Type a real word and tap <b>Enter</b> (bottom right).',
       'Each letter then changes color: <b style="color:var(--lm-c)">green</b> means right letter, right place; <b style="color:var(--lm-p)">gold</b> means it’s in the word but somewhere else; <b>grey</b> means it isn’t in the word (or not that many times). The keyboard keeps track.',
-      'There are <b>two words of the day</b> (<b>Word 1</b> and <b>Word 2</b> at the top), the same for everyone, so you and Cindy can compare. New ones come at midnight. Each word has its own <b>streak</b> for days in a row solved. <b>Share</b> sends your colored squares (not the letters).',
+      'There are <b>two single words of the day</b> (<b>Word 1</b> and <b>Word 2</b> at the top), the same for everyone, so you and Cindy can compare. New ones come at midnight. Each has its own <b>streak</b>. <b>Share</b> sends your colored squares (not the letters).',
+      '<b>Quordle</b> has four words and nine shared guesses. Each guess goes to all unfinished boards. On a phone, tap Word 1–4 above the board to view each one. Solve all four before guess nine. The four-word puzzle changes daily and has its own streak. Hard mode is off for this mode because clues from different boards can conflict.',
       '<b>Practice</b> gives as many extra words as you like; it has its own records and doesn’t touch the streak.',
       '<b>Enter</b> is the green button at the bottom right. Letters your guesses show grey fade on the keyboard and are <b>locked</b>, so you can’t type one by mistake. Want one anyway? Tap the blue <b>Lock</b> key (bottom left) to unlock them until your next guess. (Settings can turn Lock off.)',
       '<b>Hard mode</b> (Settings): whatever you’ve found must be used in the next guesses. <b>High-contrast colors</b> swap green and gold for orange and blue.'
@@ -723,7 +845,7 @@ var LMSound = (function () {
     document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
     window.addEventListener('pagehide', save);
     syncSound(); syncAds(); syncLook();
-    open(meta.mode === 'practice' || meta.mode === 'daily2' ? meta.mode : 'daily', false);
+    open(['practice','daily2','quad'].indexOf(meta.mode) >= 0 ? meta.mode : 'daily', false);
     if (!meta.seen) openHelp();
 
     Goobs.markPlayed('daily');
