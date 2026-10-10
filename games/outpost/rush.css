@@ -7,3 +7,29 @@
 @media(min-width:761px) and (max-height:740px){#intel{padding:19px 20px}#intel h1{font-size:28px}.rule{margin:12px 0}.instructions{gap:9px;margin:8px 0}.instructions>div{font-size:10px}#intel .eyebrow{font-size:8px}#intel .intro{display:none}}
 
 @media(max-height:480px){#toast{top:auto;bottom:83px;font-size:11px;padding:8px 15px}header .brand>span:not(.emblem){display:none}.brand{width:44px}header #operation{margin-left:0}}
+
+/* Goobs polish: remaining collection pass. */
+@media (orientation:landscape) and (max-height:500px) {
+  #card { padding:12px 16px; }
+  #card .heroTitle { font-size:32px; line-height:.92; margin:4px 0; }
+  #card .heroTitle br { display:none; }
+  #card .subtitle { margin:5px 0; line-height:1.35; }
+  #card .operationCard { margin:6px 0; padding:7px; }
+  #card .actions { margin-top:8px; gap:5px; }
+  #card .actions button { min-height:38px; padding:6px; }
+  #card .textlink { padding:4px 0; }
+}
+
+@media (orientation:landscape) and (max-height:500px) {
+  #card .heroTitle { font-size:30px!important; margin:3px 0 5px!important; letter-spacing:-1px!important; white-space:normal; }
+  #card .heroTitle br { display:none; }
+  #card .subtitle { font-size:12px; line-height:1.2; }
+  #card .operationCard { min-height:0; }
+  #card .textlink { font-size:10px; }
+}
+
+@media (orientation:landscape) and (max-height:500px) {
+  #card .subtitle br { display:none; }
+  #card .operationCard { padding:5px 8px; }
+  #card .actions button { min-height:36px; }
+}

@@ -897,16 +897,20 @@ var FPSound = (function () {
     }
     next();
   }
-  function openHelp() {
-    $('helpTitle').textContent = 'How to play Fizz Pop';
-    $('helpList').innerHTML = [
+  function openHelp(quick) {
+    $('helpTitle').textContent = quick ? 'Start playing Fizz Pop' : 'How to play Fizz Pop';
+    $('helpList').innerHTML = (quick ? [
+      'Drag above the launcher to aim, then release to shoot. Bounce shots off a wall to reach the sides.',
+      'Match 3 bubbles of one color to pop them. Clear the board before bubbles cross the dashed line.',
+      'Open How to Play in the menu for swaps, modes and scoring details.'
+    ] : [
       '<b>Drag</b> anywhere above the launcher to aim (the dotted line shows the way, off one wall), and <b>let go</b> to shoot. Slide your finger back down below the launcher to cancel.',
       'Bubbles stick where they touch. Make a group of <b>3 or more</b> of one color and they <b>pop</b>. Anything left hanging with nothing holding it to the top <b>falls</b>, for big points (each extra falling bubble doubles them).',
       'Bank shots off the side walls to reach tricky spots. <b>Tap the NEXT bubble</b> (or the launcher) to swap the two.',
       '<b>Levels</b>: clear every bubble. Every few shots the <b>ceiling</b> comes down a row (the gold dots count down). If a bubble crosses the dashed <b>line</b>, the level is lost. Fewer shots earn more stars. The levels never run out: after the first 100, each new one is made on your phone and checked to be clearable before you play it.',
       '<b>Endless</b>: new rows push in from the top every 6 shots. Keep going as long as you can.',
       'Settings: the aim line, and small <b>shapes</b> on the bubbles so colors are easy to tell apart.'
-    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    ]).map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
   }
   function renderStats() {
@@ -978,7 +982,7 @@ var FPSound = (function () {
     window.addEventListener('pagehide', save);
     syncSound(); syncAds(); fit();
     if (!load()) { if (meta.mode === 'endless') startEndless(); else startLevel(Math.min(meta.level, meta.open)); } else renderAll();
-    if (!meta.seen) openHelp();
+    if (!meta.seen) openHelp(true);
     lastT = performance.now(); requestAnimationFrame(frame);
     Goobs.markPlayed('bubbles');
     Goobs.initUpdates({ beforeReload: save, onVersions: function (v) { $('version').textContent = 'Fizz Pop ' + (v.bubbles || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });

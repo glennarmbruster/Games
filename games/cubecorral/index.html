@@ -115,7 +115,16 @@ html.gg-fs-over .turnhint { top: calc(env(safe-area-inset-top, 0px) + 60px); }
 <link rel="stylesheet" href="details.css">
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script><!-- Goobs polish: remaining collection pass --><style>
+.cubepill small { color:#405a69; font-size:12px; letter-spacing:.15px; }
+.lane .queue small { font-size:14px; color:var(--ink); }
+.lane:focus-visible .front,.lane.down .front { outline:3px solid var(--accent); outline-offset:3px; border-radius:10px; }
+@media (orientation:landscape) and (max-height:500px) {
+  .lane .queue { height:24px; }
+  .lane .queue i { width:20px; height:20px; }
+  .cubepill small { font-size:11px; }
+}
+</style></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="cc-logo" viewBox="0 0 100 100"><defs><linearGradient id="ccg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb8ff"/><stop offset="1" stop-color="#5a54f0"/></linearGradient></defs>

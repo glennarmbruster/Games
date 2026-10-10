@@ -19,3 +19,21 @@
 @media(orientation:landscape) and (max-height:350px){#game[data-sport=football] .console{grid-template-rows:24px minmax(94px,1fr) 93px;gap:4px}#game[data-sport=football] .dpad{display:flex;gap:4px}#game[data-sport=football] .dpad button{width:44px;height:44px}#game[data-sport=football] #message{font-size:11px}}
 
 @supports not (height:100dvh){.lobby{min-height:100vh}#game{height:100vh}dialog{max-height:calc(100vh - 36px)}}
+
+/* Goobs polish: remaining collection pass. */
+@media (orientation:landscape) and (max-height:500px) {
+  .lobby { justify-content:flex-start; overflow-y:auto; padding-top:max(8px,env(safe-area-inset-top)); padding-bottom:max(8px,env(safe-area-inset-bottom)); gap:7px; }
+  .intro h1 { font-size:25px; margin:1px 0; }
+  .intro .eyebrow,.intro p,.modeCard small,.modeCard em { display:none; }
+  .modeCards { gap:9px; }
+  .modeCard { min-height:58px; padding:6px 12px; gap:10px; }
+  .modeCard strong { font-size:19px; }
+  .miniDevice { width:48px; padding:4px; }
+  .miniDevice i { font-size:9px; padding:2px; }
+  .miniDevice b { margin:2px 0 0; font-size:9px; }
+  .options { gap:9px; }
+  .options select { min-height:36px; margin-top:1px; padding:4px 8px; }
+  .lobbyNav { flex-shrink:0; }
+  .lobbyNav button { min-height:40px; }
+  #version { display:none; }
+}

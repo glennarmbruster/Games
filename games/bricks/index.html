@@ -843,16 +843,20 @@ var BKSound = (function () {
     }
     next();
   }
-  function openHelp() {
-    $('helpTitle').textContent = 'How to play Brickyard';
-    $('helpList').innerHTML = [
+  function openHelp(quick) {
+    $('helpTitle').textContent = quick ? 'Start playing Brickyard' : 'How to play Brickyard';
+    $('helpList').innerHTML = (quick ? [
+      'Slide anywhere to move the paddle. Tap to launch the ball.',
+      'Keep the ball in play and clear every breakable brick. Catch falling capsules for power-ups.',
+      'Open How to Play in the menu whenever you want the full rules.'
+    ] : [
       '<b>Slide</b> your finger anywhere on the screen (under the paddle is handy) to move the paddle (it follows the slide, so your finger doesn’t have to cover the ball). <b>Tap</b> to launch the ball; it goes by itself after 3 seconds.',
       'Keep the ball in play and break every brick. Where the ball lands on the paddle sets its angle: the ends send it off at a slant. It gets faster as you go.',
       'Colored bricks break with one hit. <b>Silver</b> ones take a few hits (more on later levels) and score 50 × the level. <b>Gold</b> ones can’t be broken.',
       'Catch the falling capsules: ' + BK.CAPS.map(function (c) { return '<b>' + c + '</b> ' + CAPNAME[c].split(': ')[1]; }).join('; ') + '. Only one of Slow, Catch, Expand or Laser works at a time; a new one replaces it (and Divide ends it). The line above the bricks names a falling capsule and says when it would end the power-up you have, so you can let it drop. No capsules fall while three balls are in play.',
       'You have 3 paddles, and get another at 20,000 points and every 60,000 after. 32 levels, each checked to be clearable. After a game over you can carry on from the level you reached (with a fresh score).',
       'Settings: <b>paddle speed</b>, how far it moves for a slide.'
-    ].map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    ]).map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
   }
   function renderStats() {
@@ -916,7 +920,7 @@ var BKSound = (function () {
     window.addEventListener('pagehide', function () { pause(); save(); });
     syncSound(); syncAds(); syncSpeed(); fit();
     if (!load()) newRun(1);
-    if (!meta.seen) openHelp();
+    if (!meta.seen) openHelp(true);
     lastT = performance.now(); requestAnimationFrame(frame);
     Goobs.markPlayed('bricks');
     Goobs.initUpdates({ beforeReload: function () { pause(); save(); }, onVersions: function (v) { $('version').textContent = 'Brickyard ' + (v.bricks || '?') + ' · Goobs-Games ' + (v.shell || '?'); } });

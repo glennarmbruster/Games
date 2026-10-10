@@ -9,3 +9,16 @@ html,body{overscroll-behavior:none}#game{touch-action:none}button,select,a{touch
 #toast{top:169px}@media(max-width:600px){#toast{top:151px}}@media(max-height:480px){#toast{top:126px}}
 
 .gamesBack{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-height:44px;padding:10px 13px;border-radius:12px;background:#fff6e8f2;color:#233c69;text-decoration:none;font-size:13px;font-weight:800;box-shadow:0 2px 10px #19384315}.menuBack{display:block;padding:13px;text-align:center;border:1px solid #ced9f5;border-radius:12px;color:#305fac;font-size:13px;font-weight:750;text-decoration:none}@media(max-width:600px){header{gap:6px}.gamesBack{font-size:11px;padding:8px;min-width:58px}.site{padding:8px;}.site strong{font-size:11px}.site span{font-size:6px;letter-spacing:.5px}#budget{min-width:87px;max-width:98px;padding:8px}#money{font-size:12px}#money small{font-size:9px}}
+
+/* Goobs polish: remaining collection pass. */
+@media (orientation:landscape) and (max-height:500px) {
+  #card { padding:14px 18px; }
+  #card .heroTitle { font-size:34px; line-height:.94; margin:3px 0 4px; }
+  #card .heroTitle br { display:none; }
+  #card > p { margin:5px 0; line-height:1.35; }
+  #card .stats { margin:7px 0; gap:5px; }
+  #card .stats>div { padding:6px 8px; }
+  #card .stats strong { font-size:16px; margin:0; }
+  #card .actions { margin-top:8px; gap:5px; }
+  #card .actions button,#card .actions a { min-height:38px; padding:7px; }
+}

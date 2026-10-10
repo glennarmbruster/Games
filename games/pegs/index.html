@@ -3712,7 +3712,7 @@ var PLSound = (function () {
     if (loadGame()) { screen = 'play'; meta.screen = 'play'; saveMeta(); setBackdrop(); updateChrome(); toast('Back where you were: level ' + fmt(levelNo), 1400); return; }
     startLevel(meta.cur);
   }
-  $('tPlay').addEventListener('click', function () { S.unlock(); S.click(); if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); helpThen = playFromTitle; openHelp(); return; } playFromTitle(); });
+  $('tPlay').addEventListener('click', function () { S.unlock(); S.click(); if (!meta.seenHelp) { meta.seenHelp = true; saveMeta(); helpThen = playFromTitle; openHelp(true); return; } playFromTitle(); });
   $('tMap').addEventListener('click', function () { S.click(); hide('ovTitle'); openMap(); });
   $('tHelp').addEventListener('click', function () { S.click(); helpThen = null; openHelp(); });
 
@@ -3804,7 +3804,10 @@ var PLSound = (function () {
     'Stars come from your score: the bar at the top shows the two marks. Run out of balls and you can keep going once with +3 balls (two stars at most).',
     'A ball stuck on lit pegs clears them so it can fall. Levels never run out: past the islands, the Open Sea makes new ones for you.'
   ];
-  function openHelp() { $('helpList').innerHTML = HELP.map(function (h) { return '<li>' + h + '</li>'; }).join(''); show('ovHelp'); }
+  function openHelp(quick) { var tips = quick ? [
+    'Drag to aim Tavi’s shell, then release to shoot. The dotted line previews the bounce.',
+    'Clear every coral peg to win. Pearls and guide powers raise your score.'
+  ] : HELP; document.querySelector('#ovHelp h2').textContent = quick ? 'Quick start' : 'How to play'; $('helpList').innerHTML = tips.map(function (h) { return '<li>' + h + '</li>'; }).join(''); show('ovHelp'); }
   $('btnCloseHelp').addEventListener('click', function () { S.click(); hide('ovHelp'); var f = helpThen; helpThen = null; if (f) f(); });
   $('btnHelp').addEventListener('click', function () { helpThen = null; openHelp(); });
 
