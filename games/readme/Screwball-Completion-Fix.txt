@@ -1,0 +1,7 @@
+Screwball 4.4.10
+
+Loads the shared dialog helper before Timber Tumble starts. Cleared boards now show completion and Next puzzle correctly, including reopening a saved cleared board. Completion awards are saved immediately. Preserves swing and contrast improvements.
+
+Verified a complete puzzle, reload of the cleared save, advancing to level 2, and menu opening with both native and fallback dialogs.
+
+Upload files to the repository root preserving folders; accept the update. No need to clear saved progress.

@@ -6,7 +6,7 @@ const VERSIONS = {
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.6",
-  "screwball": "4.4.9",
+  "screwball": "4.4.10",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
