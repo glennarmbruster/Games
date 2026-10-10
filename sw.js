@@ -71,7 +71,7 @@ const VERSIONS = {
   "three": "0.186.1",
   "planck": "1.5.0",
   "cannon": "0.20.0",
-  "pool": "1.0.1",
+  "pool": "1.0.2",
   "metro": "1.0.1"
 };
 const GROUPS = {
