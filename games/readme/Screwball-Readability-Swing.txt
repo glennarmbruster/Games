@@ -1,0 +1,6 @@
+Screwball 4.4.9
+
+Improved text contrast on the selector, Classic, and Timber Tumble.
+Timber Tumble: visible pendulum follow-through and settling; blocked planks rebound without swinging through supporting screws. Reduced-motion preference respected. Rules, levels, hints, saves and final positions unchanged.
+
+Upload these files to the repository root preserving folders. Accept the offline update before testing.

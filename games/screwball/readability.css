@@ -1,0 +1,18 @@
+/* Screwball readability: explicit surfaces keep both shared themes legible. */
+html body.collection-page[data-collection=screwball]{--ink:#182b49;--muted:#435674;--surface:#ffffff;--surface-2:#e8effa}
+html[data-theme=dark] body.collection-page[data-collection=screwball],html[data-theme=blue] body.collection-page[data-collection=screwball]{--ink:#f5f8ff;--muted:#d0dced;--surface:#203552;--surface-2:#2b4568}
+html body.collection-page[data-collection=screwball] .card-copy{background:#fff;color:#182b49}
+html body.collection-page[data-collection=screwball] .card-copy p,html body.collection-page[data-collection=screwball] .card-copy .eyebrow{color:#435674}
+html body.collection-page[data-collection=screwball] .upnext,html body.collection-page[data-collection=screwball] .partnote{font-size:13px;color:var(--ink);background:var(--surface)}
+html body.collection-page[data-collection=screwball] .traylbl,html body.collection-page[data-collection=screwball] .screwpill small{color:var(--ink);font-size:12px}
+html body.collection-page[data-collection=screwball] .workshop{color:#f5f8ff}
+html body.collection-page[data-collection=screwball] .status,html body.collection-page[data-collection=screwball] .status #moves,html body.collection-page[data-collection=screwball] .instruction{color:#fff;background:#192f53;border-radius:10px;padding:7px 9px;font-size:14px}
+html body.collection-page[data-collection=screwball] .game-title h1,html body.collection-page[data-collection=screwball] .game-title span{color:var(--ink);opacity:1}
+html body.collection-page[data-collection=screwball] .tools button,html body.collection-page[data-collection=screwball] .menu-button,html body.collection-page[data-collection=screwball] .level-tag{color:#fff;background:#214d87;border-color:#7398c7}
+html body.collection-page[data-collection=screwball] .tools span{font-size:14px}
+html body.collection-page[data-collection=screwball] dialog{background:var(--surface);color:var(--ink)}
+html body.collection-page[data-collection=screwball] dialog p,html body.collection-page[data-collection=screwball] dialog .eyebrow,html body.collection-page[data-collection=screwball] dialog .build-detail{color:var(--muted)}
+html body.collection-page[data-collection=screwball] dialog button,html body.collection-page[data-collection=screwball] dialog a{background:#214d87;color:#fff}
+html body.collection-page[data-collection=screwball] .screwpill{background:var(--surface);color:var(--ink)}
+html body.collection-page[data-collection=screwball] .collection-build,html body.collection-page[data-collection=screwball] .upnext small{color:var(--muted)}
+html[data-theme=dark] body.collection-page[data-collection=screwball] .help li::marker,html[data-theme=blue] body.collection-page[data-collection=screwball] .help li::marker{color:#a9ceff}

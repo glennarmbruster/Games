@@ -23,12 +23,32 @@ function pose(st,i){const g=R.geometry(level,st,i);return{x:g.x1,y:g.y1,angle:Ma
 function plank(i,t){const p=level.planks[i],b=state.bars[i],prior=anim&&anim.old.bars[i];if(!b.mode&&!(prior&&prior.mode))return '';
  let q=pose(state,i),opacity=1;
  if(anim&&prior&&prior.mode){
-  const u=Math.max(0,Math.min(1,(t-.32)/.68));let old=pose(anim.old,i);
+  const phase=anim.swinging?.18:.32;
+  const u=Math.max(0,Math.min(1,(t-phase)/(1-phase)));let old=pose(anim.old,i);
   if(b.mode===1){
    if(prior.mode===2&&b.pivot===p.b){old={...old,x:level.holes[p.b].x,y:level.holes[p.b].y,angle:old.angle+180};}
    let delta=q.angle-old.angle;while(delta>180)delta-=360;while(delta< -180)delta+=360;
-   // Ease into the exact collision pose; never overshoot a supporting screw.
-   const ease=1-Math.pow(1-u,2);q={...q,angle:old.angle+delta*ease};
+   // Accelerate under gravity, then swing back through the hanging position.
+   // Collision-limited planks rebound on their own side of the supporting peg.
+   let ease;
+   if(b.stop>=0){ease=1-Math.abs(Math.cos(2.5*Math.PI*u))*Math.pow(1-u,3);}
+   else{
+    ease=1-Math.exp(-3.5*u)*Math.cos(3*Math.PI*u)*(1-u);
+    if(ease>1){
+     const base=R.geometry(level,state,i),cap=R.capsule(base,p.width),radius=p.width/2+R.PEG_RADIUS;
+     const obstacles=level.holes.filter((h,j)=>state.pins[j]&&j!==b.pivot&&R.distance(h.x,h.y,cap)>=radius-.001);
+     // Sweep the overshoot, rather than testing only its endpoint.
+     const desired=delta*(ease-1);let safe=0;
+     for(let step=1;step<=Math.ceil(Math.abs(desired));step++){
+      const extra=Math.sign(desired)*Math.min(step,Math.abs(desired)),a=(q.angle+extra)*Math.PI/180;
+      const g={x1:q.x,y1:q.y,x2:q.x+q.len*Math.cos(a),y2:q.y+q.len*Math.sin(a),len:q.len};
+      if(obstacles.some(h=>R.distance(h.x,h.y,R.capsule(g,p.width))<radius))break;
+      safe=extra;
+     }
+     ease=1+(delta?safe/delta:0);
+    }
+   }
+   q={...q,angle:old.angle+delta*ease};
   }else{
    if(b.trace&&b.trace.length>1){
     const poses=[old,...b.trace.map(g=>({x:g.x1,y:g.y1,angle:Math.atan2(g.y2-g.y1,g.x2-g.x1)*180/Math.PI,len:g.len}))];
@@ -54,7 +74,7 @@ function render(t=1){
   if(hintPair&&(hintPair[0]===i||hintPair[1]===i))out+=`<circle cx="${h.x}" cy="${h.y}" r="27" fill="none" stroke="#f9ffca" stroke-width="3" stroke-dasharray="5 4"/><text x="${h.x+23}" y="${h.y-21}" font-size="19" font-weight="bold" fill="#153e31" stroke="#fff1be" stroke-width=".5">${hintPair[0]===i?'1':'2'}</text>`;
   out+=`<g class="hole-target" role="button" tabindex="${busy?-1:0}" aria-label="${pin?'Screw':'Empty hole'} ${i+1}" data-hole="${i}"><circle class="focus-ring" cx="${h.x}" cy="${h.y}" r="26" fill="none" stroke="#fff4b8" stroke-width="3"/><circle cx="${h.x}" cy="${h.y}" r="29" fill="transparent"/></g>`;
  }
- if(anim){const a=level.holes[anim.from],b=level.holes[anim.to],u=Math.min(1,t/.32),ease=u*u*(3-2*u);out+=screw(a.x+(b.x-a.x)*ease,a.y+(b.y-a.y)*ease-Math.sin(u*Math.PI)*40,true,720*u);}
+ if(anim){const a=level.holes[anim.from],b=level.holes[anim.to],u=Math.min(1,t/(anim.swinging?.18:.32)),ease=u*u*(3-2*u);out+=screw(a.x+(b.x-a.x)*ease,a.y+(b.y-a.y)*ease-Math.sin(u*Math.PI)*40,true,720*u);}
  if(drag&&drag.active)out+=screw(drag.x,drag.y-16,true,20);
  svg.innerHTML=out;
  $('levelButton').textContent='Level '+level.level;$('difficulty').textContent=level.level<=4?'Apprentice':level.level<12?'Craftsman':level.level<24?'Artisan':'Masterwork';$('remaining').textContent=state.bars.filter(b=>b.mode).length+' planks';$('moves').textContent=moves+' moves';$('undo').disabled=busy||!history.length;$('hint').disabled=busy||R.won(state);$('restart').disabled=busy;$('menu').disabled=busy;$('levelButton').disabled=busy;$('help').disabled=busy;
@@ -79,9 +99,9 @@ function act(h){if(busy||R.won(state)||h<0)return;if(!R.accessible(level,state,h
  if(state.pins[h]){selected=selected===h?-1:h;say(selected<0?'Tap a screw to pick it up.':'Choose an exposed empty hole. Tap the screw again to cancel.');render();ping(430);return;}
  if(selected<0){say('Pick up a brass screw first, then tap this empty hole.');return;}doMove(selected,h);
 }
-function doMove(a,b){const next=R.move(level,state,a,b,true);if(!next){say('Choose a clear, empty hole.');return;}history.push({state:R.clone(state),moves});if(history.length>200)history.shift();const old=state;state=next;moves++;selected=-1;hintPair=null;busy=true;anim={old,from:a,to:b};save();ping(300);
+function doMove(a,b){const next=R.move(level,state,a,b,true);if(!next){say('Choose a clear, empty hole.');return;}history.push({state:R.clone(state),moves});if(history.length>200)history.shift();const old=state;state=next;moves++;selected=-1;hintPair=null;busy=true;anim={old,from:a,to:b,swinging:state.bars.some((bar,i)=>bar.mode===1&&JSON.stringify(R.geometry(level,old,i))!==JSON.stringify(R.geometry(level,state,i)))};save();ping(300);
  const finish=()=>{for(const b of state.bars)delete b.trace;anim=null;busy=false;render();save();if(R.won(state)){won();return;}const choices=R.choices(level,state);if(!choices.length)say('No moves left. Undo to free up a hole, or restart.');else if(state.bars.some(b=>b.mode&&b.stop>=0))say('Resting on a screw. Shift its support to let it continue.');else say('Keep an empty hole available. Every screw matters.');};
- if(reduced){finish();return;}const begin=performance.now();function frame(now){let t=Math.min(1,(now-begin)/1100);render(t);if(t<1)requestAnimationFrame(frame);else finish();}requestAnimationFrame(frame);
+ if(reduced){finish();return;}const begin=performance.now();function frame(now){let t=Math.min(1,(now-begin)/(anim.swinging?2000:1100));render(t);if(t<1)requestAnimationFrame(frame);else finish();}requestAnimationFrame(frame);
 }
 function hint(){if(busy)return;busy=true;selected=-1;say('Studying the grain…');render();const snapshot=R.key(state);askWorker({type:'hint',level,state},result=>{busy=false;if(R.key(state)!==snapshot){render();return;}const path=result.result&&result.result.path;if(path&&path.length){hintPair=path[0];say('Move screw 1 to hole 2. Follow the bright rings.');}else{hintPair=null;say(result.error||'No solution found from here. Undo a move, or restart this board.');}render();});}
 function help(){dialog(`<div class="eyebrow">THE ART OF LETTING GO</div><h2>A screw at a time.</h2><p><strong>1.</strong> Tap a brass screw, then an exposed empty hole. You can also drag it there.</p><p><strong>2.</strong> With one screw left, a plank swings down until it hits an installed screw. With none, it drops, slides, and tips around screws beneath it.</p><p><strong>3.</strong> Clear every plank. A balanced plank can rest on a screw; an unbalanced one can slide or tip past it. Screws holding other boards and parked screws both stay solid.</p><p>Undo and hints are always free. No timer, lives, or paid holes. The first four puzzles are practice; level 5 starts the real workshop.</p><button class="primary" data-action="close">Back to the board</button><p class="build-detail" id="versionInfo">Timber Tumble · Version ${BUILD}</p>`);}
