@@ -1,6 +1,6 @@
 /* Goobs Games — Requested Corrections 1. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.4",
+  "shell": "3.8.5",
   "handheld": "1.1.5",
   "zoodoku": "1.12.8",
   "woodpile": "1.7.3",
@@ -192,6 +192,10 @@ const GROUPS = {
     "icons/games/worddice-v1.webp",
     "icons/games/wordwheel-v1.webp",
     "icons/games/zoodoku-v1.webp",
+    "icons/game-vault-180-v2.png",
+    "icons/game-vault-192-v2.png",
+    "icons/game-vault-512-v2.png",
+    "icons/game-vault-maskable-512-v2.png",
     "icons/icon-180.png",
     "icons/icon-192.png",
     "icons/icon-512.png",

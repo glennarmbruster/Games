@@ -1,0 +1,5 @@
+Goobs Games 3.8.5 — icon and selector logo correction
+
+Replace index.html, manifest.json and sw.js in the MAIN repository directory. Preserve icons/, shared/, and games/readme/ folders.
+
+This updates the embedded collection-menu logo as well as the app icons. New icon filenames avoid old cached artwork. Open in Safari and accept update 3.8.5. Existing Home Screen icons may require re-adding; export a progress backup before removing a shortcut. Do not clear website data.

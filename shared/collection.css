@@ -4,7 +4,7 @@ body.collection { background: var(--bg); }
 .collection .top { min-height: 52px; }
 .collection .logo { gap: 12px; }
 .collection .logo h1 { font-size: 27px; font-weight: 750; letter-spacing: -1px; }
-.collection .logo svg { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 3px 8px #00000012; }
+.collection .logo svg, .collection .logo .game-vault-logo { width: 42px; height: 42px; border-radius: 12px; box-shadow: 0 3px 8px #00000012; }
 .collection .hello { font-size: 14px; margin: -16px 0 0 54px; }
 .collection .iconbtn { width: 44px; height: 44px; border-radius: 50%; }
 .collection .section:empty { display: none; }
