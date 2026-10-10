@@ -1917,7 +1917,7 @@ var TFScene = (function () {
       build(); ready = true; $('loading').classList.add('hide');
       startLevel(levelNo);
       requestAnimationFrame(frame);
-    }).catch(function () { $('loading').textContent = 'Couldn’t load the game. Check the connection once, then it works offline.'; });
+    }).catch(function (e) { $('loading').textContent = 'Topple Fair couldn’t start: ' + (e && e.message ? e.message : 'The game files could not be loaded.'); });
   }
 
   // hook for automated tests
