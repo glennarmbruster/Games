@@ -624,7 +624,7 @@ var BWScene = (function () {
   var ORDER = ['starlight', 'comet', 'tiki', 'neon'];
 
   function build(T, canvas, BW, alleyId) {
-    var R = null, photoWood = null, laneSurfaceMat = null;
+    var R = null, photoWood = null, laneSurfaceMat = null, loungePhoto = null, muralSurface = null;
     function seed(s) { R = (function (v) { return function () { v = (v * 16807) % 2147483647; return (v - 1) / 2147483646; }; })(s); }
     function rnd(a, b) { return a + (b - a) * R(); }
     function canvasOf(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
@@ -717,7 +717,7 @@ var BWScene = (function () {
     }
 
     // ================= the alley (everything that changes with the theme) =================
-    var room = null, A = null, screens = [], mainScreen = null, showEvt = null;
+    var room = null, A = null, screens = [], mainScreen = null, showEvt = null, venueLights = [];
     function hexCss(n) { return '#' + ('000000' + n.toString(16)).slice(-6); }
     function add(m) { room.add(m); return m; }
     function box(w, h, d, mat, x, y, z) { var m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return add(m); }
@@ -761,6 +761,17 @@ var BWScene = (function () {
 
     // ---------------- big pictures: the back wall's mural, the side walls, the carpet ----------------
     function muralTex(id) {
+      if (loungePhoto) return tex(2048, 300, function (x,w,h) {
+        var g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#102641');g.addColorStop(1,'#080e1a');x.fillStyle=g;x.fillRect(0,0,w,h);
+        // Preserve photographic proportions on the wide wall; architectural wings frame the sign.
+        var pw=h*loungePhoto.width/loungePhoto.height;
+        x.drawImage(loungePhoto,(w-pw)/2,0,pw,h);
+        for(var side=0;side<2;side++)for(var k=0;k<7;k++){
+          var px=side?w-24-k*70:24+k*70;
+          x.fillStyle='#5a4630';x.fillRect(px,0,6,h);x.fillStyle='#d2a76c';x.fillRect(px,0,1,h);
+        }
+        x.fillStyle=hexCss((ALLEYS[id]||ALLEYS.starlight).neon[1]);x.shadowColor=x.fillStyle;x.shadowBlur=12;x.fillRect(0,h-5,w,3);x.shadowBlur=0;
+      });
       seed(31 + ORDER.indexOf(id));
       return tex(2048, 300, function (x, w, h) {
         var g;
@@ -817,9 +828,13 @@ var BWScene = (function () {
       seed(51 + ORDER.indexOf(id));
       var t = tex(512, 256, function (x, w, h) {
         var g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, a.wall[0]); g.addColorStop(1, a.wall[1]); x.fillStyle = g; x.fillRect(0, 0, w, h);
-        if (id === 'tiki') { for (var i = 0; i < w; i += 28) { x.fillStyle = i % 56 ? '#6a3b20' : '#7c4a28'; x.fillRect(i, h * 0.45, 24, h * 0.55); x.fillStyle = 'rgba(0,0,0,.25)'; for (var k = 0; k < 4; k++) x.fillRect(i, h * 0.45 + 30 + k * 34, 24, 3); } }
-        else if (id === 'neon') { x.strokeStyle = 'rgba(255,47,168,.6)'; x.lineWidth = 3; for (var j = -h; j < w; j += 64) { x.beginPath(); x.moveTo(j, h); x.lineTo(j + h * 0.7, h * 0.3); x.stroke(); } }
-        else { for (var s = 0; s < 40; s++) { x.fillStyle = 'rgba(255,255,255,' + rnd(0.2, 0.8).toFixed(2) + ')'; x.beginPath(); x.arc(rnd(0, w), rnd(0, h * 0.4), rnd(0.8, 2), 0, 7); x.fill(); } }
+        for(var panel=0;panel<w;panel+=64){
+          var finish=x.createLinearGradient(panel,0,panel+60,0);
+          finish.addColorStop(0,id==='tiki'?'#453023':'#14233b');finish.addColorStop(.5,id==='tiki'?'#78533b':'#30425e');finish.addColorStop(1,'#101522');
+          x.fillStyle=finish;x.fillRect(panel,0,60,h);
+          x.fillStyle='rgba(220,177,111,.65)';x.fillRect(panel+60,0,2,h);
+          for(var grain=0;grain<120;grain++){x.fillStyle='rgba(255,255,255,.025)';x.fillRect(panel+rnd(1,58),rnd(0,h),1,rnd(8,70));}
+        }
         var c0 = hexCss(a.neon[0]); x.fillStyle = c0; x.shadowColor = c0; x.shadowBlur = 14; x.fillRect(0, h * 0.4, w, 5); x.shadowBlur = 0;
       });
       t.wrapS = T.RepeatWrapping; t.repeat.set(7, 1); return t;
@@ -883,13 +898,20 @@ var BWScene = (function () {
         x.fillStyle = '#ff7a59'; x.beginPath(); x.arc(pxp, pyp, h * 0.2, 0, 7); x.fill();
         var shoot = (s * 0.35) % 2; if (shoot < 1) { var ssx = w * (0.95 - shoot * 0.6), ssy = h * (0.15 + shoot * 0.3); x.strokeStyle = 'rgba(120,230,255,.9)'; x.lineWidth = 3; x.beginPath(); x.moveTo(ssx, ssy); x.lineTo(ssx + 60, ssy - 30); x.stroke(); x.fillStyle = '#bff3ff'; x.beginPath(); x.arc(ssx, ssy, 4, 0, 7); x.fill(); }
       }
+      // Photo-quality venue displays with a slow reflected-light sweep.
+      if(loungePhoto){
+        x.drawImage(loungePhoto,0,0,w,h);
+        var sweep=(s*.08%1.8-.4)*w,shine=x.createLinearGradient(sweep-50,0,sweep+50,0);
+        shine.addColorStop(0,'rgba(190,226,255,0)');shine.addColorStop(.5,'rgba(190,226,255,.12)');shine.addColorStop(1,'rgba(190,226,255,0)');
+        x.fillStyle=shine;x.fillRect(0,0,w,h);
+      }
       // the alley's name (or the strike show on our lane)
       var ev = o.main && showEvt && s - showEvt.t0 < showEvt.dur ? showEvt : null;
       if (ev) { drawEvent(o, s - ev.t0, ev); }
       else {
         var pulse = 0.7 + 0.3 * Math.sin(s * 2.2);
         x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 ' + Math.round(h * 0.3) + 'px Georgia, "Times New Roman", serif';
-        x.shadowColor = hexCss(A.neon[0]); x.shadowBlur = 18 * pulse; x.fillStyle = '#fff4fd'; x.fillText(A.title, w / 2, h * 0.42); x.shadowBlur = 0;
+        x.shadowColor = hexCss(A.neon[0]); x.shadowBlur = 18 * pulse; x.fillStyle = '#fff4fd'; if(!loungePhoto)x.fillText(A.title, w / 2, h * 0.42); x.shadowBlur = 0;
         if (o.main) { x.font = '800 ' + Math.round(h * 0.13) + 'px -apple-system, system-ui, sans-serif'; x.fillStyle = hexCss(A.neon[1]); x.fillText('LANE 7', w / 2, h * 0.78); }
       }
       o.tex.needsUpdate = true;
@@ -918,6 +940,10 @@ var BWScene = (function () {
       var now = performance.now(); if (!force && now - lastShow < 40) return; lastShow = now;
       var s = (now - clockT0) / 1000;
       screens.forEach(function (o) { drawShow(o, s); });
+      if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches) venueLights.forEach(function(o,i){
+        o.position.x=Math.sin(s*.22+i*Math.PI)*ROOMW*.32;
+        o.material.opacity=.25+.12*Math.sin(s*.65+i);
+      });
     }
 
     // ---------------- build the room ----------------
@@ -925,7 +951,7 @@ var BWScene = (function () {
       A = ALLEYS[id] || ALLEYS.starlight;
       if (room) { scene.remove(room); room.traverse(function (o) { if (o.geometry && o.geometry !== pinGeo) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(function (m) { if (m.map) m.map.dispose(); if (m.emissiveMap && m.emissiveMap !== m.map) m.emissiveMap.dispose(); m.dispose(); }); }); }
       if (scene.environment) { scene.environment.dispose(); scene.environment = null; }
-      room = new T.Group(); scene.add(room); screens = [];
+      room = new T.Group(); scene.add(room); screens = []; venueLights = [];
       var BG = new T.Color(A.bg); scene.background = BG; scene.fog = new T.Fog(BG, A.fog[0], A.fog[1]);
       // lights
       add(new T.HemisphereLight(A.hemi[0], A.hemi[1], A.hemi[2]));
@@ -978,8 +1004,14 @@ var BWScene = (function () {
       box(ROOMW, SCR_H + 0.5, 0.1, fasciaMat, 0, SCR_Y0 + SCR_H / 2 + 0.15, HEAD + 0.3);   // the dark fascia behind the screens
       // the back wall: the mural, with a neon line along its bottom and top
       var mural = new T.Mesh(new T.PlaneGeometry(ROOMW, CEIL - 1.95), new T.MeshBasicMaterial({ map: muralTex(id), toneMapped: false, color: 0xd8d8d8 }));
+      muralSurface=mural.material;
       mural.position.set(0, 1.95 + (CEIL - 1.95) / 2, BACKZ); add(facing(mural));
       box(ROOMW, 0.03, 0.03, neonA, 0, 1.96, BACKZ - 0.05); box(ROOMW, 0.03, 0.03, neonB, 0, CEIL - 0.03, BACKZ - 0.05);
+      // Slow architectural light ribbons above the pin decks; no extra dynamic lights or physics.
+      [A.neon[0],A.neon[1]].forEach(function(col,i){
+        var glow=new T.Mesh(new T.PlaneGeometry(1.8,.025),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.3,depthWrite:false,toneMapped:false}));
+        glow.position.set(0,2.12+i*.92,BACKZ-.07);add(facing(glow));venueLights.push(glow);
+      });
       // the ceiling: dark, with long light strips over the gaps between lanes and beams across
       var ceil = new T.Mesh(new T.PlaneGeometry(ROOMW, BACKZ - FRONTZ), std(A.ceil, 0.9)); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, CEIL, (BACKZ + FRONTZ) / 2); add(ceil);
       var stripMat = glowMat(A.strip);
@@ -1021,6 +1053,9 @@ var BWScene = (function () {
       if(laneSurfaceMat){var old=laneSurfaceMat.map,next=laneTex(A.lane);laneSurfaceMat.map=next;if(laneSurfaceMat.emissiveMap)laneSurfaceMat.emissiveMap=next;laneSurfaceMat.needsUpdate=true;old.dispose();}
     };
     grainImage.src='assets/lane-grain-v1.webp';
+    var loungeImage=new Image();
+    loungeImage.onload=function(){loungePhoto=loungeImage;if(muralSurface){var old=muralSurface.map;muralSurface.map=muralTex(alleyId);muralSurface.needsUpdate=true;old.dispose();}};
+    loungeImage.src='assets/lounge-mural-v2.png';
 
     // ================= updates from the app =================
     // pins: list of { n, p: {x,y,z}, q: {x,y,z,w}, a (opacity 0..1), s (scale, for the rack dropping in) }

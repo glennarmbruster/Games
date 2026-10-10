@@ -1,0 +1,6 @@
+Timber Tumble / Strike Alley refresh
+
+Timber Tumble: removed duplicate How to Play; larger phone control labels. Preserves completion fix and swinging animation.
+Strike Alley: new photographic bowling mural, paneled walls, illuminated displays and moving light accents above pins. Bowling physics unchanged. Added artwork is cached offline.
+
+Upload ZIP contents to repository root preserving folders and accept the update.

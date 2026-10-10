@@ -16,3 +16,14 @@ html body.collection-page[data-collection=screwball] dialog button,html body.col
 html body.collection-page[data-collection=screwball] .screwpill{background:var(--surface);color:var(--ink)}
 html body.collection-page[data-collection=screwball] .collection-build,html body.collection-page[data-collection=screwball] .upnext small{color:var(--muted)}
 html[data-theme=dark] body.collection-page[data-collection=screwball] .help li::marker,html[data-theme=blue] body.collection-page[data-collection=screwball] .help li::marker{color:#a9ceff}
+
+/* The native Timber help button already opens its full guide. */
+html body.timber-mode #bottomHelp{display:none!important}
+@media(max-width:600px){
+ html body.timber-mode .tools.finished-controls{gap:4px;flex-wrap:nowrap}
+ html body.timber-mode .tools button{min-width:0;padding:6px 5px;gap:3px;font-size:18px;max-width:none}
+ html body.timber-mode .tools button span{font-size:14px}
+ html body.timber-mode .tools #gameBottomNav{flex:none;width:auto!important;gap:0}
+ html body.timber-mode .tools #gameBottomNav a{font-size:14px;padding:8px;min-width:44px}
+ html body.timber-mode .instruction{font-size:14px;line-height:1.3}
+}
