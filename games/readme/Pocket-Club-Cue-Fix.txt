@@ -1,0 +1,11 @@
+POCKET CLUB 1.0.5 — CUE PULL FIX
+
+This ZIP can be uploaded even if the Contraption Lab update has not been
+applied yet. It includes both the Contraption Lab update and this cue fix.
+
+Touch the visible pool cue and pull it backward. It follows your finger
+without flipping the aim. Release after a pull to shoot. A brief tap does
+not shoot. You can still aim by tapping or dragging on the felt, adjust with
+the fine aim buttons, and use the Power slider plus Shoot button.
+
+The larger numbered balls from Pocket Club 1.0.4 are preserved.
