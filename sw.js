@@ -73,7 +73,7 @@ const VERSIONS = {
   "cannon": "0.20.0",
   "pool": "1.0.5",
   "metro": "1.0.3",
-  "contraption": "1.0.2"
+  "contraption": "1.0.3"
 };
 const GROUPS = {
   "handheld": [

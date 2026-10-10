@@ -1,4 +1,4 @@
-CONTRAPTION LAB — VERSION 1.0.2
+CONTRAPTION LAB — VERSION 1.0.3
 
 Upload all ZIP contents to the repository root, preserving games/contraption/.
 This update adds one game to the Puzzles tab and its dedicated offline cache group.
@@ -13,11 +13,14 @@ Run checks the chain, stopping at the first failed link.
 Use Hint for the next missing/incorrect component.
 
 VERSION NOTE
-The Run animation uses elapsed time and a timer fallback for slow iPads.
-The offline cache is explicitly versioned at 1.0.1.
+Run advances each link on an independent timer and displays the ball in a
+separate animated layer. A canvas frame cannot stall the result.
+The offline cache is explicitly versioned at 1.0.3.
 
 The mechanics are an authored chain-reaction puzzle. Ball travel and part
 activation are deterministic animation, not a general-purpose physics sandbox.
 
 1.0.2: Smoother continuous animation on the display clock and a new
 full-bleed workshop icon. No puzzle rules or saved progress changed.
+1.0.3: Rebuilt Run progression to finish even when canvas animation stalls.
+This package contains Contraption Lab only; Pool is not included.
