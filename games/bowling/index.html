@@ -634,7 +634,7 @@ var BWScene = (function () {
     var PITCH = LW + 2 * GUT + 0.16;      // lane to lane
     var SIDE = 3;                         // neighbouring lanes on each side
     var ROOMW = (2 * SIDE + 1) * PITCH + 1.4, WALLX = ROOMW / 2, CEIL = 3.4, BACKZ = PIT + 0.3, FRONTZ = -7;
-    var SCR_Y0 = 1.24, SCR_H = 0.76;      // the masking unit's screen over each lane's pins (bottom edge, height)
+    var SCR_Y0 = 0.98, SCR_H = 1.02;      // the masking unit's screen over each lane's pins (bottom edge, height)
 
     // ---------------- renderer, camera ----------------
     var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
@@ -900,9 +900,17 @@ var BWScene = (function () {
       }
       // Photo-quality venue displays with a slow reflected-light sweep.
       if(loungePhoto){
-        x.drawImage(loungePhoto,0,0,w,h);
-        var sweep=(s*.08%1.8-.4)*w,shine=x.createLinearGradient(sweep-50,0,sweep+50,0);
-        shine.addColorStop(0,'rgba(190,226,255,0)');shine.addColorStop(.5,'rgba(190,226,255,.12)');shine.addColorStop(1,'rgba(190,226,255,0)');
+        var motion=window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:s;
+        var zoom=1.06+.04*Math.sin(motion*.65),dw=w*zoom,dh=h*zoom;
+        x.drawImage(loungePhoto,(w-dw)/2+Math.sin(motion*.4)*w*.025,(h-dh)/2,dw,dh);
+        // Broad moving marquee lights remain visible from the approach camera.
+        for(var lamp=0;lamp<18;lamp++){
+          var bright=.28+.72*Math.pow((1+Math.sin(lamp*.65-motion*1.8))/2,3);
+          x.fillStyle='rgba(255,211,124,'+bright.toFixed(3)+')';
+          x.fillRect(lamp*w/18+2,2,w/18-4,5);x.fillRect(lamp*w/18+2,h-7,w/18-4,5);
+        }
+        var sweep=(motion*.16%1.8-.4)*w,shine=x.createLinearGradient(sweep-50,0,sweep+50,0);
+        shine.addColorStop(0,'rgba(190,226,255,0)');shine.addColorStop(.5,'rgba(190,226,255,.28)');shine.addColorStop(1,'rgba(190,226,255,0)');
         x.fillStyle=shine;x.fillRect(0,0,w,h);
       }
       // the alley's name (or the strike show on our lane)
@@ -912,7 +920,7 @@ var BWScene = (function () {
         var pulse = 0.7 + 0.3 * Math.sin(s * 2.2);
         x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '900 ' + Math.round(h * 0.3) + 'px Georgia, "Times New Roman", serif';
         x.shadowColor = hexCss(A.neon[0]); x.shadowBlur = 18 * pulse; x.fillStyle = '#fff4fd'; if(!loungePhoto)x.fillText(A.title, w / 2, h * 0.42); x.shadowBlur = 0;
-        if (o.main) { x.font = '800 ' + Math.round(h * 0.13) + 'px -apple-system, system-ui, sans-serif'; x.fillStyle = hexCss(A.neon[1]); x.fillText('LANE 7', w / 2, h * 0.78); }
+        if (o.main) { x.font = '800 ' + Math.round(h * 0.13) + 'px -apple-system, system-ui, sans-serif'; x.fillStyle = hexCss(A.neon[1]); x.fillText('LANE 18', w / 2, h * 0.78); }
       }
       o.tex.needsUpdate = true;
     }
@@ -998,7 +1006,7 @@ var BWScene = (function () {
         var scr = new T.Mesh(new T.PlaneGeometry(PITCH - 0.1, SCR_H), main ? mainScrMat : sideScrMat); scr.position.set(xc, SCR_Y0 + SCR_H / 2, HEAD + 0.15); add(facing(scr));
         box(PITCH, 0.06, 0.12, fasciaMat, xc, SCR_Y0 - 0.03, HEAD + 0.2);
         box(PITCH - 0.1, 0.012, 0.02, li % 2 ? neonB : neonA, xc, SCR_Y0 - 0.065, HEAD + 0.12);
-        var plate = new T.Mesh(new T.PlaneGeometry(0.3, 0.11), new T.MeshBasicMaterial({ map: plateTex(7 - li), toneMapped: false })); plate.position.set(xc, SCR_Y0 + SCR_H + 0.08, HEAD + 0.14); add(facing(plate));
+        var plate = new T.Mesh(new T.PlaneGeometry(0.3, 0.11), new T.MeshBasicMaterial({ map: plateTex(18 - li), toneMapped: false })); plate.position.set(xc, SCR_Y0 + SCR_H + 0.08, HEAD + 0.14); add(facing(plate));
         box(0.06, SCR_H + 0.26, 0.14, fasciaMat, xc + PITCH / 2, SCR_Y0 + SCR_H / 2 + 0.1, HEAD + 0.2);   // post between screens
       }
       box(ROOMW, SCR_H + 0.5, 0.1, fasciaMat, 0, SCR_Y0 + SCR_H / 2 + 0.15, HEAD + 0.3);   // the dark fascia behind the screens

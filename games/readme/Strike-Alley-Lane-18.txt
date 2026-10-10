@@ -1,0 +1,5 @@
+Strike Alley 0.4.8
+
+Lane 18 replaces lane 7, with neighboring lane numbers updated. Larger, lower displays show the bowling artwork from the normal approach view. Added gentle image movement, traveling marquee lights, and a broader light sweep. Physics and aiming unchanged.
+
+Upload to the main repository preserving folders, then accept the update.
