@@ -1,6 +1,6 @@
-/* Goobs Games — Requested Corrections 1. Earlier caches retained. */
+/* Goobs Games — Contraption Lab added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.7",
+  "shell": "3.8.8",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -2271,6 +2271,11 @@ const GROUPS = {
     "shared/new-games.css",
     "shared/new-games.js",
     "shared/goobs.js"
+  ],
+  "contraption": [
+    "games/contraption/",
+    "games/contraption/index.html",
+    "games/contraption/workshop.webp"
   ],
   "metro": [
     "games/metro/",
