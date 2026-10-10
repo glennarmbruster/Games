@@ -26,7 +26,7 @@ const VERSIONS = {
   "mines": "1.4.8",
   "bubbles": "1.5.6",
   "bricks": "1.5.8",
-  "topple": "1.11.10",
+  "topple": "1.11.11",
   "barrage": "1.8.8",
   "siege": "1.5.7",
   "hoops": "1.4.6",

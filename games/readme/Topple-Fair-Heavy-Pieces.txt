@@ -1,0 +1,7 @@
+Topple Fair 1.11.11
+
+Removed the spinning-table popup. More iron anchors from level 22 where same-size base blocks fit: one early, two from level 75, up to three from level 200. Intro levels unchanged. Updated levels are checked by the physics bot; layouts that fail retain their original arrangement. Ball allowances adjusted only where the check requires more shots.
+
+Actual hits depend on aim, stacks, and position; heavy pieces are physical objects, not fixed hit-point targets.
+
+Retains the tablet camera pullback and iOS compatibility fixes. Upload to the repository root preserving folders, then accept the update.
