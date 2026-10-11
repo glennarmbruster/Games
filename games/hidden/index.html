@@ -4210,7 +4210,13 @@ var HS = (function () {
   function load() {
     var r = store.get('game', null);
     if (!r || r.level !== meta.level || typeof r.sig !== 'string' || !Array.isArray(r.done)) return false;
-    var l = HO.level(r.level, settings.diff); if (!l || sig(l) !== r.sig) return false;
+    var l = HO.level(r.level, settings.diff);
+    if (l && sig(l) !== r.sig) {
+      // Restore a puzzle begun before the shuffled scene order was installed.
+      var old = /^([^:]+):photo(\d+):/.exec(r.sig);
+      if (old) l = HO.level(r.level, settings.diff, +old[2]);
+    }
+    if (!l || sig(l) !== r.sig) return false;
     if (!(r.wrong >= 0) || !(r.hints >= 0) || !(r.secs >= 0)) return false;
     if (r.done.some(function (j) { return !(j >= 0 && j < l.targets.length); })) return false;
     lv = l; levelNo = r.level; lv.scene.items.forEach(function (it) { it.gone = false; });

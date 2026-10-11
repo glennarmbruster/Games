@@ -1572,4 +1572,590 @@ var PhotoTourData = [
     }
   ]
 }
+,
+{
+  "key": "lighthouse",
+  "name": "Lighthouse keeper’s room",
+  "id": "photo-lighthouse-v1",
+  "regions": [
+    {
+      "id": "lantern",
+      "label": "oil lantern",
+      "box": [
+        14,
+        382,
+        211,
+        373
+      ],
+      "file": "lantern-color-v1.webp"
+    },
+    {
+      "id": "mug",
+      "label": "ceramic mug",
+      "box": [
+        263,
+        549,
+        190,
+        159
+      ],
+      "file": "mug-color-v1.webp"
+    },
+    {
+      "id": "coat",
+      "label": "raincoat",
+      "box": [
+        1120,
+        39,
+        255,
+        565
+      ],
+      "file": "coat-color-v1.webp"
+    },
+    {
+      "id": "rope",
+      "label": "rope coil",
+      "box": [
+        828,
+        526,
+        382,
+        149
+      ],
+      "file": "rope-color-v1.webp"
+    },
+    {
+      "id": "telescope",
+      "label": "brass telescope",
+      "box": [
+        392,
+        597,
+        386,
+        164
+      ],
+      "file": "telescope-color-v1.webp"
+    },
+    {
+      "id": "binoculars",
+      "label": "binoculars",
+      "box": [
+        746,
+        619,
+        309,
+        143
+      ],
+      "file": "binoculars-color-v1.webp"
+    },
+    {
+      "id": "ring",
+      "label": "life ring",
+      "box": [
+        1326,
+        94,
+        210,
+        330
+      ],
+      "file": "ring-color-v1.webp"
+    },
+    {
+      "id": "notebook",
+      "label": "notebook",
+      "box": [
+        939,
+        723,
+        350,
+        163
+      ],
+      "file": "notebook-color-v1.webp"
+    },
+    {
+      "id": "shell",
+      "label": "seashell",
+      "box": [
+        1145,
+        635,
+        208,
+        130
+      ],
+      "file": "shell-color-v1.webp"
+    },
+    {
+      "id": "boots",
+      "label": "sea boots",
+      "box": [
+        1325,
+        452,
+        211,
+        195
+      ],
+      "file": "boots-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "bookshop",
+  "name": "Antique bookshop",
+  "id": "photo-bookshop-v1",
+  "regions": [
+    {
+      "id": "lamp",
+      "label": "reading lamp",
+      "box": [
+        92,
+        158,
+        280,
+        200
+      ],
+      "file": "lamp-color-v1.webp"
+    },
+    {
+      "id": "globe",
+      "label": "globe",
+      "box": [
+        359,
+        217,
+        283,
+        295
+      ],
+      "file": "globe-color-v1.webp"
+    },
+    {
+      "id": "book",
+      "label": "hardcover book",
+      "box": [
+        334,
+        578,
+        501,
+        234
+      ],
+      "file": "book-color-v1.webp"
+    },
+    {
+      "id": "watch",
+      "label": "pocket watch",
+      "box": [
+        851,
+        684,
+        232,
+        249
+      ],
+      "file": "watch-color-v1.webp"
+    },
+    {
+      "id": "magnifier",
+      "label": "magnifying glass",
+      "box": [
+        1015,
+        650,
+        312,
+        182
+      ],
+      "file": "magnifier-color-v1.webp"
+    },
+    {
+      "id": "bookmark",
+      "label": "bookmark",
+      "box": [
+        48,
+        700,
+        295,
+        167
+      ],
+      "file": "bookmark-color-v1.webp"
+    },
+    {
+      "id": "vase",
+      "label": "ceramic vase",
+      "box": [
+        676,
+        366,
+        159,
+        231
+      ],
+      "file": "vase-color-v1.webp"
+    },
+    {
+      "id": "ink",
+      "label": "ink bottle",
+      "box": [
+        882,
+        469,
+        137,
+        174
+      ],
+      "file": "ink-color-v1.webp"
+    },
+    {
+      "id": "quill",
+      "label": "feather quill",
+      "box": [
+        1191,
+        643,
+        283,
+        209
+      ],
+      "file": "quill-color-v1.webp"
+    },
+    {
+      "id": "satchel",
+      "label": "leather satchel",
+      "box": [
+        1087,
+        316,
+        421,
+        330
+      ],
+      "file": "satchel-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "market",
+  "name": "Autumn market",
+  "id": "photo-market-v1",
+  "regions": [
+    {
+      "id": "apples",
+      "label": "apple basket",
+      "box": [
+        0,
+        351,
+        353,
+        335
+      ],
+      "file": "apples-color-v1.webp"
+    },
+    {
+      "id": "watering",
+      "label": "watering can",
+      "box": [
+        306,
+        295,
+        401,
+        330
+      ],
+      "file": "watering-color-v1.webp"
+    },
+    {
+      "id": "pumpkin",
+      "label": "pumpkin",
+      "box": [
+        608,
+        424,
+        252,
+        221
+      ],
+      "file": "pumpkin-color-v1.webp"
+    },
+    {
+      "id": "jug",
+      "label": "ceramic jug",
+      "box": [
+        861,
+        369,
+        169,
+        251
+      ],
+      "file": "jug-color-v1.webp"
+    },
+    {
+      "id": "flowers",
+      "label": "potted flowers",
+      "box": [
+        1044,
+        344,
+        287,
+        263
+      ],
+      "file": "flowers-color-v1.webp"
+    },
+    {
+      "id": "thermos",
+      "label": "thermos",
+      "box": [
+        1354,
+        335,
+        172,
+        279
+      ],
+      "file": "thermos-color-v1.webp"
+    },
+    {
+      "id": "scarf",
+      "label": "scarf",
+      "box": [
+        0,
+        622,
+        656,
+        288
+      ],
+      "file": "scarf-color-v1.webp"
+    },
+    {
+      "id": "blanket",
+      "label": "checked blanket",
+      "box": [
+        752,
+        606,
+        502,
+        249
+      ],
+      "file": "blanket-color-v1.webp"
+    },
+    {
+      "id": "hat",
+      "label": "straw hat",
+      "box": [
+        1190,
+        568,
+        304,
+        176
+      ],
+      "file": "hat-color-v1.webp"
+    },
+    {
+      "id": "bell",
+      "label": "market bell",
+      "box": [
+        1425,
+        584,
+        111,
+        228
+      ],
+      "file": "bell-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "observatory",
+  "name": "Mountain observatory",
+  "id": "photo-observatory-v1",
+  "regions": [
+    {
+      "id": "folder",
+      "label": "star-chart folder",
+      "box": [
+        59,
+        588,
+        450,
+        221
+      ],
+      "file": "folder-color-v1.webp"
+    },
+    {
+      "id": "flashlight",
+      "label": "flashlight",
+      "box": [
+        330,
+        722,
+        285,
+        130
+      ],
+      "file": "flashlight-color-v1.webp"
+    },
+    {
+      "id": "astrolabe",
+      "label": "astrolabe",
+      "box": [
+        512,
+        521,
+        192,
+        194
+      ],
+      "file": "astrolabe-color-v1.webp"
+    },
+    {
+      "id": "thermos",
+      "label": "thermos",
+      "box": [
+        750,
+        421,
+        104,
+        287
+      ],
+      "file": "thermos-color-v1.webp"
+    },
+    {
+      "id": "gloves",
+      "label": "wool gloves",
+      "box": [
+        866,
+        587,
+        323,
+        170
+      ],
+      "file": "gloves-color-v1.webp"
+    },
+    {
+      "id": "lamp",
+      "label": "desk lamp",
+      "box": [
+        1165,
+        249,
+        296,
+        165
+      ],
+      "file": "lamp-color-v1.webp"
+    },
+    {
+      "id": "globe",
+      "label": "globe",
+      "box": [
+        1170,
+        472,
+        174,
+        172
+      ],
+      "file": "globe-color-v1.webp"
+    },
+    {
+      "id": "compass",
+      "label": "compass",
+      "box": [
+        666,
+        786,
+        155,
+        112
+      ],
+      "file": "compass-color-v1.webp"
+    },
+    {
+      "id": "hat",
+      "label": "knitted hat",
+      "box": [
+        850,
+        701,
+        365,
+        216
+      ],
+      "file": "hat-color-v1.webp"
+    },
+    {
+      "id": "blanket",
+      "label": "folded blanket",
+      "box": [
+        1220,
+        644,
+        316,
+        330
+      ],
+      "file": "blanket-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "aquarium",
+  "name": "Aquarium research room",
+  "id": "photo-aquarium-v1",
+  "regions": [
+    {
+      "id": "coral",
+      "label": "coral specimen",
+      "box": [
+        0,
+        402,
+        334,
+        311
+      ],
+      "file": "coral-color-v1.webp"
+    },
+    {
+      "id": "clipboard",
+      "label": "clipboard",
+      "box": [
+        0,
+        696,
+        466,
+        205
+      ],
+      "file": "clipboard-color-v1.webp"
+    },
+    {
+      "id": "mask",
+      "label": "diving mask",
+      "box": [
+        336,
+        558,
+        280,
+        148
+      ],
+      "file": "mask-color-v1.webp"
+    },
+    {
+      "id": "bottle",
+      "label": "glass bottle",
+      "box": [
+        618,
+        423,
+        89,
+        248
+      ],
+      "file": "bottle-color-v1.webp"
+    },
+    {
+      "id": "shell",
+      "label": "seashell",
+      "box": [
+        670,
+        649,
+        198,
+        117
+      ],
+      "file": "shell-color-v1.webp"
+    },
+    {
+      "id": "fins",
+      "label": "diving fins",
+      "box": [
+        901,
+        515,
+        375,
+        221
+      ],
+      "file": "fins-color-v1.webp"
+    },
+    {
+      "id": "bucket",
+      "label": "bucket",
+      "box": [
+        1274,
+        470,
+        254,
+        244
+      ],
+      "file": "bucket-color-v1.webp"
+    },
+    {
+      "id": "towel",
+      "label": "striped towel",
+      "box": [
+        1120,
+        706,
+        416,
+        318
+      ],
+      "file": "towel-color-v1.webp"
+    },
+    {
+      "id": "clock",
+      "label": "porthole clock",
+      "box": [
+        847,
+        712,
+        245,
+        142
+      ],
+      "file": "clock-color-v1.webp"
+    },
+    {
+      "id": "magnifier",
+      "label": "magnifying glass",
+      "box": [
+        501,
+        787,
+        327,
+        117
+      ],
+      "file": "magnifier-color-v1.webp"
+    }
+  ]
+}
 ];

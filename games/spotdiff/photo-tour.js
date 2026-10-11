@@ -6,9 +6,20 @@ var PhotoTour = (function () {
   function definition(id) { return PhotoTourData.find(function (e) { return e.id === id; }); }
   function known(id) { return id === PhotoCruise.ID || !!definition(id); }
   function rng(seed) { var a = seed >>> 0; return function () { a += 0x6D2B79F5; var t = Math.imul(a ^ a >>> 15, 1 | a); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var sceneBags = {};
+  function rawBag(cycle) {
+    var bag = [PhotoCruise.ID].concat(PhotoTourData.map(function(e){return e.id;})), r = rng(Math.imul(cycle + 1, 32452843) + 0x1a5d4b);
+    for (var i=bag.length-1;i>0;i--) { var j=Math.floor(r()*(i+1)), t=bag[i];bag[i]=bag[j];bag[j]=t; }
+    return bag;
+  }
+  function sceneFor(n) {
+    var size=PhotoTourData.length+1,cycle=Math.floor((n-1)/size),bag=sceneBags[cycle];
+    if(!bag){bag=rawBag(cycle);if(cycle&&bag[0]===rawBag(cycle-1)[size-1]){var t=bag[0];bag[0]=bag[1];bag[1]=t;}sceneBags[cycle]=bag;}
+    return bag[(n-1)%size];
+  }
   function level(n, d, id) {
     n = Math.max(1, Math.floor(n) || 1); d = Math.max(0, Math.min(3, d | 0));
-    if (!id) { var slot = (n - 1) % (PhotoTourData.length + 1); id = slot ? PhotoTourData[slot - 1].id : PhotoCruise.ID; }
+    if (!id) id = sceneFor(n);
     if (id === PhotoCruise.ID) return PhotoCruise.level(n, d);
     var e = definition(id); if (!e) return null;
     var seed = 0; for (var k = 0; k < id.length; k++) seed = Math.imul(seed, 31) + id.charCodeAt(k) | 0;
