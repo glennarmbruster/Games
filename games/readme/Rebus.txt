@@ -1,0 +1,15 @@
+REBUS — VERSION 1.0.0
+
+Upload the ZIP contents to the Goobs Games repository root, preserving folders.
+Rebus appears in the Puzzles tab. The game and icon work offline after the
+collection update is installed. No existing game files are changed.
+
+HOW TO PLAY
+Choose Easy, Medium, or Hard. Look at the size, color, position, direction,
+and arrangement of the words. Type the familiar word or phrase and press Check.
+Punctuation and small articles (a, an, the) do not matter.
+
+There are 18 puzzles in each difficulty, 54 total. Use the arrows to review
+clues; Next moves to another unsolved puzzle. Hint gives a nudge, then the
+first word. Reveal shows the answer without marking that clue solved.
+Progress is saved on this device in localStorage key goobs.rebus.v1.

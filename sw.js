@@ -1,6 +1,6 @@
 /* Goobs Games — Contraption Lab added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.9",
+  "shell": "3.8.10",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -73,7 +73,8 @@ const VERSIONS = {
   "cannon": "0.20.0",
   "pool": "1.0.5",
   "metro": "1.0.3",
-  "contraption": "1.1.0"
+  "contraption": "1.1.0",
+  "rebus": "1.0.0"
 };
 const GROUPS = {
   "handheld": [
@@ -131,6 +132,7 @@ const GROUPS = {
     "index.html",
     "manifest.json",
     "icons/games/contraption-v2.webp",
+    "icons/games/rebus-v1.webp",
     "icons/games/containment-v1.webp",
     "icons/games/stranded-v1.webp",
     "icons/games/aliens-v1.webp",
@@ -2273,6 +2275,10 @@ const GROUPS = {
     "shared/new-games.css",
     "shared/new-games.js",
     "shared/goobs.js"
+  ],
+  "rebus": [
+    "games/rebus/",
+    "games/rebus/index.html"
   ],
   "contraption": [
     "games/contraption/",
