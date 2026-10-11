@@ -1,6 +1,6 @@
-/* Goobs Games — Contraption Lab added. Earlier caches retained. */
+/* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.10",
+  "shell": "3.8.11",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -74,7 +74,8 @@ const VERSIONS = {
   "pool": "1.0.5",
   "metro": "1.0.3",
   "contraption": "1.1.0",
-  "rebus": "1.0.0"
+  "rebus": "1.0.0",
+  "snowbound": "1.0.0"
 };
 const GROUPS = {
   "handheld": [
@@ -133,6 +134,7 @@ const GROUPS = {
     "manifest.json",
     "icons/games/contraption-v2.webp",
     "icons/games/rebus-v1.webp",
+    "icons/games/snowbound-v1.svg",
     "icons/games/containment-v1.webp",
     "icons/games/stranded-v1.webp",
     "icons/games/aliens-v1.webp",
@@ -2405,6 +2407,10 @@ const GROUPS = {
     "games/contraption/index.html",
     "games/contraption/free.html",
     "games/contraption/workshop.webp"
+  ],
+  "snowbound": [
+    "games/snowbound/",
+    "games/snowbound/index.html"
   ],
   "metro": [
     "games/metro/",
