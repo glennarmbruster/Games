@@ -1,7 +1,8 @@
-Snowbound 0.10.0 — early gameplay and visual revision
+Snowbound 0.9 Alpha — two level preview
 
-Install this ZIP at the Goobs Games root, preserving folders. Existing saved scores and upgrades carry forward.
+Install this ZIP at the Goobs Games root, preserving folders. It keeps the winning Snowbound icon from 0.10 and carries over saved best distances, upgrades and settings.
 
-The floating diamonds are gone. Stars grant a rocket refill, a timed shield, or a speed surge. The sled has a new hull and Rocket level 3 unlocks visible dual thrusters with stronger boost. New snow-laden pines, colorful lodges, course flags and brighter scenery accompany a slightly faster ride. The menu icon is new illustrated artwork.
+Level 1: Alpine Village. Accumulate 7,500 meters across runs in either mode to unlock Level 2.
+Level 2: Aurora Pass. Accumulate another 10,000 meters across runs to clear the two level preview. Extra distance in the clearing run counts toward Level 2. The second course has a cooler blue and violet setting, more ice scenery and a different obstacle pattern. After both targets are met, Aurora Pass stays playable; more settings can follow after the screenshot review.
 
-This is still an early playable version, not a finished 1.0.
+This pass also raises the chase camera modestly, refines the snowy tree boughs, and adds brighter alpine color. The icon and steering stay as in 0.10.

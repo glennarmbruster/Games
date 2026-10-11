@@ -75,7 +75,7 @@ const VERSIONS = {
   "metro": "1.0.3",
   "contraption": "1.1.0",
   "rebus": "1.0.0",
-  "snowbound": "0.10.0"
+  "snowbound": "0.9-alpha.1"
 };
 const GROUPS = {
   "handheld": [
