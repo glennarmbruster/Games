@@ -1,11 +1,7 @@
-SNOWBOUND — Goobs Games
+Snowbound 0.2.0 — substantial first rebuild
 
-Copy this ZIP's files into the main Goobs Games directory, preserving paths.
-Open Arcade > Snowbound. The game works offline once the collection update has finished installing.
+Install the ZIP at the Goobs Games root, preserving its folders. Existing saved best distances and upgrades carry forward. The shared 3D engine is already present in the collection and cached for offline use.
 
-Launch & Glide: choose power or pull down and release on the opening screen. Drag left/right to steer. Tap Jump to clear low obstacles. After each run choose one free upgrade: Launch, Glide or Steering. Upgrades and best distance save on this device.
+Changes: chase camera, rolling 3D mountain, forest, launch gate and pullback, ramps, jumping, rocket boost, visible wing and rocket hardware, five saved upgrade paths. Both Launch & Glide and Endless Ride remain.
 
-Endless Ride: steer around obstacles, jump over low rocks and logs, use ramps, and try to beat your best distance. You have three chances per run. No tickets or wait time.
-
-Keyboard: Left/Right or A/D to steer, Space to jump, Escape to pause.
-Pause, Sound, and Exit are always in the top row while riding.
+This is an early playable revision, not a finished 1.0.

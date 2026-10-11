@@ -75,7 +75,7 @@ const VERSIONS = {
   "metro": "1.0.3",
   "contraption": "1.1.0",
   "rebus": "1.0.0",
-  "snowbound": "1.0.0"
+  "snowbound": "0.2.0"
 };
 const GROUPS = {
   "handheld": [
@@ -2410,7 +2410,9 @@ const GROUPS = {
   ],
   "snowbound": [
     "games/snowbound/",
-    "games/snowbound/index.html"
+    "games/snowbound/index.html",
+    "games/snowbound/game.js",
+    "shared/three.module.min.js"
   ],
   "metro": [
     "games/metro/",
