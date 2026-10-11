@@ -1,7 +1,7 @@
 /* Photographic scenes and deterministic, removable search objects. */
 (function(){'use strict';
 var A=SceneArt,H=HO,oldThumb=A.thumb,images=[],objects=[],keys=[],names=['Silver safety pin','Turquoise paperclip','Red button','Purple feather','Green marble','Dragonfly brooch','Amber ring','Blue thimble','Brass padlock','Copper coin','Ivory bishop','Pink eraser','Black barrette','Goldfish figurine','Threaded needle','Silver heart'];
-var titles=['Captain’s Cabin','Country Kitchen','The Greenhouse','Old Toy Shop','Beach Hut','Winter Cabin','Artist’s Attic','Railway Luggage Office','Watchmaker’s Workshop','Collector’s Study'];
+var titles=['Captain’s Cabin','Country Kitchen','The Greenhouse','Old Toy Shop','Beach Hut','Winter Cabin','Artist’s Attic','Railway Luggage Office','Watchmaker’s Workshop','Collector’s Study','Bicycle Workshop','Theater Dressing Room','Music Room','Natural History Gallery','Pottery Studio'];
 var anchors=[
 [[12,58],[20,66],[27,64],[38,52],[46,57],[56,66],[64,78],[74,69],[83,82],[91,63],[53,84],[35,75],[19,57],[72,53],[89,48],[66,43],[51,47],[79,45],[58,52],[41,72]],
 [[7,61],[17,66],[24,79],[34,62],[44,77],[54,66],[64,82],[74,77],[87,79],[93,63],[39,53],[51,53],[62,58],[77,57],[88,52],[32,21],[43,24],[54,18],[13,82],[55,87]],
@@ -12,18 +12,23 @@ var anchors=[
 [[8,74],[19,86],[29,74],[39,85],[50,75],[61,86],[72,75],[84,86],[94,74],[14,62],[31,59],[43,55],[54,57],[70,60],[88,61],[9,36],[22,40],[59,32],[71,32],[46,94]],
 [[8,63],[18,77],[28,67],[39,80],[50,70],[61,82],[73,77],[86,83],[94,64],[19,56],[33,54],[45,57],[58,54],[75,54],[90,50],[38,37],[67,46],[81,46],[55,23],[74,23]],
 [[8,66],[19,79],[30,69],[40,82],[50,73],[61,86],[71,75],[82,88],[94,76],[17,56],[29,55],[42,60],[55,56],[69,57],[84,56],[24,42],[36,43],[66,45],[80,46],[92,45]],
-[[8,79],[19,75],[28,83],[39,74],[49,84],[59,73],[69,83],[79,72],[89,78],[22,64],[36,62],[48,66],[61,63],[76,64],[92,62],[53,46],[64,48],[77,39],[89,38],[40,92]]];
+[[8,79],[19,75],[28,83],[39,74],[49,84],[59,73],[69,83],[79,72],[89,78],[22,64],[36,62],[48,66],[61,63],[76,64],[92,62],[53,46],[64,48],[77,39],[89,38],[40,92]],
+[[13,81],[25,76],[34,85],[47,78],[57,85],[70,76],[82,83],[94,77],[21,60],[39,60],[53,63],[67,61],[78,55],[90,57],[32,38],[47,43],[62,37],[76,41],[44,92],[67,92]],
+[[8,67],[19,81],[30,70],[41,81],[53,72],[63,83],[76,76],[89,84],[96,68],[13,53],[27,59],[42,57],[55,61],[70,58],[84,59],[22,42],[38,41],[62,43],[78,44],[49,91]],
+[[8,72],[20,78],[32,71],[44,82],[56,73],[68,82],[79,72],[90,81],[16,59],[28,58],[40,60],[52,59],[64,61],[76,58],[88,59],[19,43],[34,40],[49,42],[71,42],[59,90]],
+[[9,72],[19,78],[30,69],[41,80],[52,73],[63,84],[75,71],[87,82],[96,71],[13,58],[26,59],[39,58],[53,61],[66,59],[80,58],[20,41],[34,43],[50,42],[68,42],[54,91]],
+[[8,70],[20,80],[32,72],[44,83],[56,72],[68,82],[80,71],[92,80],[14,60],[27,61],[40,60],[53,60],[66,62],[79,60],[91,60],[23,45],[36,45],[49,44],[71,44],[56,91]]];
 function load(src){return new Promise(function(ok,no){var im=new Image();im.onload=function(){ok(im)};im.onerror=function(){no(new Error('Could not load '+src))};im.src=src})}
 var tasks=[];titles.forEach(function(t,i){var id='photo'+i;A.THEMES[id]={name:t};tasks.push(load('assets/scene-'+i+'.webp').then(function(im){images[i]=im}))});A.THEME_IDS=titles.map(function(_,i){return 'photo'+i});
 names.forEach(function(label,i){var k='photo_object_'+i;keys.push(k);A.OBJECTS[k]={label:label};tasks.push(load('assets/object-'+i+'.png').then(function(im){objects[i]=im}))});
 H.LOST=H.LOST.concat(keys);
 function shuffle(a,r){for(var j=a.length-1;j>0;j--){var k=Math.floor(r()*(j+1)),t=a[j];a[j]=a[k];a[k]=t}return a}
-H.level=function(n,diff){n=Math.max(1,n|0);diff=diff||'normal';var d=['relaxed','normal','hard','expert'].indexOf(diff);if(d<0)d=1;var si=(n-1)%10,r=A.rng(n*93563+d*773+821),p=H.params(n,diff),available=keys.map(function(_,i){return i}).filter(function(i){return !(si===7&&i===9)&&!(si===8&&i===8)}),order=shuffle(available,r),spots=shuffle(anchors[si].slice(),r),count=Math.min([9,12,14,16][d],order.length),items=[],list=[],targets=[];
+H.level=function(n,diff){n=Math.max(1,n|0);diff=diff||'normal';var d=['relaxed','normal','hard','expert'].indexOf(diff);if(d<0)d=1;var si=(n-1)%titles.length,r=A.rng(n*93563+d*773+821),p=H.params(n,diff),available=keys.map(function(_,i){return i}).filter(function(i){return !(si===7&&i===9)&&!(si===8&&i===8)}),order=shuffle(available,r),spots=shuffle(anchors[si].slice(),r),count=Math.min([9,12,14,16][d],order.length),items=[],list=[],targets=[];
  p.count=count;p.type=d?'word':'pic';p.breather=false;p.parPer=[28,26,22,18][d];p.parAdd=40;
  order.forEach(function(id,i){var im=objects[id],size=[40,29,25,22][d]*(.93+r()*.14),w=size*im.width/Math.max(im.width,im.height),h=size*im.height/Math.max(im.width,im.height),x=spots[i][0]*9+(r()-.5)*6,y=spots[i][1]*6+(r()-.5)*4,rot=(r()-.5)*.55,box={x:x-w/2,y:y-h/2,w:w,h:h},it={k:keys[id],photo:id,x:x,y:y,w:w,h:h,s:1,rot:rot,flip:false,gone:false,box:box,vis:{frac:1,area:w*h,cx:x,cy:y,px:x,py:y,vbox:box}};items.push(it);if(i<count){list.push({k:it.k,ids:[i],need:1,i:i,label:names[id],show:p.type});targets.push({e:i,id:i})}});
  var bonus=null;if(order.length>count){var bi=count;bonus={k:items[bi].k,ids:[bi],need:1,label:names[items[bi].photo],show:'pic',bonus:true};targets.push({e:-1,id:bi})}
  return {n:n,diff:diff,p:p,decoys:[],theme:'photo'+si,attempt:210,type:p.type,breather:false,scene:{theme:'photo'+si,photo:si,pal:0,bgv:0,items:items,slots:[]},list:list,targets:targets,bonus:bonus};};
-H.themeFor=function(n){return 'photo'+((n-1)%10)};
+H.themeFor=function(n){return 'photo'+((n-1)%titles.length)};
 H.hit=function(lv,x,y,tol,done){var best=-1,dist=Infinity;lv.targets.forEach(function(t,j){if(done&&done[j])return;var it=lv.scene.items[t.id];if(it.gone)return;var dx=x-it.x,dy=y-it.y,c=Math.cos(it.rot),s=Math.sin(it.rot),xx=dx*c+dy*s,yy=-dx*s+dy*c,pad=Math.min(3,tol||0);if(Math.abs(xx)<=it.w/2+pad&&Math.abs(yy)<=it.h/2+pad){var dd=dx*dx+dy*dy;if(dd<dist){best=j;dist=dd}}});return best};
 H.anyAt=function(l,x,y,t){return H.hit(l,x,y,t,null)>=0};
 A.drawScene=function(c,sc){c.drawImage(images[sc.photo],0,0,900,600);sc.items.forEach(function(it){if(it.gone)return;c.save();c.translate(it.x,it.y);c.rotate(it.rot);c.shadowColor='rgba(24,17,10,.55)';c.shadowBlur=1.1;c.shadowOffsetY=.7;c.globalAlpha=.96;c.filter='saturate(0.78) brightness(0.92)';c.drawImage(objects[it.photo],-it.w/2,-it.h/2,it.w,it.h);c.restore()})};

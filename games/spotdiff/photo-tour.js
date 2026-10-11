@@ -8,7 +8,7 @@ var PhotoTour = (function () {
   function rng(seed) { var a = seed >>> 0; return function () { a += 0x6D2B79F5; var t = Math.imul(a ^ a >>> 15, 1 | a); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function level(n, d, id) {
     n = Math.max(1, Math.floor(n) || 1); d = Math.max(0, Math.min(3, d | 0));
-    if (!id) { var slot = (n - 1) % 6; id = slot ? PhotoTourData[slot - 1].id : PhotoCruise.ID; }
+    if (!id) { var slot = (n - 1) % (PhotoTourData.length + 1); id = slot ? PhotoTourData[slot - 1].id : PhotoCruise.ID; }
     if (id === PhotoCruise.ID) return PhotoCruise.level(n, d);
     var e = definition(id); if (!e) return null;
     var seed = 0; for (var k = 0; k < id.length; k++) seed = Math.imul(seed, 31) + id.charCodeAt(k) | 0;

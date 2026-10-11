@@ -986,4 +986,590 @@ var PhotoTourData = [
       }
     ]
   }
+,
+{
+  "key": "bike",
+  "name": "Bicycle workshop",
+  "id": "photo-bike-v1",
+  "regions": [
+    {
+      "id": "saddle",
+      "label": "bicycle saddle",
+      "box": [
+        195,
+        177,
+        190,
+        78
+      ],
+      "file": "saddle-color-v1.webp"
+    },
+    {
+      "id": "handlebar",
+      "label": "handlebar tape",
+      "box": [
+        548,
+        216,
+        242,
+        99
+      ],
+      "file": "handlebar-color-v1.webp"
+    },
+    {
+      "id": "toolbox",
+      "label": "tool chest",
+      "box": [
+        832,
+        288,
+        278,
+        214
+      ],
+      "file": "toolbox-color-v1.webp"
+    },
+    {
+      "id": "pump",
+      "label": "floor pump",
+      "box": [
+        1070,
+        458,
+        140,
+        337
+      ],
+      "file": "pump-color-v1.webp"
+    },
+    {
+      "id": "bottle",
+      "label": "water bottle",
+      "box": [
+        1350,
+        568,
+        122,
+        231
+      ],
+      "file": "bottle-color-v1.webp"
+    },
+    {
+      "id": "helmet",
+      "label": "helmet",
+      "box": [
+        475,
+        669,
+        248,
+        156
+      ],
+      "file": "helmet-color-v1.webp"
+    },
+    {
+      "id": "oilcan",
+      "label": "oil can",
+      "box": [
+        766,
+        625,
+        143,
+        157
+      ],
+      "file": "oilcan-color-v1.webp"
+    },
+    {
+      "id": "rag",
+      "label": "cleaning cloth",
+      "box": [
+        619,
+        781,
+        322,
+        123
+      ],
+      "file": "rag-color-v1.webp"
+    },
+    {
+      "id": "bell",
+      "label": "bicycle bell",
+      "box": [
+        1203,
+        794,
+        91,
+        68
+      ],
+      "file": "bell-color-v1.webp"
+    },
+    {
+      "id": "pliers",
+      "label": "pliers",
+      "box": [
+        1332,
+        906,
+        170,
+        70
+      ],
+      "file": "pliers-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "theater",
+  "name": "Theater dressing room",
+  "id": "photo-theater-v1",
+  "regions": [
+    {
+      "id": "roses",
+      "label": "roses",
+      "box": [
+        0,
+        56,
+        309,
+        294
+      ],
+      "file": "roses-color-v1.webp"
+    },
+    {
+      "id": "hatbox",
+      "label": "hatbox",
+      "box": [
+        119,
+        388,
+        350,
+        233
+      ],
+      "file": "hatbox-color-v1.webp"
+    },
+    {
+      "id": "boa",
+      "label": "feather boa",
+      "box": [
+        0,
+        390,
+        620,
+        634
+      ],
+      "file": "boa-color-v1.webp"
+    },
+    {
+      "id": "perfume",
+      "label": "perfume bottle",
+      "box": [
+        476,
+        412,
+        143,
+        218
+      ],
+      "file": "perfume-color-v1.webp"
+    },
+    {
+      "id": "brush",
+      "label": "hairbrush",
+      "box": [
+        483,
+        556,
+        305,
+        139
+      ],
+      "file": "brush-color-v1.webp"
+    },
+    {
+      "id": "lipstick",
+      "label": "lipstick",
+      "box": [
+        912,
+        478,
+        121,
+        151
+      ],
+      "file": "lipstick-color-v1.webp"
+    },
+    {
+      "id": "mask",
+      "label": "masquerade mask",
+      "box": [
+        1063,
+        467,
+        262,
+        163
+      ],
+      "file": "mask-color-v1.webp"
+    },
+    {
+      "id": "compact",
+      "label": "compact",
+      "box": [
+        756,
+        622,
+        153,
+        92
+      ],
+      "file": "compact-color-v1.webp"
+    },
+    {
+      "id": "necklace",
+      "label": "necklace",
+      "box": [
+        917,
+        616,
+        254,
+        121
+      ],
+      "file": "necklace-color-v1.webp"
+    },
+    {
+      "id": "gloves",
+      "label": "gloves",
+      "box": [
+        1268,
+        644,
+        268,
+        258
+      ],
+      "file": "gloves-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "music",
+  "name": "Music room",
+  "id": "photo-music-v1",
+  "regions": [
+    {
+      "id": "cellocase",
+      "label": "cello case",
+      "box": [
+        181,
+        88,
+        192,
+        443
+      ],
+      "file": "cellocase-color-v1.webp"
+    },
+    {
+      "id": "trumpet",
+      "label": "trumpet",
+      "box": [
+        0,
+        506,
+        420,
+        132
+      ],
+      "file": "trumpet-color-v1.webp"
+    },
+    {
+      "id": "metronome",
+      "label": "metronome",
+      "box": [
+        444,
+        402,
+        135,
+        206
+      ],
+      "file": "metronome-color-v1.webp"
+    },
+    {
+      "id": "guitar",
+      "label": "guitar",
+      "box": [
+        1125,
+        171,
+        137,
+        336
+      ],
+      "file": "guitar-color-v1.webp"
+    },
+    {
+      "id": "folder",
+      "label": "sheet music folder",
+      "box": [
+        466,
+        584,
+        359,
+        177
+      ],
+      "file": "folder-color-v1.webp"
+    },
+    {
+      "id": "maracas",
+      "label": "maracas",
+      "box": [
+        830,
+        610,
+        187,
+        150
+      ],
+      "file": "maracas-color-v1.webp"
+    },
+    {
+      "id": "headphones",
+      "label": "headphones",
+      "box": [
+        958,
+        543,
+        184,
+        145
+      ],
+      "file": "headphones-color-v1.webp"
+    },
+    {
+      "id": "record",
+      "label": "record sleeve",
+      "box": [
+        1067,
+        632,
+        389,
+        143
+      ],
+      "file": "record-color-v1.webp"
+    },
+    {
+      "id": "scarf",
+      "label": "scarf",
+      "box": [
+        1390,
+        774,
+        146,
+        250
+      ],
+      "file": "scarf-color-v1.webp"
+    },
+    {
+      "id": "cup",
+      "label": "tea cup",
+      "box": [
+        1370,
+        559,
+        137,
+        108
+      ],
+      "file": "cup-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "museum",
+  "name": "Natural history gallery",
+  "id": "photo-museum-v1",
+  "regions": [
+    {
+      "id": "crystal",
+      "label": "crystal specimen",
+      "box": [
+        27,
+        525,
+        205,
+        180
+      ],
+      "file": "crystal-color-v1.webp"
+    },
+    {
+      "id": "book",
+      "label": "specimen book",
+      "box": [
+        232,
+        631,
+        267,
+        194
+      ],
+      "file": "book-color-v1.webp"
+    },
+    {
+      "id": "notebook",
+      "label": "field notebook",
+      "box": [
+        487,
+        590,
+        261,
+        161
+      ],
+      "file": "notebook-color-v1.webp"
+    },
+    {
+      "id": "fossil",
+      "label": "ammonite fossil",
+      "box": [
+        729,
+        611,
+        123,
+        165
+      ],
+      "file": "fossil-color-v1.webp"
+    },
+    {
+      "id": "jar",
+      "label": "specimen jar",
+      "box": [
+        856,
+        535,
+        141,
+        201
+      ],
+      "file": "jar-color-v1.webp"
+    },
+    {
+      "id": "skull",
+      "label": "dinosaur skull",
+      "box": [
+        1019,
+        468,
+        240,
+        185
+      ],
+      "file": "skull-color-v1.webp"
+    },
+    {
+      "id": "pouch",
+      "label": "drawstring pouch",
+      "box": [
+        976,
+        659,
+        299,
+        173
+      ],
+      "file": "pouch-color-v1.webp"
+    },
+    {
+      "id": "scarf",
+      "label": "woven scarf",
+      "box": [
+        1274,
+        594,
+        262,
+        427
+      ],
+      "file": "scarf-color-v1.webp"
+    },
+    {
+      "id": "magnifier",
+      "label": "magnifying glass",
+      "box": [
+        410,
+        740,
+        370,
+        185
+      ],
+      "file": "magnifier-color-v1.webp"
+    },
+    {
+      "id": "compass",
+      "label": "compass",
+      "box": [
+        848,
+        775,
+        188,
+        115
+      ],
+      "file": "compass-color-v1.webp"
+    }
+  ]
+},
+{
+  "key": "pottery",
+  "name": "Pottery studio",
+  "id": "photo-pottery-v1",
+  "regions": [
+    {
+      "id": "pitcher",
+      "label": "ceramic pitcher",
+      "box": [
+        33,
+        350,
+        294,
+        288
+      ],
+      "file": "pitcher-color-v1.webp"
+    },
+    {
+      "id": "bowl",
+      "label": "scalloped bowl",
+      "box": [
+        328,
+        506,
+        335,
+        188
+      ],
+      "file": "bowl-color-v1.webp"
+    },
+    {
+      "id": "vase",
+      "label": "leaf vase",
+      "box": [
+        657,
+        376,
+        194,
+        279
+      ],
+      "file": "vase-color-v1.webp"
+    },
+    {
+      "id": "cup",
+      "label": "ceramic cup",
+      "box": [
+        852,
+        539,
+        155,
+        157
+      ],
+      "file": "cup-color-v1.webp"
+    },
+    {
+      "id": "apron",
+      "label": "potter’s apron",
+      "box": [
+        0,
+        697,
+        495,
+        327
+      ],
+      "file": "apron-color-v1.webp"
+    },
+    {
+      "id": "sponge",
+      "label": "sponge",
+      "box": [
+        564,
+        649,
+        224,
+        103
+      ],
+      "file": "sponge-color-v1.webp"
+    },
+    {
+      "id": "brush",
+      "label": "paint brush",
+      "box": [
+        589,
+        727,
+        340,
+        89
+      ],
+      "file": "brush-color-v1.webp"
+    },
+    {
+      "id": "tiles",
+      "label": "decorated tiles",
+      "box": [
+        949,
+        680,
+        291,
+        183
+      ],
+      "file": "tiles-color-v1.webp"
+    },
+    {
+      "id": "wheelbowl",
+      "label": "bowl on wheel",
+      "box": [
+        1167,
+        394,
+        225,
+        122
+      ],
+      "file": "wheelbowl-color-v1.webp"
+    },
+    {
+      "id": "rollingpin",
+      "label": "rolling pin",
+      "box": [
+        1194,
+        681,
+        342,
+        235
+      ],
+      "file": "rollingpin-color-v1.webp"
+    }
+  ]
+}
 ];
