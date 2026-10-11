@@ -30,9 +30,9 @@ function tone(f,d=.13,type='sine',gain=.09) {
     o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t+d+.02);
   } catch {}
 }
-let scene,camera,renderer,rider,wings,flame,gate,particles,skyGroup;
+let scene,camera,renderer,rider,wings,flames,engineSingle,engineDual,gate,particles,skyGroup;
 const chunks=new Map(), objects=[], materials={}, turbines=[], mountains=[];
-let mode='launch', phase='menu', beforeHelp='menu', z=4, lateral=0, target=0, speed=0, air=0, vy=0, hearts=3, flakes=0, invuln=0, boostTime=0, boostCharges=1, jumpCooldown=0, hitFlash=0, power=85, pull=null, pointer=false, last=0, clock=0, runId=0, introT=0;
+let mode='launch', phase='menu', beforeHelp='menu', z=4, lateral=0, target=0, speed=0, air=0, vy=0, hearts=3, stars=0, shieldTime=0, surgeTime=0, invuln=0, boostTime=0, boostCharges=1, jumpCooldown=0, hitFlash=0, power=85, pull=null, pointer=false, last=0, clock=0, runId=0, introT=0;
 let noticeTimer;
 function notice(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('toast').classList.remove('show'),1450)}
 function rng(n){const v=Math.sin(n*127.1+64.7)*43758.5453;return v-Math.floor(v)}
@@ -44,7 +44,15 @@ function box(w,h,d,m){return new T.Mesh(new T.BoxGeometry(w,h,d),m)}
 function ball(r,m,segments=14){return new T.Mesh(new T.SphereGeometry(r,segments,10),m)}
 function tube(a,b,r,m,parent){const va=new T.Vector3(...a),vb=new T.Vector3(...b),dir=vb.clone().sub(va);const mesh=new T.Mesh(new T.CylinderGeometry(r,r,dir.length(),8),m);mesh.position.copy(va.add(vb).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),dir.normalize());parent.add(mesh);return mesh}
 function put(parent,mesh,x,y,z,scale=1){mesh.position.set(x,y,z);mesh.scale.setScalar(scale);parent.add(mesh);return mesh}
-function pine(parent,x,z,s=1){const y=ground(z,x-center(z));const g=new T.Group();g.position.set(x,y,z);parent.add(g);const trunk=box(.52*s,2*s,.52*s,materials.wood);put(g,trunk,0,1*s,0);for(let k=0;k<3;k++){const c=new T.Mesh(new T.ConeGeometry((1.32-k*.19)*s,2.45*s,7),k===1?materials.pine2:materials.pine);put(g,c,0,(1.25+k*.83)*s,0);const snow=new T.Mesh(new T.ConeGeometry((.98-k*.13)*s,.67*s,7),materials.snow);put(g,snow,0,(2.27+k*.83)*s,0)}return g}
+function pine(parent,x,z,s=1){const y=ground(z,x-center(z));const g=new T.Group();g.position.set(x,y,z);g.scale.setScalar(s);g.rotation.y=rng(x+z)*1.6;parent.add(g);
+  put(g,box(.38,1.8,.38,materials.wood),0,.85,0);
+  const profile=[[0,.2],[1.34,.42],[1.12,.66],[.63,.86],[1.14,.98],[.94,1.2],[.51,1.42],[.96,1.54],[.76,1.79],[.38,1.99],[.72,2.14],[.52,2.47],[.27,2.72],[.43,2.8],[.18,3.1],[0,3.45]].map(v=>new T.Vector2(...v));
+  put(g,new T.Mesh(new T.LatheGeometry(profile,10),rng(x*.2+z)>.5?materials.pine2:materials.pine),0,.55,0);
+  for(const [r,yy] of [[1.14,.99],[.96,1.57],[.74,2.17],[.43,2.82]]){
+    const snow=new T.Mesh(new T.ConeGeometry(r,.42,10),materials.snow);put(g,snow,0,yy+.55,0);
+  }
+  return g
+}
 function makeMesh(start,len,track=false){const offsets=track?[-9,-8,-6,0,6,8,9]:[-55,-38,-24,-15,-9,-6,0,6,9,15,24,38,55],steps=Math.ceil(len/4),v=[],colors=[],idx=[];
   const palette=track?['#ecfbff','#a8e6fa','#d5f5ff','#edfaff','#d5f5ff','#a8e6fa','#ecfbff']:['#c1e8f2','#d5eff7','#e9f8fb','#fbffff','#e4f7fa','#e2f6fa','#e8f9fc','#e2f6fa','#e4f7fa','#fbffff','#e9f8fb','#d5eff7','#c1e8f2'];
   for(let i=0;i<=steps;i++){let zz=start+len*i/steps;for(let j=0;j<offsets.length;j++){const off=offsets[j];v.push(center(zz)+off,ground(zz,off)+(track?.08:0),zz);const c=new T.Color(palette[j]);colors.push(c.r,c.g,c.b)}}
@@ -54,72 +62,128 @@ function makeMesh(start,len,track=false){const offsets=track?[-9,-8,-6,0,6,8,9]:
 function trailMarks(start,len){const v=[];for(let q=Math.ceil(start/6)*6;q<start+len;q+=6){const c=center(q),y=ground(q,0)+.13;for(const side of [-1,1])v.push(c+side*1.4,y,q-1.65,c+side*1.4,y,q+1.65)}const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(v,3));return new T.LineSegments(geo,materials.trail)}
 function createRamp(group,x,q){const g=new T.Group();g.position.set(x,ground(q,x-center(q)),q);group.add(g);const deck=box(6.3,.42,4.7,materials.ramp);deck.rotation.x=-.17;put(g,deck,0,.48,0);for(let k=-1;k<=1;k++){const stripe=box(.52,.04,4.2,materials.rampStripe);stripe.rotation.x=-.17;put(g,stripe,k*1.9,.76,0)}const flag=box(6.7,.32,.2,materials.rampStripe);put(g,flag,0,.52,-2.3);return g}
 function createRock(group,x,q){const y=ground(q,x-center(q));const rock=put(group,new T.Mesh(new T.DodecahedronGeometry(1.1,0),materials.rock),x,y+.7,q);rock.scale.set(1.15,.75,1);return rock}
-function createCrystal(group,x,q){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y+1.8,q);group.add(g);const gem=put(g,new T.Mesh(new T.OctahedronGeometry(.78),materials.crystal),0,0,0);gem.rotation.z=.28;put(g,ball(.18,materials.white),0,.7,0);return g}
+function createStar(group,x,q,power){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y+1.22,q);group.add(g);
+  const outline=new T.Shape();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?.47:1.03,px=Math.cos(a)*r,py=Math.sin(a)*r;i?outline.lineTo(px,py):outline.moveTo(px,py)}outline.closePath();
+  const color=power==='shield'?materials.starBlue:power==='surge'?materials.starPink:materials.starGold;
+  const gem=new T.Mesh(new T.ExtrudeGeometry(outline,{depth:.24,bevelEnabled:true,bevelSize:.1,bevelThickness:.08,bevelSegments:2,steps:1}),color);g.add(gem);
+  const ring=new T.Mesh(new T.TorusGeometry(1.24,.055,5,24),materials.starRing);g.add(ring);g.userData.spin=true;return g
+}
+function lodge(group,x,q,roofColor){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y,q);g.rotation.y=.25;group.add(g);
+  put(g,box(6,3.2,5,materials.cabin),0,1.6,0);const roof=new T.Mesh(new T.ConeGeometry(4.55,2.8,4),roofColor);roof.rotation.y=Math.PI/4;put(g,roof,0,4.27,0);
+  for(const s of [-1,1]){const window=box(1.06,.95,.08,materials.window);put(g,window,s*1.55,2.15,2.55);const frame=box(1.24,.11,.13,materials.wood);put(g,frame,s*1.55,2.67,2.58)}
+  put(g,box(1.2,2,.12,materials.door),0,1,2.59);put(g,box(.65,1.35,.65,materials.wood),1.6,5.15,-.9);return g
+}
+function flagPole(group,x,q,color){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y,q);group.add(g);tube([0,0,0],[0,4.1,0],.09,materials.chrome,g);const shape=new T.Shape();shape.moveTo(0,0);shape.lineTo(2.2,-.35);shape.lineTo(0,-.85);shape.closePath();const flag=new T.Mesh(new T.ShapeGeometry(shape),color);flag.position.y=3.85;flag.material.side=T.DoubleSide;g.add(flag);return g}
 function iceSpire(group,x,q,s=1){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y,q);group.add(g);for(let k=0;k<3;k++){const shard=new T.Mesh(new T.ConeGeometry((.6+k*.15)*s,(2.2+k*.5)*s,5),materials.ice);shard.position.set((k-1)*.65*s,(1.1+k*.25)*s,(k-1)*.4*s);shard.rotation.z=(k-1)*.16;g.add(shard)}return g}
 function turbine(group,x,q){const y=ground(q,x-center(q));const g=new T.Group();g.position.set(x,y,q);group.add(g);tube([0,0,0],[0,17,0],.36,materials.white,g);const hub=put(g,ball(.65,materials.chrome),0,17,0);const rotor=new T.Group();rotor.position.set(0,17,.65);g.add(rotor);for(let k=0;k<3;k++){const arm=box(.48,6.4,.17,materials.white);arm.position.set(0,3.5,0);const blade=new T.Group();blade.rotation.z=k*Math.PI*2/3;blade.add(arm);rotor.add(blade)}turbines.push({rotor,group});return g}
 function createChunk(i){const g=new T.Group(),start=i*88;g.add(makeMesh(start,88));g.add(makeMesh(start,88,true));g.add(trailMarks(start,88));scene.add(g);
   for(let k=0;k<10;k++){const q=start+3+k*8.6;for(const side of [-1,1]){const n=i*140+k*7+(side+1);const x=center(q)+side*(14+rng(n)*29);pine(g,x,q,.8+rng(n+4)*1.4);if(rng(n+10)>.68)pine(g,x+side*3,q+4,.55+rng(n+5)*.6);if(k===3&&i>0)iceSpire(g,center(q)+side*11.8,q,.8+rng(n+11)*.9)}}
+  if(i>0){for(const side of [-1,1])flagPole(g,center(start+13)+side*10.9,start+13,side>0?materials.flagCoral:materials.flagViolet)}
+  if(i>0&&i%2===0)lodge(g,center(start+39)+(i%4===0?1:-1)*30,start+39,i%4===0?materials.roofCoral:materials.roofPurple);
   if(i>0&&i%3===0)turbine(g,center(start+50)+35,start+50);
-  if(i>=1){const q=start+26+rng(i*12)*32, lane=(Math.floor(rng(i*17)*3)-1)*5.2,x=center(q)+lane;let type=i%5===0?'ramp':i%4===0?'rock':i%7===0?'tree':'flake';if(type==='ramp')createRamp(g,x,q);if(type==='rock')createRock(g,x,q);if(type==='tree')pine(g,x,q,1.1);if(type==='flake')createCrystal(g,x,q);objects.push({q,x,type,used:false,group:g});
-    const cq=start+70,cx=center(cq)+(rng(i*23)-.5)*9;createCrystal(g,cx,cq);objects.push({q:cq,x:cx,type:'flake',used:false,group:g})}
+  if(i>=1){const q=start+26+rng(i*12)*32, lane=(Math.floor(rng(i*17)*3)-1)*5.2,x=center(q)+lane;let type=i%5===0?'ramp':i%4===0?'rock':i%7===0?'tree':'star';if(type==='ramp')createRamp(g,x,q);if(type==='rock')createRock(g,x,q);if(type==='tree')pine(g,x,q,1.1);if(type==='star'){const power=['boost','shield','surge'][i%3],visual=createStar(g,x,q,power);objects.push({q,x,type,power,visual,used:false,group:g})}else objects.push({q,x,type,used:false,group:g});
+    const cq=start+70,cx=center(cq)+(rng(i*23)-.5)*9,power=['boost','shield','surge'][(i+1)%3],visual=createStar(g,cx,cq,power);objects.push({q:cq,x:cx,type:'star',power,visual,used:false,group:g})}
   chunks.set(i,g)
 }
 function maintainChunks(){const first=Math.max(-1,Math.floor(z/88)-1),lastChunk=Math.floor(z/88)+6;for(let i=first;i<=lastChunk;i++)if(!chunks.has(i))createChunk(i);for(const [i,g] of chunks){if(i<first||i>lastChunk){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()});chunks.delete(i)}}for(let i=objects.length-1;i>=0;i--)if(!chunks.has(Math.floor(objects[i].q/88)))objects.splice(i,1);for(let i=turbines.length-1;i>=0;i--)if(!turbines[i].group.parent?.parent)turbines.splice(i,1)}
 function createGate(){const g=new T.Group();scene.add(g);g.position.set(center(7),ground(7,0),7);for(const s of [-1,1]){tube([s*4.4,0,0],[s*4.4,5.2,0],.35,materials.hot,g);put(g,ball(.52,materials.pink),s*4.4,5.1,0);tube([s*4.4,5,0],[s*4.4,3.3,-1.2],.15,materials.white,g)}tube([-4.4,4.45,0],[4.4,4.45,0],.13,materials.pink,g);const arch=box(8.8,.4,.4,materials.white);put(g,arch,0,5.7,0);for(let k=-3;k<=3;k++){let flag=new T.Mesh(new T.ConeGeometry(.38,.9,3),k%2?materials.gold:materials.hot);flag.rotation.z=Math.PI;put(g,flag,k*1.1,5.15,0)}return g}
-function makeRider(){const g=new T.Group(),sled=new T.Group();g.add(sled);const baseBoard=box(2.3,.28,3.5,materials.red);put(sled,baseBoard,0,.34,0);const nose=put(sled,ball(1,materials.red),0,.34,1.38);nose.scale.set(1.1,.16,.55);for(const s of [-1,1]){tube([s*.85,.13,-1.5],[s*.85,.13,1.62],.12,materials.chrome,sled);tube([s*.85,.13,1.6],[s*.65,.5,1.98],.11,materials.chrome,sled)}
-  const body=put(g,ball(.95,materials.fox),0,1.13,-.25);body.scale.set(.78,1.12,.7);const belly=put(g,ball(.63,materials.white),0,1.03,.3);belly.scale.set(.8,1.05,.4);const head=put(g,ball(.73,materials.fox),0,2.27,.05);head.scale.set(1,.85,.88);for(const s of [-1,1]){const ear=new T.Mesh(new T.ConeGeometry(.29,.64,6),materials.fox);put(g,ear,s*.46,2.92,-.13);put(g,ball(.1,materials.dark),s*.31,2.37,.61);const arm=put(g,ball(.27,materials.fox),s*.74,1.48,.4);arm.scale.set(.8,1.4,.8);tube([s*.73,1.28,.48],[s*.63,.83,1.03],.12,materials.dark,g)}
-  put(g,ball(.16,materials.dark),0,2.19,.68);const scarf=put(g,new T.Mesh(new T.TorusGeometry(.54,.14,8,20),materials.gold),0,1.85,.05);scarf.rotation.x=Math.PI/2;const tail=put(g,ball(.48,materials.fox),0,.94,-.93);tail.scale.set(.65,.72,1.45);put(g,ball(.27,materials.white),0,.98,-1.57);
-  const wingL=new T.Group(),wingR=new T.Group();for(const [s,wing] of [[-1,wingL],[1,wingR]]){wing.position.set(s*1.1,.53,-.2);const plate=box(1.65,.09,1.45,materials.wing);put(wing,plate,s*.72,0,0);const trim=box(1.65,.06,.18,materials.gold);put(wing,trim,s*.72,.07,.54);g.add(wing)}
-  const engine=new T.Group();engine.position.set(0,.55,-1.68);put(engine,new T.Mesh(new T.CylinderGeometry(.46,.35,1.12,12),materials.chrome),0,0,0).rotation.x=Math.PI/2;const nozzle=new T.Mesh(new T.CylinderGeometry(.39,.3,.22,12),materials.dark);nozzle.rotation.x=Math.PI/2;put(engine,nozzle,0,0,-.55);const fire=new T.Mesh(new T.ConeGeometry(.33,1.65,8),materials.flame);fire.rotation.x=-Math.PI/2;put(engine,fire,0,0,-1.2);g.add(engine);flame=fire;wings=[wingL,wingR];g.userData.engine=engine;g.userData.sled=sled;scene.add(g);return g}
+function makeRider(){
+  const g=new T.Group(),sled=new T.Group();g.add(sled);
+  const hullGeo=new T.BoxGeometry(2.55,.36,3.85);const v=hullGeo.attributes.position;
+  for(let i=0;i<v.count;i++){const zz=v.getZ(i);if(zz>.6)v.setX(i,v.getX(i)*(1-.19*(zz-.6)));if(zz>1.4)v.setY(i,v.getY(i)+.09)}v.needsUpdate=true;hullGeo.computeVertexNormals();
+  put(sled,new T.Mesh(hullGeo,materials.red),0,.39,0);
+  const nose=put(sled,ball(1,materials.red),0,.43,1.66);nose.scale.set(.96,.19,.49);
+  put(sled,box(1.8,.055,2.65,materials.sledPanel),0,.61,.12);
+  for(const side of [-1,1]){
+    tube([side*1.03,.12,-1.85],[side*1.03,.12,1.82],.12,materials.chrome,sled);
+    tube([side*1.03,.12,1.82],[side*.77,.53,2.16],.11,materials.chrome,sled);
+    const trim=box(.11,.07,2.65,materials.gold);put(sled,trim,side*1.12,.61,.08);
+    const light=box(.32,.11,.13,materials.headlamp);put(sled,light,side*.68,.55,1.95)
+  }
+  const seat=put(sled,box(1.55,.18,1.4,materials.dark),0,.74,-.38);seat.rotation.x=.07;
+  const windshield=new T.Mesh(new T.SphereGeometry(.85,16,8,0,Math.PI*2,0,Math.PI*.55),materials.glass);windshield.scale.set(1,.58,.42);put(sled,windshield,0,.95,1.03);
+  tube([-1.0,1.05,.78],[1.0,1.05,.78],.07,materials.chrome,sled);
+  const jacket=put(g,ball(.88,materials.jacket),0,1.28,-.36);jacket.scale.set(.77,1.07,.73);
+  const belly=put(g,ball(.64,materials.white),0,1.11,.25);belly.scale.set(.8,1.03,.43);
+  const head=put(g,ball(.72,materials.fox,18),0,2.28,-.03);head.scale.set(1,.85,.9);
+  for(const side of [-1,1]){
+    const ear=new T.Mesh(new T.ConeGeometry(.3,.68,8),materials.fox);put(g,ear,side*.47,2.95,-.15);
+    const inner=new T.Mesh(new T.ConeGeometry(.15,.37,8),materials.pink);put(g,inner,side*.47,2.92,.08);
+    put(g,ball(.105,materials.dark),side*.32,2.34,.62);
+    const glove=put(g,ball(.27,materials.fox),side*.72,1.48,.4);glove.scale.set(.8,1.2,.8);
+    tube([side*.7,1.3,.48],[side*.62,.97,.95],.13,materials.jacket,g)
+  }
+  const muzzle=put(g,ball(.29,materials.white),0,2.15,.58);muzzle.scale.set(1.25,.57,.8);
+  put(g,ball(.13,materials.dark),0,2.23,.81);
+  const scarf=put(g,new T.Mesh(new T.TorusGeometry(.54,.14,8,24),materials.gold),0,1.86,.03);scarf.rotation.x=Math.PI/2;
+  const scarfTail=box(.37,.08,1.45,materials.gold);put(g,scarfTail,-.35,1.86,-1.1);scarfTail.rotation.y=-.3;
+  const tail=put(g,ball(.48,materials.fox),0,.98,-.96);tail.scale.set(.68,.7,1.46);put(g,ball(.28,materials.white),0,1,-1.6);
+  const wingL=new T.Group(),wingR=new T.Group();for(const [side,wing] of [[-1,wingL],[1,wingR]]){
+    wing.position.set(side*1.18,.56,-.35);
+    const plate=box(1.7,.1,1.48,materials.wing);put(wing,plate,side*.76,0,0);
+    put(wing,box(1.56,.05,.18,materials.gold),side*.72,.08,.52);g.add(wing)
+  }
+  function thruster(parent,x){const unit=new T.Group();unit.position.set(x,.55,-1.68);parent.add(unit);
+    const motor=new T.Mesh(new T.CylinderGeometry(.39,.42,1.04,12),materials.chrome);motor.rotation.x=Math.PI/2;unit.add(motor);
+    const ring=new T.Mesh(new T.TorusGeometry(.39,.08,8,16),materials.headlamp);ring.position.z=-.58;unit.add(ring);
+    const nozzle=new T.Mesh(new T.CylinderGeometry(.31,.25,.2,12),materials.dark);nozzle.rotation.x=Math.PI/2;nozzle.position.z=-.58;unit.add(nozzle);
+    const fire=new T.Mesh(new T.ConeGeometry(.32,1.65,10),materials.flame);fire.rotation.x=-Math.PI/2;fire.position.z=-1.37;unit.add(fire);flames.push(fire)
+  }
+  flames=[];engineSingle=new T.Group();g.add(engineSingle);thruster(engineSingle,0);
+  engineDual=new T.Group();g.add(engineDual);thruster(engineDual,-.82);thruster(engineDual,.82);
+  wings=[wingL,wingR];g.userData.sled=sled;scene.add(g);return g
+}
 function setup(){try{
   renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight,false);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.42;
   scene=new T.Scene();scene.background=new T.Color('#91d9f9');scene.fog=new T.Fog('#b3e4f6',185,650);
   camera=new T.PerspectiveCamera(66,innerWidth/innerHeight,.2,900);
   scene.add(new T.HemisphereLight('#fff8e4','#70aaca',2.5));const sun=new T.DirectionalLight('#fff2dc',2.7);sun.position.set(-30,80,70);scene.add(sun);
-  Object.assign(materials,{terrain:new T.MeshStandardMaterial({vertexColors:true,roughness:.9,side:T.DoubleSide}),trail:new T.LineBasicMaterial({color:'#61bad5',transparent:true,opacity:.45}),snow:mat('#f9fdff'),pine:mat('#128d96'),pine2:mat('#0c6d8d'),wood:mat('#765957'),rock:mat('#879eae'),ice:mat('#91eaff',{metalness:.11,roughness:.25}),crystal:mat('#8dfff5',{emissive:'#22a1ab',emissiveIntensity:.38,metalness:.12}),white:mat('#ffffff'),ramp:mat('#ffbd31'),rampStripe:mat('#ff7f4f'),hot:mat('#f6638e'),pink:mat('#ff9dc0'),gold:mat('#ffc94d'),red:mat('#eb4750',{roughness:.43}),fox:mat('#f6a552'),dark:mat('#173e57'),chrome:mat('#bddce5',{metalness:.67,roughness:.23}),wing:mat('#39b9d9',{metalness:.3,roughness:.32}),flame:new T.MeshBasicMaterial({color:'#ffb633'})});
+  Object.assign(materials,{terrain:new T.MeshStandardMaterial({vertexColors:true,roughness:.9,side:T.DoubleSide}),trail:new T.LineBasicMaterial({color:'#61bad5',transparent:true,opacity:.45}),snow:mat('#f9fdff'),pine:mat('#128d96'),pine2:mat('#0c6d8d'),wood:mat('#765957'),rock:mat('#879eae'),ice:mat('#91eaff',{metalness:.11,roughness:.25}),white:mat('#ffffff'),ramp:mat('#ffbd31'),rampStripe:mat('#ff7f4f'),hot:mat('#f6638e'),pink:mat('#ff9dc0'),gold:mat('#ffc94d'),red:mat('#eb4750',{roughness:.43}),sledPanel:mat('#ff7253',{roughness:.35}),jacket:mat('#2481a4'),fox:mat('#f6a552'),dark:mat('#173e57'),chrome:mat('#bddce5',{metalness:.67,roughness:.23}),glass:mat('#83e8ef',{transparent:true,opacity:.45,metalness:.2,roughness:.12}),headlamp:new T.MeshBasicMaterial({color:'#93f9ff'}),wing:mat('#39b9d9',{metalness:.3,roughness:.32}),flame:new T.MeshBasicMaterial({color:'#ffb633'}),cabin:mat('#c8855e'),window:new T.MeshBasicMaterial({color:'#ffe58b'}),door:mat('#3d607c'),roofCoral:mat('#ee664e'),roofPurple:mat('#7057a8'),flagCoral:mat('#ff724f',{side:T.DoubleSide}),flagViolet:mat('#a171d6',{side:T.DoubleSide}),starGold:mat('#ffd747',{metalness:.24,roughness:.2,emissive:'#ffaf1d',emissiveIntensity:.43,side:T.DoubleSide}),starBlue:mat('#6feaff',{metalness:.24,roughness:.2,emissive:'#2ac4ef',emissiveIntensity:.43,side:T.DoubleSide}),starPink:mat('#ff81c5',{metalness:.24,roughness:.2,emissive:'#ea359c',emissiveIntensity:.43,side:T.DoubleSide}),starRing:new T.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.62,side:T.DoubleSide})});
   // The distant peaks stay outside the playable corridor and move with the vista.
   for(let k=0;k<8;k++){const peak=new T.Group(),body=new T.Mesh(new T.ConeGeometry(30+rng(k)*17,60+rng(k+9)*38,5),mat(k%2?'#77aecb':'#8bbfd8'));peak.add(body);const cap=new T.Mesh(new T.ConeGeometry(13+rng(k)*8,15,5),materials.snow);cap.position.y=body.geometry.parameters.height*.42;peak.add(cap);scene.add(peak);mountains.push(peak)}
   skyGroup=new T.Group();const sunDisc=new T.Mesh(new T.SphereGeometry(18,16,12),new T.MeshBasicMaterial({color:'#fff0be'}));skyGroup.add(sunDisc);for(let i=0;i<6;i++){const puff=ball(1,new T.MeshBasicMaterial({color:'#effbff',transparent:true,opacity:.75}));puff.scale.set(11+rng(i)*9,2.1+rng(i+4)*2,4);puff.position.set((i-2.5)*25,6+(i%2)*4,-8);skyGroup.add(puff)}scene.add(skyGroup);
   const sprayPositions=new Float32Array(48*3);const sprayGeo=new T.BufferGeometry();sprayGeo.setAttribute('position',new T.BufferAttribute(sprayPositions,3));particles=new T.Points(sprayGeo,new T.PointsMaterial({color:'#faffff',size:.45,transparent:true,opacity:.84,depthWrite:false}));scene.add(particles);
-  gate=createGate();rider=makeRider();maintainChunks();resize();requestAnimationFrame(frame);
+  gate=createGate();rider=makeRider();applyUpgrades();maintainChunks();resize();requestAnimationFrame(frame);
 } catch(e){console.error(e);$('error').hidden=false}}
 function resize(){if(!renderer)return;renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=innerHeight>innerWidth?73:62;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);
-function updateHud(){$('dist').textContent=Math.max(0,Math.floor(z-4))+' m';$('speed').textContent=Math.round(speed*2.237)+' mph';$('life').textContent=mode==='endless'?'♥ '+hearts:'Best '+Math.floor(save.bestLaunch)+' m';$('boostCount').textContent=boostCharges}
+function updateHud(){$('dist').textContent=Math.max(0,Math.floor(z-4))+' m';$('speed').textContent=Math.round(speed*2.237)+' mph';$('stars').textContent='★ '+stars;$('life').textContent=(mode==='endless'?'♥ '+hearts:'Best '+Math.floor(save.bestLaunch)+' m')+(shieldTime>0?' 🛡':'');$('boostCount').textContent=boostCharges;const status=$('powerup');status.hidden=!(shieldTime>0||surgeTime>0);status.textContent=shieldTime>0?'🛡 SHIELD '+Math.ceil(shieldTime)+'s':'✦ STAR SURGE '+Math.ceil(surgeTime)+'s'}
 function display(id){for(const key of ['menu','paused','result','help'])$(key).hidden=key!==id}
-function applyUpgrades(){const gl=save.up.glide;wings[0].visible=wings[1].visible=gl>0;rider.userData.engine.visible=true;flame.visible=false}
-function reset(m){mode=m;phase='ready';z=4;lateral=target=0;speed=air=vy=flakes=invuln=boostTime=jumpCooldown=hitFlash=0;hearts=3;boostCharges=1+Math.floor(save.up.rocket/4);introT=0;runId++;for(const [i,g] of chunks){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()})}chunks.clear();objects.length=0;turbines.length=0;maintainChunks();applyUpgrades();gate.visible=true;display('');$('ready').hidden=false;$('pullGuide').hidden=m!=='launch';$('readyTitle').textContent=m==='launch'?'Pull back to launch':'Ready to ride?';$('readyText').textContent=m==='launch'?'Drag downward on the snow, then release. The button works too.':'Dodge, jump and boost your way down the mountain.';$('powerBox').hidden=m!=='launch';$('go').textContent=m==='launch'?'Launch':'Start riding';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;updateHud()}
-function begin(){if(phase!=='ready')return;phase='running';$('ready').hidden=true;$('pullGuide').hidden=true;$('pause').hidden=false;$('jump').hidden=false;$('boost').hidden=false;$('steerHint').hidden=false;speed=mode==='launch'?(53+save.up.launch*3.3)*(power/100):42;air=.36;vy=mode==='launch'?3:0;gate.visible=true;tone(560,.22,'sawtooth',.11);setTimeout(()=>{if(phase==='running')$('steerHint').hidden=true},3000);last=performance.now()}
-function finish(){if(phase!=='running')return;phase='result';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;$('steerHint').hidden=true;const dist=Math.floor(z-4),key=mode==='launch'?'bestLaunch':'bestEndless',record=dist>save[key];save[key]=Math.max(save[key],dist);if(mode==='launch')save.tokens++;persist();$('resultLabel').textContent=mode==='launch'?'Launch & Glide':'Endless Ride';$('resultTitle').textContent=record?'New best!':'Run complete';$('resultDistance').textContent=dist+' m';$('resultDetail').textContent=(record?'Personal record · ':'')+flakes+' snowflakes collected · best '+Math.floor(save[key])+' m';$('upgradeBox').hidden=mode!=='launch';refreshUpgrade();display('result');tone(720,.28)}
+function applyUpgrades(){const gl=save.up.glide;wings[0].visible=wings[1].visible=gl>0;engineSingle.visible=save.up.rocket<3;engineDual.visible=save.up.rocket>=3;for(const f of flames)f.visible=false;$('rocketLabel').textContent=save.up.rocket>=3?'Dual Thrusters':'Rocket'}
+function reset(m){mode=m;phase='ready';z=4;lateral=target=0;speed=air=vy=stars=shieldTime=surgeTime=invuln=boostTime=jumpCooldown=hitFlash=0;hearts=3;boostCharges=1+Math.floor(save.up.rocket/4);introT=0;runId++;for(const [i,g] of chunks){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()})}chunks.clear();objects.length=0;turbines.length=0;maintainChunks();applyUpgrades();gate.visible=true;display('');$('ready').hidden=false;$('pullGuide').hidden=m!=='launch';$('readyTitle').textContent=m==='launch'?'Pull back to launch':'Ready to ride?';$('readyText').textContent=m==='launch'?'Drag downward on the snow, then release. The button works too.':'Dodge, jump and boost your way down the mountain.';$('powerBox').hidden=m!=='launch';$('go').textContent=m==='launch'?'Launch':'Start riding';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;updateHud()}
+function begin(){if(phase!=='ready')return;phase='running';$('ready').hidden=true;$('pullGuide').hidden=true;$('pause').hidden=false;$('jump').hidden=false;$('boost').hidden=false;$('steerHint').hidden=false;speed=mode==='launch'?(58+save.up.launch*3.5)*(power/100):47;air=.36;vy=mode==='launch'?3:0;gate.visible=true;tone(560,.22,'sawtooth',.11);setTimeout(()=>{if(phase==='running')$('steerHint').hidden=true},3000);last=performance.now()}
+function finish(){if(phase!=='running')return;phase='result';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;$('steerHint').hidden=true;$('powerup').hidden=true;const dist=Math.floor(z-4),key=mode==='launch'?'bestLaunch':'bestEndless',record=dist>save[key];save[key]=Math.max(save[key],dist);if(mode==='launch')save.tokens++;persist();$('resultLabel').textContent=mode==='launch'?'Launch & Glide':'Endless Ride';$('resultTitle').textContent=record?'New best!':'Run complete';$('resultDistance').textContent=dist+' m';$('resultDetail').textContent=(record?'Personal record · ':'')+stars+' stars collected · best '+Math.floor(save[key])+' m';$('upgradeBox').hidden=mode!=='launch';refreshUpgrade();display('result');tone(720,.28)}
 function refreshUpgrade(){$('upgradePrompt').textContent=save.tokens?'Choose an upgrade · '+save.tokens+' available':'All upgrades used for now';for(const key of Object.keys(save.up)){$(key+'Level').textContent=save.up[key]+'/12';document.querySelector('[data-up="'+key+'"]').disabled=!save.tokens||save.up[key]>=12}}
 function upgrade(key){if(!save.tokens||save.up[key]>=12)return;save.tokens--;save.up[key]++;persist();refreshUpgrade();applyUpgrades();notice(key[0].toUpperCase()+key.slice(1)+' upgraded');tone(870,.18)}
 function jump(){if(phase!=='running'||jumpCooldown>0||air>.6)return;vy=7+save.up.glide*.2;air=Math.max(air,.05);jumpCooldown=1.15;tone(510,.14)}
-function boost(){if(phase!=='running'||boostCharges<1||boostTime>0)return;boostCharges--;boostTime=1.5+save.up.rocket*.12;speed+=9+save.up.rocket*1.5;vy+=2.2;air=Math.max(.2,air);notice('Rocket boost!');tone(210,.45,'sawtooth',.1);updateHud()}
+function boost(){if(phase!=='running'||boostCharges<1||boostTime>0)return;boostCharges--;boostTime=1.5+save.up.rocket*.12;speed+=11+save.up.rocket*1.6+(save.up.rocket>=3?5:0);vy+=2.2;air=Math.max(.2,air);notice(save.up.rocket>=3?'Dual thrusters!':'Rocket boost!');tone(210,.45,'sawtooth',.1);updateHud()}
 function pause(){if(phase!=='running')return;phase='paused';$('pauseStats').textContent=Math.floor(z-4)+' m · '+Math.round(speed*2.237)+' mph';$('jump').hidden=true;$('boost').hidden=true;display('paused')}
 function resume(){phase='running';display('');$('jump').hidden=false;$('boost').hidden=false;last=performance.now()}
 function back(){phase='menu';$('ready').hidden=true;$('pullGuide').hidden=true;$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;$('steerHint').hidden=true;display('menu');updateHud()}
 function help(){beforeHelp=phase;display('help')}
 function closeHelp(){display(beforeHelp==='menu'?'menu':beforeHelp==='paused'?'paused':beforeHelp==='result'?'result':'')}
 function simulate(dt){clock+=dt;hitFlash=Math.max(0,hitFlash-dt*3);if(phase!=='running')return;
-  const oldZ=z;z+=speed*dt;target=clamp(target,-7.1,7.1);lateral=lerp(lateral,target,Math.min(1,dt*(2.8+save.up.steer*.28)));maintainChunks();invuln=Math.max(0,invuln-dt);jumpCooldown=Math.max(0,jumpCooldown-dt);
+  const oldZ=z;z+=speed*dt;target=clamp(target,-7.1,7.1);lateral=lerp(lateral,target,Math.min(1,dt*(2.8+save.up.steer*.28)));maintainChunks();invuln=Math.max(0,invuln-dt);jumpCooldown=Math.max(0,jumpCooldown-dt);shieldTime=Math.max(0,shieldTime-dt);surgeTime=Math.max(0,surgeTime-dt);
   if(boostTime>0){boostTime=Math.max(0,boostTime-dt);speed+=dt*(1.5+save.up.rocket*.3)}
-  if(mode==='launch'){speed=Math.max(0,speed-dt*Math.max(.6,.85+speed*.022-save.up.glide*.04))}else speed=lerp(speed,Math.min(86,45+z/120),Math.min(1,dt*.55));
+  if(surgeTime>0)speed+=dt*1.8;
+  if(mode==='launch'){speed=Math.max(0,speed-dt*Math.max(.6,.88+speed*.022-save.up.glide*.04))}else speed=lerp(speed,Math.min(90,48+z/120),Math.min(1,dt*.55));
   if(air>0||vy>0){const grav=save.up.glide>0?Math.max(8,16-save.up.glide*.56):16;vy-=grav*dt;air+=vy*dt;if(air<=0){air=vy=0;tone(150,.09,'triangle',.04)}}
   // Check the whole swept path: a fast sled may travel over three meters in one frame.
   for(const o of objects){if(o.used||o.q>z+2||o.q<oldZ-2)continue;if(Math.abs(o.x-(center(o.q)+lateral))>2.0)continue;o.used=true;
-    if(o.type==='flake'){flakes++;speed+=2.2;tone(920,.12);if(flakes%5===0)notice('Snowflake streak · speed up')}
+    if(o.type==='star'){o.visual.visible=false;stars++;tone(920,.16);if(o.power==='boost'){boostCharges=Math.min(4,boostCharges+1);notice('★ Rocket refilled')}else if(o.power==='shield'){shieldTime=10;notice('★ Shield · 10 seconds')}else{surgeTime=4;speed+=14;notice('★ Speed surge!')}}
     else if(o.type==='ramp'){air=Math.max(air,.3);vy=10+save.up.glide*.34;speed+=2.5;notice('Air time!');tone(470,.22)}
-    else if(invuln<=0&&air<1.1){invuln=1.5;hitFlash=1;tone(150,.28,'triangle');if(mode==='endless'){hearts--;speed=Math.max(20,speed*.58);notice(hearts?'Crash · '+hearts+' chances left':'Run complete');if(hearts<=0){finish();return}}else if(save.up.armor>0){speed*=clamp(.28+save.up.armor*.045,.28,.72);notice('Armor absorbed the crash')}else{speed=0;notice('Crash!');finish();return}}
+    else if(invuln<=0&&air<1.1){invuln=1.5;hitFlash=1;tone(150,.28,'triangle');if(shieldTime>0){shieldTime=0;speed*=.88;notice('Shield absorbed the crash')}else if(mode==='endless'){hearts--;speed=Math.max(20,speed*.58);notice(hearts?'Crash · '+hearts+' chances left':'Run complete');if(hearts<=0){finish();return}}else if(save.up.armor>0){speed*=clamp(.28+save.up.armor*.045,.28,.72);notice('Armor absorbed the crash')}else{speed=0;notice('Crash!');finish();return}}
   }
   if(mode==='launch'&&speed<2.4&&z>45)finish();updateHud()
 }
 function render(dt){if(!renderer)return;introT+=dt;const x=center(z)+lateral,level=ground(z,lateral);rider.position.set(x,level+.1+air,z-(phase==='ready'&&pull?Math.min(2.2,pull.amount/100):0));rider.rotation.z=lerp(rider.rotation.z,(target-lateral)*-.055,Math.min(1,dt*6));rider.rotation.y=lerp(rider.rotation.y,(center(z+6)-center(z))*.018+(target-lateral)*.04,Math.min(1,dt*5));rider.userData.sled.rotation.x=air>0?-.08:Math.sin(clock*24)*.012;
+  for(const o of objects)if(o.type==='star'&&!o.used){o.visual.rotation.y+=dt*1.6;o.visual.position.y=ground(o.q,o.x-center(o.q))+1.22+Math.sin(clock*3+o.q)*.12}
   for(let k=0;k<mountains.length;k++){const side=k%2?-1:1,step=Math.floor(k/2),q=z+330+step*29,peak=mountains[k];peak.position.set(center(q)+side*(95+step*42),base(q)+peak.children[0].geometry.parameters.height*.45-4,q)}
   skyGroup.position.set(center(z+330)+80,base(z+330)+105,z+330);
   const p=particles.geometry.attributes.position,active=phase==='running'?clamp(speed/75,.35,1):0;for(let i=0;i<48;i++){const back=(i/48*12+clock*(16+speed*.27))%12,side=(rng(i+7)*2-1)*(1+back*.17),yy=ground(z-back,lateral)+.1+rng(i+33)*.75*active;p.setXYZ(i,x+side,yy,z-back)}p.needsUpdate=true;particles.visible=phase==='running';
   for(const entry of turbines)entry.rotor.rotation.z+=dt*.7;
   const wingAngle=air>0?-.11:.1;wings[0].rotation.z=lerp(wings[0].rotation.z,wingAngle,Math.min(1,dt*7));wings[1].rotation.z=-wings[0].rotation.z;
-  flame.visible=boostTime>0;flame.scale.set(1+Math.sin(clock*38)*.12,1+Math.sin(clock*31)*.24,1);
+  for(const f of flames){f.visible=boostTime>0;f.scale.set(1+Math.sin(clock*38)*.12,1+Math.sin(clock*31)*.24,1)}
   gate.visible=z<22;
   const portrait=innerHeight>innerWidth,back=portrait?10.8:15,high=portrait?5.8:6.6,look=portrait?22:30;
   const desired=new T.Vector3(x+(center(z-back)-center(z))*.25,level+high+air*.32,z-back);camera.position.lerp(desired,Math.min(1,dt*(phase==='menu'||phase==='ready'?2.7:5.5)));

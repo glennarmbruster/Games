@@ -1,7 +1,7 @@
-Snowbound 0.09.0 — early gameplay revision
+Snowbound 0.10.0 — early gameplay and visual revision
 
-Install the ZIP at the Goobs Games root, preserving folders. Existing scores and upgrades carry forward.
+Install this ZIP at the Goobs Games root, preserving folders. Existing saved scores and upgrades carry forward.
 
-Fixes: steering matches finger movement and keyboard direction; decorative mountains are kept outside the playable course; hitting an obstacle ends a Launch & Glide run unless armor absorbs it. Both modes now move faster, with a closer camera, snow spray, track marks, brighter mountain backdrop, and a new icon.
+The floating diamonds are gone. Stars grant a rocket refill, a timed shield, or a speed surge. The sled has a new hull and Rocket level 3 unlocks visible dual thrusters with stronger boost. New snow-laden pines, colorful lodges, course flags and brighter scenery accompany a slightly faster ride. The menu icon is new illustrated artwork.
 
-This is still an early game, not a finished 1.0.
+This is still an early playable version, not a finished 1.0.
