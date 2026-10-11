@@ -1,7 +1,7 @@
-Snowbound 0.2.0 — substantial first rebuild
+Snowbound 0.09.0 — early gameplay revision
 
-Install the ZIP at the Goobs Games root, preserving its folders. Existing saved best distances and upgrades carry forward. The shared 3D engine is already present in the collection and cached for offline use.
+Install the ZIP at the Goobs Games root, preserving folders. Existing scores and upgrades carry forward.
 
-Changes: chase camera, rolling 3D mountain, forest, launch gate and pullback, ramps, jumping, rocket boost, visible wing and rocket hardware, five saved upgrade paths. Both Launch & Glide and Endless Ride remain.
+Fixes: steering matches finger movement and keyboard direction; decorative mountains are kept outside the playable course; hitting an obstacle ends a Launch & Glide run unless armor absorbs it. Both modes now move faster, with a closer camera, snow spray, track marks, brighter mountain backdrop, and a new icon.
 
-This is an early playable revision, not a finished 1.0.
+This is still an early game, not a finished 1.0.
