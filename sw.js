@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.15",
+  "shell": "3.8.16",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -8,6 +8,10 @@ const VERSIONS = {
   "cubecorral": "4.1.8",
   "screwball": "4.5.0",
   "carjam": "1.0.0",
+  "pixelvolley": "1.0.0",
+  "skyward": "1.0.0",
+  "citydash": "1.0.0",
+  "squadsprint": "1.0.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -135,6 +139,10 @@ const GROUPS = {
     "manifest.json",
     "icons/games/contraption-v2.webp",
     "icons/games/carjam-v1.webp",
+    "icons/games/pixelvolley-v1.webp",
+    "icons/games/skyward-v1.webp",
+    "icons/games/citydash-v1.webp",
+    "icons/games/squadsprint-v1.webp",
     "icons/games/rebus-v1.webp",
     "icons/games/snowbound-v3.webp",
     "icons/games/containment-v1.webp",
@@ -331,6 +339,34 @@ const GROUPS = {
     "games/carjam/index.html",
     "games/carjam/engine.js",
     "games/carjam/game.js"
+  ],
+  "pixelvolley": [
+    "games/pixelvolley/",
+    "games/pixelvolley/index.html",
+    "games/pixelvolley/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
+  ],
+  "skyward": [
+    "games/skyward/",
+    "games/skyward/index.html",
+    "games/skyward/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
+  ],
+  "citydash": [
+    "games/citydash/",
+    "games/citydash/index.html",
+    "games/citydash/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
+  ],
+  "squadsprint": [
+    "games/squadsprint/",
+    "games/squadsprint/index.html",
+    "games/squadsprint/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
   ],
   "skeehop": [
     "games/skeehop/",
