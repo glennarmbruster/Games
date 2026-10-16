@@ -1,0 +1,5 @@
+Car Jam — Version 1.0.0
+
+Tap a car whose arrow points along a clear route to the edge of the lot. A car matching the next color leaves immediately; other colors park in four waiting bays. Cars in bays depart automatically when their color reaches the front of the queue. Clear the lot to advance to a new, harder layout.
+
+Undo, Hint, restart, and How to are available in the game. Progress is saved locally. The levels continue indefinitely. Designed for touch play in portrait and landscape.

@@ -9,3 +9,6 @@ Install the complete Batch 2 ZIP after Batch 1, merging into the existing site r
 REQUESTED CORRECTIONS 1 — 4.4.0
 Brighter blue, purple and warm accent colors across modes.
 Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.
+
+NEW MODE — 4.5.0
+Unscrew It adds layered metal plates and colored screw sorting to the Screwball mode selector. Existing Classic and Timber Tumble gameplay is unchanged. See UnscrewIt.txt for details.
