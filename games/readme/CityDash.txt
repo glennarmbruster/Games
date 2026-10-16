@@ -1,0 +1,2 @@
+City Dash — 1.0.0
+Tap or swipe left and right, or use the arrow buttons to change lanes. Dodge traffic to preserve three lives, earn points by passing cars, and try to beat your saved high score. The run speeds up over time. Portrait and landscape supported.

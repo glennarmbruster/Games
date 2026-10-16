@@ -1,0 +1,2 @@
+Pixel Volley — 1.0.0
+Tap numbered launchers in the rack. Up to five launchers travel the rail and fire automatically at the pixel picture until their shots run out. Clear every tile to reach the next procedurally generated picture. Stars and progress save locally. Portrait and landscape supported.

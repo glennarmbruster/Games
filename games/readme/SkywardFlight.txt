@@ -1,0 +1,2 @@
+Skyward Flight — 1.0.0
+Tap the runway to launch. Drag left or right to steer; tap during flight for a limited thrust boost. Fly through gold markers and avoid the treetops. Distance earns stars. Spend stars on Launch, Wings, Engine and Income. Longer flights unlock further routes. Progress saves locally. Portrait and landscape supported.
