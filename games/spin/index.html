@@ -353,6 +353,69 @@ html.gg-fs-over .top .topbtns { gap: 6px; }
 .key.sel { box-shadow:inset 0 1px #fff8,0 2px 0 #8a6410; }
 .key:disabled { box-shadow:none; }
 
+/* A brighter show stage. Decoration stays behind the puzzle and controls. */
+:root { --gold-grad:linear-gradient(180deg,#fff8d6 0%,#f9dc82 39%,#d99e35 72%,#a56a1c 100%); }
+.scene { background:
+  radial-gradient(ellipse 46% 52% at 50% 38%,rgba(255,224,146,.30),transparent 75%),
+  radial-gradient(ellipse 68% 42% at 50% 98%,rgba(87,76,169,.50),transparent 78%),
+  radial-gradient(ellipse 100% 120% at 50% 0,#6b1736 0%,#250b26 58%,#100922 100%); }
+:root[data-skin="halloween"] .scene { background:
+  radial-gradient(ellipse 50% 55% at 50% 34%,rgba(255,154,60,.25),transparent 75%),
+  radial-gradient(ellipse 70% 45% at 50% 100%,rgba(92,35,139,.5),transparent 78%),
+  radial-gradient(ellipse 100% 120% at 50% 0,#502366 0%,#1b1032 58%,#0e0920 100%); }
+.scene::after { content:"";position:absolute;left:6%;right:6%;bottom:0;height:31%;background:
+  repeating-linear-gradient(90deg,transparent 0 50px,rgba(255,227,175,.055) 51px 52px),
+  linear-gradient(0deg,rgba(10,8,30,.86),rgba(93,46,75,.32) 56%,transparent);
+  border-radius:50% 50% 0 0 / 12% 12% 0 0;box-shadow:0 -12px 55px rgba(255,186,96,.16); }
+.curtain { width:clamp(13px,4.5vw,68px);background:
+  repeating-linear-gradient(90deg,rgba(20,2,22,.58) 0,rgba(255,122,156,.14) 7px,transparent 12px,rgba(20,2,22,.46) 21px),
+  linear-gradient(90deg,#390820,#a22549 47%,#3b0a26);background-blend-mode:normal;
+  box-shadow:0 0 28px #090412, inset -5px 0 12px #18051a; }
+.curtain::after { content:"";position:absolute;top:27%;height:9px;left:0;right:0;background:var(--gold-grad);
+  box-shadow:0 2px 0 #633a0c,0 0 13px #ffda7780;transform:rotate(-7deg); }
+.cr::after { transform:rotate(7deg); }
+:root[data-skin="halloween"] .curtain {background:
+  repeating-linear-gradient(90deg,rgba(10,2,18,.6) 0,rgba(229,137,255,.14) 7px,transparent 12px,rgba(10,2,18,.5) 21px),
+  linear-gradient(90deg,#260c42,#71349b 47%,#290c3f); }
+.valance {height:calc(env(safe-area-inset-top,0px) + 19px);background:
+  radial-gradient(circle at 50% 0,#a9244b 67%,transparent 69%) 0 100% / 42px 21px repeat-x,
+  linear-gradient(#3a0928,#8d1e42);box-shadow:0 4px 0 #c99236,0 7px 20px #100515; }
+.bulbs,.board::before {animation:bulbs 2.4s steps(2) infinite;opacity:.78;}
+.spot {opacity:.65;}
+.catplate {border:1px solid #fff0ae;box-shadow:0 2px 0 #9f6321,0 7px 18px #090510a6, inset 0 1px 0 #fffbe5;
+  text-shadow:0 1px #fff7ca;letter-spacing:1px;}
+.catplate i {background:#792944;color:#fff7d7;text-shadow:none;}
+.board {border:3px solid #f2c45b;background:
+  radial-gradient(ellipse at 50% 17%,#21858e 0%,var(--boardbg) 58%,var(--boardbg2) 100%);
+  box-shadow:0 0 0 2px #704713,0 0 0 5px #c08a39,0 10px 22px #070511b8,inset 0 0 25px #061a2db3;}
+:root[data-skin="halloween"] .board {background:radial-gradient(ellipse at 50% 17%,#663675,var(--boardbg) 58%,var(--boardbg2));}
+.board::before {background:
+  radial-gradient(circle,#fff9da 0 2px,#ffc856 2.5px,transparent 4.5px) 0 0 / 17px 7px repeat-x,
+  radial-gradient(circle,#fff9da 0 2px,#ffc856 2.5px,transparent 4.5px) 0 100% / 17px 7px repeat-x;
+  inset:-5px;opacity:.9;filter:drop-shadow(0 0 3px #ffd46b);}
+.cell.void {background:rgba(0,15,30,.21);}
+.cell .t {background:linear-gradient(145deg,#fff,#f7f9f8 45%,#cbd9dc);border:1px solid #f8ffff;
+  box-shadow:inset 0 1px #fff, inset 0 -2px #8aadb2,0 2px 3px #00152280;}
+.cell.hidden .t {background:linear-gradient(145deg,#fff,#e9f7fa 58%,#b5d7e4);}
+.cell.lit .t {background:linear-gradient(150deg,#e6ffff,#6ae2f7 53%,#16a5d5);}
+.pod {background:linear-gradient(160deg,rgba(255,255,255,.20),rgba(41,31,74,.8));border:1px solid rgba(255,226,166,.45);
+  border-bottom:3px solid #b47e35;border-radius:13px;box-shadow:inset 0 1px #ffffff45,0 5px 13px #08041388;}
+.pod.on {background:linear-gradient(160deg,rgba(255,255,255,.27),rgba(55,39,83,.86));
+  box-shadow:0 0 0 2px var(--sc),0 0 18px var(--sc),inset 0 1px #ffffff75;}
+.pod .bank {color:#fff2b7;text-shadow:0 1px 5px #ffda7970;}
+.hostline p {background:linear-gradient(160deg,#fffdf2,#f3e3c7);border:1px solid #fff4d7;
+  box-shadow:0 4px 13px #06030b99,inset 0 1px #fff;}
+.arena::before {content:"";position:absolute;left:8%;right:8%;bottom:-18%;height:46%;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,195,104,.21),transparent 70%);pointer-events:none;}
+.wheel {filter:drop-shadow(0 9px 14px #080313bb);}
+.arena.idle .wheel {filter:saturate(.82) brightness(.9) drop-shadow(0 9px 14px #080313bb);}
+.acts .status {background:linear-gradient(165deg,rgba(49,32,73,.89),rgba(22,17,49,.93));border-color:#bc9254;}
+.bigbtn {border:1px solid #ffffff55;text-shadow:0 1px 1px #21102775;box-shadow:inset 0 1px #fff7,0 5px 0 #3d1c34,0 8px 14px #09051588;}
+.bigbtn.spin,.bigbtn.go {text-shadow:0 1px #fff7;box-shadow:inset 0 1px #fff,0 5px 0 #9b5c18,0 9px 16px #09051599;}
+.modebtn {background:linear-gradient(125deg,#b42f56,#652046);border:1px solid #ffb4bf80;box-shadow:inset 0 1px #ffffff54,0 6px 14px #16051d88;}
+.modebtn.quick {background:linear-gradient(125deg,#4c70d8,#314ca1);color:#fff;border-color:#a5c8ff80;}
+@media (prefers-reduced-motion:reduce) { .bulbs,.board::before {animation:none;} }
+
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch5.css">
@@ -1166,8 +1229,8 @@ var SA = (function () {
   'use strict';
   var uid = 0;
   function id(p) { uid++; return p + uid; }
-  var COLORS = ['#ff6b5a', '#ffc93c', '#2ec4b6', '#7b6cf6', '#ff9f43', '#3fa7f5', '#f25f9a', '#6ed36e'];
-  var HALLOWEEN = ['#ff7a1a', '#8e44ad', '#5bbf3a', '#ffb02e', '#c0392b', '#6c3fb5', '#e8a33d', '#3d9a4a'];
+  var COLORS = ['#f43c73', '#ffb527', '#00bdae', '#7356e9', '#ff7039', '#1979dc', '#df3eab', '#43bb68'];
+  var HALLOWEEN = ['#ff751f', '#863bca', '#48b657', '#f6b031', '#e64550', '#573dc0', '#e6a13c', '#258f91'];
 
   // ---------- the wheel: drawn once per round into an offscreen canvas, then rotated every frame ----------
   function wedgeLabel(w) {
@@ -1185,8 +1248,9 @@ var SA = (function () {
     var pal = skin === 'halloween' ? HALLOWEEN : COLORS, step = Math.PI * 2 / 24;
     // the rim
     var rim = c.createRadialGradient(0, 0, r * 0.9, 0, 0, r + pad);
-    rim.addColorStop(0, '#7a5408'); rim.addColorStop(0.35, '#f6d36b'); rim.addColorStop(0.7, '#b8860b'); rim.addColorStop(1, '#5e3f06');
+    rim.addColorStop(0, '#8e4d11'); rim.addColorStop(0.2, '#fff4bb'); rim.addColorStop(0.55, '#d8992e'); rim.addColorStop(0.82, '#ffde75'); rim.addColorStop(1, '#704019');
     c.beginPath(); c.arc(0, 0, r + pad * 0.85, 0, Math.PI * 2); c.fillStyle = rim; c.fill();
+    c.beginPath(); c.arc(0, 0, r + pad * 0.58, 0, Math.PI * 2); c.lineWidth = Math.max(1.5,r * 0.012); c.strokeStyle = '#fff1ae'; c.stroke();
     var k = 0;
     wedges.forEach(function (w, i) {
       // wedge i is centred on angle i*15deg clockwise from the top (canvas angle -90deg)
@@ -1199,11 +1263,16 @@ var SA = (function () {
         c.fillStyle = g;
       } else c.fillStyle = bg;
       c.fill();
+      // Each segment has an enamel highlight while the value remains crisp.
+      c.save(); c.beginPath(); c.moveTo(0,0); c.arc(0,0,r,a0,a1); c.closePath(); c.clip();
+      var glint = c.createLinearGradient(0,-r,0,r);
+      glint.addColorStop(0,'rgba(255,255,255,.26)');glint.addColorStop(0.5,'rgba(255,255,255,0)');glint.addColorStop(1,'rgba(0,0,0,.09)');
+      c.fillStyle = glint; c.fillRect(-r,-r,r*2,r*2); c.restore();
       // a soft shine toward the rim
       var sh = c.createRadialGradient(0, 0, r * 0.25, 0, 0, r);
       sh.addColorStop(0, 'rgba(0,0,0,.18)'); sh.addColorStop(0.55, 'rgba(255,255,255,0)'); sh.addColorStop(0.92, 'rgba(255,255,255,.18)'); sh.addColorStop(1, 'rgba(0,0,0,.12)');
       c.fillStyle = sh; c.fill();
-      c.strokeStyle = 'rgba(40,24,0,.55)'; c.lineWidth = Math.max(1, r * 0.008); c.stroke();
+      c.strokeStyle = 'rgba(44,22,38,.7)'; c.lineWidth = Math.max(1, r * 0.01); c.stroke();
       // the label, along the radius, reading from the rim toward the hub
       c.save(); c.rotate(a0 + step / 2);
       var fs = Math.max(8, r * 0.105 * L.font), x0 = r * 0.93;
@@ -1218,6 +1287,8 @@ var SA = (function () {
       if (L.top) { c.fillStyle = '#ffb703'; star(c, r * 0.31, 0, fs * 0.36); }
       c.restore();
     });
+    c.beginPath(); c.arc(0,0,r * 0.973,0,Math.PI*2);c.lineWidth=Math.max(1.5,r * 0.014);c.strokeStyle='rgba(255,250,217,.75)';c.stroke();
+    c.beginPath(); c.arc(0,0,r * 0.89,0,Math.PI*2);c.lineWidth=Math.max(1,r * 0.006);c.strokeStyle='rgba(255,255,255,.33)';c.stroke();
     // brass pegs between the wedges
     for (var p = 0; p < 24; p++) {
       var a = -Math.PI / 2 + (p - 0.5) * step, px = Math.cos(a) * r * 0.985, py = Math.sin(a) * r * 0.985, pr = Math.max(2, r * 0.028);
@@ -1227,10 +1298,11 @@ var SA = (function () {
     }
     // the hub: a pearl with our logo
     var hr = r * 0.25, hg = c.createRadialGradient(-hr * 0.3, -hr * 0.35, hr * 0.1, 0, 0, hr);
-    hg.addColorStop(0, '#ffffff'); hg.addColorStop(0.6, '#f1e7d2'); hg.addColorStop(1, '#bfa979');
-    c.beginPath(); c.arc(0, 0, hr * 1.12, 0, Math.PI * 2); c.fillStyle = '#7a5408'; c.fill();
+    hg.addColorStop(0, '#fffefa'); hg.addColorStop(0.55, '#fff1cc'); hg.addColorStop(1, '#cf9959');
+    c.beginPath(); c.arc(0, 0, hr * 1.2, 0, Math.PI * 2); c.fillStyle = '#5c2345'; c.fill();
+    c.beginPath(); c.arc(0, 0, hr * 1.12, 0, Math.PI * 2); c.lineWidth=Math.max(2,r * .018);c.strokeStyle='#ffe998';c.stroke();
     c.beginPath(); c.arc(0, 0, hr, 0, Math.PI * 2); c.fillStyle = hg; c.fill();
-    c.fillStyle = '#8e1630'; c.font = 'italic 900 ' + (hr * 0.62).toFixed(1) + 'px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#832744'; c.font = 'italic 900 ' + (hr * 0.62).toFixed(1) + 'px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText('S&S', 0, hr * 0.04);
     return { canvas: cv, size: size };
   }

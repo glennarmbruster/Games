@@ -1,17 +1,12 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.16",
+  "shell": "3.8.13",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
-  "screwball": "4.5.0",
-  "carjam": "1.0.0",
-  "pixelvolley": "1.0.0",
-  "skyward": "1.0.0",
-  "citydash": "1.0.0",
-  "squadsprint": "1.0.0",
+  "screwball": "4.4.12",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -59,7 +54,7 @@ const VERSIONS = {
   "trivia": "0.4.7",
   "links": "0.4.5",
   "bowling": "0.4.8",
-  "deck": "0.4.7",
+  "deck": "0.4.6",
   "wordboard": "0.2.6",
   "nonogram": "0.3.6",
   "getout2": "1.6.7",
@@ -138,11 +133,6 @@ const GROUPS = {
     "index.html",
     "manifest.json",
     "icons/games/contraption-v2.webp",
-    "icons/games/carjam-v1.webp",
-    "icons/games/pixelvolley-v1.webp",
-    "icons/games/skyward-v1.webp",
-    "icons/games/citydash-v1.webp",
-    "icons/games/squadsprint-v1.webp",
     "icons/games/rebus-v1.webp",
     "icons/games/snowbound-v3.webp",
     "icons/games/containment-v1.webp",
@@ -192,9 +182,6 @@ const GROUPS = {
     "icons/games/shelf-v1.webp",
     "icons/games/siege-v1.webp",
     "icons/games/skeehop-v1.webp",
-    "icons/games/skeehop-v2.webp",
-    "icons/games/pool-v2.webp",
-    "icons/games/hexslide-v2.webp",
     "icons/games/snake-v1.webp",
     "icons/games/solitaire-v1.webp",
     "icons/games/sort-v1.webp",
@@ -322,9 +309,6 @@ const GROUPS = {
     "games/screwball/timber-worker.js",
     "games/screwball/timber.css",
     "games/screwball/timber.html",
-    "games/screwball/unscrew.html",
-    "games/screwball/unscrew-engine.js",
-    "games/screwball/unscrew.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
@@ -333,40 +317,6 @@ const GROUPS = {
     "shared/menu-polish.css",
     "shared/layout-finish.css",
     "shared/layout-finish.js"
-  ],
-  "carjam": [
-    "games/carjam/",
-    "games/carjam/index.html",
-    "games/carjam/engine.js",
-    "games/carjam/game.js"
-  ],
-  "pixelvolley": [
-    "games/pixelvolley/",
-    "games/pixelvolley/index.html",
-    "games/pixelvolley/game.js",
-    "games/arcade4/common.css",
-    "games/arcade4/core.js"
-  ],
-  "skyward": [
-    "games/skyward/",
-    "games/skyward/index.html",
-    "games/skyward/game.js",
-    "games/arcade4/common.css",
-    "games/arcade4/core.js"
-  ],
-  "citydash": [
-    "games/citydash/",
-    "games/citydash/index.html",
-    "games/citydash/game.js",
-    "games/arcade4/common.css",
-    "games/arcade4/core.js"
-  ],
-  "squadsprint": [
-    "games/squadsprint/",
-    "games/squadsprint/index.html",
-    "games/squadsprint/game.js",
-    "games/arcade4/common.css",
-    "games/arcade4/core.js"
   ],
   "skeehop": [
     "games/skeehop/",
