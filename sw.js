@@ -1,12 +1,13 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.14",
+  "shell": "3.8.15",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
-  "screwball": "4.4.12",
+  "screwball": "4.5.0",
+  "carjam": "1.0.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -133,6 +134,7 @@ const GROUPS = {
     "index.html",
     "manifest.json",
     "icons/games/contraption-v2.webp",
+    "icons/games/carjam-v1.webp",
     "icons/games/rebus-v1.webp",
     "icons/games/snowbound-v3.webp",
     "icons/games/containment-v1.webp",
@@ -312,6 +314,9 @@ const GROUPS = {
     "games/screwball/timber-worker.js",
     "games/screwball/timber.css",
     "games/screwball/timber.html",
+    "games/screwball/unscrew.html",
+    "games/screwball/unscrew-engine.js",
+    "games/screwball/unscrew.js",
     "shared/corrections-1.css",
     "shared/corrections-1.js",
     "shared/portrait-safe.css",
@@ -320,6 +325,12 @@ const GROUPS = {
     "shared/menu-polish.css",
     "shared/layout-finish.css",
     "shared/layout-finish.js"
+  ],
+  "carjam": [
+    "games/carjam/",
+    "games/carjam/index.html",
+    "games/carjam/engine.js",
+    "games/carjam/game.js"
   ],
   "skeehop": [
     "games/skeehop/",
