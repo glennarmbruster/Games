@@ -47,9 +47,9 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .app button { pointer-events: auto; }
 
 /* the scoreboard: you on the left, the other side on the right */
-.scorebd { position: fixed; z-index: 7; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 50%; transform: translateX(-50%); width: min(430px, calc(100vw - 116px)); height: 52px; display: flex; align-items: stretch; justify-content: center;
-  pointer-events: none; background: rgba(255,255,255,.93); border-radius: 18px; box-shadow: 0 3px 12px rgba(0,0,0,.18); color: #142847; overflow: hidden; }
-.scorebd .sd { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "nm nm" "pts left"; grid-template-rows: 18px 1fr; align-items: center; column-gap: 6px; padding: 3px 7px 3px 9px; transition: background .25s; }
+.scorebd { position: fixed; z-index: 7; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 50%; transform: translateX(-50%); width: min(350px, calc(100vw - 116px)); height: 46px; display: flex; align-items: stretch; justify-content: center;
+  pointer-events: none; background: rgba(9,37,63,.78); border: 1px solid rgba(255,255,255,.30); border-radius: 15px; box-shadow: 0 3px 12px rgba(0,0,0,.15); color: #fff; overflow: hidden; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.scorebd .sd { flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "nm nm" "pts left"; grid-template-rows: 16px 1fr; align-items: center; column-gap: 6px; padding: 2px 7px 2px 9px; transition: background .25s; }
 .scorebd #sd1 { grid-template-columns: 1fr auto; grid-template-areas: "nm nm" "left pts"; padding: 3px 9px 3px 7px; }
 .scorebd .nm { grid-area: nm; display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; font-weight: 800; letter-spacing: -.2px; }
 .scorebd #sd1 .nm { justify-content: flex-end; }
@@ -57,14 +57,14 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .scorebd .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 2px rgba(0,0,0,.25); }
 .scorebd #sd0 .dot { background: #e8453c; }
 .scorebd #sd1 .dot { background: #2f6fd6; }
-.scorebd .pts { grid-area: pts; font-size: 24px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.scorebd .pts { grid-area: pts; font-size: 21px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
 .scorebd .left { grid-area: left; display: flex; gap: 3px; height: 10px; align-items: center; }
 .scorebd #sd1 .left { justify-content: flex-end; }
 .scorebd .left i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .25; }
 .scorebd #sd0 .left i.on { background: #e8453c; border-color: #e8453c; opacity: 1; }
 .scorebd #sd1 .left i.on { background: #2f6fd6; border-color: #2f6fd6; opacity: 1; }
-.scorebd .sd.turn { background: #fff4c4; }
-.scorebd .mid { flex: none; width: 34px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10px; line-height: 1.1; font-weight: 800; color: #6a7a92; border-left: 1px solid #e3e8ef; border-right: 1px solid #e3e8ef; }
+.scorebd .sd.turn { background: rgba(255,205,95,.30); }
+.scorebd .mid { flex: none; width: 34px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10px; line-height: 1.1; font-weight: 800; color: #dceaff; border-left: 1px solid rgba(255,255,255,.22); border-right: 1px solid rgba(255,255,255,.22); }
 .scorebd.solo #sd1, .scorebd.solo .mid { display: none; }
 
 
@@ -88,11 +88,11 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .tip { position: fixed; left: 50%; top: 58%; transform: translateX(-50%); width: max-content; max-width: 90vw; text-align: center; pointer-events: none; z-index: 5;
   background: rgba(14,32,60,.7); color: #fff; font-weight: 700; font-size: 14px; line-height: 1.3; padding: 8px 14px; border-radius: 14px; transition: opacity .3s; }
 .tip.hide { opacity: 0; }
-.turn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); z-index: 5; pointer-events: none; display: flex; align-items: center; gap: 7px;
+#turn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); z-index: 5; pointer-events: none; display: flex; align-items: center; gap: 7px;
   background: rgba(255,255,255,.92); color: #142847; font-weight: 800; font-size: 15px; padding: 8px 15px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,.2); white-space: nowrap; max-width: 92vw; transition: opacity .25s; }
-.turn:empty, .turn.hide { opacity: 0; }
-.turn i { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 2px rgba(0,0,0,.25); }
-.turn small { font-weight: 700; color: #6a7a92; font-size: 13px; }
+#turn:empty, #turn.hide { opacity: 0; }
+#turn i { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 -2px 2px rgba(0,0,0,.25); }
+#turn small { font-weight: 700; color: #6a7a92; font-size: 13px; }
 .power { position: fixed; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 62px); z-index: 5; pointer-events: none; background: rgba(14,32,60,.7); color: #ffe27a; font-weight: 800; font-size: 14px; padding: 6px 11px; border-radius: 12px; opacity: 0; transition: opacity .3s; }
 .power.show { opacity: 1; }
 .loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 17px; pointer-events: none; z-index: 4; text-shadow: 0 2px 6px rgba(0,0,0,.3); }
@@ -163,7 +163,7 @@ html.gg-fs-over .app { position: relative; z-index: 3; height: 100%; pointer-eve
 .shuffle-controls small { font-size:11px; line-height:1.3; color:#526477; }
 .shuffle-controls button { min-height:44px; min-width:104px; border:0; border-radius:11px; background:#146b80; color:white; font:800 16px system-ui; cursor:pointer; }
 .shuffle-controls button:active { background:#104e60; transform:translateY(1px); }
-body.shuffle-aim .turn { top:103px; bottom:auto; left:10px; transform:none; max-width:calc(100vw - 125px); font-size:12px; padding:7px 9px; }
+body.shuffle-aim #turn { top:103px; bottom:auto; left:10px; transform:none; max-width:calc(100vw - 125px); font-size:12px; padding:7px 9px; }
 @media (orientation:landscape) and (max-height:500px) { .shuffle-controls { display:none; } }
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css"><script defer src="../../shared/collection-ui.js"></script><link rel="stylesheet" href="../../shared/remaining-navigation.css"><!-- Goobs polish: remaining collection pass --><style>

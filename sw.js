@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.13",
+  "shell": "3.8.14",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -54,7 +54,7 @@ const VERSIONS = {
   "trivia": "0.4.7",
   "links": "0.4.5",
   "bowling": "0.4.8",
-  "deck": "0.4.6",
+  "deck": "0.4.7",
   "wordboard": "0.2.6",
   "nonogram": "0.3.6",
   "getout2": "1.6.7",
@@ -182,6 +182,9 @@ const GROUPS = {
     "icons/games/shelf-v1.webp",
     "icons/games/siege-v1.webp",
     "icons/games/skeehop-v1.webp",
+    "icons/games/skeehop-v2.webp",
+    "icons/games/pool-v2.webp",
+    "icons/games/hexslide-v2.webp",
     "icons/games/snake-v1.webp",
     "icons/games/solitaire-v1.webp",
     "icons/games/sort-v1.webp",
