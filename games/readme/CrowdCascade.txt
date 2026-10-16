@@ -1,0 +1,2 @@
+Crowd Cascade — 1.0.0
+Steer the crowd across a sunlit bridge. Grow it with blue and green gates, avoid red gates and hazards, and reach higher prize tiers at the finish. Each course unlocks the next; progress saves locally. Portrait and landscape supported.

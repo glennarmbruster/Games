@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var $=function(id){return document.getElementById(id);},KEY='goobs.unscrew.v1',cv=$('board'),ctx=cv.getContext('2d'),overlay=$('overlay');
+  var scene=new Image();scene.src='workshop.webp';var $=function(id){return document.getElementById(id);},KEY='goobs.unscrew.v1',cv=$('board'),ctx=cv.getContext('2d'),overlay=$('overlay');
   var s,history=[],L={scale:1,ox:0,oy:0,w:0,h:0},falling=[],flying=[],glow=null,toastTimer=0;
   var palette=ScrewSort.colors;
   function clone(v){return JSON.parse(JSON.stringify(v));}
@@ -41,8 +41,8 @@
       else{ctx.beginPath();ctx.arc(pos.x,pos.y,13,0,Math.PI*2);ctx.fillStyle='rgba(9,20,48,'+(alpha*.7)+')';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(244,246,255,'+(alpha*.7)+')';ctx.stroke();}
     });
   }
-  function draw(){var w=L.w,h=L.h;if(!w)return;var bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#314d8d');bg.addColorStop(.5,'#21366f');bg.addColorStop(1,'#0b2155');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(L.ox,L.oy);ctx.scale(L.scale,L.scale);
-    var panel=ctx.createLinearGradient(0,0,600,690);panel.addColorStop(0,'#435b9b');panel.addColorStop(.5,'#263d80');panel.addColorStop(1,'#193066');rr(8,8,584,674,29);ctx.fillStyle=panel;ctx.fill();ctx.lineWidth=5;ctx.strokeStyle='#d7b877';ctx.stroke();rr(20,20,560,650,22);ctx.lineWidth=2;ctx.strokeStyle='#ffffff50';ctx.stroke();
+  function draw(){var w=L.w,h=L.h;if(!w)return;var bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#314d8d');bg.addColorStop(.5,'#21366f');bg.addColorStop(1,'#0b2155');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);if(scene.complete&&scene.naturalWidth)ctx.drawImage(scene,0,0,scene.naturalWidth,scene.naturalHeight,0,0,w,h);ctx.save();ctx.translate(L.ox,L.oy);ctx.scale(L.scale,L.scale);
+    var panel=ctx.createLinearGradient(0,0,600,690);panel.addColorStop(0,'#28407699');panel.addColorStop(.5,'#21396b77');panel.addColorStop(1,'#102653aa');rr(8,8,584,674,29);ctx.fillStyle=panel;ctx.fill();ctx.lineWidth=5;ctx.strokeStyle='#d7b877';ctx.stroke();rr(20,20,560,650,22);ctx.lineWidth=2;ctx.strokeStyle='#ffffff50';ctx.stroke();
     ctx.strokeStyle='#ffffff12';ctx.lineWidth=1;for(var yy=48;yy<675;yy+=29){ctx.beginPath();ctx.moveTo(24,yy);ctx.lineTo(576,yy);ctx.stroke();}
     for(var k=0;k<10;k++){var xx=48+(k%5)*126,by=k<5?62:635;ctx.beginPath();ctx.arc(xx,by,5,0,Math.PI*2);ctx.fillStyle='#0f265b';ctx.fill();ctx.strokeStyle='#b8a677';ctx.lineWidth=2;ctx.stroke();}
     s.plates.forEach(function(p){if(!p.gone)plate(p,0,0,1);});
@@ -65,6 +65,7 @@
   $('help').onclick=how;$('reset').onclick=function(){modal('Restart level?','<p>This level will begin with fresh screws.</p>',[['Restart',function(){s=ScrewSort.make(s.level);history=[];falling=[];flying=[];save();paintHUD();draw();},'primary'],['Cancel',function(){}]]);};
   $('undo').onclick=function(){if(!history.length)return;s=history.pop();falling=[];flying=[];glow=null;save();paintHUD();draw();};
   $('hint').onclick=function(){var h=ScrewSort.hint(s);if(!h){toast('No screws left.');return;}glow=h;draw();toast('Try the glowing screw.');setTimeout(function(){glow=null;draw();},2100);};
+  scene.onload=draw;
   cv.addEventListener('pointerup',play);window.addEventListener('resize',resize);s=load();paintHUD();requestAnimationFrame(resize);
   if(s.win)setTimeout(win,100);
 })();

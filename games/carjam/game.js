@@ -2,7 +2,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var KEY = 'goobs.carjam.v1', canvas = $('board'), ctx = canvas.getContext('2d');
-  var state, history = [], layout = { x: 0, y: 0, cell: 40 }, moving = [], glowing = 0, toastTimer = 0, raf = 0, modal = $('overlay');
+  var scene=new Image();scene.src='lot.webp';var state, history = [], layout = { x: 0, y: 0, cell: 40 }, moving = [], glowing = 0, toastTimer = 0, raf = 0, modal = $('overlay');
   var colors = Jam.colors;
   function copy(v) { return JSON.parse(JSON.stringify(v)); }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -52,10 +52,10 @@
   }
   function draw() {
     var L=layout,w=L.w,h=L.h;if(!w)return;
-    var bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#3b6277');bg.addColorStop(.3,'#263e57');bg.addColorStop(1,'#13263d');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+    var bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#3b6277');bg.addColorStop(.3,'#263e57');bg.addColorStop(1,'#13263d');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);if(scene.complete&&scene.naturalWidth)ctx.drawImage(scene,0,0,scene.naturalWidth,scene.naturalHeight,0,0,w,h);
     var c=L.cell,x=L.x,y=L.y,side=c*8;
     ctx.shadowColor='#020c1e';ctx.shadowBlur=24;ctx.shadowOffsetY=11;rr(x-8,y-8,side+16,side+16,14);ctx.fillStyle='#0c2238';ctx.fill();ctx.shadowColor='transparent';
-    ctx.fillStyle='#23394b';ctx.fillRect(x,y,side,side);
+    ctx.fillStyle='#162b3acc';ctx.fillRect(x,y,side,side);
     // Painted bays and asphalt grain provide depth without hiding the cars.
     for(var row=0;row<8;row++)for(var col=0;col<8;col++){
       var px=x+col*c,py=y+row*c;
@@ -93,6 +93,7 @@
   $('undo').onclick=function(){if(!history.length)return;state=history.pop();moving=[];glowing=0;save();paintHUD();draw();};
   $('hint').onclick=function(){var car=Jam.hint(state);if(!car){toast('Use Undo or restart to free a route.');return;}glowing=car.id;draw();toast('Try the glowing car.');setTimeout(function(){glowing=0;draw();},2100);};
   canvas.addEventListener('pointerup',selectAt);window.addEventListener('resize',resize);
+  scene.onload=draw;
   state=load();paintHUD();requestAnimationFrame(resize);
   if (!state.queue.length && !state.cars.length && !state.bay.length) setTimeout(win,100);
 })();

@@ -1,0 +1,2 @@
+Neon Brick Quest — 1.0.0
+Aim a volley at the numbered neon bricks. Every volley adds a new row and pushes the existing wall toward the launcher. Survive waves and beat your saved best score. Portrait and landscape supported.

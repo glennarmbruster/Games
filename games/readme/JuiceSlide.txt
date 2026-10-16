@@ -1,0 +1,2 @@
+Juice Slide — 1.0.0
+Drag and release a drink into one of five lanes. Matching front drinks merge into new recipes and chain matches score more. Each lane holds four drinks; make space to keep playing. High score and unlocked recipes save locally. Portrait and landscape supported.

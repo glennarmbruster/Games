@@ -1,0 +1,2 @@
+Prism Breaker — 1.0.0
+Drag from the launcher and release a volley. Bounce pearl balls off the walls to lower numbered gem bricks. Clear each full pixel pattern to unlock the next design. Levels and score save locally. Portrait and landscape supported.

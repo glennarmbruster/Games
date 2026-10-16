@@ -1,0 +1,12 @@
+Goobs Games — Three More Games and Visual Update
+
+NEW
+Fruit Fusion: drop and merge fruit.
+Crash Course: steer through stunt obstacles, ramps, impacts, and courses.
+Ludo Lights: two or four players with computer opponents.
+
+VISUAL UPDATES
+Car Jam, Screwball: Unscrew It, Prism Breaker, Crowd Cascade, Neon Brick Quest, Harbor Escape, Juice Slide, Pixel Volley, Skyward Flight, City Dash, Squad Sprint.
+Updated in-game scene art, board texture, and object visibility while preserving the existing gameplay in these games.
+
+Install the contents into the existing Goobs Games root, replacing matching files. This ZIP is cumulative with the preceding games added today. Existing saves remain in local storage.
