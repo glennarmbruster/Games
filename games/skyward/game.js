@@ -1,4 +1,4 @@
-(function(){'use strict';var A=Arcade,scene=new Image();scene.src='valley.webp',phase='ready',run=null,time=0,buttons=[],trees=[],stars=[],dragging=false,aim=0;
+(function(){'use strict';var A=Arcade,scene=new Image();scene.src='valley.webp';var phase='ready',run=null,time=0,buttons=[],trees=[],stars=[],dragging=false,aim=0;
 function defaults(){return{coins:150,best:0,flights:0,upgrades:[0,0,0,0],route:1};}
 function init(){var s=A.data;if(!Array.isArray(s.upgrades))s.upgrades=[0,0,0,0];hud();}
 function hud(){A.hud('Route '+A.data.route,'Best '+Math.floor(A.data.best)+'m · '+A.data.coins+' ★');}

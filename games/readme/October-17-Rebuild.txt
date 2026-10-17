@@ -1,0 +1,61 @@
+GOOBS GAMES — OCTOBER 17 REPAIR AND REBUILD
+
+INSTALL
+Upload the contents over your existing collection, preserving the games/ and
+icons/ folders. index.html and sw.js belong at the collection root. This is
+an update, not a replacement for all the older games in your collection.
+After the upload finishes syncing, open the main collection online and accept
+the Update available prompt. Reopen a game after the update completes.
+
+GAMEPLAY REBUILDS
+Car Jam: a visible passenger queue, matching-color boarding, five pickup bays,
+four- and six-seat cars, animated arrival and departure, Undo and Hint.
+Crash Course: free driving in a 3D physics stunt park, vehicle suspension,
+ramps, a tube, movable crates, collisions, reverse, recovery, and two modes.
+Crowd Cascade: crowd gates, enemy clashes, sweepers, jump pads, and a visible
+multiplier staircase that spends surviving runners as they climb.
+Juice Slide: continuous table physics, angled shots, wall bounces, collisions,
+and merges across the whole table, with 12 drink recipes.
+
+STARTUP AND INTERFACE REPAIRS
+Ludo Lights, City Dash, Neon Brick Quest, Pixel Volley, Prism Breaker,
+Skyward Flight, Squad Sprint, and Fruit Fusion.
+The shared shell now tolerates games without steering buttons. Strict-mode
+declaration errors in several graphics scripts are repaired. Headers can wrap
+on narrower screens. Modal dialogs cancel held controls. Ludo's landscape
+dice display is moved away from the board.
+Harbor Escape also receives the shared shell improvements.
+
+CONTENTS
+This cumulative ZIP includes the preceding artwork and Screwball's Unscrew It
+mode as well as these repairs. The existing Screwball modes are retained.
+
+SAVED PROGRESS
+Car Jam keeps your level and starts a new passenger-based lot when migrating
+an older save. Juice Slide keeps best score and unlocked recipes, starting a
+new physics table when migrating an older lane-based save. Other save keys
+remain the same. No stored data is deliberately cleared.
+
+CHECKS COMPLETED
+- Actual, unmodified page scripts and shared shell executed in an automated
+  DOM/Canvas harness at phone portrait and landscape dimensions for 12 games.
+  Startup, drawing, input, pause, help and restart checks passed.
+- Crash Course's actual module, Canvas fallback, acceleration, recovery and
+  pause were exercised at portrait and landscape dimensions.
+- Car Jam: 100 generated lots solved with passenger/seat totals checked;
+  an entire lot also completed using taps and animation timers.
+- Juice Slide: aimed shot, collision merge, score and saved reload across sizes.
+- Fruit Fusion: drop, physics collision and merge scoring.
+- Pixel Volley: launcher input, complete picture clear, next design.
+- Both brick games: volley collision, return, progression.
+- Crowd Cascade: full run through gates to stair rewards and the next course.
+- Ludo Lights: six, pawn leaving home, movement and extra turn.
+- Crash Course physics: acceleration, steering, reverse, ramp launch/landing,
+  solid-wall blocking, movable crate collision and recovery.
+- Updated game cache versions, required local files/imports and JS syntax.
+
+LIMITS OF THESE CHECKS
+These are automated code and Canvas rendering checks, not physical-device or
+full-browser play tests. The WebGL rendering path, Safari layout, multitouch,
+audio, performance and real offline installation still need device testing.
+This is a substantial alpha rebuild, not a claim that every game is finished.

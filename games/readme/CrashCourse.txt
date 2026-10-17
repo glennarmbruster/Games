@@ -1,3 +1,2 @@
-CrashCourse — Goobs Games
-
-Hold GO to drive and steer around obstacles. Hit ramps for points and reach the finish without reaching 100% damage.
+Crash Course — free driving rebuild
+Choose Free Drive or Stunt Trail. Hold GO to accelerate, steer using arrows, BRAKE to slow, REV to reverse. Recover resets and repairs a rolled truck. Explore ramps, a drive-through tube, crate stacks, walls, and a rotating obstacle. Stunt Trail adds five checkpoints. Real 3D rigid-body vehicle physics, chase camera, suspension, jumps and collisions replace the old lane-runner model. Rendering and physics libraries are included for offline use.

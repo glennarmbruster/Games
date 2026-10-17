@@ -1,4 +1,4 @@
-(function(){'use strict';var A=Arcade,scene=new Image();scene.src='neon-city.webp',rng=1,carColors=['#f6cf43','#f66158','#4ad6b9','#d9e6f4','#935ce1','#4bb5ef'];var state,elapsed=0,cool=0,downX=0,lastX=0;
+(function(){'use strict';var A=Arcade,scene=new Image();scene.src='neon-city.webp';var rng=1,carColors=['#f6cf43','#f66158','#4ad6b9','#d9e6f4','#935ce1','#4bb5ef'];var state,elapsed=0,cool=0,downX=0,lastX=0;
 function defaults(){return{best:0,runs:0,total:0};}
 function rand(){rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;return(rng>>>0)/4294967296;}
 function start(){rng=(Date.now()>>>0)||1;state={lane:1,visual:1,traffic:[],distance:0,score:0,lives:3,invuln:0,spawn:1.8,passing:0,ended:false};elapsed=0;cool=0;hud();}

@@ -1,4 +1,4 @@
-(function(root){'use strict';var A=Arcade,scene=new Image();scene.src='../arcade4/crystal.webp',mode,st,balls=[],sparks=[],aim={x:0,y:-1},pointer=false,spawnClock=0,spawnLeft=0,shotCount=0,time=0,finished=false;
+(function(root){'use strict';var A=Arcade,scene=new Image();scene.src='../arcade4/crystal.webp';var mode,st,balls=[],sparks=[],aim={x:0,y:-1},pointer=false,spawnClock=0,spawnLeft=0,shotCount=0,time=0,finished=false;
 var palettes={prism:['#ff5879','#f8b952','#49d5e9','#a078f9','#6ce2af'],quest:['#27d5ff','#f257b4','#f9d657','#8b7dff','#74f6b6']};
 function defaults(){return{level:1,score:0,best:0,shots:30,turn:1,bricks:null};}
 function random(seed){var n=seed>>>0||1;return function(){n^=n<<13;n^=n>>>17;n^=n<<5;return(n>>>0)/4294967296;};}

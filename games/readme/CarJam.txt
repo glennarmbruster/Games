@@ -1,5 +1,2 @@
-Car Jam — Version 1.0.0
-
-Tap a car whose arrow points along a clear route to the edge of the lot. A car matching the next color leaves immediately; other colors park in four waiting bays. Cars in bays depart automatically when their color reaches the front of the queue. Clear the lot to advance to a new, harder layout.
-
-Undo, Hint, restart, and How to are available in the game. Progress is saved locally. The levels continue indefinitely. Designed for touch play in portrait and landscape.
+Car Jam — passenger rebuild
+Tap cars with a clear arrow route to send them to five pickup bays. The passengers at the front of the queue board matching cars. Full cars drive away. Clear all passengers to advance. Undo and Hint are available. Four- and six-seat cars; levels continue procedurally. Old progress keeps the level but begins a fresh lot with passengers.

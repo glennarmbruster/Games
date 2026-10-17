@@ -1,4 +1,4 @@
-(function(){'use strict';var A=Arcade,scene=new Image();scene.src='sky-causeway.webp',s,events=[],elapsed=0,drawTarget=1,downX=0,rng=7,flash=0;
+(function(){'use strict';var A=Arcade,scene=new Image();scene.src='sky-causeway.webp';var s,events=[],elapsed=0,drawTarget=1,downX=0,rng=7,flash=0;
 function defaults(){return{level:1,coins:0,bestSquad:3,cleared:0};}
 function random(){rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;return(rng>>>0)/4294967296;}
 function build(level){rng=(level*1299827+19)>>>0;var list=[],types=['recruit','gate','enemy','crate','recruit','gate','enemy','cash','crate','gate','enemy','recruit'];for(var i=0;i<18;i++){var type=types[i%types.length],lane=Math.floor(random()*3),z=22+i*13,hp=type==='enemy'?6+level*2+(i%3)*2:type==='crate'?8+level:0;list.push({type:type,lane:lane,z:z,hp:hp,max:hp,value:type==='gate'?3:type==='recruit'?2:type==='cash'?20:0,done:false});if(type==='gate')list.push({type:'gate',lane:(lane+1)%3,z:z,hp:0,max:0,value:-2,done:false});}list.push({type:'boss',lane:1,z:270,hp:Math.min(132,24+level*6),max:Math.min(132,24+level*6),done:false});return list;}
