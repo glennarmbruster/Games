@@ -1,2 +1,4 @@
-Crowd Cascade — crowd course rebuild
-Tap to run; drag left/right to choose gate halves. Additions and multipliers grow your crowd. Red swarms consume runners in clashes. Avoid sweepers, collect coins, and use jump pads. Surviving runners climb a visible multiplier staircase. Levels continue with increasing opposition.
+Crowd Cascade — two modes
+Crowd Run: grow a running crowd through paired gates, avoid costly enemy clashes, collect coins and use jump pads.
+Squad Assault: the former Squad Sprint, now a mode here. Aim the moving squad toward crates and enemies to fire automatically; collect recruits.
+Both use a moving 3D course, running characters and a stair finish. Each saves its own level; old Squad Sprint level imports into Squad Assault. Drag to steer.

@@ -1,3 +1,2 @@
-FruitFusion — Goobs Games
-
-Drop fruit into the jar. Two equal fruit touching combine into the next larger fruit. Keep the pile below the rim.
+Fruit Fusion — detailed fruit artwork
+Nine distinct fruit sprites replace the colored spheres. Larger fruit improve recognition on a phone. Drop matching fruit together to merge, and keep the jar from overflowing. Best score is retained.

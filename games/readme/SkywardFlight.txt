@@ -1,2 +1,2 @@
-Skyward Flight — 1.0.0
-Tap the runway to launch. Drag left or right to steer; tap during flight for a limited thrust boost. Fly through gold markers and avoid the treetops. Distance earns stars. Spend stars on Launch, Wings, Engine and Income. Longer flights unlock further routes. Progress saves locally. Portrait and landscape supported.
+Skyward Flight — catapult and plane evolution
+Pull the plane back/down on the runway, release to launch, or use Launch. Drag to bank, and Boost to extend the glide. Landing distance earns stars. Upgrade Catapult, Wings, Engine and Income in the Workshop. The glider evolves visually into a biplane, sport plane and twin jet. Existing upgrades, best distance and stars are retained.

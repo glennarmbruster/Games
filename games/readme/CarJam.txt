@@ -1,2 +1,2 @@
-Car Jam — passenger rebuild
-Tap cars with a clear arrow route to send them to five pickup bays. The passengers at the front of the queue board matching cars. Full cars drive away. Clear all passengers to advance. Undo and Hint are available. Four- and six-seat cars; levels continue procedurally. Old progress keeps the level but begins a fresh lot with passengers.
+Car Jam — straight lot and vehicle footprints
+Tap a vehicle with a clear route in its arrow direction. Compact cars hold 2 passengers, sedans 4, minibuses 6 and large buses 10. Vehicles occupy 1–4 spaces and have distinct bodies. They drive out, use five pickup bays and board matching passengers. Full vehicles depart. Undo and Hint remain available. An existing save keeps its level and starts a fresh lot under the new footprint rules.

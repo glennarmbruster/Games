@@ -1,2 +1,3 @@
-Neon Brick Quest — 1.0.0
-Aim a volley at the numbered neon bricks. Every volley adds a new row and pushes the existing wall toward the launcher. Survive waves and beat your saved best score. Portrait and landscape supported.
+Neon Bricks — Endless and Patterns
+Endless keeps the descending-wall game. Patterns incorporates Prism Breaker. Each retains its own save key.
+Start with at least 60 balls; bricks have higher counts and difficulty rises. Every fifth destroyed brick releases a power-up: extra balls, Laser, Blast or a doubled next volley. Laser removes the lowest row. Blast halves brick counts. Recall returns an unfinished volley. Mode selector opens both games from one icon.

@@ -1,2 +1,1 @@
-Squad Sprint — 1.0.0
-Tap to run. Drag across lanes or use the arrow controls. Collect teammates, choose the positive gates, and avoid hazards. Your squad fires automatically at enemies and crates in its lane. Defeat the final guard and reach the finish to advance. Levels continue indefinitely and progress saves locally. Portrait and landscape supported.
+Squad Sprint is now Squad Assault within Crowd Cascade. The collection has one Crowd Cascade icon. The old path redirects to its mode selector.
