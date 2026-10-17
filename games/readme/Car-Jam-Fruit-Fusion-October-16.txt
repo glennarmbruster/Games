@@ -1,0 +1,24 @@
+GOOBS GAMES — CAR JAM & FRUIT FUSION
+
+Extract into the existing main Goobs Games directory, preserving the folders and replacing matching files. sw.js belongs in the main directory. Accept the normal collection update prompt and reopen the games. Do not clear website data.
+
+CAR JAM
+Vehicles now keep exactly the same scale in the jam, during travel and in the pickup bays. The bays are taller to accommodate them. Improved car silhouettes, sculpted paint, windows, roof panels, lights, wheels, mirrors and small directional chevrons. Shorter minibuses and occasional eight-seat buses have bus windows, roof ventilation and front windshields. Ordinary capacities are two, four and six. Eight-seat buses occur at most once every fifth lot, beginning at level five (under 1% of vehicles in a 150-level check). No ten-seat buses remain.
+
+Existing saved lots keep their level, remaining vehicles and delivered passengers. Vehicle sizes and remaining passenger order are adjusted to the new capacities; the remaining queue stays completable. Also fixed the landscape caption overlapping the bottom of the lot.
+
+FRUIT FUSION
+The container is now a paper shopping bag with handles, folds, a paper interior and a reinforced bottom. Two pineapples combine into one jackfruit worth 1,000 merge points. Jackfruit is the tenth and final fruit; jackfruits do not merge further.
+
+Fruit artwork is aligned to its physical body rather than the transparent padding around each sprite. Decorative stems and leaves extend beyond the body. Multiple contact passes stabilize piles, and merging no longer kicks the new fruit upward.
+
+The game ends when the entire visible fruit lies outside the shopping bag. Newly dropped fruit gets a brief opportunity to enter. Fruit partly above the rim does not end the run merely for being near the top.
+
+CHECKS
+150 new lots completed in rules checks; 200 old-lot conversions (fresh and partially boarded) remained completable. Verified identical bay/lot scale, boarding, normal fruit drops, floor and pile support, pineapple-to-jackfruit merging, the terminal jackfruit tier, partial-rim survival, and above/side escape game-over. Rendered both games at phone portrait and landscape sizes, including a small 320px-wide screen. These are local JavaScript/canvas checks; actual Safari touch feel still needs device testing.
+
+ARTWORK
+games/fruitfusion/jackfruit.webp: generated with the built-in image-generation tool, exported as a 512px transparent WebP.
+Prompt: A single whole ripe jackfruit, nearly round plump oval, front view slightly three-quarter, short woody stem at top, richly detailed green-gold knobbled spiky rind with realistic highlights. Premium photorealistic fruit game sprite matching bright fresh photographed strawberry orange apple pineapple game pieces. Entire fruit fully visible with modest transparent padding. No sliced flesh, no extra fruit, no leaves, no floor, no cast shadow, no text, no face. Transparent background. Centered square composition, fruit takes about 85 percent of image.
+
+One update ZIP. No rollback. Other games are unchanged.
