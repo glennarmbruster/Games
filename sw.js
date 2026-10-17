@@ -1,25 +1,25 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.22",
+  "shell": "3.8.23",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
   "screwball": "4.6.0",
-  "carjam": "1.4.0",
+  "carjam": "1.5.0",
   "fruitfusion": "1.4.0",
-  "crashcourse": "1.4.0",
+  "crashcourse": "1.5.0",
   "ludolights": "1.3.0",
   "prismbreaker": "1.3.0",
-  "crowdcascade": "1.4.0",
+  "crowdcascade": "1.5.0",
   "neonbricks": "1.3.0",
   "harborescape": "1.3.0",
   "juiceslide": "1.3.0",
   "pixelvolley": "1.4.0",
-  "skyward": "1.4.0",
-  "citydash": "1.4.0",
-  "squadsprint": "1.4.0",
+  "skyward": "1.5.0",
+  "citydash": "1.5.0",
+  "squadsprint": "1.5.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -381,7 +381,8 @@ const GROUPS = {
     "games/citydash/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/citydash/neon-city.webp"
+    "games/citydash/neon-city.webp",
+    "games/arcade4/polish-kit.js"
   ],
   "ludolights": [
     "games/ludolights/",
@@ -408,7 +409,8 @@ const GROUPS = {
     "games/crowdcascade/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/crowdcascade/sky-bridge.webp"
+    "games/crowdcascade/sky-bridge.webp",
+    "games/arcade4/polish-kit.js"
   ],
   "neonbricks": [
     "games/neonbricks/",
@@ -453,7 +455,8 @@ const GROUPS = {
     "games/skyward/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/skyward/valley.webp"
+    "games/skyward/valley.webp",
+    "games/arcade4/polish-kit.js"
   ],
   "citydash": [
     "games/arcade4/scene-kit.js",
@@ -464,7 +467,8 @@ const GROUPS = {
     "games/citydash/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/citydash/neon-city.webp"
+    "games/citydash/neon-city.webp",
+    "games/arcade4/polish-kit.js"
   ],
   "squadsprint": [
     "games/squadsprint/",
@@ -477,7 +481,8 @@ const GROUPS = {
     "games/crowdcascade/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/crowdcascade/sky-bridge.webp"
+    "games/crowdcascade/sky-bridge.webp",
+    "games/arcade4/polish-kit.js"
   ],
   "skeehop": [
     "games/skeehop/",

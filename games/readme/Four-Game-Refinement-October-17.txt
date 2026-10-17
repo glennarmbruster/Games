@@ -1,0 +1,41 @@
+GOOBS GAMES — FOUR-GAME REFINEMENT — OCTOBER 17, 2026
+
+Install: extract this update into the main Goobs-Games directory, keeping its games/ folders and replacing the included files. Replace sw.js in the main directory. This is an incremental update over the last supplied updates. Existing saves remain in place. No rollback is included.
+
+CAR JAM 1.5.0
+- A better-sized lot in portrait, including small phones, while cars retain identical scale in the lot and pickup bays.
+- Seat counts on vehicle roofs, clearer direction markings, richer pavement and vehicle highlights.
+- Hint draws the exit route and searches ahead for a complete solution instead of choosing just any movable car. Search is bounded to keep it responsive; if no complete path is found, Undo is suggested.
+- Brief shake/highlight for a blocked car. Departing cars finish their animation before a new car can use the bay.
+- Existing vehicle sizes, rare eight-seat buses, passenger queues, levels and saved progress are preserved.
+
+CITY DASH 1.5.0 (includes Crash mode)
+- Relative drag steering: touching the screen no longer teleports the steering target to your finger.
+- Frame-rate-independent steering lean, a clearer forward camera, and a closer landscape view.
+- Storefronts, striped awnings, destination signs, more detailed trees, brighter skies and reflective paint lighting on WebGL devices.
+- Mild field-of-view change under acceleration and district milestones.
+- Highway bumps still slow the car without ending the run. Crash still uses the same controls and a 2,000-meter challenge.
+
+CROWD CASCADE 1.5.0
+- The same no-jump relative drag steering; one combined game, one mode.
+- Gate choices alternate sides between rows and courses. The current gate choice is highlighted.
+- More prominent runner count, concise status text, course progress strip, clearer enemy/upgrade labels and a finish arch.
+- Fuller trees, harbor boats, brighter lighting and a closer landscape camera.
+- Existing progress, shooting, power upgrades and bonus staircase retained.
+
+SKYWARD FLIGHT 1.5.0
+- Smooth tapered fuselage, shaped wings/tail, improved canopy and paint reflections.
+- Fuller evergreens and autumn trees, ridged hills, farm plots, fences, animated windmills and smoother clouds.
+- Open launch shelter with clearer sightlines, a higher flight camera and a closer landscape view.
+- All five upgrade paths, stars and flight records retained. Flight balance is unchanged.
+
+SCOPE
+Fruit Fusion, Juice Slide, other game code, shared navigation and the main menu are unchanged. The new visual helper is opt-in for these three 3D games. Service-worker versions and offline dependencies include legacy Crash Course and Squad Sprint redirects.
+
+CHECKS
+- All 100 generated Car Jam lots completed using the revised hint; boarding and Undo checked at five viewport sizes, including 320px phone width and iPad portrait/landscape.
+- City Dash: initial touch preserves steering; drag direction checked; Highway collision remains nonfatal; Crash scoring and completion checked.
+- Crowd Cascade: complete course, power pickup, bonus stairs, rewards and next-course advancement checked.
+- Skyward: existing upgrades retained; purchase, launch, boost, landing rewards and restart checked.
+- Actual game scene rendering exercised through the software fallback at phone and tablet portrait/landscape sizes; module syntax and offline dependencies checked.
+These checks do not replace Safari/WebGL and real touchscreen playtesting. Browser UI layout and WebGL lighting could not be verified on actual Apple hardware here.
