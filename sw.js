@@ -12,14 +12,14 @@ const VERSIONS = {
   "crashcourse": "1.5.0",
   "ludolights": "1.3.0",
   "prismbreaker": "1.3.0",
-  "crowdcascade": "1.5.0",
+  "crowdcascade": "2.0.0",
   "neonbricks": "1.3.0",
   "harborescape": "1.3.0",
   "juiceslide": "1.3.0",
   "pixelvolley": "1.4.0",
   "skyward": "1.5.0",
   "citydash": "1.5.0",
-  "squadsprint": "1.5.0",
+  "squadsprint": "2.0.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -409,6 +409,8 @@ const GROUPS = {
     "games/arcade4/crystal.webp"
   ],
   "crowdcascade": [
+    "games/crowdcascade/visuals.js",
+    "games/crowdcascade/bridge.css",
     "games/arcade4/scene-kit.js",
     "games/arcade4/three.module.min.js",
     "games/crashcourse/software-renderer.js",
@@ -479,6 +481,8 @@ const GROUPS = {
     "games/arcade4/polish-kit.js"
   ],
   "squadsprint": [
+    "games/crowdcascade/visuals.js",
+    "games/crowdcascade/bridge.css",
     "games/squadsprint/",
     "games/squadsprint/index.html",
     "games/arcade4/scene-kit.js",

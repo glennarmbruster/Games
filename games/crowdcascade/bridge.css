@@ -1,0 +1,6 @@
+.world-label{border:2px solid #ffffffb8;border-radius:6px;padding:4px 10px;box-shadow:0 3px 0 #113d6444,0 5px 12px #0a31582b;letter-spacing:.2px}
+.course-progress{left:27%;right:27%;top:10px;height:7px;background:#123e6c;border-color:#78bce3}
+.course-progress span{background:linear-gradient(90deg,#36c1ff,#a2f1ff)}
+.crowd-badge{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:7px 16px;border-radius:18px;background:#0751a9e8;border:1px solid #95d6ff;color:#fff;font-size:14px;font-weight:900;letter-spacing:.7px;white-space:nowrap;pointer-events:none;box-shadow:0 3px 12px #052e5566}
+.stage{background:#3185c6}.toast{top:30px!important;bottom:auto!important;max-width:92%;font-size:13px!important}
+@media (orientation:landscape){.crowd-badge{bottom:6px;font-size:12px;padding:5px 12px}.world-label{padding:3px 7px}}

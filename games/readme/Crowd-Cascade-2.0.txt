@@ -1,0 +1,29 @@
+Crowd Cascade 2.0 — Bridge squad update
+
+Upload these six files preserving folder paths. Accept the collection's update
+prompt and reload after uploading. No other game files need to be replaced.
+
+Changes
+- Stone bridge over blue water, viewed from behind the squad.
+- Dense blue runners and red enemy formations, with animated legs and weapons.
+- Up to 160 visible runners; camera follows the squad and adjusts for its size.
+- Continuous volleys that visibly travel to their targets before doing damage.
+- Shoot blue recruit gates to increase their reward, or choose purple multipliers.
+- Four weapon power levels from breakable gold crates.
+- A large final enemy and a seven-second gold-truck bonus round replace stairs.
+- Existing Crowd Cascade level and stars remain saved under the same key.
+- Existing controls and the single combined Crowd Cascade game are retained.
+
+How to play
+Drag to steer and aim. Shooting is automatic. Choose gates to recruit runners,
+shoot gold crates for stronger weapons, and clear or avoid red squads. Keep at
+least one runner alive through the course. Aim at the gold truck in the bonus
+round to earn extra stars. Later courses increase enemy strength.
+
+Validation
+Local simulations completed levels 1, 3, 10 and 30, including upgrade collection,
+bonus rewards, next course, loss/retry, preserved saves and paused simulation.
+Portrait and landscape Canvas fallback renders checked at phone/tablet sizes.
+Instanced crowd transforms and disposal checked separately. Actual Safari/WebGL
+rendering, touch feel, sound, and device performance still require device testing.
+Gameplay interpretation is based on the supplied screenshots, not a video.
