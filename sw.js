@@ -1,6 +1,7 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.26",
+  "shell": "3.8.27",
+  "marblegrove": "1.0.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -153,6 +154,7 @@ const GROUPS = {
     "icons/games/ludolights-v1.webp",
     "icons/games/prismbreaker-v1.webp",
     "icons/games/crowdcascade-v1.webp",
+    "icons/games/marblegrove-v1.webp",
     "icons/games/neonbricks-v1.webp",
     "icons/games/harborescape-v1.webp",
     "icons/games/juiceslide-v1.webp",
@@ -421,6 +423,17 @@ const GROUPS = {
     "games/arcade4/core.js",
     "games/crowdcascade/sky-bridge.webp",
     "games/arcade4/polish-kit.js"
+  ],
+  "marblegrove": [
+    "games/marblegrove/",
+    "games/marblegrove/index.html",
+    "games/marblegrove/style.css",
+    "games/marblegrove/game.js",
+    "games/marblegrove/engine.js",
+    "games/marblegrove/art.js",
+    "games/marblegrove/grove.webp",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
   ],
   "neonbricks": [
     "games/neonbricks/",

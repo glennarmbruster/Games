@@ -1,0 +1,54 @@
+MARBLE GROVE 1.0 — Goobs Games
+
+Install: upload all files in this ZIP, preserving their folder paths. This adds
+Marble Grove to the Arcade tab and its assets to offline caching. Accept the
+collection's update prompt, reload, and open the game online before testing in
+airplane mode. Apply this after the previously supplied collection updates.
+
+PLAY
+Tap a marble to shoot, or drag to aim and release. Match three or more of the
+same color. Tap the guardian or Swap to exchange the current and next colors.
+Matching groups pull together after clears and can produce combo multipliers.
+Slow time lasts eight seconds, once per level. Clear the entire chain before
+its leading marble reaches the hole. The counter includes marbles entering
+the track. There are no ads, purchases, or network dependencies during play.
+
+Levels continue offline using seeded marble arrangements, four spiral
+orientations, varying curves, longer chains and up to five colors. Color and
+pattern both identify marble types. The board adapts to portrait and landscape.
+Current chain, level, score and best score save locally. A missed shot has no
+separate life penalty; the moving chain provides the time pressure.
+
+VALIDATION
+Checked matches, nonmatching insertion, cascading combos, win/loss, rotation,
+slow time, save restoration and full level completion through simulated real
+tap/release shots. Checked Canvas renders at 320x568, 390x844, 844x390, 768x1024
+and 1024x768. Actual Safari touch play, audio and installed offline behavior
+still need device testing. No other gameplay files are changed.
+
+ARTWORK
+Built-in image generation produced grove.webp and marblegrove-v1.webp.
+Marbles, the guardian and the track are drawn by the game for sharp resizing.
+
+Background prompt:
+Create a polished premium casual game background texture, square, orthographic
+directly overhead view of a sunlit tropical temple garden. A broad softly
+textured lush emerald grassy clearing occupies the central 80 percent, open
+and fairly even brightness so a game track can be drawn over it. Along the
+outer edges only: richly detailed palm fronds, ferns, a few coral pink hibiscus
+flowers, weathered sandstone blocks with subtle turquoise inlays, tiny mossy
+stones. Delightful saturated natural color, soft dimensional ambient occlusion,
+expensive stylized 3D rendered mobile game aesthetic, detailed but clean. No
+marbles, no track, no roads, no frog, no people, no text, no UI, no watermark.
+Asset for a marble shooter game, center must remain uncluttered.
+
+Icon prompt:
+Square premium mobile puzzle game icon for Marble Grove. No text. Close-up of
+a charming ornate bronze and turquoise temple frog guardian aiming a luminous
+emerald marble; a sweeping curved chain of large glossy jewel marbles in ruby
+red, sapphire blue, emerald green and golden yellow around it, lush tropical
+leaves and a hint of golden carved temple track behind. Clear bold silhouette
+that reads at small size, colorful dimensional polished 3D illustration with
+rich highlights, subtle engraved patterns inside glass marbles, dynamic
+diagonal composition, saturated vivid colors, beautiful cinematic sunshine.
+Full bleed square, no border, no words, no watermark.
