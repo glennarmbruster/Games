@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.25",
+  "shell": "3.8.26",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -88,7 +88,8 @@ const VERSIONS = {
   "metro": "1.0.3",
   "contraption": "1.1.0",
   "rebus": "1.0.0",
-  "snowbound": "0.9-alpha.1"
+  "snowbound": "0.9-alpha.1",
+  "trafficjam": "1.0.0"
 };
 const GROUPS = {
   "handheld": [
@@ -246,7 +247,8 @@ const GROUPS = {
     "shared/new-games.css",
     "shared/new-games.js",
     "shared/layout-finish.css",
-    "shared/layout-finish.js"
+    "shared/layout-finish.js",
+    "icons/games/trafficjam-v1.webp"
   ],
   "zoodoku": [
     "games/zoodoku/modern.css",
@@ -2593,6 +2595,16 @@ const GROUPS = {
     "shared/new-games.css",
     "shared/new-games.js",
     "shared/goobs.js"
+  ],
+  "trafficjam": [
+    "games/trafficjam/",
+    "games/trafficjam/index.html",
+    "games/trafficjam/style.css",
+    "games/trafficjam/engine.js",
+    "games/trafficjam/art.js",
+    "games/trafficjam/game.js",
+    "games/arcade4/core.js",
+    "games/arcade4/common.css"
   ]
 };
 

@@ -1,0 +1,29 @@
+TRAFFIC JAM 1.0 — October 17, 2026
+
+Upload the contents of this ZIP into the main Goobs Games directory, preserving
+all folder paths. Replace index.html and sw.js when prompted. The new game is
+under Puzzles. Accept the collection's Update available prompt after syncing.
+Open the game while online once before using it offline.
+
+A separate road-clearing puzzle inspired by the supplied screenshots.
+Tap a car to follow its arrow at the next intersection, then continue straight
+out of town. Straight, left, right and U-turn arrows are included. The whole
+route must be clear before a car moves. A blocked car stays put and its blocker
+flashes coral. Clear all cars to advance.
+
+- Unlimited deterministic levels; layouts become denser and add more streets.
+- Guaranteed solution by construction, with free Hint and Undo.
+- No timer, lives, ads, purchases or locked power-ups.
+- Colorful top-down cars, dark asphalt, landscaped town blocks, smooth turns.
+- Integrated Restart / How to / Exit controls and Sound toggle.
+- Portrait and landscape layouts; level and remaining cars saved locally.
+- Dedicated Traffic Jam icon, Puzzles menu entry and offline cache group.
+
+Car Jam and the other games' gameplay are unchanged. Shared arcade core/style
+files are included as unchanged dependencies. No rollback ZIP included.
+
+Validation: native Canvas/JavaScript runtime checks solved the first 60 levels
+(1,326 cars). Five phone/tablet viewport sizes checked for tap transforms,
+blocked routes, hints, animation, undo, completion and next-level navigation.
+Save/restore and offline asset paths checked. This environment has no browser
+runtime; actual Safari/iPhone/iPad behavior and visual layout need device testing.
