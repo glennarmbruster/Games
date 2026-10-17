@@ -1,0 +1,2 @@
+City Dash — rebuilt highway racer
+Full 3D highway and moving traffic. Drag to steer continuously. The car accelerates automatically; Brake slows it and Nitro adds a rechargeable burst. Close passes award points. A collision ends the run. Previous best score is retained.

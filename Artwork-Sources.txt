@@ -1,0 +1,14 @@
+Built-in image generation was used for these project assets:
+games/fruitfusion/fruit-atlas.webp
+games/juiceslide/drinks-atlas.webp
+
+Fruit prompt: transparent 3-by-3 production sprite atlas of detailed realistic
+strawberry, tangerine, lemon, apple, peach, pear, grapes, watermelon and
+pineapple; consistent studio lighting; natural textures and dew; no faces or
+labels; isolated cells for use as game pieces.
+
+Drink prompt: transparent 4-by-3 production sprite atlas of twelve realistic
+beverages, each with a distinct vessel and ingredients: water tumbler, berry
+smoothie, orange juice, matcha mug, grape soda highball, coconut shell,
+pineapple cup, sunset hurricane, blue martini, diner milkshake, slush goblet,
+and lavender punch coupe. No numbers, lettering or faces; consistent view.

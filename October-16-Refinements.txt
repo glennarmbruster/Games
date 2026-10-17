@@ -1,0 +1,25 @@
+GOOBS GAMES — OCTOBER 16 EVENING REFINEMENT
+
+Upload this ZIP over the existing collection, preserving folders. index.html
+and sw.js go at the root. After syncing, accept the main collection update.
+
+The collection now shows Neon Bricks with Endless and Patterns modes, and
+Crowd Cascade with Crowd Run and Squad Assault modes. Old favorites migrate;
+old game URLs and save keys remain supported.
+
+City Dash and Skyward Flight were rebuilt. Crash Course has assisted steering
+and cruise. Pixel Volley now uses color matching, finite ammunition and waiting
+slots. Car Jam has different vehicle lengths/capacities on a straight lot.
+Fruit Fusion and Juice Slide have detailed generated artwork; Juice Slide
+shots reach the end when unobstructed. See the individual game readmes.
+
+Automated checks covered actual page scripts, Canvas fallback rendering,
+portrait/landscape startup and controls; Car Jam generated-lot solvability and
+full-level boarding; Juice Slide travel; fruit merges; brick difficulty and
+power controls; Pixel Volley matching/fire/ammo and rail movement; Skyward
+full flights and upgrades; both crowd modes through their finish; City Dash
+brake/nitro; Crash Course cruise/steering/recovery; offline file dependencies.
+
+These are code and rendering checks, not physical iPhone/iPad or full-browser
+play tests. WebGL appearance/performance, Safari layout and multitouch still
+need device testing. No numerical maturity rating is claimed.

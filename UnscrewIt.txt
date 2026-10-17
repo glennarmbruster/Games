@@ -1,0 +1,5 @@
+Screwball: Unscrew It — Version 1.0.0
+
+Choose Unscrew It from the Screwball mode screen. Tap colored screws to release the overlapping plates. Two trays sort screws in groups of three matching colors, and five holding holes temporarily store screws that cannot enter a tray. Clear every layer to advance.
+
+The mode has colorful metal workshop graphics without characters above the trays. Undo, Hint, restart, How to, Modes, and Exit are available. Progress is saved locally. The levels continue indefinitely in portrait and landscape.

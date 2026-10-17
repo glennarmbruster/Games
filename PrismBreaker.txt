@@ -1,0 +1,1 @@
+Prism Breaker is now the Patterns mode inside Neon Bricks. Its previous level and score remain under the original save key. Opening the old path still works.

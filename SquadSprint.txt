@@ -1,0 +1,1 @@
+Squad Sprint is now Squad Assault within Crowd Cascade. The collection has one Crowd Cascade icon. The old path redirects to its mode selector.

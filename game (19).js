@@ -1,0 +1,1 @@
+BrickArena.start('prism');

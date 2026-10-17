@@ -1,0 +1,2 @@
+Fruit Fusion — detailed fruit artwork
+Nine distinct fruit sprites replace the colored spheres. Larger fruit improve recognition on a phone. Drop matching fruit together to merge, and keep the jar from overflowing. Best score is retained.

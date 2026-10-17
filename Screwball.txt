@@ -1,0 +1,14 @@
+Screwball — Version 4.3.0
+Consistency Batch 2
+
+Brighter blue workshop selector with larger titles and copy. Shared navigation across Classic and Timber Tumble, including native dialogs. Classic landscape controls sit to the left of a larger scene. Sorting and timber physics unchanged.
+
+Install the complete Batch 2 ZIP after Batch 1, merging into the existing site root. Include sw.js and the shared presentation files. No save-key migrations, level changes or balance changes. The version is available in How to Play.
+
+
+REQUESTED CORRECTIONS 1 — 4.4.0
+Brighter blue, purple and warm accent colors across modes.
+Floating in-game Exit and blue menu styling applied. See Corrections1.txt for installation and testing.
+
+NEW MODE — 4.5.0
+Unscrew It adds layered metal plates and colored screw sorting to the Screwball mode selector. Existing Classic and Timber Tumble gameplay is unchanged. See UnscrewIt.txt for details.
