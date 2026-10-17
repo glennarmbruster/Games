@@ -1,0 +1,21 @@
+CAR JAM 2.0 — 3D TOWN — OCTOBER 17, 2026
+
+A new visual presentation based on your supplied Car Jam reference.
+
+WHAT CHANGED
+- Actual 3D vehicles with rounded bodies, windows, tires, lights and large white direction arrows.
+- Angled view of the lot, with five painted pickup spaces, animated waiting passengers, storefronts, striped awnings, trees and streetlights.
+- Cars remain the same apparent size in the lot and the pickup spaces.
+- Vehicles drive out toward the pickup area; passengers walk over to board; full vehicles depart.
+- Landscape places the pickup spaces beside the lot and moves scenery away from playable areas.
+- Taps select the 3D vehicle, with a forgiving footprint fallback.
+
+PRESERVED
+The existing passenger matching, two/four/six-seat vehicles, rare eight-seat bus, generated lots, look-ahead Hint, Undo and saved progress. No ads, locked paid bays or monetization added. Other games are unchanged.
+
+INSTALL
+Extract into your main Goobs-Games folder, preserving the included games/ folders and replacing the included files. Replace sw.js in the main directory. The 3D renderer and its offline dependencies are included. How to shows “Car Jam 2.0 · 3D town” so you can identify the new build.
+
+CHECKS
+Tested actual game JavaScript and scene rendering at 320x568, 390x844, 844x390, 768x1024 and 1024x768. Checked projected vehicle selection, boarding, departures, Hint, Undo, full-lot completion, advancing to the next lot, orientation changes during travel, saved-state restoration, and all five bay boundaries. Verified syntax and offline dependencies.
+These were local code/scene checks using the software renderer. Actual Safari/WebGL lighting, touch feel and device performance still need your iPhone/iPad test.

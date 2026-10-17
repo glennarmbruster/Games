@@ -1,13 +1,13 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.23",
+  "shell": "3.8.24",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
   "screwball": "4.6.0",
-  "carjam": "1.5.0",
+  "carjam": "2.0.0",
   "fruitfusion": "1.4.0",
   "crashcourse": "1.5.0",
   "ludolights": "1.3.0",
@@ -357,7 +357,9 @@ const GROUPS = {
     "games/carjam/index.html",
     "games/carjam/engine.js",
     "games/carjam/game.js",
-    "games/carjam/lot.webp",
+    "games/carjam/scene.js",
+    "games/carjam/renderer.js",
+    "games/arcade4/three.module.min.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js"
   ],
