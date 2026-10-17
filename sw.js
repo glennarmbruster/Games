@@ -1,13 +1,13 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.24",
+  "shell": "3.8.25",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
   "screwball": "4.6.0",
-  "carjam": "2.0.0",
+  "carjam": "2.1.0",
   "fruitfusion": "1.4.0",
   "crashcourse": "1.5.0",
   "ludolights": "1.3.0",

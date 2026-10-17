@@ -1,0 +1,16 @@
+CAR JAM 2.1 — VISUAL REFINEMENT
+
+Install over the Car Jam 2.0 update. Extract into the main Goobs-Games directory, preserving folders and replacing the included files. sw.js belongs in the main directory. How to now shows “Car Jam 2.1 · Bright town”.
+
+Changes:
+- Dark gray asphalt with subtle grain in WebGL.
+- Brighter matching colors and less washed-out lighting.
+- Reshaped compact cars and sedans, sloping cabin glass, hoods, mirrors, grilles, lights, tire/hub details and better bus trim.
+- Passengers now have hair, varied skin tones, faces, jackets, trousers and shoes.
+- Richer building colors, cornices, brick details, shop signs, doors, window boxes and striped awnings.
+- Pickup bays moved away from the jam, leaving a clear drive lane in portrait. Landscape bays and approach aisles are also farther from the lot.
+- Departure animation uses an aisle rather than driving straight across occupied pickup bays.
+
+The matching rules, generated lots, vehicle capacities, Hint, Undo and saved progress remain unchanged. Other games are untouched.
+
+Verification: local JavaScript and software-rendered scene checks covered five phone/tablet viewport sizes, selection, boarding, Undo, hints, full-lot completion, next level, rotation and saved-state restoration. Final layout checks verified bay boundaries and boarding in small portrait and landscape views. Actual Safari/WebGL appearance and device performance still need your device test.
