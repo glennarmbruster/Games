@@ -1,0 +1,10 @@
+SPLASH SORT MODE ART
+Generated with the built-in image-generation tool for this update. Exported as 640px WebP game assets.
+
+games/sort/assets/water-mode.webp
+Prompt: Use case: stylized-concept. Create a premium mobile puzzle game square mode icon for Water Sort: three large clear glass test tubes holding neatly separated vivid translucent layers of sapphire blue, coral red, sunshine yellow and turquoise liquid; one tilted glass tube pouring an elegant stream into another. Beautiful realistic studio glass refraction, bright polished rim highlights, tiny bubbles, convincing fluid meniscus. Deep blue and violet luminous background, very readable close-up composition, all tubes inside frame with small margin, luxury playful 3D rendered app art. No text, no letters, no people, no faces, no numbers, no border.
+
+games/sort/assets/balls-mode.webp
+Prompt: Use case: stylized-concept. Create a premium mobile puzzle game square mode icon for Ball Sort: three clear glass test tubes holding stacks of gorgeous glossy candy colored glass marbles, sapphire, coral, amber, turquoise and purple. A single shiny blue marble in a graceful transfer arc above the open tube. Strong bright studio reflection highlights, deep transparent jewel color, realistic curved glass, rich blue-violet background with subtle sparkles. Very readable large close-up mobile icon composition, all tubes fit within frame small margin. Luxury playful 3D rendered app art. No text, no letters, no people, no faces, no numbers, no border.
+
+All other new visual details in this update are rendered by the games' existing canvas or Three.js code. Existing third-party engine licenses remain applicable.

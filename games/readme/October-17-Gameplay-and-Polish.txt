@@ -1,0 +1,27 @@
+GOOBS GAMES — OCTOBER 17 GAMEPLAY & POLISH
+
+Install: extract this update into the main Goobs Games directory, preserving the folders and replacing matching files. index.html and sw.js belong in the main directory. Accept the collection's update prompt when offered, then reopen the games. Do not clear website data; that would remove saved progress.
+
+ARCADE
+City Dash — Curved roads, faster cruising and traffic, more colorful buildings, roadside trees and railings, wheel animation and nitro exhaust. Highway bumps briefly reduce speed but never end the drive. Crash Course is now City Dash's Crash mode: the same steering, Brake, Nitro and graphics, with a 2,000-meter impact-scoring challenge. Chain impacts within three seconds; Nitro doubles impact points. The Modes button also starts a fresh drive. Old Crash Course links open Crash mode; its collection favorite moves to City Dash.
+
+Crowd Cascade — One course and one mode. Gates grow the crowd, gold recruits join, runners automatically shoot enemies and upgrade crates, and survivors climb the bonus stairs. Crates raise firepower up to four during a course. Later courses increase enemy strength. The higher of previous Crowd/Squad levels carries forward. Added waterfront planters, paving, brighter gate frames and translucent panels. Squad Sprint links lead to this game.
+
+Pixel Volley — More detailed launchers, recoil, cabinet hardware, pixel highlights and break particles. Sixteen picture designs, including new owl, castle, turtle, robot, fish, cupcake and dragon designs. Pictures expand from 19x19 to 23x23 at design 10 and 27x27 at design 22. Existing finite ammunition, matching-color shots, rail and waiting-bench rules remain.
+
+Skyward Flight — More detailed plane bodies, wing ribs, canopy, landing gear and spinning propeller; villages, ponds and clouds. Five upgrade paths now: Catapult, Wings, Engine, Income and Twin Thrusters. Thrusters add visible engine pods, animated boost flames, stronger/longer boosts and an extra boost charge every two levels. Existing stars and upgrades are retained.
+
+PUZZLES
+Screwball / Unscrew It — Deeper plate edges, enamel reflections, brighter machined screw heads and polished trays. The matching finish also applies to Classic: lacquered materials, metal reflections, studio lighting and workshop background. Rules and level generation are unchanged. No people added.
+
+Splash Sort — Translucent liquid bands and streams, shinier marbles, new Water Sort and Ball Sort mode art. A ball in flight is no longer also drawn in its source tube. Sorting rules and saved progress are unchanged.
+
+UNCHANGED
+Fruit Fusion and Juice Slide are unchanged. Juice Slide's visible core loop matches the supplied recording: slide and aim drinks, collide/merge matching recipes, unlock drinks, keep the launch line clear. This is a comparison of the visible recording, not a claim of identical hidden physics or level balance.
+
+VERIFICATION
+Checked startup, rendering, controls, pause/help and game logic at portrait and landscape dimensions. Targeted checks covered nonfatal highway collisions; Crash scoring and finish; a full combined crowd course including a weapon upgrade and bonus stairs; thruster purchase, boost charges, flight landing and saved rewards; Pixel designs through 48; screw removal/undo; and Splash Sort ball counts during four transfer frames. Checked JavaScript syntax, service-worker cache lists and redirect dependencies. Fruit Fusion/Juice Slide files were compared byte-for-byte with the previous update.
+
+The checks use a local JavaScript/canvas harness and the 3D software fallback where needed. Actual Safari/WebGL rendering, touch feel and device performance still need iPhone/iPad testing.
+
+This is an update, not a complete collection backup. No rollback included.

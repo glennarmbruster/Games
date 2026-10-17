@@ -137,7 +137,7 @@ html.gg-fs-over .turnhint { top: auto; bottom: calc(env(safe-area-inset-bottom, 
 body .app{position:relative; margin-top:calc(env(safe-area-inset-top,0px) + 65px); height:calc(100% - env(safe-area-inset-top,0px) - 65px);padding-top:58px!important;}
 html.gg-fs-over .top{top:calc(env(safe-area-inset-top,0px) + 65px);padding-top:6px;}
 </style><link rel="stylesheet" href="../../shared/collection-ui.css"><link rel="stylesheet" href="../../shared/collection-batch2.css"><script defer src="../../shared/collection-batch2.js"></script><link rel="stylesheet" href="../../shared/corrections-1.css">
-<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script><link rel="stylesheet" href="readability.css"></head>
+<link rel="stylesheet" href="../../shared/portrait-safe.css"><link rel="stylesheet" href="../../shared/bottom-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script><link rel="stylesheet" href="readability.css"><link rel="stylesheet" href="workshop-finish.css"></head>
 <body><nav class="classic-nav"><a href="../../index.html" id="classicExit">Exit</a><a href="index.html" id="classicCollection">Screwball menu →</a></nav>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="sb-logo" viewBox="0 0 100 100"><defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#7a5cff"/></linearGradient></defs>
@@ -1268,11 +1268,13 @@ var SBRender = (function () {
   function create(THREE, canvas, screwColors) {
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 0);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
     var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a93a8, 1.2));
     var sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(-5, 10, 8); scene.add(sun);
-    var fill = new THREE.DirectionalLight(0xdfe8ff, 0.5); fill.position.set(6, 3, -6); scene.add(fill);
+    var fill = new THREE.DirectionalLight(0xc4eaff, 1.1); fill.position.set(6, 3, -6); scene.add(fill);
+    // Softbox reflections illuminate lacquer and machined screw heads.
+    var studio=document.createElement('canvas');studio.width=512;studio.height=256;var studioCtx=studio.getContext('2d');var studioGlow=studioCtx.createLinearGradient(0,0,0,256);studioGlow.addColorStop(0,'#dcefff');studioGlow.addColorStop(.48,'#87a8c9');studioGlow.addColorStop(.52,'#253c62');studioGlow.addColorStop(1,'#17243b');studioCtx.fillStyle=studioGlow;studioCtx.fillRect(0,0,512,256);studioCtx.fillStyle='#f6fbff';studioCtx.fillRect(45,35,100,66);studioCtx.fillStyle='#b6d8ff';studioCtx.fillRect(285,53,68,100);var reflection=new THREE.CanvasTexture(studio);reflection.mapping=THREE.EquirectangularReflectionMapping;reflection.colorSpace=THREE.SRGBColorSpace;scene.environment=reflection;
     var root = new THREE.Group(); scene.add(root);
     var W = 1, H = 1, st = null, raf = 0, tapCb = null;
     var HOME_YAW = 0.55, HOME_PITCH = 0.42, zoom = 1, vyaw = 0, vpitch = 0, dist = 20, center = new THREE.Vector3();
@@ -1342,18 +1344,18 @@ var SBRender = (function () {
       var t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;surfaceMaps[kind]=t;return t;
     }
     function material(p) {
-      var o = { color: new THREE.Color(p.color), roughness: 0.55, metalness: 0 };
+      var o = { color: new THREE.Color(p.color), roughness: 0.34, metalness: 0.08, clearcoat: 0.65, clearcoatRoughness: 0.18, envMapIntensity: 0.7 };
       switch (p.mat) {
-        case 'wood': o.roughness = 0.75; break;
-        case 'metal': o.roughness = 0.35; o.metalness = 0.45; break;
+        case 'wood': o.roughness = 0.48; o.clearcoat=.45; break;
+        case 'metal': o.roughness = 0.24; o.metalness = 0.6; break;
         case 'glass': o.roughness = 0.08; o.metalness = 0.1; o.transparent = true; o.opacity = 0.38; o.depthWrite = false; break;
-        case 'fabric': o.roughness = 0.95; break;
+        case 'fabric': o.roughness = 0.95; o.clearcoat=0; break;
         case 'plastic': o.roughness = 0.3; break;
-        case 'leaf': o.roughness = 0.9; break;
+        case 'leaf': o.roughness = 0.9; o.clearcoat=0; break;
         case 'glow': o.roughness = 0.4; o.emissive = new THREE.Color(p.color); o.emissiveIntensity = 0.55; break;
       }
       if(['wood','fabric','roof','brick','art','clock','stone'].indexOf(p.mat)>=0){o.map=surfaceMap(p.mat);if(p.mat==='art'||p.mat==='clock')o.color=new THREE.Color('#ffffff');}
-      var mt = new THREE.MeshStandardMaterial(o);
+      var mt = new THREE.MeshPhysicalMaterial(o);
       mt.userData = { base: o.emissive ? o.emissive.getHex() : 0, glow: o.emissiveIntensity || 0 };
       return mt;
     }
@@ -1371,7 +1373,7 @@ var SBRender = (function () {
       });
       return g;
     })();
-    var headMat = new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.08 }), slotMat = new THREE.MeshStandardMaterial({ color: 0x1b2130, roughness: 0.6 });
+    var headMat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, metalness: 0.42, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.15 }), slotMat = new THREE.MeshStandardMaterial({ color: 0x1b2130, roughness: 0.6 });
     // each color's mark on top of its heads (2.3.0): one instanced flat mark per color, in place of the cross slot
     var symGeo = new THREE.PlaneGeometry(HEAD_R * 1.7, HEAD_R * 1.7); symGeo.rotateX(-Math.PI / 2); symGeo.translate(0, HEAD_H / 2 + 0.004, 0);
     var symMats = (window.SB ? SB.SCREWS : []).map(function (sc) {

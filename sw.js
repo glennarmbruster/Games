@@ -1,25 +1,25 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.20",
+  "shell": "3.8.21",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
-  "screwball": "4.5.1",
+  "screwball": "4.6.0",
   "carjam": "1.3.0",
   "fruitfusion": "1.3.0",
-  "crashcourse": "1.3.0",
+  "crashcourse": "1.4.0",
   "ludolights": "1.3.0",
   "prismbreaker": "1.3.0",
-  "crowdcascade": "1.3.0",
+  "crowdcascade": "1.4.0",
   "neonbricks": "1.3.0",
   "harborescape": "1.3.0",
   "juiceslide": "1.3.0",
-  "pixelvolley": "1.3.0",
-  "skyward": "1.3.0",
-  "citydash": "1.3.0",
-  "squadsprint": "1.3.0",
+  "pixelvolley": "1.4.0",
+  "skyward": "1.4.0",
+  "citydash": "1.4.0",
+  "squadsprint": "1.4.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -44,7 +44,7 @@ const VERSIONS = {
   "siege": "1.5.8",
   "hoops": "1.4.6",
   "beacon": "0.7.7",
-  "sort": "2.2.5",
+  "sort": "2.3.0",
   "triple": "2.2.8",
   "pinball": "2.2.6",
   "parking": "2.1.6",
@@ -350,6 +350,7 @@ const GROUPS = {
     "shared/layout-finish.css",
     "shared/layout-finish.js",
     "games/screwball/workshop.webp",
+    "games/screwball/workshop-finish.css"
   ],
   "carjam": [
     "games/carjam/",
@@ -358,12 +359,36 @@ const GROUPS = {
     "games/carjam/game.js",
     "games/carjam/lot.webp",
     "games/arcade4/common.css",
-    "games/arcade4/core.js",
+    "games/arcade4/core.js"
   ],
-  "fruitfusion": ["games/fruitfusion/fruit-atlas.webp", "games/fruitfusion/", "games/fruitfusion/index.html", "games/fruitfusion/game.js", "games/arcade4/common.css", "games/arcade4/core.js"],
+  "fruitfusion": [
+    "games/fruitfusion/fruit-atlas.webp",
+    "games/fruitfusion/",
+    "games/fruitfusion/index.html",
+    "games/fruitfusion/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
+  ],
   "crashcourse": [
-    "games/arcade4/scene-kit.js","games/crashcourse/", "games/crashcourse/index.html", "games/crashcourse/game.js", "games/crashcourse/style.css", "games/crashcourse/arena.webp", "games/crashcourse/physics.js", "games/crashcourse/software-renderer.js", "games/arcade4/three.module.min.js", "games/arcade4/cannon-es.min.js", "games/arcade4/common.css", "games/arcade4/core.js"],
-  "ludolights": ["games/ludolights/", "games/ludolights/index.html", "games/ludolights/game.js", "games/arcade4/common.css", "games/arcade4/core.js"],
+    "games/crashcourse/",
+    "games/crashcourse/index.html",
+    "games/arcade4/scene-kit.js",
+    "games/arcade4/three.module.min.js",
+    "games/crashcourse/software-renderer.js",
+    "games/citydash/",
+    "games/citydash/index.html",
+    "games/citydash/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js",
+    "games/citydash/neon-city.webp"
+  ],
+  "ludolights": [
+    "games/ludolights/",
+    "games/ludolights/index.html",
+    "games/ludolights/game.js",
+    "games/arcade4/common.css",
+    "games/arcade4/core.js"
+  ],
   "prismbreaker": [
     "games/prismbreaker/",
     "games/prismbreaker/index.html",
@@ -371,7 +396,7 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/arcade4/brick-engine.js",
-    "games/arcade4/crystal.webp",
+    "games/arcade4/crystal.webp"
   ],
   "crowdcascade": [
     "games/arcade4/scene-kit.js",
@@ -391,7 +416,7 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/arcade4/brick-engine.js",
-    "games/arcade4/crystal.webp",
+    "games/arcade4/crystal.webp"
   ],
   "harborescape": [
     "games/harborescape/",
@@ -401,7 +426,8 @@ const GROUPS = {
     "games/arcade4/core.js",
     "games/harborescape/ocean.webp"
   ],
-  "juiceslide": ["games/juiceslide/drinks-atlas.webp", 
+  "juiceslide": [
+    "games/juiceslide/drinks-atlas.webp",
     "games/juiceslide/",
     "games/juiceslide/index.html",
     "games/juiceslide/game.js",
@@ -415,7 +441,7 @@ const GROUPS = {
     "games/pixelvolley/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/pixelvolley/cabinet.webp",
+    "games/pixelvolley/cabinet.webp"
   ],
   "skyward": [
     "games/arcade4/scene-kit.js",
@@ -426,7 +452,7 @@ const GROUPS = {
     "games/skyward/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/skyward/valley.webp",
+    "games/skyward/valley.webp"
   ],
   "citydash": [
     "games/arcade4/scene-kit.js",
@@ -437,15 +463,20 @@ const GROUPS = {
     "games/citydash/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/citydash/neon-city.webp",
+    "games/citydash/neon-city.webp"
   ],
   "squadsprint": [
     "games/squadsprint/",
     "games/squadsprint/index.html",
-    "games/squadsprint/game.js",
+    "games/arcade4/scene-kit.js",
+    "games/arcade4/three.module.min.js",
+    "games/crashcourse/software-renderer.js",
+    "games/crowdcascade/",
+    "games/crowdcascade/index.html",
+    "games/crowdcascade/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/squadsprint/sky-causeway.webp",
+    "games/crowdcascade/sky-bridge.webp"
   ],
   "skeehop": [
     "games/skeehop/",
@@ -827,6 +858,9 @@ const GROUPS = {
     "games/sort/assets/marble-studio.webp",
     "games/sort/index.html",
     "games/sort/studio.css",
+    "games/sort/mode-art.js",
+    "games/sort/assets/water-mode.webp",
+    "games/sort/assets/balls-mode.webp",
     "shared/remaining-navigation.js",
     "shared/remaining-navigation.css",
     "shared/menu-polish.css"
@@ -2553,6 +2587,7 @@ const GROUPS = {
     "shared/goobs.js"
   ]
 };
+
 const PREFIX = 'goobs-';
 const cacheName = (g) => PREFIX + g + '-' + VERSIONS[g];
 const CURRENT = Object.keys(GROUPS).map(cacheName);

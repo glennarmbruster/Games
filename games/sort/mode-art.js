@@ -1,0 +1,2 @@
+/* Artwork only: original mode switch and saved progress remain in charge. */
+(function(){'use strict';function install(){['water','balls'].forEach(function(mode){var image=document.querySelector('.collection-card[data-pick="'+mode+'"] .collection-art');if(image){image.src='assets/'+mode+'-mode.webp';image.style.objectFit='cover';image.style.filter='none';}});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();})();

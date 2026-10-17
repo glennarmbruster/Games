@@ -1,0 +1,8 @@
+/* Shared workshop finish, scoped to Screwball's two color-sorting modes. */
+:root{--sb-stage:linear-gradient(145deg,#284b80cc,#1a2c5599),url(workshop.webp) center/cover}
+:root[data-theme="dark"],:root[data-theme="blue"]{--sb-stage:linear-gradient(145deg,#172d58bf,#14234199),url(workshop.webp) center/cover}
+.head{border-color:#e4efff;box-shadow:inset 2px 2px 3px #ffffffb0,inset -3px -4px 5px #11244377,0 2px 3px #06122966}
+.box{border:1px solid #d6e8ff80;box-shadow:inset 0 2px 1px #fff8,inset 0 -4px 5px #10244b55,0 4px 9px #10244b33}
+.tray,.reserve{border-color:#c3d9f8a0;background:linear-gradient(145deg,#41649bd9,#1a3261f0);box-shadow:inset 0 2px 1px #ffffff66,inset 0 -3px 4px #091b37aa,0 5px 12px #0004}
+.hole.filled{background:radial-gradient(circle at 28% 22%,#fff 0%,var(--c) 28%,var(--c) 57%,#233962 100%);border-color:#e6f2ff;box-shadow:inset 0 1px 2px #fff,0 2px 4px #061531aa}
+.boardwrap{border-color:#b3d0ee;box-shadow:inset 0 2px #fff8,0 10px 25px #04102a88}
