@@ -5,7 +5,7 @@ let V,hero,heroRoot,events=[],deco=[],shots=[],fx=[],labels=[],phase='ready',cou
 let fingerX=0,fingerTarget=0,progress,badge,bonusTruck,bonusTime=0,bonusHits=0,bonusAward=0,formationWidth=2;
 const shotGeo=new T.BoxGeometry(.075,.075,.8),shotMats=['#fff9c2','#a8ff68','#65f5ff','#e57eff'].map(c=>new T.MeshBasicMaterial({color:c}));
 function label(text,color){const el=document.createElement('div');el.className='world-label';el.textContent=text;el.style.background=color;document.getElementById('stage').appendChild(el);labels.push(el);return el;}
-function placeLabel(el,p){const v=p.clone().project(V.camera);el.hidden=v.z>1||v.z<0||v.y>.94||v.y<-.94||Math.abs(v.x)>1.05;el.style.left=(v.x*.5+.5)*A.w+'px';el.style.top=(-v.y*.5+.5)*A.h+'px';el.style.fontSize=Math.max(13,Math.min(23,650/p.distanceTo(V.camera.position)))+'px';}
+function placeLabel(el,p){const v=p.clone().project(V.camera),r=A.viewport,px=(v.x*.5+.5)*(r?r.fullW:A.w),py=(-v.y*.5+.5)*(r?r.fullH:A.h);el.hidden=v.z>1||v.z<0||Math.abs(v.x)>1.05||(r?(py<r.y+16||py>r.y+r.h-16):(v.y>.94||v.y<-.94));el.style.left=px+'px';el.style.top=py+'px';el.style.fontSize=Math.max(13,Math.min(23,650/p.distanceTo(V.camera.position)))+'px';}
 function init(){if(!A.data.unified){try{const old=JSON.parse(localStorage.getItem('goobs.squadsprint.v1'));A.data.level=Math.max(A.data.level||1,old&&old.level||1);}catch(e){}A.data.unified=true;A.save();}A.data.level=Math.max(1,Number(A.data.level)||1);
  V=view(document.getElementById('board'),'#3185c6');V.scene.fog=new T.Fog('#3185c6',85,190);V.sun.intensity=2;deco=bridge(V.scene);
  hero=formation(V.scene,'#1676ec',MAX,!!V.renderer.isWebGLRenderer);heroRoot=hero.root;

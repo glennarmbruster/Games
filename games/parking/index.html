@@ -64,7 +64,7 @@ html.gg-fs .stage { margin: 0; border-radius: 0; }
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script></head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/layout-finish.css"><script defer src="../../shared/layout-finish.js"></script><link rel="stylesheet" href="fullscreen.css"></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="le-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#4a5568"/>
@@ -440,7 +440,7 @@ var LESound = (function () {
   function fit() { var r = $('stage').getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1); W = Math.max(100, r.width); H = Math.max(100, r.height); cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); layout(); }
   // full screen: across, the margin is just the road (0.8 of a square each side) plus a sliver of grass, because the lot
   // is width-bound on a phone (was a whole square each side); up and down it keeps the full square
-  function layout() { if (!g) return; cs = Math.min(W / (g.w + (g.challenge?1.75:.8)), H / (g.h + 1), 100); ox = (W - g.w * cs) / 2; oy = (H - g.h * cs) / 2; cache = {}; }
+  function layout() { if (!g) return; var y=0,bottom=0;if(document.querySelector){var nav=document.querySelector('.lot-modes'),tools=document.querySelector('.toolbar'),stage=$('stage').getBoundingClientRect();if(nav&&tools){y=Math.max(0,nav.getBoundingClientRect().bottom-stage.top+8);bottom=Math.max(0,stage.bottom-tools.getBoundingClientRect().top+8);document.body.style.setProperty('--lot-top',y+'px');}}var h=Math.max(100,H-y-bottom);cs = Math.min(W / (g.w + (g.challenge?1.75:.8)), h / (g.h + 1), 100); ox = (W - g.w * cs) / 2; oy = y+(h - g.h * cs) / 2; cache = {}; }
   function cellAt(px, py) { var x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs); return [x, y]; }
   function carAt(px, py) {
     var p = cellAt(px, py), best = -1;

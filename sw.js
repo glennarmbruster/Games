@@ -1,26 +1,26 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.27",
-  "marblegrove": "1.0.0",
+  "shell": "3.8.28",
+  "marblegrove": "1.1.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
-  "screwball": "4.6.0",
-  "carjam": "2.3.0",
-  "fruitfusion": "1.4.0",
-  "crashcourse": "1.5.0",
-  "ludolights": "1.3.0",
-  "prismbreaker": "1.3.0",
-  "crowdcascade": "2.0.0",
-  "neonbricks": "1.3.0",
-  "harborescape": "1.3.0",
-  "juiceslide": "1.3.0",
-  "pixelvolley": "1.4.0",
-  "skyward": "1.5.0",
-  "citydash": "1.5.0",
-  "squadsprint": "2.0.0",
+  "screwball": "4.6.1",
+  "carjam": "2.3.1",
+  "fruitfusion": "1.4.1",
+  "crashcourse": "1.5.1",
+  "ludolights": "1.3.1",
+  "prismbreaker": "1.3.1",
+  "crowdcascade": "2.0.1",
+  "neonbricks": "1.3.1",
+  "harborescape": "1.3.1",
+  "juiceslide": "1.3.1",
+  "pixelvolley": "1.4.1",
+  "skyward": "1.5.1",
+  "citydash": "1.5.1",
+  "squadsprint": "2.0.1",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -48,7 +48,7 @@ const VERSIONS = {
   "sort": "2.3.0",
   "triple": "2.2.8",
   "pinball": "2.2.6",
-  "parking": "2.2.0",
+  "parking": "2.2.1",
   "minigolf": "2.3.6",
   "board": "1.3.3",
   "buzz": "2.4.7",
@@ -90,7 +90,7 @@ const VERSIONS = {
   "contraption": "1.1.0",
   "rebus": "1.0.0",
   "snowbound": "0.9-alpha.1",
-  "trafficjam": "1.2.0"
+  "trafficjam": "1.2.1"
 };
 const GROUPS = {
   "handheld": [
@@ -354,7 +354,8 @@ const GROUPS = {
     "shared/layout-finish.css",
     "shared/layout-finish.js",
     "games/screwball/workshop.webp",
-    "games/screwball/workshop-finish.css"
+    "games/screwball/workshop-finish.css",
+    "games/screwball/unscrew-fullscreen.css"
   ],
   "carjam": [
     "games/carjam/",
@@ -369,7 +370,9 @@ const GROUPS = {
     "games/arcade4/vehicles-lot-v2.png",
     "games/arcade4/three.module.min.js",
     "games/arcade4/common.css",
-    "games/arcade4/core.js"
+    "games/arcade4/core.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "fruitfusion": [
     "games/fruitfusion/fruit-atlas.webp",
@@ -378,7 +381,9 @@ const GROUPS = {
     "games/fruitfusion/index.html",
     "games/fruitfusion/game.js",
     "games/arcade4/common.css",
-    "games/arcade4/core.js"
+    "games/arcade4/core.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "crashcourse": [
     "games/crashcourse/",
@@ -392,14 +397,18 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/citydash/neon-city.webp",
-    "games/arcade4/polish-kit.js"
+    "games/arcade4/polish-kit.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "ludolights": [
     "games/ludolights/",
     "games/ludolights/index.html",
     "games/ludolights/game.js",
     "games/arcade4/common.css",
-    "games/arcade4/core.js"
+    "games/arcade4/core.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "prismbreaker": [
     "games/prismbreaker/",
@@ -408,7 +417,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/arcade4/brick-engine.js",
-    "games/arcade4/crystal.webp"
+    "games/arcade4/crystal.webp",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "crowdcascade": [
     "games/crowdcascade/visuals.js",
@@ -422,7 +433,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/crowdcascade/sky-bridge.webp",
-    "games/arcade4/polish-kit.js"
+    "games/arcade4/polish-kit.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "marblegrove": [
     "games/marblegrove/",
@@ -433,7 +446,15 @@ const GROUPS = {
     "games/marblegrove/art.js",
     "games/marblegrove/grove.webp",
     "games/arcade4/common.css",
-    "games/arcade4/core.js"
+    "games/arcade4/core.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js",
+    "games/marblegrove/guardian.webp",
+    "games/marblegrove/ruby.webp",
+    "games/marblegrove/sapphire.webp",
+    "games/marblegrove/emerald.webp",
+    "games/marblegrove/amber.webp",
+    "games/marblegrove/amethyst.webp"
   ],
   "neonbricks": [
     "games/neonbricks/",
@@ -442,7 +463,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/arcade4/brick-engine.js",
-    "games/arcade4/crystal.webp"
+    "games/arcade4/crystal.webp",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "harborescape": [
     "games/harborescape/",
@@ -450,7 +473,9 @@ const GROUPS = {
     "games/harborescape/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/harborescape/ocean.webp"
+    "games/harborescape/ocean.webp",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "juiceslide": [
     "games/juiceslide/drinks-atlas.webp",
@@ -459,7 +484,9 @@ const GROUPS = {
     "games/juiceslide/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/juiceslide/beach-board.webp"
+    "games/juiceslide/beach-board.webp",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "pixelvolley": [
     "games/pixelvolley/",
@@ -467,7 +494,9 @@ const GROUPS = {
     "games/pixelvolley/game.js",
     "games/arcade4/common.css",
     "games/arcade4/core.js",
-    "games/pixelvolley/cabinet.webp"
+    "games/pixelvolley/cabinet.webp",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "skyward": [
     "games/arcade4/scene-kit.js",
@@ -479,7 +508,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/skyward/valley.webp",
-    "games/arcade4/polish-kit.js"
+    "games/arcade4/polish-kit.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "citydash": [
     "games/arcade4/scene-kit.js",
@@ -491,7 +522,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/citydash/neon-city.webp",
-    "games/arcade4/polish-kit.js"
+    "games/arcade4/polish-kit.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "squadsprint": [
     "games/crowdcascade/visuals.js",
@@ -507,7 +540,9 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/crowdcascade/sky-bridge.webp",
-    "games/arcade4/polish-kit.js"
+    "games/arcade4/polish-kit.js",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ],
   "skeehop": [
     "games/skeehop/",
@@ -949,7 +984,8 @@ const GROUPS = {
     "shared/remaining-navigation.css",
     "shared/menu-polish.css",
     "shared/layout-finish.css",
-    "shared/layout-finish.js"
+    "shared/layout-finish.js",
+    "games/parking/fullscreen.css"
   ],
   "minigolf": [
     "games/minigolf/",
@@ -2630,7 +2666,9 @@ const GROUPS = {
     "games/arcade4/vehicles-lot-v2.png",
     "games/trafficjam/game.js",
     "games/arcade4/core.js",
-    "games/arcade4/common.css"
+    "games/arcade4/common.css",
+    "games/arcade4/fullscreen.css",
+    "games/arcade4/fullscreen.js"
   ]
 };
 

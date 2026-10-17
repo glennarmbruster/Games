@@ -1,0 +1,16 @@
+/* Local opt-in: preserve the collection's controls while letting asphalt fill the screen. */
+html body #app.app{position:fixed!important;inset:0!important;display:block!important;padding:0!important;margin:0!important;width:100%!important;max-width:none!important;height:100%!important;height:100dvh!important;overflow:hidden}
+html body #stagewrap{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important}
+html body #stage{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html body #app>.top,html body #app>.lot-modes,html body #app>.toolbar{position:absolute!important;left:max(8px,env(safe-area-inset-left,0px))!important;right:max(8px,env(safe-area-inset-right,0px))!important;z-index:10!important;margin:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;min-height:0!important;width:auto!important}
+html body #app>.top{top:calc(env(safe-area-inset-top,0px) + 7px)!important;height:40px!important;gap:5px!important}
+html body #app>.lot-modes{top:calc(env(safe-area-inset-top,0px) + 54px)!important;display:flex!important}
+html body #app>.lot-modes>*{min-height:36px;padding:5px 8px;background:#1c3446ed;color:#fff;border-color:#ffffff66}
+html body #app>.lot-modes>.active{background:#286faf;color:#fff}
+html body #app>.toolbar{bottom:calc(env(safe-area-inset-bottom,0px) + 7px)!important;top:auto!important;display:flex!important;flex-wrap:wrap!important;gap:5px!important}
+html body #app>.toolbar>button,html body #integratedGameNav button{min-height:38px!important;height:auto!important;padding:7px 8px!important;font-size:12px!important;flex:1 1 0!important;max-width:none!important;white-space:nowrap}
+html body #app .top button,html body #app .toolbar button,html body #app .ggpill{background:#1c3446ed!important;color:#fff!important;border:1px solid #ffffff66!important;box-shadow:0 2px 7px #0004!important}
+html body #app .top .ggpill small{color:#d9eaff!important}
+html body #app .top .brand{padding:0 4px!important}
+html body #app .toast{top:calc(var(--lot-top,105px) + 4px)!important}
+@media(max-width:380px){html body #app .ttpills .ggpill{font-size:12px;padding:5px}html body #app .ttpills .ggpill small{display:none}}

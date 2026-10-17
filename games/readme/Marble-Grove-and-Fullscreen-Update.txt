@@ -1,0 +1,61 @@
+GOOBS GAMES — MARBLE GROVE ART + RECENT GAMES FULLSCREEN
+October 17, 2026
+
+INSTALL
+Upload every file in this ZIP over the current collection, preserving paths.
+This is an update, not a complete collection. It assumes the previous game
+updates, including Marble Grove 1.0, have already been installed.
+Accept the collection's update prompt and reload. Open the updated games online
+once before testing offline. No rollback is included.
+
+MARBLE GROVE 1.1
+New original artwork: detailed bronze/turquoise guardian, glossy patterned
+ruby, sapphire, emerald, amber and amethyst marbles. The curved channel has
+warmer highlights, a deeper inner edge and stronger ground shadows. The grove
+fills the entire display. The existing icon is retained.
+
+FULLSCREEN LAYOUT PASS — 14 GAMES
+Car Jam
+City Dash (including the Crash Course link/mode)
+Crowd Cascade (including the Squad Sprint link)
+Fruit Fusion
+Harbor Escape
+Juice Slide
+Lot Escape
+Ludo Lights
+Marble Grove
+Neon Bricks (including the Prism Breaker entry)
+Pixel Volley
+Skyward Flight
+Traffic Jam
+Unscrew It (within Screwball)
+
+The scene now reaches every screen edge. Exit, pause, sound and game controls
+float over scenery. Interactive boards are fitted between the measured control
+bounds; narrow screens can wrap the controls without covering the game.
+
+The 3D games extend their cameras into the surrounding scenery while keeping
+vehicles and other active objects in the safe play area. Car Jam retains its
+waiting count in the header, away from the passenger queue. Unscrew It keeps
+sorting trays visible, with a side arrangement in landscape. Lot Escape keeps
+its mode selector visible above the lot. Existing save keys and gameplay rules
+are retained. Previously approved exceptions in other games are untouched.
+
+CHECKS
+Local Canvas/JavaScript checks covered 13 recent game entry points at five
+phone/tablet sizes (320x568, 390x844, 844x390, 768x1024, 1024x768), fullscreen
+coordinate conversion and projected Car Jam taps. Unscrew It board/tray bounds,
+screw selection and Undo passed at those same sizes. Lot Escape's two modes
+render within the control bounds; all 40 tested Classic levels can be solved.
+Marble Grove passed matching, cascading combos, win/loss, rotation, saved run
+restoration, Swap, Slow and an entire level completed through simulated shots.
+Concurrent Car Jam and Traffic Jam dispatch still completes their levels.
+
+These are local runtime and Canvas checks, using measured-layout stand-ins;
+they are not a claim of completed Safari device testing. Browser installation
+was unavailable in this workspace. Please check the floating controls, touch
+feel, portrait/landscape rotation and offline loading on your iPhone/iPad.
+
+ARTWORK
+The new Marble Grove sprite sheet was produced with built-in image generation.
+Six transparent sprites were cropped and optimized to WebP for game use.

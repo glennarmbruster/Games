@@ -1,0 +1,11 @@
+(function(){'use strict';
+ var A=window.Arcade,start=A.start,rect={x:0,y:0,w:1,h:1,fullW:1,fullH:1},background=null;
+ var image=document.body.getAttribute('data-scene');if(image){background=new Image();background.src=image;}
+ function bounds(w,h){var bar=document.querySelector('.bar').getBoundingClientRect(),controls=document.querySelector('.controls').getBoundingClientRect(),stage=document.querySelector('.stage').getBoundingClientRect();var x=Math.max(8,bar.left-stage.left),y=Math.max(8,bar.bottom-stage.top+8),bottom=Math.max(8,stage.bottom-controls.top+8);return{x:x,y:y,w:Math.max(100,w-2*x),h:Math.max(100,h-y-bottom),fullW:w,fullH:h,bottom:bottom};}
+ function scenery(c,w,h){var g=c.createLinearGradient(0,0,w,h),col=document.body.getAttribute('data-color')||'#153952';g.addColorStop(0,col);g.addColorStop(1,'#0b2239');c.fillStyle=g;c.fillRect(0,0,w,h);if(background&&background.complete&&background.naturalWidth){var k=Math.max(w/background.naturalWidth,h/background.naturalHeight),sw=w/k,sh=h/k;c.drawImage(background,(background.naturalWidth-sw)/2,(background.naturalHeight-sh)/2,sw,sh,0,0,w,h);}}
+ A.start=function(game){var resize=game.resize,draw=game.draw;game.resize=function(w,h){rect=bounds(w,h);A.viewport=rect;A.w=rect.w;A.h=rect.h;document.body.style.setProperty('--play-top',rect.y+'px');document.body.style.setProperty('--play-bottom',rect.bottom+'px');if(resize)resize(rect.w,rect.h);};
+  game.draw=function(c,w,h){if(game.context==='webgl'){draw(c,rect.w,rect.h);return;}if(game.scenery)game.scenery(c,w,h);else scenery(c,w,h);c.save();c.translate(rect.x,rect.y);c.beginPath();c.rect(0,0,rect.w,rect.h);c.clip();draw(c,rect.w,rect.h);c.restore();};
+  ['down','drag','up'].forEach(function(k){var f=game[k];if(f)game[k]=function(x,y){if(k==='down'&&(x<rect.x||x>rect.x+rect.w||y<rect.y||y>rect.y+rect.h))return;f(x-rect.x,y-rect.y);};});start.call(A,game);
+  if(window.ResizeObserver){var observer=new ResizeObserver(function(){var stage=document.querySelector('.stage').getBoundingClientRect();if(!stage.width||!stage.height)return;var next=bounds(stage.width,stage.height);if(next.x!==rect.x||next.y!==rect.y||next.w!==rect.w||next.h!==rect.h)game.resize(stage.width,stage.height);});observer.observe(document.querySelector('.bar'));observer.observe(document.querySelector('.controls'));}
+ };
+})();
