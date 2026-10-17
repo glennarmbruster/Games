@@ -1,0 +1,32 @@
+CAR JAM 2.3 / TRAFFIC JAM 1.2 — October 17, 2026
+
+Upload this ZIP's eight files into the main collection, preserving paths.
+Accept Update available after syncing. This update builds on the previous
+shared vehicle graphics update; install that update first if not already done.
+
+Car Jam:
+- Waiting count moved into the header, clear of all passengers. It stays visible
+  in portrait and landscape.
+- Sidewalk slightly darker warm gray; asphalt unchanged.
+- Several vehicles can travel at the same time when their paths are safe.
+- Input stays active during passenger boarding and vehicle departures.
+- Pickup bays remain reserved until departing vehicles clear them; passengers
+  cannot board a car while it is still approaching its bay.
+- Rotating the device settles active vehicle transfers safely into the new layout.
+
+Traffic Jam:
+- Several cars can travel concurrently, including safely spaced following cars.
+- Timed path checks reject movements that would collide at a shared crossing.
+- Hint can identify a currently safe car while others move.
+- Dispatched cars save immediately; reopening continues with the remaining cars.
+- Undo becomes available when the active vehicles finish moving.
+
+Both games keep their existing levels, progress, goals and artwork.
+
+Validation: rapid-tap playthroughs completed both games in portrait/landscape,
+with multiple cars active at once (up to six in sampled Traffic Jam runs and
+four/five in sampled Car Jam runs). Checked boarding eligibility, departing-bay
+reservations, reload during motion, full completion, Undo, Hint, rotation and
+saved Car Jam restoration. Explicit crossing, parallel, following and occupied
+bay clearance checks passed. These are local runtime tests, not physical iOS
+or browser validation. Please check the header on your devices.

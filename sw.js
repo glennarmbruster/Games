@@ -7,7 +7,7 @@ const VERSIONS = {
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
   "screwball": "4.6.0",
-  "carjam": "2.2.0",
+  "carjam": "2.3.0",
   "fruitfusion": "1.4.0",
   "crashcourse": "1.5.0",
   "ludolights": "1.3.0",
@@ -89,7 +89,7 @@ const VERSIONS = {
   "contraption": "1.1.0",
   "rebus": "1.0.0",
   "snowbound": "0.9-alpha.1",
-  "trafficjam": "1.1.0"
+  "trafficjam": "1.2.0"
 };
 const GROUPS = {
   "handheld": [
@@ -362,6 +362,7 @@ const GROUPS = {
     "games/carjam/scene.js",
     "games/carjam/renderer.js",
     "games/carjam/texture-face.js",
+    "games/arcade4/motion-clearance.js",
     "games/arcade4/vehicle-art.js",
     "games/arcade4/vehicles-lot-v2.png",
     "games/arcade4/three.module.min.js",
@@ -2607,6 +2608,7 @@ const GROUPS = {
     "games/trafficjam/style.css",
     "games/trafficjam/engine.js",
     "games/trafficjam/art.js",
+    "games/arcade4/motion-clearance.js",
     "games/arcade4/vehicle-art.js",
     "games/arcade4/vehicles-lot-v2.png",
     "games/trafficjam/game.js",
