@@ -1,5 +1,5 @@
 var LotLook=(function(){'use strict';var bg=new Image();bg.src='assets/marina-v1.webp';
-function box(c,x,y,w,h,r,fill,stroke){c.beginPath();c.roundRect(x,y,w,h,r);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}}
+function box(c,x,y,w,h,r,fill,stroke){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}}
 function draw(c,W,H,g,s,x,y){c.fillStyle='#203b3d';c.fillRect(0,0,W,H);if(bg.complete&&bg.naturalWidth){var k=Math.max(W/bg.width,H/bg.height);c.drawImage(bg,(W-bg.width*k)/2,(H-bg.height*k)/2,bg.width*k,bg.height*k);}var w=g.w*s,h=g.h*s;
 c.save();c.shadowColor='rgba(0,0,0,.5)';c.shadowBlur=20;c.shadowOffsetY=8;box(c,x-7,y-7,w+14,h+14,10,'#d4cbb5');c.restore();box(c,x,y,w,h,5,'#303b40');
 // Quiet, deterministic asphalt grain; no visual randomness from frame to frame.

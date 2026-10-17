@@ -1,0 +1,38 @@
+LOT ESCAPE 2.2 — October 17, 2026
+
+Upload this ZIP's contents into the main Goobs Games folder, keeping the folder
+paths. Accept Update available after the files sync. No main index replacement
+is needed. Traffic Jam and Car Jam remain separate games.
+
+Visual changes based on your parking-lot screenshots:
+- Six detailed, saturated vehicle designs with reflective windows and bodywork.
+- Clear white direction arrows in Classic mode.
+- Textured gray asphalt, subtle cracks, faded parking grid and boundary paint.
+- Larger board/cars within available screen space.
+- Distinct delivery trucks for three-cell vehicles.
+
+Classic and Harbor Exit modes, movement rules, collisions, hints, Undo,
+completion and existing parking.* progress/settings are preserved. Classic
+still permits swiping backward along a car's axis; arrows show tap direction.
+No lives, paid hints or ad banner from the reference images were added.
+
+The sprite cache refreshes when new artwork finishes loading. Existing drawn
+cars remain a fallback if the image cannot load. That fallback now uses arcTo
+instead of roundRect to avoid requiring the newer Canvas method on old iPads.
+
+Validation: parsed inline scripts; verified Classic rules are byte-identical;
+solved 40 generated Classic levels; rendered the actual draw routine in both
+modes at phone portrait, tablet portrait and phone landscape sizes. Verified
+sprite loading and delivery truck rendering. Native canvas tests are not a
+browser test: actual Safari/device layout and offline update testing remain.
+
+Asset: games/parking/assets/vehicles-v2.png
+Created with the built-in image-generation tool. Prompt: a transparent 3-by-2
+atlas of six strict overhead vehicles, all facing up: red sedan, yellow coupe,
+turquoise crossover, purple SUV, green wagon and orange sedan; saturated glossy
+paint, sculpted panels, reflective black glass, headlights, tires and mirrors;
+no arrows, logos, labels, road or background. Arrows are drawn by the game.
+
+The Sites local-update workflow preserved the existing collection structure.
+Image generation supplied the detailed car artwork; no gameplay engine was
+replaced. One ZIP, six files; no rollback included.

@@ -360,6 +360,7 @@ var LESound = (function () {
 </script><script src="challenge-bank.js"></script>
 <script src="challenge.js"></script>
 <script src="lot-look.js"></script>
+<script src="asphalt-look.js"></script>
 <script>
 (function () {
   'use strict';
@@ -439,7 +440,7 @@ var LESound = (function () {
   function fit() { var r = $('stage').getBoundingClientRect(); DPR = Math.min(3, window.devicePixelRatio || 1); W = Math.max(100, r.width); H = Math.max(100, r.height); cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); layout(); }
   // full screen: across, the margin is just the road (0.8 of a square each side) plus a sliver of grass, because the lot
   // is width-bound on a phone (was a whole square each side); up and down it keeps the full square
-  function layout() { if (!g) return; cs = Math.min(W / (g.w + 1.75), H / (g.h + 2), 70); ox = (W - g.w * cs) / 2; oy = (H - g.h * cs) / 2; cache = {}; }
+  function layout() { if (!g) return; cs = Math.min(W / (g.w + (g.challenge?1.75:.8)), H / (g.h + 1), 100); ox = (W - g.w * cs) / 2; oy = (H - g.h * cs) / 2; cache = {}; }
   function cellAt(px, py) { var x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs); return [x, y]; }
   function carAt(px, py) {
     var p = cellAt(px, py), best = -1;
@@ -462,7 +463,7 @@ var LESound = (function () {
 
   // ================= drawing =================
   function carSprite(c) {
-    var key = c.color + ':' + c.len + ':' + Math.round(cs * 10); if (cache[key]) return cache[key];
+    var key = c.color + ':' + c.len + ':' + Math.round(cs * 10) + ':' + LotLook.revision; if (cache[key]) return cache[key];
     var L = c.len * cs, cvs = document.createElement('canvas'); cvs.width = Math.ceil((cs + 8) * DPR); cvs.height = Math.ceil((L + 8) * DPR);
     var x = cvs.getContext('2d'); x.scale(DPR, DPR); x.translate((cs + 8) / 2, (L + 8) / 2); LArt.car(x, c.color, c.len, cs);
     cache[key] = { c: cvs, w: cs + 8, h: L + 8 }; return cache[key];
@@ -497,7 +498,7 @@ var LESound = (function () {
       var ang = c.dir === 'v' ? (c.face > 0 ? Math.PI : 0) : (c.face > 0 ? Math.PI / 2 : -Math.PI / 2);
       cx.save(); cx.translate(px + w2 / 2 + sx, py + h2 / 2 + sy); cx.rotate(ang);
       if (c.id === hintId && Math.floor((now - hintT) / 250) % 2 === 0) { cx.shadowColor = 'rgba(255,240,120,1)'; cx.shadowBlur = cs * 0.5; }
-      cx.drawImage(sp.c, -sp.w / 2, -sp.h / 2, sp.w, sp.h);if(g.challenge&&c.id===0){cx.fillStyle='#fff7de';cx.fillRect(-cs*.11,-cs*.18,cs*.065,cs*.6);cx.fillRect(cs*.045,-cs*.18,cs*.065,cs*.6);}cx.restore();if(g.challenge){cx.fillStyle='#101f29d9';cx.beginPath();cx.arc(px+w2/2,py+h2/2,cs*.13,0,7);cx.fill();cx.font='800 '+Math.max(9,cs*.18)+'px system-ui';cx.textAlign='center';cx.fillStyle='#fff';cx.fillText(c.id+1,px+w2/2,py+h2/2+cs*.065);}
+      cx.drawImage(sp.c, -sp.w / 2, -sp.h / 2, sp.w, sp.h);if(!g.challenge)LotLook.arrow(cx,cs);if(g.challenge&&c.id===0){cx.fillStyle='#fff7de';cx.fillRect(-cs*.11,-cs*.18,cs*.065,cs*.6);cx.fillRect(cs*.045,-cs*.18,cs*.065,cs*.6);}cx.restore();if(g.challenge){cx.fillStyle='#101f29d9';cx.beginPath();cx.arc(px+w2/2,py+h2/2,cs*.13,0,7);cx.fill();cx.font='800 '+Math.max(9,cs*.18)+'px system-ui';cx.textAlign='center';cx.fillStyle='#fff';cx.fillText(c.id+1,px+w2/2,py+h2/2+cs*.065);}
     });
     // "!" over a car that got bumped
     signs = signs.filter(function (s) { s.t += dt; return s.t < 1; });
