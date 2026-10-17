@@ -1,4 +1,5 @@
 import {W,H,rng} from './engine.js';
+import {drawVehicle} from '../arcade4/vehicle-art.js';
 const colors=['#20c9e0','#ff535b','#ffd344','#8b72ef','#42d390','#ff963f','#3888ed'];
 function round(c,x,y,w,h,r,color){Arcade.round(c,x,y,w,h,r,color);}
 function tree(c,x,y,s){c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#143d3833';c.beginPath();c.ellipse(7,7,21,17,0,0,7);c.fill();round(c,-3,0,6,19,2,'#a47649');for(const a of [[-9,0,14,'#228b61'],[9,-4,15,'#2ba66a'],[0,-12,16,'#58c778'],[-5,-15,9,'#8bdf7b']]){c.fillStyle=a[3];c.beginPath();c.arc(a[0],a[1],a[2],0,7);c.fill();}c.restore();}
@@ -21,6 +22,7 @@ export function scenery(map,level){const cv=document.createElement('canvas');cv.
 export function arrow(c,turn){c.save();c.lineCap='round';c.lineJoin='round';let pts=turn===0?[[0,17],[0,-16]]:turn===2?[[-9,16],[-9,-5],[-6,-12],[3,-12],[9,-6],[9,12]]:turn===1?[[0,17],[0,-6],[15,-6]]:[[0,17],[0,-6],[-15,-6]];let end=pts[pts.length-1],head=turn===0?[[-7,-8],[0,-16],[7,-8]]:turn===2?[[3,5],[9,12],[15,5]]:turn===1?[[8,-13],[15,-6],[8,1]]:[[-8,-13],[-15,-6],[-8,1]];
  for(const style of [['#092f45',10],['#ffffff',5]]){c.strokeStyle=style[0];c.lineWidth=style[1];for(const line of [pts,head]){c.beginPath();line.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.stroke();}}c.restore();}
 export function car(c,a,x=a.x,y=a.y,angle=a.d*Math.PI/2,glow=null){c.save();c.translate(x,y);c.rotate(angle);if(glow){c.shadowColor=glow;c.shadowBlur=14;round(c,-24,-39,48,78,16,glow);c.shadowBlur=0;}
+ if(drawVehicle(c,[2,0,1,3,4,5,2][a.color%7],42,68)){arrow(c,a.turn);c.restore();return;}
  round(c,-18,-29,40,67,13,'#101d2855');for(const xx of [-21,14])for(const yy of [-23,16])round(c,xx,yy,7,13,3,'#152434');
  const base=colors[a.color%colors.length];round(c,-18,-33,36,66,a.model===1?8:12,'#153b4b');const g=c.createLinearGradient(-17,0,18,0);g.addColorStop(0,base);g.addColorStop(.25,'#e9ffff');g.addColorStop(.34,base);g.addColorStop(1,base);round(c,-17,-32,34,63,a.model===1?7:11,g);round(c,-13,-19,26,39,7,'#174255');round(c,-11,-17,22,13,4,'#76bfd3');round(c,-11,9,22,9,4,'#37798e');round(c,-12,-4,24,14,3,base);c.fillStyle='#c0f1fa99';c.beginPath();c.moveTo(-9,-16);c.lineTo(5,-16);c.lineTo(-8,-5);c.closePath();c.fill();
  round(c,-14,-29,8,5,2,'#fff9bf');round(c,6,-29,8,5,2,'#fff9bf');round(c,-13,26,7,3,1,'#ff4b4e');round(c,6,26,7,3,1,'#ff4b4e');round(c,-6,29,12,2,1,'#f2e9db');round(c,-21,-8,5,6,2,base);round(c,16,-8,5,6,2,base);arrow(c,a.turn);c.restore();}

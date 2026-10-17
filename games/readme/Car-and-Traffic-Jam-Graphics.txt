@@ -1,0 +1,33 @@
+CAR JAM 2.2 / TRAFFIC JAM 1.1 — October 17, 2026
+
+Upload all nine files into the main Goobs Games directory, preserving paths.
+Accept Update available after syncing. Open both games while online once to
+finish their offline update. No main index replacement is needed.
+
+Both games reuse the exact glossy vehicle artwork supplied with Lot Escape 2.2.
+Traffic Jam uses compact copies with its existing straight, turn and U-turn
+arrows. Car Jam projects the artwork onto shaped vehicle surfaces to keep its
+angled 3D view. Minibuses/buses retain their distinct body sizes and gain roof
+glass, bright trim and ventilation detail. Passenger clothing and car paint
+use the same five matching color families.
+
+Existing controls, car footprints, rules, capacities, levels, progress and
+saved-game keys are preserved. Cars in Car Jam retain the same size in the lot
+and in the pickup bays. Traffic Jam keeps its existing roads and scenery.
+
+The detailed artwork is shared between these two games and cached offline.
+Original drawn/3D cars remain available while the image loads or if it fails.
+Car Jam's Canvas fallback also renders the vehicle textures, for devices where
+WebGL is unavailable. Shared textures are retained when individual cars leave.
+
+Validation: Traffic Jam's first 60 levels solved and five viewport sizes checked.
+Car Jam checked at five viewport sizes for selection, boarding, Undo, Hint,
+completion, next level, rotation during travel and saved-progress restoration.
+Actual game renderers inspected with the new imagery. These are local runtime
+and native Canvas checks; browser/WebGL and physical Safari testing are still
+needed. No claim of an on-device test.
+
+Artwork source: Lot Escape's existing generated vehicles-v2.png, reused without
+generating replacements. Shared asset: games/arcade4/vehicles-lot-v2.png.
+The existing collection and local-update workflow are preserved.
+No rollback ZIP or unrelated game changes included.
