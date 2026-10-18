@@ -1,0 +1,15 @@
+JUICE SLIDE — DIRECT WOODEN BAR — v1.6.1
+
+Upload these files to matching paths in the existing Goobs Games collection.
+
+Removes the separate raised platform, its texture, frame, front apron and shadow.
+The drinks slide directly on the original wooden bar visible in the beach scene.
+Only faint side guides and the launch line remain. Glass contact shadows remain.
+Portrait framing places the playable surface fully over the wood.
+
+Straight launches, collision and merge rules, scores, saved runs and the
+Continue-when-full option are retained. No saved progress is reset.
+
+Validation: portrait phone, small phone, landscape phone and tablet canvas
+renders; straight launches and vertical drag behavior; all 12 merge tiers and
+physics compared with the earlier game. Physical Safari testing unavailable.

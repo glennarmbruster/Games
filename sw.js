@@ -16,7 +16,7 @@ const VERSIONS = {
   "crowdcascade": "2.1.0",
   "neonbricks": "1.3.1",
   "harborescape": "1.3.1",
-  "juiceslide": "1.6.0",
+  "juiceslide": "1.6.1",
   "pixelvolley": "1.4.1",
   "skyward": "1.5.1",
   "citydash": "1.5.1",
@@ -491,7 +491,6 @@ const GROUPS = {
   ],
   "juiceslide": [
     "games/juiceslide/drinks-atlas.webp",
-    "games/juiceslide/teak-surface.webp",
     "games/juiceslide/",
     "games/juiceslide/index.html",
     "games/juiceslide/game.js",
