@@ -1,0 +1,26 @@
+FRUIT FUSION + JUICE SLIDE — SAVE AND RESUME
+
+Upload all included files to their matching paths in the existing collection.
+Fruit Fusion v1.6.1 / Juice Slide v1.4.1.
+
+Exit now saves the current board, score, next piece and moving-piece state.
+Reopening continues the same run. New game remains the explicit reset action.
+Both games save when backgrounded and periodically during play.
+Fruit Fusion restores the bag proportionally if reopened in another orientation.
+Finished runs reopen their result dialog instead of an unresponsive board.
+Existing best scores are retained. Previously unsaved fruit piles cannot be
+recovered; this update preserves runs played after it is installed.
+
+Includes the current 12-fruit game and 12-drink cocktail artwork.
+Strawberry and jackfruit sizes remain unchanged. Gameplay and merge rules remain
+unchanged. The shared controls and other games are not modified.
+
+Validation used the actual shared game core and fullscreen wrapper:
+- Exit link and Pause-menu Exit followed by a fresh page load
+- Moving pieces, next piece, score and board persistence
+- Background pause and resume
+- Reopening in portrait and landscape
+- New game reset with best score retained
+- Finished-run recovery and legacy score loading
+- Repeated portrait/landscape round trips
+Physical iPhone/iPad Safari testing was not available in this workspace.
