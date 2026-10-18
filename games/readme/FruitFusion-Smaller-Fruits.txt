@@ -1,0 +1,10 @@
+Fruit Fusion 1.7.3
+
+Jackfruit: 20% smaller.
+Pineapple, watermelon, cantaloupe, dragon fruit: 10% smaller.
+Grapes, pear, peach, apple, lemon: 5% smaller.
+Strawberry and orange: unchanged.
+
+Both artwork and collision sizes are reduced. Existing saved games load with the new sizes. Includes the pear contact merge fix and previous floating-fruit correction.
+
+Upload these files to their matching collection locations. Automated checks cover the exact size changes, merge progression, stacked pears, and saved-game recovery.

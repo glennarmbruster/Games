@@ -9,7 +9,7 @@ const VERSIONS = {
   "cubecorral": "4.1.8",
   "screwball": "4.6.1",
   "carjam": "2.4.0",
-  "fruitfusion": "1.7.2",
+  "fruitfusion": "1.7.3",
   "crashcourse": "1.5.1",
   "ludolights": "1.3.1",
   "prismbreaker": "1.3.1",
