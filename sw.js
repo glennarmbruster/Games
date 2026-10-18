@@ -1,7 +1,7 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.30",
-  "marblegrove": "1.1.0",
+  "shell": "3.8.31",
+  "marblegrove": "1.2.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
   "woodpile": "1.7.3",
@@ -13,14 +13,14 @@ const VERSIONS = {
   "crashcourse": "1.5.1",
   "ludolights": "1.3.1",
   "prismbreaker": "1.3.1",
-  "crowdcascade": "2.0.1",
+  "crowdcascade": "2.1.0",
   "neonbricks": "1.3.1",
   "harborescape": "1.3.1",
   "juiceslide": "1.3.1",
   "pixelvolley": "1.4.1",
   "skyward": "1.5.1",
   "citydash": "1.5.1",
-  "squadsprint": "2.0.1",
+  "squadsprint": "2.1.0",
   "skeehop": "1.6.7",
   "merge": "2.1.5",
   "tapaway": "2.1.5",
@@ -48,7 +48,7 @@ const VERSIONS = {
   "sort": "2.3.0",
   "triple": "2.2.8",
   "pinball": "2.2.6",
-  "parking": "2.3.0",
+  "parking": "2.4.0",
   "minigolf": "2.3.6",
   "board": "1.3.3",
   "buzz": "2.4.7",
@@ -90,7 +90,7 @@ const VERSIONS = {
   "contraption": "1.1.0",
   "rebus": "1.0.0",
   "snowbound": "0.9-alpha.1",
-  "trafficjam": "1.3.0"
+  "trafficjam": "1.4.0"
 };
 const GROUPS = {
   "handheld": [

@@ -201,10 +201,10 @@ var PJ = (function () {
 
   // ---------------- levels ----------------
   function recipe(n) {
-    var sizes = [[4, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 8], [8, 10], [9, 11], [10, 12], [11, 14]];
-    var si = Math.min(sizes.length - 1, n <= 1 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 9 ? 3 : n <= 13 ? 4 : n <= 19 ? 5 : n <= 29 ? 6 : n <= 44 ? 7 : n <= 69 ? 8 : 9);
-    var fill = Math.min(0.86, 0.55 + n * 0.006), rounds = Math.min(9, 2 + Math.floor(Math.sqrt(n) * 0.7)), rocks = n < 12 ? 0 : Math.min(4, Math.floor((n - 8) / 15));
-    if (n % 10 === 0 && n > 10) { rounds = Math.max(2, rounds - 3); fill -= 0.1; }
+    var sizes = [[4, 4], [4, 5], [5, 6], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 14], [12, 16]];
+    var si = Math.min(sizes.length - 1, n <= 1 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 9 ? 3 : n <= 12 ? 4 : n <= 16 ? 5 : n <= 24 ? 6 : n <= 39 ? 7 : n <= 59 ? 8 : 9);
+    var fill = Math.min(0.85, 0.60 + n * 0.010), rounds = Math.min(9, 2 + Math.floor(Math.sqrt(n) * 0.7)), rocks = n < 12 ? 0 : Math.min(4, Math.floor((n - 8) / 15));
+    if (n % 10 === 0 && n > 10) { rounds = Math.max(2, rounds - 3); fill -= 0.035; }
     return { w: sizes[si][0], h: sizes[si][1], fill: fill, rounds: rounds, rocks: rocks, trucks: n < 5 ? 0 : 0.18 };
   }
   // waves of cars that can drive straight out; returns the number of waves, or 0 if it gets stuck

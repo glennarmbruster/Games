@@ -1,13 +1,25 @@
 export const R=22,GAP=44;
 export function random(seed){return ()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
-export function makePath(w,h,level){const pts=[],turns=[1.28,1.42,1.34,1.48][(level-1)%4],start=[.17,.62,1.12,1.65][(level-1)%4]*Math.PI;let length=0;
+function legacyPath(w,h,level){const pts=[],turns=[1.28,1.42,1.34,1.48][(level-1)%4],start=[.17,.62,1.12,1.65][(level-1)%4]*Math.PI;let length=0;
  for(let i=0;i<=1000;i++){const t=i/1000,a=start+t*Math.PI*2*turns,r=.445-t*.30,warp=level%3===0?Math.sin(a*3)*.012:0;const p={x:w*.5+Math.cos(a)*(r+warp)*w,y:h*.5+Math.sin(a)*(r+warp)*h,s:0};if(i)length+=Math.hypot(p.x-pts[i-1].x,p.y-pts[i-1].y);p.s=length;pts.push(p);}return {pts,length,w,h};}
-export function at(path,s){const p=path.pts;if(s<=0)return {...p[0]};if(s>=path.length)return {...p[p.length-1]};let lo=0,hi=p.length-1;while(hi-lo>1){let m=(lo+hi)>>1;if(p[m].s<s)lo=m;else hi=m;}const a=p[lo],b=p[hi],t=(s-a.s)/(b.s-a.s);return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
-export function create(level,w=850,h=1100){const path=makePath(w,h,level),rand=random(level*7919),colors=Math.min(5,3+Math.floor((level-1)/4)),n=34+Math.min(46,level*3),head=Math.min(path.length*.40,25*GAP),balls=[];let color=0,run=0;
- for(let i=0;i<n;i++){if(run===0){color=Math.floor(rand()*colors);run=2+Math.floor(rand()*2);}run--;balls.push({s:head-(n-1-i)*GAP,c:color,id:i});}
- return {level,path,balls,score:0,combo:0,cleared:0,total:n,nextId:n,slow:0,slowUsed:false,state:'playing',bursts:[],speed:15+Math.min(15,level*.65)};
+export const PATH_VERSION=2;
+export function makePath(w,h,level,version=PATH_VERSION){if(version===1)return legacyPath(w,h,level);
+ const pts=[],kind=(level-1)%6,start=[.18,.65,1.1,1.65,.4,1.3][kind]*Math.PI,turns=[1.3,1.4,1.36,1.45,1.38,1.42][kind];let length=0;
+ for(let i=0;i<=1200;i++){const t=i/1200,a=start+t*Math.PI*2*turns,r=.44-t*.27,co=Math.cos(a),si=Math.sin(a);let shape=1,dx=0,dy=0;
+  if(kind===1)shape=.84/Math.pow(Math.pow(Math.abs(co),4)+Math.pow(Math.abs(si),4),.25);
+  if(kind===2){shape=.92*(1+.09*Math.cos(3*a));dx=.025*Math.sin(a*2)*(1-t);}
+  if(kind===3)shape=.9*(1+.11*Math.cos(4*a));
+  if(kind===4){shape=.91*(1+.09*Math.sin(2*a));dy=.027*Math.cos(a*2)*(1-t);}
+  if(kind===5)shape=1/Math.pow(Math.pow(Math.abs(co),1.45)+Math.pow(Math.abs(si),1.45),1/1.45);
+  const p={x:w*(.5+co*r*shape+dx),y:h*(.5+si*r*shape+dy),s:0};if(i)length+=Math.hypot(p.x-pts[i-1].x,p.y-pts[i-1].y);p.s=length;pts.push(p);
+ }return{pts,length,w,h,kind};
 }
-export function resize(s,w,h){const old=s.path.length,positions=s.balls.map(b=>b.s);s.path=makePath(w,h,s.level);const ratio=s.path.length/old,n=s.balls.length;if(!n)return;s.balls[n-1].s=positions[n-1]*ratio;for(let i=n-2;i>=0;i--){const gap=Math.max(0,positions[i+1]-positions[i]-GAP);s.balls[i].s=s.balls[i+1].s-GAP-gap*ratio;}}
+export function at(path,s){const p=path.pts;if(s<=0)return {...p[0]};if(s>=path.length)return {...p[p.length-1]};let lo=0,hi=p.length-1;while(hi-lo>1){let m=(lo+hi)>>1;if(p[m].s<s)lo=m;else hi=m;}const a=p[lo],b=p[hi],t=(s-a.s)/(b.s-a.s);return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+export function create(level,w=850,h=1100,pathVersion=PATH_VERSION){const path=makePath(w,h,level,pathVersion),rand=random(level*7919),colors=Math.min(5,3+Math.floor((level-1)/2)),n=38+Math.min(58,level*4),head=Math.min(path.length*.40,25*GAP),balls=[];let color=0,run=0;
+ for(let i=0;i<n;i++){if(run===0){const prev=color;color=(prev+1+Math.floor(rand()*(colors-1)))%colors;run=level<3?2+Math.floor(rand()*2):rand()<.35?1:2;}run--;balls.push({s:head-(n-1-i)*GAP,c:color,id:i});}
+ return {level,pathVersion,path,balls,score:0,combo:0,cleared:0,total:n,nextId:n,slow:0,slowUsed:false,state:'playing',bursts:[],speed:22+Math.min(48,(level-1)*3.8)};
+}
+export function resize(s,w,h){const old=s.path.length,positions=s.balls.map(b=>b.s);s.path=makePath(w,h,s.level,s.pathVersion);const ratio=s.path.length/old,n=s.balls.length;if(!n)return;s.balls[n-1].s=positions[n-1]*ratio;for(let i=n-2;i>=0;i--){const gap=Math.max(0,positions[i+1]-positions[i]-GAP);s.balls[i].s=s.balls[i+1].s-GAP-gap*ratio;}}
 function match(s,index,chain=false){const a=s.balls;if(!a[index])return 0;let lo=index,hi=index;while(lo>0&&a[lo-1].c===a[index].c&&a[lo].s-a[lo-1].s<=GAP+2)lo--;while(hi+1<a.length&&a[hi+1].c===a[index].c&&a[hi+1].s-a[hi].s<=GAP+2)hi++;if(hi-lo<2)return 0;
  const removed=a.splice(lo,hi-lo+1);s.combo=chain?s.combo+1:1;s.score+=removed.length*10*s.combo;s.cleared+=removed.length;s.bursts.push({balls:removed.map(b=>({...at(s.path,b.s),c:b.c})),combo:s.combo});return removed.length;
 }

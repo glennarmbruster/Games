@@ -1,18 +1,24 @@
 import {W,H,rng} from './engine.js';
 import {drawVehicle} from '../arcade4/vehicle-art.js';
-import {district,asphalt,artRevision} from '../arcade4/neighborhood-art.js';
+import {asphalt,artRevision} from '../arcade4/neighborhood-art.js';
 export {artRevision};
 const colors=['#20c9e0','#ff535b','#ffd344','#8b72ef','#42d390','#ff963f','#3888ed'];
 function round(c,x,y,w,h,r,color){Arcade.round(c,x,y,w,h,r,color);}
 function tree(c,x,y,s){c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#143d3833';c.beginPath();c.ellipse(7,7,21,17,0,0,7);c.fill();round(c,-3,0,6,19,2,'#a47649');for(const a of [[-9,0,14,'#228b61'],[9,-4,15,'#2ba66a'],[0,-12,16,'#58c778'],[-5,-15,9,'#8bdf7b']]){c.fillStyle=a[3];c.beginPath();c.arc(a[0],a[1],a[2],0,7);c.fill();}c.restore();}
-function building(c,x,y,w,h,color){round(c,x+5,y+7,w,h,5,'#194d3c35');round(c,x,y,w,h,5,'#fff2db');round(c,x+3,y+3,w-6,h-6,4,color);round(c,x+8,y+8,w-16,h-16,2,'#ffedcf');round(c,x+13,y+13,w-26,h-26,2,color);for(let a=x+10;a<x+w-10;a+=15)round(c,a,y+h-7,8,7,1,'#366385');round(c,x+w/2-9,y+10,18,12,2,'#b9cbd0');round(c,x+w/2-7,y+10,14,4,1,'#e4f2ee');if(w>70&&h>55){for(let i=0;i<3;i++){round(c,x+18+i*16,y+h/2-2,12,16,2,'#385b78');round(c,x+19+i*16,y+h/2-1,10,6,1,'#74a5bc');}c.strokeStyle='#f8ecd5';c.lineWidth=2;c.strokeRect(x+9,y+9,w-18,h-18);}}
+// Quiet park islands keep route arrows and cars visually dominant.
+function park(c,x,y,w,h,seed){const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#77b884');g.addColorStop(1,'#5b9b70');round(c,x,y,w,h,6,g);
+ const room=Math.min(w,h);if(room<42)return;
+ c.strokeStyle='#bdc7aa';c.lineWidth=7;c.lineCap='round';c.beginPath();c.moveTo(x+w*.22,y+h);c.quadraticCurveTo(x+w*.65,y+h*.55,x+w*.3,y);c.stroke();
+ const size=Math.min(.66,room/100);tree(c,x+w*.72,y+h*.28,size);if(h>170)tree(c,x+w*.25,y+h*.75,size*.85);
+ if(w>90&&h>100){const bx=x+w*.7,by=y+h*.65;round(c,bx-12,by-1,24,6,2,'#6e644c');round(c,bx-12,by-5,24,5,2,'#c7ad76');}
+}
 export const PAD=320;
 export function scenery(map,level){const cv=document.createElement('canvas');cv.width=(W+PAD*2)*1.5;cv.height=(H+PAD*2)*1.5;const c=cv.getContext('2d');c.scale(1.5,1.5);asphalt(c,W+PAD*2,H+PAD*2);c.translate(PAD,PAD);
  const xs=[-PAD-50,...map.xs,W+PAD+50],ys=[-PAD-50,...map.ys,H+PAD+50];
  for(let ix=0;ix<xs.length-1;ix++)for(let iy=0;iy<ys.length-1;iy++){
   const x=xs[ix]+38,y=ys[iy]+38,w=xs[ix+1]-xs[ix]-76,h=ys[iy+1]-ys[iy]-76;if(w<=0||h<=0)continue;
   c.save();c.shadowColor='#071e2790';c.shadowBlur=8;c.shadowOffsetY=3;round(c,x,y,w,h,9,'#b8b8a8');c.shadowBlur=0;c.shadowOffsetY=0;
-  round(c,x+2,y+2,w-4,h-4,7,'#ded9c7');c.clip();district(c,(ix+iy*2+Math.floor((level-1)/4))%4,x+3,y+3,w-6,h-6);c.restore();
+  round(c,x+2,y+2,w-4,h-4,7,'#ded9c7');c.clip();park(c,x+3,y+3,w-6,h-6,ix+iy*2);c.restore();
   c.strokeStyle='#fffae58c';c.lineWidth=1;c.beginPath();c.moveTo(x+9,y+1);c.lineTo(x+w-9,y+1);c.stroke();
  }
  // Worn edge paint stays outside the vehicles. Crossings mark entrances only.

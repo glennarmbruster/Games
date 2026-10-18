@@ -1,0 +1,62 @@
+Goobs Games — Crowd Cascade, Lot Escape, Traffic Jam and Marble Grove
+
+Installation
+Upload this ZIP's contents to the collection root with folder paths preserved.
+There are 11 files. No rollback ZIP or other game's update is included.
+The service worker cache versions have been updated for these games and the
+older Squad Sprint link, which opens the same Crowd Cascade game.
+
+Crowd Cascade
+- Rounded, articulated runners with helmets, visors, armor, backpacks and boots.
+- Brighter coastal bridge, detailed rails and lamps, islands and water ripples,
+  more detailed weapon crates and truck wheels, and enemy health bars.
+- Red gates subtract runners. Shooting recruit gates improves the displayed
+  reward by up to 14; a red gate that becomes positive turns blue.
+- Striped barricades block shots and cost runners on contact. Dodge them.
+- Faster courses, tougher squads, and an unavoidable final boss. The gap between
+  the final guards gives a clear central firing lane toward the boss.
+- Shot spread and weapon-crate health tuned so upgrades can be earned.
+- Course number and earned stars preserved. One game, one mode.
+
+Lot Escape (Classic)
+- Bigger grids earlier, filled more densely with smaller cars.
+- Level 18: 10 x 11 grid with 39 cars, previously 8 x 8 with 21 cars.
+- Later grids grow to 12 x 16. All generated lots still have an exit sequence.
+- Harbor Escape challenge mode and its rules are unchanged.
+- A partly played current lot is retained. Restart it or finish it to see the
+  new density. An untouched old lot with outdated dimensions is regenerated.
+
+Traffic Jam
+- Busy building artwork replaced with quiet grass parks, a few trees, benches
+  and simple paths. Detailed cars and asphalt remain.
+- Level 7: 22 vehicles instead of 14, with a longer blocking dependency sequence.
+- Routes still guarantee a solution. Simultaneous departures, route clearance,
+  Hint and Undo are retained.
+- A partly cleared saved level keeps its old layout. Restart or finish it to use
+  the new generation. Untouched old boards upgrade immediately.
+
+Marble Grove
+- Six rotating path families: oval spiral, rounded terrace, crescent, clover,
+  riverbend and diamond. Portrait and landscape retain the same family.
+- Faster chains: level 1 speed 22 versus about 16 before; level 4 speed 33.4
+  versus 17.6 before. The progression caps at 70.
+- Four colors from level 3 and five from level 5; longer chains and fewer
+  ready-made pairs make aiming and color swapping more important.
+- Added marble highlights and contact shadows, a more detailed glowing portal,
+  and visible guardian recoil.
+- Existing saved runs keep their route until completion or restart. New runs
+  use the new path families. Levels, scores and progress remain intact.
+
+Validation
+- Traffic Jam: 60 generated levels solved; tap, blocked route, hint, concurrent
+  motion code retained, undo, save restore, completion and next level checked.
+- Lot Escape: 40 consecutive levels plus sampled levels through 1000 solved;
+  board occupancy checked; both modes rendered at phone/tablet sizes.
+- Crowd Cascade: idle play loses. Active steering cleared courses 1, 4, 10 and
+  30 in phone/tablet portrait and landscape; next course and pause checked.
+- Marble Grove: insertion, combos, loss, orientation changes, save restore,
+  old-path migration and completed levels 1 and 4 through actual shots checked.
+  All six new paths were checked for bounds and track separation.
+- Canvas render previews, script syntax, cache entries and ZIP integrity checked.
+- These are local simulations and canvas renders, not physical iOS Safari or
+  on-device WebGL testing. Please judge the final difficulty and feel in play.

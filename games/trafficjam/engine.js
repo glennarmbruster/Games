@@ -17,10 +17,10 @@ export function pathFor(car,map){
  let length=0;points.forEach((p,i)=>{if(i)length+=Math.hypot(p.x-points[i-1].x,p.y-points[i-1].y);p.s=length;});return {points,length,d};
 }
 export function blocker(car,cars,map){const p=pathFor(car,map).points;for(let i=1;i<p.length;i++){let a=p[i-1],b=p[i],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,hx=32*Math.abs(dx/len)+18*Math.abs(dy/len),hy=32*Math.abs(dy/len)+18*Math.abs(dx/len);for(const c of cars){if(c.id===car.id)continue;const cx=c.d%2?32:18,cy=c.d%2?18:32;if(Math.abs(b.x-c.x)<hx+cx+2&&Math.abs(b.y-c.y)<hy+cy+2)return c;}}return null;}
-export function makeLevel(level){const rand=rng(level*91771+343),map={xs:level<5?[130,470]:[90,300,510],ys:level<10?[130,425,720]:[105,320,535,750]},slots=[];
+export function makeLevel(level,legacy=false){const rand=rng(level*91771+343),map={xs:level<(legacy?5:4)?[130,470]:[90,300,510],ys:level<(legacy?10:9)?[130,425,720]:[105,320,535,750]},slots=[];
  function along(fixed,edges,vertical){for(let i=0;i<edges.length-1;i++){const start=edges[i]+65,end=edges[i+1]-65,n=Math.floor((end-start)/83)+1;for(let j=0;j<n;j++){const p=n===1?(start+end)/2:start+(end-start)*j/(n-1);if(p>40&&p<(vertical?H:W)-40)slots.push({x:vertical?fixed:p,y:vertical?p:fixed,vertical});}}}
  map.xs.forEach(x=>along(x,[0,...map.ys,H],true));map.ys.forEach(y=>along(y,[0,...map.xs,W],false));
- const target=Math.min(28,6+Math.floor(level*1.2)),cars=[];let id=0;
- for(let k=0;k<target;k++){let choices=[];for(const s of slots){if(cars.some(c=>Math.hypot(c.x-s.x,c.y-s.y)<74))continue;for(const d of (s.vertical?[0,2]:[1,3]))for(const turn of (level===1?[0,-1,1]:[0,-1,1,2])){const c={x:s.x,y:s.y,d,turn,id,color:Math.floor(rand()*7),model:Math.floor(rand()*3)};if(!blocker(c,cars,map)){let score=rand();for(const other of cars)if(!blocker(other,cars,map)&&blocker(other,[...cars,c],map))score+=3;choices.push({c,score});}}}
+ const target=legacy?Math.min(28,6+Math.floor(level*1.2)):Math.min(35,7+Math.floor(level*2.2)),cars=[];let id=0;
+ for(let k=0;k<target;k++){let choices=[];for(const s of slots){if(cars.some(c=>Math.hypot(c.x-s.x,c.y-s.y)<74))continue;for(const d of (s.vertical?[0,2]:[1,3]))for(const turn of (level===1?[0,-1,1]:[0,-1,1,2])){const c={x:s.x,y:s.y,d,turn,id,color:Math.floor(rand()*7),model:Math.floor(rand()*3)};if(!blocker(c,cars,map)){let score=rand();for(const other of cars){const old=blocker(other,cars,map),next=blocker(other,[...cars,c],map);if(!old&&next)score+=legacy?3:6;else if(!legacy&&next&&next.id===c.id)score+=1;}if(!legacy&&level>=4&&turn!==0)score+=.35;choices.push({c,score});}}}
  if(!choices.length)break;choices.sort((a,b)=>b.score-a.score);cars.push(choices[0].c);id++;}
  return {map,cars};}
