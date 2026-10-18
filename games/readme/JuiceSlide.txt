@@ -1,2 +1,23 @@
-Juice Slide — distinct drinks and stronger slides
-Unobstructed drinks travel to the far end of the table. Collisions can still stop or deflect them. Aim bank shots and merge equal drinks. Twelve recipes use distinct vessels and ingredients: water, berry smoothie, orange juice, matcha, grape soda, coconut, pineapple, sunset drink, blue lagoon, milkshake, slush and royal punch.
+JUICE SLIDE — COCKTAIL EDITION — v1.4.0
+
+Replace files at their matching paths in the existing Goobs Games collection.
+The game remains Juice Slide; its 12 drinks now have alcoholic names and artwork.
+
+Merge order: Beer > Mimosa > Margarita > Mojito > Sangria > Piña colada >
+Tequila sunrise > Blue lagoon > Martini > Strawberry daiquiri > Hurricane > Rum punch.
+
+Gameplay, collision sizes, scoring, controls and saved-game key are unchanged.
+Existing score, best score, drinks on the table and unlocked tiers carry over.
+Updated offline cache version makes the new drink artwork available offline.
+
+Validation: all 12 tiers compared against the previous game, with identical
+merge behavior, physics and scoring. Saved progress loading checked.
+Portrait phone, landscape phone and tablet canvas renders checked.
+Physical-device Safari testing was not available in this workspace.
+
+Artwork generated with the built-in image generation tool, preserving alpha
+when converted to WebP. Game asset: games/juiceslide/drinks-atlas.webp.
+Rendering uses individual source rectangles to preserve glass handles/garnishes.
+
+Final generation prompt:
+Use case: product-mockup. Asset type: one production game sprite atlas, EXACTLY FOUR COLUMNS and THREE ROWS, 12 isolated alcoholic drink sprites on genuinely transparent background. Square canvas, divided mentally into 4 equal columns x 3 equal rows. Each complete glass AND all garnishes entirely within its own cell, generous 12 percent padding per cell; no overlap or cropping. No lines, no labels, no letters, no numbers. Consistent photorealistic premium bar product photography, clear reflective glass with bright readable edges, saturated vivid liquids, slight elevated front view, soft studio lighting. All glass bases on same baseline within each row. Row1 left-to-right: golden beer in handled glass mug with creamy foam; orange mimosa in slender champagne flute with orange slice; pale lime margarita in broad classic stemmed margarita glass with salt rim and lime wheel; pale green mojito in tall highball glass with ice lime and mint. Row2 left-to-right: deep ruby red sangria in wine goblet with orange and apple slices; creamy ivory pina colada in curving hurricane glass with pineapple wedge and cherry; vivid red-to-orange tequila sunrise in straight tall highball with orange and cherry; electric blue lagoon cocktail in tall faceted glass with lemon wedge. Row3 left-to-right: clear martini in elegant triangular stemmed martini glass with two green olives on cocktail pick; bright red frozen strawberry daiquiri in rounded stemmed coupe with strawberry garnish; rich coral-red hurricane cocktail in tall hurricane glass with passion fruit and cherry; golden amber rum punch in squat ornate tiki tumbler with pineapple and small turquoise umbrella. Preserve transparent alpha, transparent area all around every sprite, no opaque background, no checkerboard, no surface, no external shadows, no other objects. Exactly 12, one per cell in this order.
