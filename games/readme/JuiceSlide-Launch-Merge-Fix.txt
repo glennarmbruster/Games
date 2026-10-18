@@ -1,0 +1,17 @@
+JUICE SLIDE — LAUNCH-LINE MERGE FIX — v1.7.1
+
+Upload these three files to matching paths in the existing collection.
+
+Fixed matching drinks bouncing apart near the starting line. The old code
+blocked merging until both drinks were more than 0.12 seconds old, while still
+applying normal collision bounce. A newly launched beer could therefore bounce
+away before it became eligible to merge.
+
+Matching drinks now merge immediately on contact, including new launches and
+newly formed drinks in chain matches. Applies to all 12 drink types.
+Nonmatching collisions, scoring values, graphics, settings and saved progress
+are unchanged.
+
+Validation: reproduced the old beer-on-beer failure; verified 32 near-launch
+contacts at 20, 30, 60 and 120 fps, head-on and offset; verified nonmatching
+collisions, an in-flight save/reload, and immediate contacts across all 12 tiers.
