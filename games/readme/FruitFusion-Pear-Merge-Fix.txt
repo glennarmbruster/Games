@@ -1,0 +1,7 @@
+Fruit Fusion 1.7.2 — Pear merge fix
+
+Upload the included files to the matching locations in your collection.
+
+Matching fruits now merge when their collision shapes touch, including pears stacked at the narrow neck. Keeps the existing forgiving merge distance, fruit sizes, floating-fruit correction, saved games, and Continue feature.
+
+Verified stacked pear contacts at phone/tablet viewport sizes and 30/60/120fps, all eleven fruit upgrades, separate pears staying separate, fruit settling, Continue, and saved-game recovery. Automated tests only; not tested on a physical iPhone/iPad.
