@@ -1,0 +1,31 @@
+FRUIT FUSION — TWELVE FRUITS — v1.6.0
+
+Upload the included files to matching paths in your existing Goobs Games collection.
+
+Strawberry and jackfruit retain exactly their previous sizes and artwork.
+Jackfruit remains the largest fruit. Intermediate fruits have been sized down
+to fit two new merge steps, with each collision size larger than the previous one.
+
+Merge order:
+Strawberry > Orange > Lemon > Apple > Peach > Pear > Grapes > Dragon fruit >
+Cantaloupe > Watermelon > Pineapple > Jackfruit.
+Two pineapples still produce jackfruit. Jackfruits do not merge further.
+
+Retains the gentle impact physics and forgiving touching-fruit merge detection.
+Includes the portrait/landscape rotation fix and updated offline asset cache.
+
+Validation: all 11 merge transitions and terminal jackfruit behavior passed.
+Strawberry and jackfruit rendering is pixel-identical to the previous version.
+Phone portrait/landscape and tablet canvas renders checked. Twelve simulated
+rotation round trips passed with fruit positions and scores retained.
+Physical iPhone/iPad Safari testing was not available in this workspace.
+
+New artwork: generated with the built-in image generation tool, transparent
+background, then resized to 512px WebP with alpha preserved.
+Output paths: games/fruitfusion/dragon-fruit.webp and cantaloupe.webp.
+
+Dragon fruit prompt:
+Use case: product-mockup. Asset type: a single fruit sprite for a polished fruit-merging game. One WHOLE ripe dragon fruit, vibrant magenta pink skin with fresh bright green curved scales, slightly rounded oval shape, viewed from the front with a little top visible, realistic detailed premium product photography/render style matching glossy realistic fruit sprites, upper left studio lighting, crisp clean edge, subtly plump appetizing fruit. Centered, entire fruit visible with generous 12% transparent padding on every side. Genuinely transparent background, no ground, no shadow cast outside fruit, no text, no labels, no frame, no cut pieces, no plate, no other fruit. Square composition.
+
+Cantaloupe prompt:
+Use case: product-mockup. Asset type: a single fruit sprite for a polished fruit-merging game. One WHOLE ripe cantaloupe melon, near-round warm golden tan rind with finely detailed creamy netting and faint pale green grooves, tiny natural stem scar, viewed from the front with a little top visible, realistic detailed premium product photography/render style matching glossy realistic fruit sprites, upper left studio lighting, appetizing warm color. Centered, entire melon visible with generous 12% transparent padding on every side. Genuinely transparent background, no ground, no shadow cast outside fruit, no text, no labels, no frame, no cut pieces, no plate, no other fruit. Square composition.

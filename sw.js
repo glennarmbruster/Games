@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.32",
+  "shell": "3.8.33",
   "marblegrove": "1.2.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
@@ -9,7 +9,7 @@ const VERSIONS = {
   "cubecorral": "4.1.8",
   "screwball": "4.6.1",
   "carjam": "2.4.0",
-  "fruitfusion": "1.5.1",
+  "fruitfusion": "1.6.0",
   "crashcourse": "1.5.1",
   "ludolights": "1.3.1",
   "prismbreaker": "1.3.1",
@@ -387,6 +387,8 @@ const GROUPS = {
   "fruitfusion": [
     "games/fruitfusion/fruit-atlas.webp",
     "games/fruitfusion/jackfruit.webp",
+    "games/fruitfusion/dragon-fruit.webp",
+    "games/fruitfusion/cantaloupe.webp",
     "games/fruitfusion/",
     "games/fruitfusion/index.html",
     "games/fruitfusion/game.js",
