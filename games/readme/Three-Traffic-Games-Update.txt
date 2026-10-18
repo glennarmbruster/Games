@@ -1,0 +1,100 @@
+GOOBS GAMES — THREE TRAFFIC GAMES UPDATE
+October 17, 2026 (Central)
+
+INSTALL
+Upload every file in this ZIP, retaining its folder path. This is an update
+for your existing collection, not a standalone backup. Accept the collection's
+update prompt, then reload. Open these games online before testing offline.
+No rollback is included.
+
+CAR JAM 2.4
+Replaced the distorted textured-mesh display with a crisp illustrated renderer
+using the same scene coordinates, hit testing and vehicle movements. Cars now
+use the detailed overhead artwork directly. Added original red, cyan, yellow,
+green and violet minibus art, soft contact shadows, more readable passengers,
+textured asphalt, paved sidewalk and detailed neighborhood illustrations.
+The camera fits the active lot more tightly and uses a higher viewing angle.
+Cars keep the same scale in the pickup bays and the puzzle. The waiting count
+stays in the header. Puzzle generation, passenger order, vehicle capacities,
+boarding, Undo and concurrent dispatch rules are unchanged.
+
+TRAFFIC JAM 1.3
+New detailed residential, shopping, market and park illustrations replace the
+simple buildings and trees. Added textured asphalt, curb highlights, worn road
+paint, entrance crossings, metal drains and stronger vehicle shadows. Scenery
+continues to the screen edges. Uniform scaling keeps cars from being stretched.
+Illustrations are cropped proportionally rather than distorted to fit blocks.
+Road layout, turns, collision clearance, saved level and simultaneous movement
+are unchanged.
+
+LOT ESCAPE 2.3 — CLASSIC PROGRESSION
+Starting grid: 4x4.
+Levels 4-6: 5x6. Levels 7-9: 6x7. Levels 10-13: 7x8.
+Levels 14-19: 8x8 (twice the starting width and height, four times the cells).
+Levels 20-29: 8x10. Levels 30-44: 9x11.
+Levels 45-69: 10x12. Level 70 onward: 11x14, with new generated layouts.
+The Classic selector displays the current grid dimensions.
+
+An untouched saved Classic lot adopts the new size automatically. A lot you
+have already played is kept intact; finish it or use Restart to get the larger
+layout. Your level number is preserved. The Harbor Exit sliding-block mode
+retains its existing fixed board and challenge bank. This growth change is
+for Classic, the clear-all-cars mode from the reference screenshots.
+
+VALIDATION
+Local Canvas/JavaScript checks covered actual game rendering and projected
+Car Jam selection at 320x568, 390x844, 844x390, 768x1024 and 1024x768. Checked
+boarding, Hint, Undo, full-lot completion, next level, saved-state restoration
+and rotation during travel. Concurrent Car Jam and Traffic Jam dispatch still
+completes levels in both orientations. Tested all 40 early Classic lots plus
+sampled larger lots through level 1000 for valid placement and solvability.
+Lot Escape's movement and Undo code remain identical to the previous version.
+
+These are local runtime checks, not Safari device testing. Please test touch
+feel, menu placement, portrait/landscape rotation and installed offline loading
+on your devices. Fullscreen controls and prior exceptions are retained.
+
+ARTWORK
+Built-in image generation produced the neighborhood atlas and minibus sprites.
+Final assets are games/arcade4/neighborhood-v3.webp and games/carjam/bus-0.webp
+through bus-4.webp. Original car art remains shared with Lot Escape.
+
+NEIGHBORHOOD PROMPT
+Use case: stylized-concept. Create a production game environment sprite atlas:
+EXACTLY FOUR equally sized square tiles in a 2 by 2 grid, no gutters, no text,
+no UI, no vehicles, no people. Each tile is a separate detailed neighborhood
+block seen DIRECTLY FROM ABOVE in orthographic bird's-eye view, no horizon,
+no visible building sides, compatible with a top-down traffic puzzle. Premium
+polished mobile game 3D rendered miniature town, rich saturated realistic
+materials, architectural detail, beautifully shaped realistic tree canopies
+with individual leaf clusters, strong sunlight and soft ambient occlusion,
+sharp at small size. Each tile has a narrow pale stone sidewalk border and
+lush landscaping, no surrounding roads. Top left: terracotta-roof cream
+Mediterranean villas, blue swimming pool, bougainvillea and gardens. Top right:
+blue-gray metal roof and glass skylights of a compact shopping arcade, coral
+accents, cafe courtyard with orange umbrellas. Bottom left: elegant public
+park, circular turquoise fountain, winding pale paths, vivid flowerbeds,
+detailed mature trees and benches. Bottom right: red brick market roofs and
+glass conservatory, yellow awnings, sculpted shrubs and cafe plaza. Keep every
+building fully contained inside its tile with clear landscaped margins. Fill
+the four tiles with very high quality appealing detail, colored roofs and rich
+green foliage, no dull flat rectangles. Exact 2x2 layout matters because each
+tile will be cropped independently.
+
+MINIBUS PROMPT
+Production game sprite atlas on genuine transparent background. EXACTLY six
+isolated small passenger minibuses, arranged in a perfectly regular 3 columns
+by 2 rows grid, each centered in its cell with generous transparent margins,
+no touching sprites. Camera DIRECTLY OVERHEAD, orthographic top-down view,
+each front points straight UP the image. Polished premium game art, detailed
+recognizable modern 6-8 passenger shuttle buses, substantial squared roof,
+wraparound front windshield, visible narrow dark side windows, headlights,
+rear lights, subtle rooftop air conditioning unit and vents, gleaming paint
+highlights, realistic dark tires, small mirrors. These must look like attractive
+real minibuses rather than rectangular blocks or stretched sports cars.
+Saturated colors: top row cherry red, bright cyan blue, golden yellow; bottom
+row vivid green, rich violet, orange. Each vehicle has the same scale and roughly
+2.5 times longer than wide. No numbers, no lettering, no arrows, no logos, no
+people, no scenery, no floor, no cast shadow outside sprite. Clean alpha edges.
+Rich light and materials, stylistically match high quality overhead racing game
+car sprites.

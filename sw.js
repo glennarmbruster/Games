@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.28",
+  "shell": "3.8.29",
   "marblegrove": "1.1.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
@@ -8,7 +8,7 @@ const VERSIONS = {
   "patchwork": "3.2.7",
   "cubecorral": "4.1.8",
   "screwball": "4.6.1",
-  "carjam": "2.3.1",
+  "carjam": "2.4.0",
   "fruitfusion": "1.4.1",
   "crashcourse": "1.5.1",
   "ludolights": "1.3.1",
@@ -48,7 +48,7 @@ const VERSIONS = {
   "sort": "2.3.0",
   "triple": "2.2.8",
   "pinball": "2.2.6",
-  "parking": "2.2.1",
+  "parking": "2.3.0",
   "minigolf": "2.3.6",
   "board": "1.3.3",
   "buzz": "2.4.7",
@@ -90,7 +90,7 @@ const VERSIONS = {
   "contraption": "1.1.0",
   "rebus": "1.0.0",
   "snowbound": "0.9-alpha.1",
-  "trafficjam": "1.2.1"
+  "trafficjam": "1.3.0"
 };
 const GROUPS = {
   "handheld": [
@@ -372,7 +372,15 @@ const GROUPS = {
     "games/arcade4/common.css",
     "games/arcade4/core.js",
     "games/arcade4/fullscreen.css",
-    "games/arcade4/fullscreen.js"
+    "games/arcade4/fullscreen.js",
+    "games/arcade4/neighborhood-art.js",
+    "games/arcade4/neighborhood-v3.webp",
+    "games/carjam/premium-renderer.js",
+    "games/carjam/bus-0.webp",
+    "games/carjam/bus-1.webp",
+    "games/carjam/bus-2.webp",
+    "games/carjam/bus-3.webp",
+    "games/carjam/bus-4.webp"
   ],
   "fruitfusion": [
     "games/fruitfusion/fruit-atlas.webp",
@@ -2668,7 +2676,9 @@ const GROUPS = {
     "games/arcade4/core.js",
     "games/arcade4/common.css",
     "games/arcade4/fullscreen.css",
-    "games/arcade4/fullscreen.js"
+    "games/arcade4/fullscreen.js",
+    "games/arcade4/neighborhood-art.js",
+    "games/arcade4/neighborhood-v3.webp"
   ]
 };
 

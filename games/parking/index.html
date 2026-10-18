@@ -201,8 +201,8 @@ var PJ = (function () {
 
   // ---------------- levels ----------------
   function recipe(n) {
-    var sizes = [[4, 4], [4, 5], [5, 5], [5, 6], [6, 6], [6, 7], [6, 8], [7, 8], [7, 9], [7, 10]];
-    var si = Math.min(sizes.length - 1, n <= 1 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 10 ? 3 : n <= 18 ? 4 : n <= 30 ? 5 : n <= 50 ? 6 : n <= 80 ? 7 : n <= 130 ? 8 : 9);
+    var sizes = [[4, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 8], [8, 10], [9, 11], [10, 12], [11, 14]];
+    var si = Math.min(sizes.length - 1, n <= 1 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : n <= 9 ? 3 : n <= 13 ? 4 : n <= 19 ? 5 : n <= 29 ? 6 : n <= 44 ? 7 : n <= 69 ? 8 : 9);
     var fill = Math.min(0.86, 0.55 + n * 0.006), rounds = Math.min(9, 2 + Math.floor(Math.sqrt(n) * 0.7)), rocks = n < 12 ? 0 : Math.min(4, Math.floor((n - 8) / 15));
     if (n % 10 === 0 && n > 10) { rounds = Math.max(2, rounds - 3); fill -= 0.1; }
     return { w: sizes[si][0], h: sizes[si][1], fill: fill, rounds: rounds, rocks: rocks, trucks: n < 5 ? 0 : 0.18 };
@@ -397,6 +397,7 @@ var LESound = (function () {
   function load() {
     var r = store.get(meta.mode==='challenge'?'challengeGame':'game', null);
     if (!r || r.n !== (meta.mode==='challenge'?meta.challengeLevel:meta.level) || !Array.isArray(r.cars) || r.won) return false;
+    if(!r.challenge&&!r.moves){var expected=PJ.recipe(r.n);if(r.w!==expected.w||r.h!==expected.h)return false;}
     g = r; hintId = -1; parts = []; signs = []; view = {}; g.cars.forEach(function (c) { view[c.id] = { x: c.x, y: c.y, out: c.gone ? 99 : 0, shake: 0 }; }); layout(); renderInfo(); return true;
   }
   function moveCar(id, sign, dist) {
@@ -519,7 +520,7 @@ var LESound = (function () {
     if (w > el.clientWidth + 6) el.classList.add('tight');
   }
   // full screen: two pills in the top row instead of the old LEVEL / CARS LEFT row (frees ~50px)
-  function renderInfo() { if (!g) return; $('info').innerHTML = '<span class="ggpill"><small>Lot</small> ' + g.n + '</span><span class="ggpill">' + (g.challenge?'Par '+g.par:PJ.left(g)+' cars') + ' · ' + g.moves + ' <small>moves</small></span>'; fitPills();$('modeChallenge').classList.toggle('active',!!g.challenge);$('modeClassic').classList.toggle('active',!g.challenge);$('lotSelect').hidden=!g.challenge;$('lotSelect').value=g.n; Array.prototype.forEach.call($('lotSelect').options,function(o){var b=meta.best[o.value];o.textContent='Lot '+o.value+' · par '+LotChallengeBank[o.value-1].par+(b?' · '+('★★★'.slice(0,b.stars)):'');}); }
+  function renderInfo() { if (!g) return; $('info').innerHTML = '<span class="ggpill"><small>Lot</small> ' + g.n + '</span><span class="ggpill">' + (g.challenge?'Par '+g.par:PJ.left(g)+' cars') + ' · ' + g.moves + ' <small>moves</small></span>'; fitPills();$('modeChallenge').classList.toggle('active',!!g.challenge);$('modeClassic').classList.toggle('active',!g.challenge);$('modeClassic').textContent=g.challenge?'Classic':'Classic '+g.w+'×'+g.h;$('lotSelect').hidden=!g.challenge;$('lotSelect').value=g.n; Array.prototype.forEach.call($('lotSelect').options,function(o){var b=meta.best[o.value];o.textContent='Lot '+o.value+' · par '+LotChallengeBank[o.value-1].par+(b?' · '+('★★★'.slice(0,b.stars)):'');}); }
   var toastT = 0;
   function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2000); }
   function showCard(title, html, buttons) {
@@ -536,7 +537,7 @@ var LESound = (function () {
       '<b>Swipe a car</b> forward or backward to drive it. <b>Tap</b> a car to drive it the way it faces.',
       'Cars only move along their own line. A car keeps going until it touches something, or reaches the road and <b>drives away</b>.',
       'Driving straight into something is a <b>bump</b> (and a honk). Trees and cones never move.',
-      '<b>Empty the lot</b> to win. Every level can be cleared by driving cars out one after another.',
+      '<b>Empty the lot</b> to win. Every level can be cleared by driving cars out one after another. Lots grow from 4×4 to 8×8 by level 15, then up to 11×14.',
       '<b>Undo</b> and <b>Hint</b> are free and unlimited. <b>Restart</b> puts the lot back how it started.'
     ]).map(function (x) { return '<li>' + x + '</li>'; }).join('');
     $('ovHelp').classList.add('show');
