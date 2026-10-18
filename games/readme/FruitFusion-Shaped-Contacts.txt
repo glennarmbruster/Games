@@ -1,0 +1,21 @@
+FRUIT FUSION — GRAPE / PEAR CONTACT FIX — v1.7.1
+
+Upload the three included files to their matching paths.
+
+Grapes and pears previously used one round collision circle each. Empty corners
+around a tapered grape bunch could act as solid support, leaving visible air
+between fruit that the physics considered touching.
+
+These two fruits now use compound contact discs fitted inside their visible
+flesh. Decorative leaves and transparent lower corners do not support the pile.
+Bag floor/wall contacts use these same fitted shapes.
+
+Artwork, fruit sizes (including strawberry and jackfruit), score rules and the
+existing forgiving matching-fruit merge distance are unchanged. Saved runs,
+Continue, and portrait/landscape restoration are retained. An existing saved
+pile settles using the updated contact shapes when play resumes.
+
+Validation: a false grape-corner contact reproduced and rejected by the new
+shape; floor settling for grapes and pears; an approximation of the reported
+pile; all 11 merge transitions; unchanged strawberry/jackfruit artwork; Continue,
+Exit/reload and repeated portrait/landscape tests. Physical Safari unavailable.
