@@ -1,0 +1,22 @@
+JUICE SLIDE — LARGER, MORE NATURAL DRINK ART — v1.7.0
+
+Upload the four included files to matching paths in your existing collection.
+
+Replaces the drink artwork with a fresh photographic-style set of the same
+12 cocktails, with more restrained glass edges and natural ingredient detail.
+Drinks on the board and the waiting drink render up to 10% larger. Natural
+aspect ratios are preserved; headroom is protected to avoid clipping in narrow
+landscape layouts. Small collection icons stay compact.
+
+Retains direct wooden-bar background, Boundary markings setting, straight-only
+launches, collision sizes, merge rules, scores, Continue option and saved runs.
+
+Validation: 4 responsive renders, all 12 sprite crops, straight launch and
+vertical drag behavior, all merge tiers and score/physics comparisons, actual
+Pause > Settings > Resume and saved preference checks. No physical Safari test.
+
+Asset: games/juiceslide/drinks-atlas.webp, created with the built-in image
+ generation tool and converted to WebP with alpha preserved. Source crop masks
+exclude adjacent garnish/base fragments from the atlas.
+Final selected prompt:
+Create a photographic contact sheet of twelve real drinks for an adult tropical bar game. This must look like a professional DSLR beverage shoot, with the quiet believable material quality of editorial food photography. Not product illustration, not CGI, no shiny plastic, no stylized game art. Soft large daylight source on the upper left, slight warm fill, low-contrast thin glass edges, subtle imperfect condensation, realistic irregular half-melted ice, small believable fruit garnishes. Restrained clear glass with narrow delicate rims, NO chrome-like thick silver borders on stems or bases. Camera elevated 25 degrees above the bar so the glass rims appear as ellipses; same perspective on all twelve. Rich natural liquid color, not neon saturation. Genuine clean transparent background. Arrange exactly 12 complete isolated glass cutouts in a strict 4-column 3-row grid, with 12 percent empty space around each object inside each cell; nothing overlaps cell edges. TOP ROW: 1 ordinary golden lager beer in a smooth simple beer mug with small handle and modest flat fine foam; 2 orange mimosa in a smooth elegant champagne flute with one tiny orange wedge; 3 cloudy pale-green margarita in a broad clear margarita glass with a fine salt rim and small lime wedge; 4 pale lime mojito in a rounded highball with real mint leaves and ice. MIDDLE ROW: 5 dark ruby sangria in smooth rounded wine glass with two small natural citrus pieces; 6 ivory pina colada in short curving hurricane glass with a small pineapple wedge; 7 tequila sunrise layered red/orange in simple rounded tall tumbler with orange slice; 8 medium cyan blue lagoon cocktail in a smooth rounded highball with clear ice and small lemon wedge. BOTTOM ROW: 9 clear martini in fine thin glass with a single olive on a pick; 10 ruby-red strawberry daiquiri in a short-stem coupe with small strawberry; 11 coral-red hurricane in a short hurricane glass with small passion fruit garnish; 12 amber rum punch in a simple faceted rocks tumbler with small blue paper umbrella and lime. Entire glass bases and all garnishes visible; clean alpha, no pixel speckles, no colored fringe, no drawn outline, no external shadow, no table, no environment, no text, no labels. Use case: product-mockup. Asset type: one transparent drink sprite atlas for a game.
