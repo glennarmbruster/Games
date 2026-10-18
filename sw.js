@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.29",
+  "shell": "3.8.30",
   "marblegrove": "1.1.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
@@ -9,7 +9,7 @@ const VERSIONS = {
   "cubecorral": "4.1.8",
   "screwball": "4.6.1",
   "carjam": "2.4.0",
-  "fruitfusion": "1.4.1",
+  "fruitfusion": "1.5.0",
   "crashcourse": "1.5.1",
   "ludolights": "1.3.1",
   "prismbreaker": "1.3.1",

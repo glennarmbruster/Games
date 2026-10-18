@@ -1,0 +1,33 @@
+Fruit Fusion — gentle physics update
+
+Upload these files to the collection root, preserving their folder paths.
+This ZIP contains only Fruit Fusion's game.js, the cache version update in
+sw.js, and this note. No other game code is included.
+
+Changes
+- Fruit can move sideways when struck. A small rebound applies to harder
+  impacts; resting contacts stay stable. Floor friction now depends on time,
+  rather than being repeatedly multiplied by the collision solver.
+- Pineapple, grapes and watermelon: physical radius and artwork reduced 12%.
+- Pear: reduced 10%. Apple: reduced 7%.
+- Sprite source bounds include the full grape stem/leaves and pineapple crown.
+  The pear crop also excludes stray pineapple leaf tips from the adjacent cell.
+- Matching now allows a small 8% contact tolerance to account for artwork
+  extending beyond the collision circles. An intervening fruit blocks this
+  allowance; the final jackfruit still does not merge.
+- Bag size, controls, scores and the merge sequence are unchanged.
+  Two pineapples still merge into one jackfruit.
+
+Validation
+- Simulated an off-center drop that pushes two previously separated matching
+  fruits together, then checked that the resulting pile settles.
+- Checked collision behavior at 30, 60 and 120 updates per second.
+- Checked the exact size factors, pineapple-to-jackfruit merge, overflow ending
+  and portrait/landscape canvas renders at phone and tablet dimensions.
+- Checked close-contact merging for every fruit rank, separation limits,
+  intervening-fruit blocking and the non-merging final jackfruit.
+- Syntax and ZIP integrity checked. Physical iPhone/iPad testing is still needed.
+
+Suggested first test
+Drop fruit slightly to one side of a resting piece to push it toward a matching
+neighbor. The effect is intentionally gentle; larger fruit is harder to move.
