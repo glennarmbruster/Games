@@ -12,10 +12,15 @@ A.start=function(game){g=game;cv=$('board');ctx=game.context==='webgl'?null:cv.g
  cv.addEventListener('pointerup',function(e){if(paused||A.dialogOpen())return;var p=point(e);if(g.up)g.up(p.x,p.y);});
  window.addEventListener('keydown',function(e){if(paused||A.dialogOpen())return;if(e.key==='ArrowLeft'||e.key==='a')held.left=true;if(e.key==='ArrowRight'||e.key==='d')held.right=true;if(e.key===' '){e.preventDefault();if(g.space)g.space();}});
  window.addEventListener('keyup',function(e){if(e.key==='ArrowLeft'||e.key==='a')held.left=false;if(e.key==='ArrowRight'||e.key==='d')held.right=false;});
- window.addEventListener('blur',function(){held.left=false;held.right=false;held.up=false;held.down=false;if(g.cancel)g.cancel();});cv.addEventListener('pointercancel',function(){if(g.cancel)g.cancel();});window.addEventListener('resize',resize);resize();requestAnimationFrame(frame);
+ window.addEventListener('blur',function(){held.left=false;held.right=false;held.up=false;held.down=false;if(g.cancel)g.cancel();});cv.addEventListener('pointercancel',function(){if(g.cancel)g.cancel();});window.addEventListener('resize',resize);if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);resize();
+ // iOS can finish CSS layout after the window resize event. Follow the actual
+ // canvas size so the backing pixels, draw dimensions and input agree.
+ if(window.ResizeObserver){var canvasObserver=new ResizeObserver(function(){var r=cv.getBoundingClientRect(),d=Math.min(2,window.devicePixelRatio||1);if(r.width&&r.height&&(r.width!==W||r.height!==H||(ctx&&(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)))))resize();});canvasObserver.observe(cv);}
+ requestAnimationFrame(frame);
 };
 function point(e){var r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
-function resize(){var r=cv.getBoundingClientRect(),d=Math.min(2,window.devicePixelRatio||1);if(!r.width||!r.height)return;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);if(ctx)ctx.setTransform(d,0,0,d,0,0);W=A.w=r.width;H=A.h=r.height;if(g.resize)g.resize(W,H);}
+function resize(){var r=cv.getBoundingClientRect(),d=Math.min(2,window.devicePixelRatio||1);if(!r.width||!r.height)return;if(ctx){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);}W=A.w=r.width;H=A.h=r.height;if(g.resize)g.resize(W,H);}
+A.resize=resize;
 function frame(t){if(!last)last=t;var dt=Math.min(.05,(t-last)/1000);last=t;if(!paused&&!A.dialogOpen()&&g.tick)g.tick(dt);if(g.draw&&W&&H){if(ctx)ctx.clearRect(0,0,W,H);g.draw(ctx,W,H);}requestAnimationFrame(frame);}
 A.read=function(key,fallback){try{var v=JSON.parse(localStorage.getItem(key));if(v&&typeof v==='object')return v;}catch(e){}return fallback;};
 A.save=function(){try{localStorage.setItem(g.key,JSON.stringify(A.data));}catch(e){}};

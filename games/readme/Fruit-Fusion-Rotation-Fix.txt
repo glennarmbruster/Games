@@ -1,0 +1,19 @@
+Fruit Fusion — orientation fix
+
+Upload these four files to the collection root with folder paths preserved.
+
+Fixed the stale canvas size after portrait -> landscape -> portrait rotation.
+iOS can apply the final layout after the window resize event. The game now
+observes the actual canvas dimensions, listens for visual viewport changes,
+and updates the canvas pixels and game dimensions together. Fullscreen menu
+reflows now go through the same resize path. WebGL renderers retain control
+of their own drawing-buffer size.
+
+The shared resize correction also applies to the other games using this core.
+Their gameplay is unchanged. This includes all earlier Fruit Fusion physics,
+fruit-size and merge-tolerance changes when those updates are already installed.
+
+Validation: reproduced the old fault with the real core/fullscreen/game scripts,
+then verified 12 portrait/landscape round trips, both resize-observer orders,
+2x pixel density, control wrapping, visual-viewport changes, retained fruit
+positions after rotation, and retained score. Physical iOS testing remains.
