@@ -1,0 +1,26 @@
+JUICE SLIDE — POLISHED BAR + STRAIGHT LAUNCHES — v1.5.0
+
+Upload these files to matching paths in the existing Goobs Games collection.
+
+Replaces the flat orange playing surface with a detailed teak bar, perspective
+wood grain, polished edge, front apron, lighting and glass contact shadows.
+The current cocktail artwork is retained and rendered without stretching.
+Landscape framing gives the glasses headroom. The bar layer is cached rather
+than rebuilt every frame.
+
+Drag left/right to position the waiting drink; release or press Slide to launch
+straight ahead. Vertical dragging no longer changes the horizontal position.
+Saved angled aim is reset. Collisions may still push drinks sideways.
+
+All 12 drinks, merge rules, score values, collision sizes and slide speed remain
+unchanged. Exit/save/resume behavior is retained.
+
+Validation: straight launches at multiple pointer positions in 4 viewport sizes;
+vertical drag stability; legacy angled save loading; all 12 merge tiers compared
+with the previous version; score/physics comparisons; actual-core exit/resume
+checks and portrait/landscape rendering. No physical Safari device was available.
+
+New asset: games/juiceslide/teak-surface.webp.
+Generated with the built-in image generation tool, resized to 1024px WebP.
+Final image prompt:
+Use case: photorealistic-natural. Asset type: wood surface texture for the playing surface of a premium tropical bar sliding game. Orthographic directly overhead close-up of a beautifully crafted honey-brown teak bar top, edge-to-edge real wood, seven long narrow parallel boards running vertically from top to bottom. Rich warm medium caramel and toasted brown grain, subtle variations among planks, tight dark hairline seams, tiny natural pores, fine wavy grain, clear polished satin varnish with very soft diffuse reflections. Photorealistic material photography with realistic fine detail, refined luxury coastal resort style. Even diffuse lighting, NOT orange plastic, NOT illustrated, NOT cartoon, NOT yellow. Flat texture with no perspective, no border, no outer table edge, no background, no glasses, no objects, no text, no dramatic spotlight or hot specular glare, no cracks, no distressed dirty patches. Entire square image is usable wood texture, restrained luminous golden highlights and rich brown lowlights.
