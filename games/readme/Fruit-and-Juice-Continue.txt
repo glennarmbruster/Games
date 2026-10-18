@@ -1,0 +1,25 @@
+FRUIT FUSION + JUICE SLIDE — CONTINUE WHEN FULL
+Fruit Fusion v1.7.0 / Juice Slide v1.6.0
+
+Upload the four included files to matching paths in your existing collection.
+
+When the bag or table fills, the game pauses and asks whether to Continue.
+Continue removes the smallest pieces first: 30% rounded up, with a minimum of
+three when available. At least the largest remaining piece is kept if there
+was more than one. A single blocked piece can be cleared to recover the run.
+Scores, best scores, next pieces and unlocked drinks are retained.
+No limit or payment applies to continues. New game and Exit are also available.
+
+The remaining fruit gets time to settle. A full-board prompt cannot immediately
+repeat before the player has made another move. An escaped fruit that survives
+the clearing is brought back into the bag.
+Exit saves the continued run, including its recovery state.
+Previously saved full runs also show the new Continue prompt when opened.
+
+Keeps Juice Slide's straight launches and teak platform; keeps all current
+fruit/drink artwork and sizes. Other games are unchanged.
+
+Validation: actual fullness conditions, smallest-first removal, score/best/next
+preservation, reload in another orientation, resumed play, empty and single-piece
+cases, New game reset, and both normal Exit and pause-menu Exit save/resume.
+Physical-device Safari testing was not available in this workspace.
