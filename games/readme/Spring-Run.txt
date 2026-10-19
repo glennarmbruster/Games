@@ -1,14 +1,13 @@
-SPRING RUN — first playable release
+SPRING RUN 0.5 — Waterworks
 
-Upload the ZIP contents into the matching locations in the Games repository. Collection version: 3.8.35. Spring Run appears alphabetically under Puzzles. Planner remains last in TableTop.
+Upload ZIP contents at the Goobs Games root, preserving folders.
 
-HOW TO PLAY
-Drag through amber soil. Gray stone is permanent. Dig before releasing water or while it flows. Fill the otter pool to finish. Touch all three golden sunstones with water for a perfect score. Coral-marked dark drains lose water. Restart has no penalty.
+Changes: 12 redesigned puzzle layouts plus 12 mirrored challenge stages; later levels continue as waterworks variations. Water-activated cyan wheels open striped gates, paired pipes transport water through stone, sponges absorb a finite amount before passing water, and purple sludge destroys water. Three collectible sunstones per stage and an otter pool to fill. Each level has a specific Hint.
 
-FEATURES
-12 designed levels followed by deterministic generated levels. Offline play, local progress and exact water/terrain saves, sound toggle, level selection, pause and Exit. Portrait-first with a fitted landscape board. Exit and How to are available in the pause panel; no scrolling is required to reach Exit.
+Drag to dig. Fine/Wide changes dig width. Undo is available before Release. Water keeps moving while you dig; Pause freezes gameplay. Exit and level selection are in Pause, with Exit first. No lives, ads or timers.
 
-TESTING
-Automated simulation checks: all 12 designed levels plus generated levels 13, 30, 100 and 999 have tested completion routes. Water conservation, reservoir containment and unbreakable stone checked. Actual game code checked for release, three collectibles, completion and unlocking. Native canvas rendering and saved-state reload checked at 390x844, 844x390 and 768x1024. No physical iOS/Android or browser interaction test performed.
+Graphics: brighter earth, buried pebbles and roots, smoother water edges, bubbles, copper tap and bath, larger otter, metal pipe mouths, linked wheel/gate effects, digging debris and updated blue controls. Fits portrait/landscape without resetting the water simulation.
 
-This is an original first version inspired by digging-and-water puzzles. It does not yet include pipes, switches, poison or steam mechanics.
+Existing unlocked levels and earned stars are preserved. An unfinished board from the previous release restarts at the same level because layouts and machinery have changed. New 0.5 saves preserve water, digging, gate state and sponge capacity, including when exiting to the collection.
+
+Verification: actual engine simulations completed all 24 stages with three sunstones; measured water conservation, closed gates, finite sponge absorption, toxic-water loss and transfers. Native canvas renders checked at phone portrait/landscape and tablet sizes. Save/restore and earlier-version progression migration passed. No actual browser or physical-device test was available. This is a larger playable alpha, not feature parity with Where's My Water: moving mechanisms, steam and interacting liquid species are not implemented.

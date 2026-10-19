@@ -1,4 +1,4 @@
-SNOWBOUND 1.0 ALPHA — mountain-flight rebuild
+SNOWBOUND 1.0 ALPHA 1 — mountain-flight rebuild
 
 Install: upload this ZIP's contents at the Goobs Games root, preserving folders. This updates Snowbound and its cache version. The main collection menu and approved Snowbound icon are unchanged.
 
@@ -11,3 +11,5 @@ Both existing modes remain. Launch runs end when momentum runs out or at the cou
 Fullscreen with a compact overlay HUD. Pause reveals Exit immediately, plus How to play. Rotation resets the camera projection without resetting the run. Icon unchanged.
 
 Verification: scripted execution of the actual game logic and Three.js scene with a stub renderer, checking save migration, level overflow, launches, finite geometry/physics, steering, pause, rotation, collisions, rockets, flips and both modes. No browser GPU rendering or physical iPhone/iPad testing was available. This is an alpha for your playtest, not a claim of visual or gameplay parity with the reference.
+
+Alpha 1 refinement: smoother frame-rate-independent camera/FOV changes, camera clearance over terrain, landing compression and snow bursts, airborne sled pitch, ground shadow, snowfall, crystal arches and scenery section notices. Garage upgrades now explain their benefit. Stationary scenery is combined by material to reduce rendering submissions while keeping animated pickups and turbines separate. Underlying momentum tuning is unchanged from the approved first rebuild.
