@@ -1,2 +1,0 @@
-Pixel Volley — color-matching launcher puzzle
-Choose a front launcher from three queues. Launchers travel around the square rail and shoot inward only when the first exposed pixel matches their color. Each has finite ammunition. After one lap, remaining shots return to the five waiting slots. Tap a waiting launcher to redeploy it. Clear every pixel with the supplied ammunition; manage the bench so returning launchers have space. Old level/coins are kept; the current picture starts with the new launcher rules.
