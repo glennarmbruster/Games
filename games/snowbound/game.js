@@ -5,17 +5,24 @@ const canvas = $('game');
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const lerp = (a,b,t) => a+(b-a)*t;
 const STORE = 'goobs.snowbound.v1';
-const LEVELS=[{name:'Alpine Village',target:7500},{name:'Aurora Pass',target:10000}];
-let save = {bestLaunch:0,bestEndless:0,tokens:0,level:1,levelMeters:[0,0],levelTwoComplete:false,up:{launch:0,glide:0,rocket:0,steer:0,armor:0}};
+const LEVELS=[
+{name:'Alpine Village',target:7500,needs:{launch:1,glide:1,rocket:1}},
+{name:'Aurora Pass',target:8500,needs:{launch:2,glide:2,rocket:2,steer:1}},
+{name:'Frostwater Harbor',target:9000,needs:{launch:3,glide:3,rocket:3,steer:2,armor:1}},
+{name:'Crystal Crossing',target:9500,needs:{launch:4,glide:4,rocket:4,steer:3,armor:3}},
+{name:'Winterkeep',target:10000,needs:{launch:6,glide:5,rocket:5,steer:5,armor:4}}
+];
+let save = {bestLaunch:0,bestEndless:0,tokens:0,level:1,courseVersion:2,levelMeters:[0,0,0,0,0],completed:[false,false,false,false,false],levelTwoComplete:false,up:{launch:0,glide:0,rocket:0,steer:0,armor:0}};
 try {
   const prior = JSON.parse(localStorage.getItem(STORE)||'null');
   if (prior && typeof prior === 'object') {
     save.bestLaunch = Number(prior.bestLaunch)||0;
     save.bestEndless = Number(prior.bestEndless)||0;
     save.tokens = Math.max(0, Number(prior.tokens)||0);
-    save.level = prior.level===2?2:1;
-    if(Array.isArray(prior.levelMeters))save.levelMeters=[clamp(Number(prior.levelMeters[0])||0,0,7500),clamp(Number(prior.levelMeters[1])||0,0,10000)];
-    save.levelTwoComplete=!!prior.levelTwoComplete;
+    save.level = clamp(Number(prior.level)||1,1,5);
+    if(prior.courseVersion===2){save.levelMeters=LEVELS.map((l,i)=>clamp(Number(prior.levelMeters?.[i])||0,0,l.target));save.completed=LEVELS.map((l,i)=>!!prior.completed?.[i]);}
+    else {save.completed[0]=prior.level>=2;save.completed[1]=!!prior.levelTwoComplete;if(prior.levelTwoComplete)save.level=3;}
+    save.levelTwoComplete=save.completed[1];
     for (const key of Object.keys(save.up)) save.up[key] = clamp(Number(prior.up?.[key])||0,0,12)|0;
   }
 } catch {}
@@ -43,12 +50,20 @@ let noticeTimer;
 function notice(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('toast').classList.remove('show'),1450)}
 function rng(n){const v=Math.sin(n*127.1+64.7)*43758.5453;return v-Math.floor(v)}
 // Broad, banked terrain: long drops feed speed into rounded launch crests.
-function center(q){return Math.sin(q*.004)*8+Math.sin(q*.009)*3}
-function base(q){return 24-q*.055+11*Math.cos(q*Math.PI/155)+3*Math.cos(q*Math.PI/67)}
-function slope(q){return (base(q+.5)-base(q-.5))}
-function ground(q,offset=0){const edge=Math.max(0,Math.abs(offset)-9);return base(q)+edge*edge*.105}
+function center(q){const bend=[.004,.005,.006,.007,.008][runLevel-1];return Math.sin(q*bend)*(7+runLevel*1.5)+Math.sin(q*bend*2.1)*3.5}
+function base(q){const span=155-runLevel*5;return 24-q*.045+11*Math.cos(q*Math.PI/span)+3*Math.cos(q*Math.PI/(67-runLevel*2))}
+function slope(q){return base(q+.5)-base(q-.5)}
+function bridgeAt(q){const k=Math.floor(q/88),t=q-k*88;return runLevel>=3&&k>=3&&k%7===4&&t>=18&&t<=70}
+function gapAt(q){const k=Math.floor(q/88),t=q-k*88;return runLevel>=4&&k>=3&&k%8===6&&t>=40&&t<=56}
+function ground(q,offset=0){const edge=Math.max(0,Math.abs(offset)-9),bank=Math.min(edge,7);let y=base(q)+bank*bank*.095+Math.max(0,edge-7)*.015;
+ if(bridgeAt(q)&&Math.abs(offset)>6)y=base(q)-4;
+ if(gapAt(q)&&Math.abs(offset)<14)y=base(q)-12;
+ return y;
+}
 function meters(){return Math.max(0,(z-4)*4)}
 function section(q){return Math.floor(Math.max(0,q)/310)%3}
+function readyForCourse(){return Object.entries(LEVELS[runLevel-1].needs).every(([key,n])=>save.up[key]>=n)}
+function requirements(level){return Object.entries(LEVELS[level-1].needs).map(([key,n])=>({launch:'Slingshot',glide:'Wings',rocket:'Rocket',steer:'Steering',armor:'Armor'}[key])+' '+n+(save.up[key]>=n?' ✓':'')).join(' · ')}
 function mat(color,opts={}){return new T.MeshStandardMaterial({color,roughness:.73,metalness:.02,...opts})}
 function box(w,h,d,m){return new T.Mesh(new T.BoxGeometry(w,h,d),m)}
 function ball(r,m,segments=14){return new T.Mesh(new T.SphereGeometry(r,segments,10),m)}
@@ -104,10 +119,26 @@ function batchScenery(group){
 function snowArch(group,q){const cx=center(q),y=base(q);for(const side of [-1,1]){const rock=put(group,new T.Mesh(new T.DodecahedronGeometry(1,0),materials.rock),cx+side*17,y+9,q);rock.scale.set(5,13,8);put(group,new T.Mesh(new T.ConeGeometry(6,8,5),materials.snow),cx+side*17,y+23,q);}
  const arch=new T.Mesh(new T.TorusGeometry(17,2.1,5,18,Math.PI),materials.ice);arch.position.set(cx,y+8,q);group.add(arch);
 }
+function castle(g,x,q){const y=ground(q,x-center(q));put(g,box(9,6,5,materials.cabin),x,y+3,q);for(const side of [-1,1]){const tx=x+side*6;put(g,new T.Mesh(new T.CylinderGeometry(2.4,2.8,11,8),materials.cabin),tx,y+5.5,q);put(g,new T.Mesh(new T.ConeGeometry(3.5,5,8),materials.roofPurple),tx,y+13,q);for(let row=1;row<5;row++)put(g,new T.Mesh(new T.CylinderGeometry(2.55,2.55,.18,8),materials.cream),tx,y+row*2.1,q);for(const h of [3.2,7.3]){put(g,box(.7,1.6,.15,materials.window),tx,y+h,q-2.7);put(g,box(.9,.18,.3,materials.cream),tx,y+h-.85,q-2.8);}}
+ for(let k=-3;k<=3;k++){put(g,box(.75,.9,5.3,materials.cream),x+k*1.3,y+6.4,q);}put(g,box(2.5,4,.2,materials.door),x,y+2,q-2.6);for(const side of [-1,1])flagPole(g,x+side*6,q,materials.flagCoral);
+}
+function crystalTree(g,x,q,size){const y=ground(q,x-center(q));tube([x,y,q],[x,y+4*size,q],.22,materials.gold,g);for(const side of [-1,1]){tube([x,y+2*size,q],[x+side*1.5*size,y+3.5*size,q],.13,materials.gold,g);const orb=put(g,new T.Mesh(new T.IcosahedronGeometry(1.8*size,1),materials.crystalBlue),x+side*1.4*size,y+4.5*size,q);put(g,new T.Mesh(new T.IcosahedronGeometry(.6*size,0),materials.starPink),x+side*2.3*size,y+3.3*size,q);}}
+function frostTree(g,x,q,size){const y=ground(q,x-center(q));tube([x,y,q],[x,y+5*size,q],.25,materials.wood,g);for(const side of [-1,1]){tube([x,y+2*size,q],[x+side*1.8*size,y+4.8*size,q],.15,materials.wood,g);const crown=put(g,ball(1.7,materials.pink,10),x+side*1.5*size,y+5*size,q);crown.scale.set(size,size*.8,size);put(g,ball(1.1,materials.snow,10),x+side*1.5*size,y+5.8*size,q);}}
+function lighthouse(g,x,q){const y=ground(q,x-center(q));for(let k=0;k<4;k++)put(g,new T.Mesh(new T.CylinderGeometry(1.8-k*.18,2.05-k*.18,2.4,12),k%2?materials.white:materials.hot),x,y+1.2+k*2.4,q);put(g,new T.Mesh(new T.CylinderGeometry(1.7,1.7,1.6,12),materials.glass),x,y+10.2,q);put(g,new T.Mesh(new T.ConeGeometry(2.4,1.7,12),materials.roofCoral),x,y+11.8,q);}
+function barricade(g,q,safe){const cx=center(q),y=base(q);for(const side of [-1,1]){const left=side<0?-13:safe+4.5,right=side<0?safe-4.5:13;if(right-left<.2)continue;const width=right-left,mid=(left+right)/2;
+ put(g,box(width,1.15,.65,materials.hot),cx+mid,y+1.25,q);put(g,box(width,.18,.71,materials.white),cx+mid,y+1.55,q);for(const x of [left+.3,right-.3])tube([cx+x,y,q],[cx+x,y+2,q],.12,materials.chrome,g);objects.push({q,x:cx+mid,type:'barrier',width:width/2+1,used:false,group:g});}
+ for(const side of [-1,1])flagPole(g,cx+safe+side*4.5,q,materials.flagGold);
+}
+function bridge(g,start){for(let q=start+18;q<=start+70;q+=2.6){put(g,box(11,.3,2.45,materials.wood),center(q),base(q)+.2,q);for(const side of [-1,1]){tube([center(q)+side*5.5,base(q)+.2,q],[center(q)+side*5.5,base(q)+2,q],.12,materials.wood,g);if(q<start+68)tube([center(q)+side*5.5,base(q)+1.7,q],[center(q+2.6)+side*5.5,base(q+2.6)+1.7,q+2.6],.1,materials.gold,g);}}
+ const q=start+44,riverVerts=[],riverIndex=[];for(let row=0;row<=26;row++){const rq=start+18+row*2;for(const side of [-1,1])riverVerts.push(center(rq)+side*45,base(rq)-3.2,rq);if(row<26){const a=row*2;riverIndex.push(a,a+2,a+1,a+1,a+2,a+3)}}const river=new T.BufferGeometry();river.setAttribute('position',new T.Float32BufferAttribute(riverVerts,3));river.setIndex(riverIndex);river.computeVertexNormals();g.add(new T.Mesh(river,materials.harbor));
+ for(const side of [-1,1]){const bx=center(q)+side*23,by=base(q)-2.5;const hull=put(g,ball(1,materials.hot),bx,by,q);hull.scale.set(2.5,.65,5);put(g,box(2.5,1.7,2.5,materials.white),bx,by+1,q);put(g,box(2.7,.25,2.8,materials.roofPurple),bx,by+2,q);tube([bx,by,bx*0+q],[bx,by+5,q],.1,materials.chrome,g);put(g,ball(.4,materials.gold),bx,by+5,q);}
+
+}
+function snowplow(parent,q){const g=new T.Group();g.userData.dynamic=true;g.position.set(center(q),base(q),q);g.rotation.y=Math.PI/2;parent.add(g);put(g,box(2.8,.8,4.1,materials.hot),0,1,0);put(g,box(2.3,1.5,1.9,materials.jacket),0,2,-.6);put(g,box(2.1,.8,.1,materials.glass),0,2.25,.4);for(const side of [-1,1])for(const z of [-1.3,1.3]){const wheel=new T.Mesh(new T.CylinderGeometry(.65,.65,.45,10),materials.dark);wheel.rotation.z=Math.PI/2;put(g,wheel,side*1.5,.65,z);}const blade=put(g,box(4.5,1.3,.4,materials.gold),0,.7,2.4);blade.rotation.x=-.25;put(g,ball(.3,materials.starGold),0,3.05,-.6);objects.push({q,x:center(q),type:'plow',width:2.8,visual:g,used:false,group:parent});}
 function createChunk(i){const g=new T.Group(),start=i*88;g.add(makeMesh(start,88));g.add(makeMesh(start,88,true));g.add(trailMarks(start,88));scene.add(g);
-  for(let k=0;k<6;k++){const q=start+3+k*14.2;for(const side of [-1,1]){const n=i*140+k*7+(side+1);const x=center(q)+side*(21+rng(n)*23);section(q)===1?iceSpire(g,x,q,1.6+rng(n+4)):pine(g,x,q,1.3+rng(n+4)*1.5);if(rng(n+10)>.9)pine(g,x+side*3,q+4,.55+rng(n+5)*.6);if((k===3||(runLevel===2&&k===7))&&i>0)iceSpire(g,center(q)+side*19.8,q,.8+rng(n+11)*.9)}}
+  for(let k=0;k<6;k++){const q=start+3+k*14.2;for(const side of [-1,1]){const n=i*140+k*7+(side+1);const x=center(q)+side*(21+rng(n)*23);runLevel===4?(k%2?crystalTree(g,x,q,1+rng(n+4)*.4):iceSpire(g,x,q,1.2+rng(n+4)*.6)):runLevel===5?frostTree(g,x,q,1+rng(n+4)*.6):pine(g,x,q,1+rng(n+4)*1.1);if(rng(n+10)>.9&&runLevel<4)pine(g,x+side*3,q+4,.55+rng(n+5)*.6);if((runLevel===2||runLevel===4)&&k===3&&i>0)iceSpire(g,center(q)+side*19.8,q,.8+rng(n+11)*.9)}}
   if(i>0){for(const side of [-1,1])flagPole(g,center(start+13)+side*16.9,start+13,runLevel===2?(side>0?materials.flagGold:materials.flagViolet):(side>0?materials.flagCoral:materials.flagGold))}
-  if(i>0&&(runLevel===2?i%3===0:i%2===0))lodge(g,center(start+39)+(i%4===0?1:-1)*30,start+39,runLevel===2?materials.roofPurple:(i%4===0?materials.roofCoral:materials.roofGold));
+  if(runLevel<=3&&i>0&&(runLevel===2?i%3===0:i%2===0))lodge(g,center(start+39)+(i%4===0?1:-1)*30,start+39,runLevel===2?materials.roofPurple:(i%4===0?materials.roofCoral:materials.roofGold));
   if(i>0&&i%5===0)turbine(g,center(start+50)+35,start+50);
   if(i>=1){
     const q=start+44,lane=(Math.floor(rng(i*17)*3)-1)*6,x=center(q)+lane;
@@ -117,11 +148,19 @@ function createChunk(i){const g=new T.Group(),start=i*88;g.add(makeMesh(start,88
     if(type!=='star')objects.push({q,x,type,used:false,group:g});
     // Readable trails reward a chosen line without filling the whole view.
     for(let j=0;j<3;j++){const cq=start+12+j*8,cx=center(cq)+lane,power=j===2&&i%4===0?'boost':'coin',visual=createStar(g,cx,cq,power);visual.scale.setScalar(.6);objects.push({q:cq,x:cx,type:'star',power,visual,used:false,group:g})}
-    if(section(start)===2){for(const side of [-1,1]){const px=center(start+40)+side*21;const tower=put(g,box(6,14,6,materials.cabin),px,ground(start+40,side*21)+7,start+40);put(g,new T.Mesh(new T.ConeGeometry(5,6,6),materials.roofPurple),px,tower.position.y+10,start+40);for(let k=-1;k<=1;k++)put(g,box(1,1.6,.2,materials.window),px+k*1.6,tower.position.y+3,start+36.9)}}
+    if(runLevel===5&&i%2===0)castle(g,center(start+40)+(i%4?1:-1)*29,start+40);
+  }
+  if(i>=2){
+   const safe=(i%2?-1:1)*(runLevel>=2?6:4.5);
+   if(i%(runLevel>=3?2:3)===0&&!(runLevel>=3&&i%7===4)&&!(runLevel>=4&&i%8===6))barricade(g,start+55,safe);
+   if(runLevel>=3&&i%7===4){bridge(g,start);for(const side of [-1,1])flagPole(g,center(start+16)+side*6,start+16,materials.flagCoral);}
+   if(runLevel>=4&&i%8===6){createRamp(g,center(start+29),start+29);objects.push({q:start+29,x:center(start+29),type:'ramp',used:false,group:g});}
+   if(runLevel>=3&&i%5===2&&i%7!==4&&!(runLevel>=4&&i%8===6))snowplow(g,start+36);
+   if(runLevel===3&&i%3===1)lighthouse(g,center(start+30)+(i%2?1:-1)*25,start+30);
   }
   const end=4+LEVELS[runLevel-1].target/4;
   if(end>=start&&end<start+88){const cx=center(end),yy=ground(end,0);for(const side of [-1,1])tube([cx+side*13,yy,end],[cx+side*13,yy+12,end],.25,materials.hot,g);for(let k=0;k<18;k++)for(let j=0;j<2;j++)put(g,box(26/18,1.3,.18,(k+j)%2?materials.white:materials.dark),cx-13+(k+.5)*26/18,yy+11+j*1.3,end);}
-  if(i>0&&i%7===3)snowArch(g,start+60);
+  if(runLevel===4&&i>0&&i%7===3)snowArch(g,start+60);
   batchScenery(g);chunks.set(i,g)
 }
 function maintainChunks(){const first=Math.max(-1,Math.floor(z/88)-1),lastChunk=Math.floor(z/88)+8;for(let i=first;i<=lastChunk;i++)if(!chunks.has(i))createChunk(i);for(const [i,g] of chunks){if(i<first||i>lastChunk){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()});chunks.delete(i)}}for(let i=objects.length-1;i>=0;i--)if(!chunks.has(Math.floor(objects[i].q/88)))objects.splice(i,1);for(let i=turbines.length-1;i>=0;i--)if(!turbines[i].group.parent)turbines.splice(i,1)}
@@ -177,9 +216,7 @@ function setup(){try{
   scene=new T.Scene();scene.background=new T.Color('#91d9f9');scene.fog=new T.Fog('#b3e4f6',240,780);
   camera=new T.PerspectiveCamera(66,innerWidth/innerHeight,.2,900);
   scene.add(new T.HemisphereLight('#fff8e4','#70aaca',2.5));const sun=new T.DirectionalLight('#fff2dc',2.7);sun.position.set(-30,80,70);scene.add(sun);
-  Object.assign(materials,{track:new T.MeshStandardMaterial({vertexColors:true,roughness:.24,metalness:.18,side:T.DoubleSide}),terrain:new T.MeshStandardMaterial({vertexColors:true,roughness:.9,side:T.DoubleSide}),trail:new T.LineBasicMaterial({color:'#ffffff',transparent:true,opacity:.48}),snow:mat('#f9fdff'),pine:mat('#177e4c'),pine2:mat('#2aac70'),pineBlue:mat('#176f9e'),pineViolet:mat('#7060a8'),wood:mat('#765957'),rock:mat('#879eae'),ice:mat('#91eaff',{metalness:.11,roughness:.25}),white:mat('#ffffff'),ramp:mat('#ffbd31'),rampStripe:mat('#ff7f4f'),hot:mat('#f6638e'),pink:mat('#ff9dc0'),gold:mat('#ffc94d'),red:mat('#eb4750',{roughness:.43}),sledPanel:mat('#ff7253',{roughness:.35}),jacket:mat('#2481a4'),fox:mat('#f6a552'),dark:mat('#173e57'),chrome:mat('#bddce5',{metalness:.67,roughness:.23}),glass:mat('#83e8ef',{transparent:true,opacity:.45,metalness:.2,roughness:.12}),headlamp:new T.MeshBasicMaterial({color:'#93f9ff'}),wing:mat('#39b9d9',{metalness:.3,roughness:.32}),flame:new T.MeshBasicMaterial({color:'#ffb633'}),cabin:mat('#c8855e'),window:new T.MeshBasicMaterial({color:'#ffe58b'}),door:mat('#3d607c'),roofCoral:mat('#ee664e'),roofPurple:mat('#7654bf'),roofGold:mat('#f1aa3d'),flagGold:mat('#ffc850',{side:T.DoubleSide}),flagCoral:mat('#ff724f',{side:T.DoubleSide}),flagViolet:mat('#a171d6',{side:T.DoubleSide}),starGold:mat('#ffd747',{metalness:.24,roughness:.2,emissive:'#ffaf1d',emissiveIntensity:.43,side:T.DoubleSide}),starBlue:mat('#6feaff',{metalness:.24,roughness:.2,emissive:'#2ac4ef',emissiveIntensity:.43,side:T.DoubleSide}),starPink:mat('#ff81c5',{metalness:.24,roughness:.2,emissive:'#ea359c',emissiveIntensity:.43,side:T.DoubleSide}),starRing:new T.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.62,side:T.DoubleSide})});
-  // The distant peaks stay outside the playable corridor and move with the vista.
-  for(let k=0;k<8;k++){const peak=new T.Group(),body=new T.Mesh(new T.ConeGeometry(30+rng(k)*17,60+rng(k+9)*38,5),mat(k%2?'#77aecb':'#8bbfd8'));peak.add(body);const cap=new T.Mesh(new T.ConeGeometry(13+rng(k)*8,15,5),materials.snow);cap.position.y=body.geometry.parameters.height*.42;peak.add(cap);scene.add(peak);mountains.push(peak)}
+  Object.assign(materials,{track:new T.MeshStandardMaterial({vertexColors:true,roughness:.24,metalness:.18,side:T.DoubleSide}),cream:mat('#f0d8aa'),crystalBlue:mat('#299edb',{metalness:.16,roughness:.27}),harbor:mat('#209dcc',{roughness:.22,metalness:.28}),terrain:new T.MeshStandardMaterial({vertexColors:true,roughness:.9,side:T.DoubleSide}),trail:new T.LineBasicMaterial({color:'#ffffff',transparent:true,opacity:.48}),snow:mat('#f9fdff'),pine:mat('#177e4c'),pine2:mat('#2aac70'),pineBlue:mat('#176f9e'),pineViolet:mat('#7060a8'),wood:mat('#765957'),rock:mat('#879eae'),ice:mat('#91eaff',{metalness:.11,roughness:.25}),white:mat('#ffffff'),ramp:mat('#ffbd31'),rampStripe:mat('#ff7f4f'),hot:mat('#f6638e'),pink:mat('#ff9dc0'),gold:mat('#ffc94d'),red:mat('#eb4750',{roughness:.43}),sledPanel:mat('#ff7253',{roughness:.35}),jacket:mat('#2481a4'),fox:mat('#f6a552'),dark:mat('#173e57'),chrome:mat('#bddce5',{metalness:.67,roughness:.23}),glass:mat('#83e8ef',{transparent:true,opacity:.45,metalness:.2,roughness:.12}),headlamp:new T.MeshBasicMaterial({color:'#93f9ff'}),wing:mat('#39b9d9',{metalness:.3,roughness:.32}),flame:new T.MeshBasicMaterial({color:'#ffb633'}),cabin:mat('#c8855e'),window:new T.MeshBasicMaterial({color:'#ffe58b'}),door:mat('#3d607c'),roofCoral:mat('#ee664e'),roofPurple:mat('#7654bf'),roofGold:mat('#f1aa3d'),flagGold:mat('#ffc850',{side:T.DoubleSide}),flagCoral:mat('#ff724f',{side:T.DoubleSide}),flagViolet:mat('#a171d6',{side:T.DoubleSide}),starGold:mat('#ffd747',{metalness:.24,roughness:.2,emissive:'#ffaf1d',emissiveIntensity:.43,side:T.DoubleSide}),starBlue:mat('#6feaff',{metalness:.24,roughness:.2,emissive:'#2ac4ef',emissiveIntensity:.43,side:T.DoubleSide}),starPink:mat('#ff81c5',{metalness:.24,roughness:.2,emissive:'#ea359c',emissiveIntensity:.43,side:T.DoubleSide}),starRing:new T.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.62,side:T.DoubleSide})});
   skyGroup=new T.Group();const sunDisc=new T.Mesh(new T.SphereGeometry(18,16,12),new T.MeshBasicMaterial({color:'#fff0be'}));skyGroup.add(sunDisc);for(let i=0;i<6;i++){const puff=ball(1,new T.MeshBasicMaterial({color:'#effbff',transparent:true,opacity:.75}));puff.scale.set(11+rng(i)*9,2.1+rng(i+4)*2,4);puff.position.set((i-2.5)*25,6+(i%2)*4,-8);skyGroup.add(puff)}scene.add(skyGroup);
   const sprayPositions=new Float32Array(48*3);const sprayGeo=new T.BufferGeometry();sprayGeo.setAttribute('position',new T.BufferAttribute(sprayPositions,3));particles=new T.Points(sprayGeo,new T.PointsMaterial({color:'#faffff',size:.45,transparent:true,opacity:.84,depthWrite:false}));scene.add(particles);
   const snowGeo=new T.BufferGeometry();snowGeo.setAttribute('position',new T.BufferAttribute(new Float32Array(140*3),3));snowfall=new T.Points(snowGeo,new T.PointsMaterial({color:'#ffffff',size:.16,transparent:true,opacity:.7,depthWrite:false}));scene.add(snowfall);
@@ -189,12 +226,16 @@ function setup(){try{
 function resize(){if(!renderer)return;camera.position.set(center(z)+lateral,ground(z,lateral)+10+air,z-18);renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=innerHeight>innerWidth?73:62;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
 function applyLevelLook(){const dusk=runLevel===2;scene.background.set(dusk?'#72b7df':'#91d9f9');scene.fog.color.set(dusk?'#a9cde9':'#b3e4f6');skyGroup.children[0].material.color.set(dusk?'#dff3ff':'#fff0be');for(let k=0;k<mountains.length;k++)mountains[k].children[0].material.color.set(dusk?(k%2?'#7c89bc':'#779dc5'):(k%2?'#79b4d2':'#91c7dc'))}
-function updateLevelUI(){const index=save.level-1,level=LEVELS[index],meters=Math.floor(save.levelMeters[index]);$('levelName').textContent='Level '+save.level+' · '+level.name;$('levelMeters').textContent=save.levelTwoComplete?'Both levels cleared · replay freely':meters.toLocaleString()+' / '+level.target.toLocaleString()+' m total';$('levelFill').style.width=Math.min(100,meters/level.target*100)+'%'}
-function addLevelDistance(meters){if(save.levelTwoComplete)return 'Both levels cleared · replay freely';let left=Math.max(0,meters),cleared='';while(left>0){const index=save.level-1,need=LEVELS[index].target-save.levelMeters[index],applied=Math.min(left,need);save.levelMeters[index]+=applied;left-=applied;if(save.levelMeters[index]<LEVELS[index].target)break;if(save.level===1){cleared='Level 1 clear! Aurora Pass unlocked.';save.level=2}else{save.levelTwoComplete=true;cleared='Level 2 clear! Both courses complete.';break}}return cleared||'Level '+save.level+': '+Math.floor(save.levelMeters[save.level-1]).toLocaleString()+' / '+LEVELS[save.level-1].target.toLocaleString()+' m'}
+function updateLevelUI(){const index=save.level-1,level=LEVELS[index],best=Math.floor(save.levelMeters[index]||0);$('levelName').textContent='Level '+save.level+' · '+level.name;$('levelMeters').textContent='One run: '+level.target.toLocaleString()+' m · best '+best.toLocaleString()+' m';$('levelFill').style.width=Math.min(100,best/level.target*100)+'%';$('courseNeeds').textContent='Required sled: '+requirements(save.level);}
+function addLevelDistance(distance){if(mode!=='launch')return 'Endless practice · finish a Launch run to advance';const index=runLevel-1;save.levelMeters[index]=Math.max(save.levelMeters[index]||0,Math.min(distance,LEVELS[index].target));
+ if(distance<LEVELS[index].target)return 'Best run '+Math.floor(save.levelMeters[index])+' / '+LEVELS[index].target+' m · distance does not accumulate';
+ if(!readyForCourse())return 'Training finish · upgrade your sled to complete this course: '+requirements(runLevel);
+ save.completed[index]=true;save.levelTwoComplete=save.completed[1];if(runLevel<5){save.level=Math.max(save.level,runLevel+1);return 'Level '+runLevel+' clear! '+LEVELS[runLevel].name+' unlocked.'}return 'Level 5 clear! All five courses complete.';
+}
 function updateHud(){$('dist').textContent=Math.max(0,Math.floor(meters()))+' m';$('speed').textContent=Math.round(speed*2.237)+' mph';$('stars').textContent='★ '+stars;$('life').textContent=(mode==='endless'?'♥ '+hearts:'Best '+Math.floor(save.bestLaunch)+' m')+(shieldTime>0?' 🛡':'');$('boostCount').textContent=boostCharges;$('courseFill').style.height=Math.min(100,meters()/LEVELS[runLevel-1].target*100)+'%';$('airtime').textContent=air>1?'AIR TIME '+airborneTime.toFixed(1)+'s':'';$('jump').disabled=air<2||flipping;const status=$('powerup');status.hidden=!(shieldTime>0||surgeTime>0);status.textContent=shieldTime>0?'🛡 SHIELD '+Math.ceil(shieldTime)+'s':'✦ STAR SURGE '+Math.ceil(surgeTime)+'s'}
 function display(id){for(const key of ['menu','paused','result','help'])$(key).hidden=key!==id}
 function applyUpgrades(){const gl=save.up.glide;wings[0].visible=wings[1].visible=gl>0;engineSingle.visible=save.up.rocket<3;engineDual.visible=save.up.rocket>=3;for(const f of flames)f.visible=false;$('rocketLabel').textContent=save.up.rocket>=3?'Dual Thrusters':'Rocket'}
-function reset(m){mode=m;phase='ready';z=4;lateral=target=0;speed=air=vy=stars=shieldTime=surgeTime=invuln=boostTime=jumpCooldown=hitFlash=0;hearts=3;boostCharges=1+Math.floor(save.up.rocket/4);introT=0;worldY=ground(4,0);verticalSpeed=0;airborneTime=totalAir=runReward=flipAngle=0;flipping=false;finishReason='';landingPulse=launchPulse=0;lastSection=-1;runId++;runLevel=save.level;for(const [i,g] of chunks){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()})}chunks.clear();objects.length=0;turbines.length=0;applyLevelLook();maintainChunks();applyUpgrades();updateLevelUI();gate.visible=true;display('');$('ready').hidden=false;$('pullGuide').hidden=m!=='launch';$('readyTitle').textContent=m==='launch'?'Pull back to launch':'Ready to ride?';$('readyText').textContent=m==='launch'?'Level '+runLevel+' · '+LEVELS[runLevel-1].name+' — drag down and release, or tap Launch.':'Level '+runLevel+' · '+LEVELS[runLevel-1].name+' — dodge, jump and boost downhill.';$('powerBox').hidden=m!=='launch';$('go').textContent=m==='launch'?'Launch':'Start riding';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;updateHud()}
+function reset(m){mode=m;phase='ready';z=4;lateral=target=0;speed=air=vy=stars=shieldTime=surgeTime=invuln=boostTime=jumpCooldown=hitFlash=0;hearts=3;boostCharges=1+Math.floor(save.up.rocket/4);introT=0;worldY=ground(4,0);verticalSpeed=0;airborneTime=totalAir=runReward=flipAngle=0;flipping=false;finishReason='';landingPulse=launchPulse=0;lastSection=-1;runId++;runLevel=save.level;worldY=ground(4,0);for(const [i,g] of chunks){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose()})}chunks.clear();objects.length=0;turbines.length=0;applyLevelLook();maintainChunks();applyUpgrades();updateLevelUI();gate.visible=true;display('');$('ready').hidden=false;$('pullGuide').hidden=true;$('readyTitle').textContent='Level '+runLevel+' · '+LEVELS[runLevel-1].name;$('readyText').textContent=m==='launch'?(readyForCourse()?'Sled ready · reach the finish in one run':'Training run · earn upgrades for this course'):'Practice the route without advancing levels';$('powerBox').hidden=m!=='launch';$('go').textContent=m==='launch'?'Launch':'Start riding';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;updateHud()}
 function begin(){if(phase!=='ready')return;phase='running';launchPulse=1;$('ready').hidden=true;$('pullGuide').hidden=true;$('pause').hidden=false;$('exit').hidden=true;$('jump').hidden=false;$('boost').hidden=false;$('steerHint').hidden=false;speed=mode==='launch'?(57+save.up.launch*3.4)*(.45+power*.0055):55;air=0;worldY=ground(z,lateral);verticalSpeed=slope(z)*speed;gate.visible=true;tone(560,.22,'sawtooth',.11);setTimeout(()=>{if(phase==='running')$('steerHint').hidden=true},3000);last=performance.now()}
 function finish(){if(phase!=='running')return;phase='result';$('pause').hidden=true;$('jump').hidden=true;$('boost').hidden=true;$('steerHint').hidden=true;$('powerup').hidden=true;const dist=Math.floor(meters()),key=mode==='launch'?'bestLaunch':'bestEndless',record=dist>save[key];save[key]=Math.max(save[key],dist);if(mode==='launch')save.tokens+=1+Math.floor(stars/12)+Math.floor(totalAir/12);const levelMessage=addLevelDistance(dist);persist();updateLevelUI();$('levelResult').textContent=levelMessage;$('resultLabel').textContent=mode==='launch'?'Launch & Glide':'Endless Ride';$('resultTitle').textContent=levelMessage.includes('clear!')?'Level cleared!':finishReason|| (record?'New best!':'Run complete');$('resultDistance').textContent=dist+' m';$('resultDetail').textContent=(record?'Personal record · ':'')+stars+' stars · '+Math.floor(totalAir)+'s air time · best '+Math.floor(save[key])+' m';$('upgradeBox').hidden=mode!=='launch';refreshUpgrade();display('result');tone(720,.28)}
 function refreshUpgrade(){$('upgradePrompt').textContent=save.tokens?'Choose an upgrade · '+save.tokens+' available':'All upgrades used for now';for(const key of Object.keys(save.up)){$(key+'Level').textContent=save.up[key]+'/12';document.querySelector('[data-up="'+key+'"]').disabled=!save.tokens||save.up[key]>=12}}
@@ -223,19 +264,21 @@ function simulate(dt){clock+=dt;hitFlash=Math.max(0,hitFlash-dt*3);if(phase!=='r
  air=Math.max(0,worldY-floor);
  if(flipping)flipAngle=Math.min(Math.PI*2,flipAngle+dt*4.8);
  invuln=Math.max(0,invuln-dt);
- for(const o of objects){if(o.used||o.q>z+2||o.q<oldZ-2)continue;if(Math.abs(o.x-(center(o.q)+lateral))>2.6)continue;
+ for(const o of objects){if(o.type==='plow')o.x=center(o.q)+Math.sin(clock*.7+o.q)*8;if(o.used||o.q>z+2||o.q<oldZ-2)continue;if(Math.abs(o.x-(center(o.q)+lateral))>(o.width||2.6))continue;
   if(o.type==='star'&&air<3){o.used=true;o.visual.visible=false;stars++;tone(920,.08);if(o.power==='boost'){boostCharges=Math.min(5,boostCharges+1);notice('Rocket refilled')}}
   if(o.type==='ramp'&&air<1.2){o.used=true;verticalSpeed=Math.max(8,speed*.24);worldY=floor+.3;air=.3;tone(470,.15)}
-  if(o.type==='rock'&&air<1.6&&invuln<=0){o.used=true;speed*=.45+save.up.armor*.02;invuln=1;notice('Impact — momentum lost');tone(100,.2,'triangle');if(mode==='endless'){hearts--;if(hearts<=0){finishReason='Run complete';finish();return}}}
+  if((o.type==='rock'||o.type==='barrier'||o.type==='plow')&&air<(o.type==='barrier'?2.3:1.6)&&invuln<=0){o.used=true;speed*=.45+save.up.armor*.02;invuln=1;notice('Impact — momentum lost');tone(100,.2,'triangle');if(mode==='endless'){hearts--;if(hearts<=0){finishReason='Run complete';finish();return}}}
  }
+ if((bridgeAt(z)&&Math.abs(lateral)>4.6&&air<1.2)||(gapAt(z)&&worldY<base(z)-2.5)){finishReason=bridgeAt(z)?'Missed the bridge':'Short of the landing';finish();return}
  if(Math.abs(lateral)>12&&air<3&&invuln<=0){speed*=.65;target*=.85;invuln=1;notice('Snowbank!');tone(130,.15)}
  maintainChunks();
- const currentSection=Math.floor(z/310);if(currentSection!==lastSection){lastSection=currentSection;if(z>30)notice(['Pine Valley','Crystal Gardens','Castle Ridge'][section(z)]);}
+ const currentSection=Math.floor(z/310);if(currentSection!==lastSection){lastSection=currentSection;if(z>30)notice(['Rolling descent','Slalom stretch','Flight section'][section(z)]);}
  if(mode==='launch'&&meters()>=LEVELS[runLevel-1].target){finishReason='Finish line reached!';finish();return}
  if(mode==='launch'&&speed<3&&z>12){finishReason='Out of momentum';finish();return}
  hudTimer+=dt;if(hudTimer>.1){updateHud();hudTimer=0}
 }
 function render(dt){if(!renderer)return;introT+=dt;landingPulse=Math.max(0,landingPulse-dt*2);launchPulse=Math.max(0,launchPulse-dt*1.2);const x=center(z)+lateral,level=ground(z,lateral);rider.position.set(x,level+.1+air-landingPulse*.13,z-(phase==='ready'&&pull?Math.min(2.2,pull.amount/100):0));rider.rotation.z=lerp(rider.rotation.z,(target-lateral)*-.055,Math.min(1,dt*6));rider.rotation.y=lerp(rider.rotation.y,(center(z+6)-center(z))*.018+(target-lateral)*.04,Math.min(1,dt*5));rider.rotation.x=flipping?-flipAngle:lerp(rider.rotation.x,(air>1?clamp(-verticalSpeed*.012,-.35,.25):-Math.atan(slope(z))),1-Math.exp(-dt*9));
+  for(const o of objects)if(o.type==='plow'){o.visual.position.x=o.x;o.visual.rotation.y=Math.cos(clock*.7+o.q)>0?Math.PI/2:-Math.PI/2;}
   for(const o of objects)if(o.type==='star'&&!o.used){o.visual.rotation.y+=dt*1.6;o.visual.position.y=ground(o.q,o.x-center(o.q))+1.22+Math.sin(clock*3+o.q)*.12}
   for(let k=0;k<mountains.length;k++){const side=k%2?-1:1,step=Math.floor(k/2),q=z+330+step*29,peak=mountains[k];peak.position.set(center(q)+side*(95+step*42),base(q)+peak.children[0].geometry.parameters.height*.45-4,q)}
   skyGroup.position.set(center(z+330)+80,base(z+330)+105,z+330);
@@ -256,7 +299,7 @@ function render(dt){if(!renderer)return;introT+=dt;landingPulse=Math.max(0,landi
 }
 let dragging=false,dragStartY=0,lastPointerX=0;
 canvas.addEventListener('pointerdown',e=>{if(phase==='ready'&&mode==='launch'){dragging=true;dragStartY=e.clientY;pull={amount:0};canvas.setPointerCapture(e.pointerId)}else if(phase==='running'){pointer=true;lastPointerX=e.clientX;canvas.setPointerCapture(e.pointerId)}});
-canvas.addEventListener('pointermove',e=>{if(dragging&&phase==='ready'){pull.amount=Math.max(0,e.clientY-dragStartY);power=clamp(Math.round(35+pull.amount*.38),35,100);$('power').value=power;$('powerValue').textContent=power+'%'}else if(pointer&&phase==='running'){const dx=e.clientX-lastPointerX;lastPointerX=e.clientX;target=clamp(target-dx/innerWidth*23,-7.1,7.1)}});
+canvas.addEventListener('pointermove',e=>{if(dragging&&phase==='ready'){pull.amount=Math.max(0,e.clientY-dragStartY);power=clamp(Math.round(35+pull.amount*.38),35,100);$('power').value=power;$('powerValue').textContent=power+'%'}else if(pointer&&phase==='running'){const dx=e.clientX-lastPointerX;lastPointerX=e.clientX;target=clamp(target-dx/innerWidth*26,-12.5,12.5)}});
 canvas.addEventListener('pointerup',e=>{if(dragging&&pull?.amount>22)begin();dragging=false;pull=null;pointer=false});canvas.addEventListener('pointercancel',()=>{dragging=false;pull=null;pointer=false});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){phase==='running'?pause():phase==='paused'?resume():null;return}if(phase!=='running')return;if(['ArrowLeft','a','A'].includes(e.key)){target+=1.8;e.preventDefault()}if(['ArrowRight','d','D'].includes(e.key)){target-=1.8;e.preventDefault()}if(e.key===' '){jump();e.preventDefault()}if(['b','B'].includes(e.key))boost()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&phase==='running')pause()});

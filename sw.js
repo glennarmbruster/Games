@@ -91,7 +91,7 @@ const VERSIONS = {
   "metro": "1.0.3",
   "contraption": "1.1.0",
   "rebus": "1.0.0",
-  "snowbound": "1.0-alpha.1",
+  "snowbound": "1.0-alpha.2",
   "trafficjam": "1.4.0"
 };
 const GROUPS = {
