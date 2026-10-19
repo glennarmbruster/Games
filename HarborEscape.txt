@@ -1,2 +1,0 @@
-Harbor Escape — 1.0.0
-Tap a floor tile to walk there. Find the golden key, avoid patrolling guards, then reach the bridge gate. The Hint button lights the next useful tile. New island mazes generate offline, with local progress saving. Portrait and landscape supported.
