@@ -1,8 +1,13 @@
-Snowbound 0.9 Alpha — two level preview
+SNOWBOUND 1.0 ALPHA — mountain-flight rebuild
 
-Install this ZIP at the Goobs Games root, preserving folders. It keeps the winning Snowbound icon from 0.10 and carries over saved best distances, upgrades and settings.
+Install: upload this ZIP's contents at the Goobs Games root, preserving folders. This updates Snowbound and its cache version. The main collection menu and approved Snowbound icon are unchanged.
 
-Level 1: Alpine Village. Accumulate 7,500 meters across runs in either mode to unlock Level 2.
-Level 2: Aurora Pass. Accumulate another 10,000 meters across runs to clear the two level preview. Extra distance in the clearing run counts toward Level 2. The second course has a cooler blue and violet setting, more ice scenery and a different obstacle pattern. After both targets are met, Aurora Pass stays playable; more settings can follow after the screenshot review.
+Rebuilt terrain and movement based on the three supplied Sled Surfers videos: wide banked ice, steep rolling hills, momentum-driven automatic takeoffs, sustained airborne glides, higher chase camera, elastic launch, star trails, snow forests, ice gardens, castle sections and finish arches. Original character and scenery assets are retained/refined rather than copying the reference game's assets.
 
-This pass also raises the chase camera modestly, refines the snowy tree boughs, and adds brighter alpine color. The icon and steering stay as in 0.10.
+Drag down and release to launch (or set power and tap Launch). Drag left/right to steer. Rockets add momentum; wings improve flight. Flip is enabled when airborne: finish the rotation before landing. Stars and air time earn additional permanent upgrade tokens. Open Garage from the opening menu or upgrade after a run. Dual thrusters remain available at Rocket level 3.
+
+Both existing modes remain. Launch runs end when momentum runs out or at the course finish. Endless mode maintains a minimum speed and allows three rock impacts. Snowbanks and rocks cost momentum. The two existing cumulative level goals remain 7,500 m and 10,000 m. Complete runs to record progress; leaving an unfinished run does not bank its distance. Existing best distances, upgrade levels, earned upgrade tokens and level progress are preserved.
+
+Fullscreen with a compact overlay HUD. Pause reveals Exit immediately, plus How to play. Rotation resets the camera projection without resetting the run. Icon unchanged.
+
+Verification: scripted execution of the actual game logic and Three.js scene with a stub renderer, checking save migration, level overflow, launches, finite geometry/physics, steering, pause, rotation, collisions, rockets, flips and both modes. No browser GPU rendering or physical iPhone/iPad testing was available. This is an alpha for your playtest, not a claim of visual or gameplay parity with the reference.
