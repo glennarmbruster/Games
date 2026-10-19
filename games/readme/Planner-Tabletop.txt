@@ -1,0 +1,7 @@
+Planner — Tabletop integration
+
+Upload the contents to the matching locations in your Goobs Games collection. Planner appears last under TableTop and uses the supplied icon. Exit in the top bar returns to the collection.
+
+Planner is cached by the collection service worker; no separate installation is required. Weather and place lookup still require internet. App features and its database name are preserved. Data from an installation on a different website does not transfer automatically; use the app export/import if needed.
+
+Validation: embedded JavaScript syntax, last-item sorting, return link, local offline asset paths. No physical iOS test performed.

@@ -1,6 +1,7 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "shell": "3.8.33",
+  "planner": "1.0.0",
+  "shell": "3.8.34",
   "marblegrove": "1.2.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
@@ -93,6 +94,7 @@ const VERSIONS = {
   "trafficjam": "1.4.0"
 };
 const GROUPS = {
+  "planner": ["games/planner/", "games/planner/index.html", "games/planner/manifest.json", "games/planner/apple-touch-icon.png", "games/planner/icon-192.png", "games/planner/icon-512.png"],
   "handheld": [
     "games/handheld/",
     "games/handheld/index.html",
