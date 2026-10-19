@@ -183,6 +183,7 @@
     return p([[x - s, y], [x, y + s / 2], [x, y + 1.5 * s], [x - s, y + s]], .82) + p([[x + s, y], [x, y + s / 2], [x, y + 1.5 * s], [x + s, y + s]], .66) + p([[x, y - s / 2], [x + s, y], [x, y + s / 2], [x - s, y]]);
   }
   var GAMES = [
+    {id:'springrun',name:'Spring Run',blurb:'Dig channels, guide the water and restore a little spring.',path:'games/springrun/',art:'<img src="games/springrun/icon.png" alt="" width="100" height="100">',status:function(){var v=readLS('goobs.springrun.v1');return v?'Level '+(v.level||1):'Dig & flow';}},
     {id:'planner',name:'Planner',blurb:'Trips, packing lists, itinerary and budget.',path:'games/planner/',art:'<img src="games/planner/icon-192.png" alt="" width="100" height="100">',status:function(){return 'Trip planner';}},
 {id:"trafficjam",name:"Traffic Jam",blurb:"Follow the arrows. Clear every car from town.",path:"games/trafficjam/",art:'<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="20" fill="#174f76"/><path d="M0 50H100M50 0V100" stroke="#344454" stroke-width="34"/><rect x="37" y="15" width="26" height="50" rx="9" fill="#22d4e1"/><path d="M50 54V26M42 34L50 26L58 34" fill="none" stroke="white" stroke-width="5"/></svg>',status:function(){var v=readLS('goobs.trafficjam.v1');return v?'Level '+(v.level||1)+' · Clear the roads':'Unlimited road-clearing puzzles';}},
 
@@ -1129,7 +1130,7 @@
 
   // One category per game. Favorites remain in their category as well.
   var GAME_TABS = [
-    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'trafficjam fruitfusion harborescape juiceslide carjam metro contraption rebus hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
+    { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'springrun trafficjam fruitfusion harborescape juiceslide carjam metro contraption rebus hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'marblegrove crowdcascade neonbricks pixelvolley skyward citydash snowbound pool handheld containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
     { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'ludolights solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily wordwheel trivia spin wordboard planner' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
@@ -1164,7 +1165,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'metro' || g.id === 'planner') return;
+    if (g.id === 'metro' || g.id === 'planner' || g.id === 'springrun') return;
     if (g.id === 'handheld' || g.id === 'farkle' || g.id === 'bridge') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='snowbound'?'-v3.webp':((g.id==='pinball'||g.id==='contraption'||g.id==='pool'||g.id==='skeehop'||g.id==='hexslide')?'-v2.webp':'-v1.webp')) + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });

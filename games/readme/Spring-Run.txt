@@ -1,0 +1,14 @@
+SPRING RUN — first playable release
+
+Upload the ZIP contents into the matching locations in the Games repository. Collection version: 3.8.35. Spring Run appears alphabetically under Puzzles. Planner remains last in TableTop.
+
+HOW TO PLAY
+Drag through amber soil. Gray stone is permanent. Dig before releasing water or while it flows. Fill the otter pool to finish. Touch all three golden sunstones with water for a perfect score. Coral-marked dark drains lose water. Restart has no penalty.
+
+FEATURES
+12 designed levels followed by deterministic generated levels. Offline play, local progress and exact water/terrain saves, sound toggle, level selection, pause and Exit. Portrait-first with a fitted landscape board. Exit and How to are available in the pause panel; no scrolling is required to reach Exit.
+
+TESTING
+Automated simulation checks: all 12 designed levels plus generated levels 13, 30, 100 and 999 have tested completion routes. Water conservation, reservoir containment and unbreakable stone checked. Actual game code checked for release, three collectibles, completion and unlocking. Native canvas rendering and saved-state reload checked at 390x844, 844x390 and 768x1024. No physical iOS/Android or browser interaction test performed.
+
+This is an original first version inspired by digging-and-water puzzles. It does not yet include pipes, switches, poison or steam mechanics.
