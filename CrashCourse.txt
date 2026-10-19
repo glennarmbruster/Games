@@ -1,2 +1,0 @@
-Crash Course — assisted driving controls
-Cruise is on by default. Drag the on-screen steering pad or the game view; release to center. Steering smooths and becomes less sensitive at speed. Brake slows; Reverse disables cruise. Toggle Cruise off to drive manually with GO. Recover repairs and resets the truck. Free Drive and Stunt Trail remain available. Added trees, parked vehicles, and more controlled acceleration.
