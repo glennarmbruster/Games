@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "springrun": "0.5.0",
+  "springrun": "0.6.0",
   "planner": "1.0.0",
   "shell": "3.8.35",
   "marblegrove": "1.2.0",
@@ -91,7 +91,7 @@ const VERSIONS = {
   "metro": "1.0.3",
   "contraption": "1.1.0",
   "rebus": "1.0.0",
-  "snowbound": "1.0-alpha.2",
+  "snowbound": "1.1-alpha.1",
   "trafficjam": "1.4.0"
 };
 const GROUPS = {
@@ -2660,6 +2660,7 @@ const GROUPS = {
     "games/snowbound/",
     "games/snowbound/index.html",
     "games/snowbound/game.js",
+    "games/snowbound/courses.js",
     "shared/three.module.min.js"
   ],
   "metro": [

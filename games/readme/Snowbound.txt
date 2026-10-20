@@ -1,26 +1,13 @@
-SNOWBOUND 1.0 ALPHA 2 — five-course campaign
+SNOWBOUND 1.1 ALPHA 1 — reference-video and graphics pass
 
-Upload ZIP contents at the Goobs Games root, preserving folders. Only Snowbound, its cache version and these notes/previews change. The approved icon is preserved.
+Upload the ZIP contents at the Goobs Games root, preserving folders. Include courses.js. This package also updates Spring Run to 0.6.0; no other games change.
 
-Removed the towering distant peaks, capped the accidentally huge outer snowbanks, and removed the floating pull-back instruction. The launch panel identifies the course without covering the sled with that instruction.
+Reviewed the supplied Sled Surfers recordings for their rolling ice slopes, long glides, changing scenic districts, bright roadside landmarks and camera movement.
 
-Five courses: Alpine Village (7,500 m), Aurora Pass (8,500 m), Frostwater Harbor (9,000 m), Crystal Crossing (9,500 m), Winterkeep (10,000 m). Finish a course in ONE run. Short runs no longer add together. Endless is practice only and does not unlock campaign levels.
+Gameplay: stronger rolling terrain, less ground friction, longer upgraded glides, smoother airborne steering, reduced impact loss and a small momentum reward for completed flips. Camera follows height and turns more smoothly from a slightly higher viewpoint. Visible runner trails, peripheral speed streaks and broader swept wings reinforce motion.
 
-Each course has explicit minimum sled requirements, shown in its opening menu. You can play training runs and earn upgrade tokens before meeting them; a training finish does not unlock the next course. This is an explicit progression rule, alongside the effects upgrades have on launch speed, flight, boost and impact loss.
+Scenery/graphics: scenic districts change along each run, with snow villages, blue forests, crystal gardens and harbor/castle areas. Larger layered trees have snow on their boughs; added igloos, snowmen and low snowdrifts. Chalets have visible windows/doors on both faces and snow-covered roofs. Ice and snow have generated surface textures, with changing ice bands and quieter cracks. The approved icon stays. No towering mountain walls or pull-back instruction.
 
-Required upgrade levels (Slingshot / Wings / Rocket / Steering / Armor):
-1: 1 / 1 / 1 / 0 / 0
-2: 2 / 2 / 2 / 1 / 0
-3: 3 / 3 / 3 / 2 / 1
-4: 4 / 4 / 4 / 3 / 3
-5: 6 / 5 / 5 / 5 / 4
+Progression remains 20 named base routes followed by unlimited numbered tours with bounded variations. Upgrades cap at 12 in each of five categories. Each course still needs its required upgrades and completion in one run. Saved progress, upgrades and tokens remain compatible. Exit stays in the pause menu during play.
 
-Courses add alternating slalom barricades, moving snowplows, narrow timber bridges from level 3, and launch gaps from level 4. Snowplows and barricades have collision responses; missing a bridge or gap landing ends the run. More curved course lines accompany these route decisions. Existing boost, flight, flip and stars remain.
-
-Harbor includes lighthouses, boats and icy river crossings. Crystal Crossing has blue/gold trees, crystal groves and arches. Winterkeep has castle structures, pink frost trees and combined obstacles. Stationary scenery remains batched by material.
-
-Saved upgrades, available upgrade tokens and already-unlocked courses are preserved. Old cumulative partial distances restart as single-run records under the new rules. Players who already cleared both previous courses start at course 3.
-
-Verification: scripted actual-code checks for all five courses, upgrade gating, noncumulative completion, old progress migration, pause/rotation, finite physics and scenery. A steering/boost-driving script reached all five finishes using a fully upgraded sled. This is not a physical-device playtest or proof that every upgrade combination can finish.
-
-The three PNG previews are rendered from the game's actual meshes and camera by a software preview renderer. Lighting, transparency, effects and antialiasing differ from WebGL in the live game; they are not iPhone screenshots.
+Verification: automated actual-physics steering/boost runs finished all 20 base courses and levels 21–23 with a fully upgraded sled. Progression, save migration, upgrade gating, orientation, pause, textured mesh UVs and runner-trail updates checked. Software-rendered scene previews reviewed. Browser/WebGL appearance, performance and on-device playability have not been verified in this environment; device playtesting is still needed.

@@ -1,13 +1,7 @@
-SPRING RUN 0.5 — Waterworks
+SPRING RUN 0.6.0 — graphics pass
 
-Upload ZIP contents at the Goobs Games root, preserving folders.
+Warmer layered earth, stronger carved-edge shadows, blue stonework with lit edges/mineral detail, richer turquoise water with surface glints, faceted sunstone medallions, shaded otter artwork with blinking/breathing animation, a ceramic pool with water gradients, and polished blue controls.
 
-Changes: 12 redesigned puzzle layouts plus 12 mirrored challenge stages; later levels continue as waterworks variations. Water-activated cyan wheels open striped gates, paired pipes transport water through stone, sponges absorb a finite amount before passing water, and purple sludge destroys water. Three collectible sunstones per stage and an otter pool to fill. Each level has a specific Hint.
+Puzzle layouts and fluid rules remain unchanged: 24 campaign puzzles, then repeating variations. Existing water, dug terrain, machinery, collected volume, unlocks and sunstones are preserved. A small fix keeps pre-release Undo history and the chosen brush width when opening Pause/Help.
 
-Drag to dig. Fine/Wide changes dig width. Undo is available before Release. Water keeps moving while you dig; Pause freezes gameplay. Exit and level selection are in Pause, with Exit first. No lives, ads or timers.
-
-Graphics: brighter earth, buried pebbles and roots, smoother water edges, bubbles, copper tap and bath, larger otter, metal pipe mouths, linked wheel/gate effects, digging debris and updated blue controls. Fits portrait/landscape without resetting the water simulation.
-
-Existing unlocked levels and earned stars are preserved. An unfinished board from the previous release restarts at the same level because layouts and machinery have changed. New 0.5 saves preserve water, digging, gate state and sponge capacity, including when exiting to the collection.
-
-Verification: actual engine simulations completed all 24 stages with three sunstones; measured water conservation, closed gates, finite sponge absorption, toxic-water loss and transfers. Native canvas renders checked at phone portrait/landscape and tablet sizes. Save/restore and earlier-version progression migration passed. No actual browser or physical-device test was available. This is a larger playable alpha, not feature parity with Where's My Water: moving mechanisms, steam and interacting liquid species are not implemented.
+Verification: all 24 puzzle routes, three-sunstone collection, gate/pipe/sponge/sludge behavior and water conservation checked. Canvas rendering/board bounds checked at 390x844, 844x390 and 768x1024. Save/restore across orientation and Pause/Resume Undo checked. These are scripted and canvas-rendering checks, not physical-device/browser playtests.
