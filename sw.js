@@ -39,7 +39,7 @@ const VERSIONS = {
   "maze": "1.4.9",
   "mahjong": "1.4.6",
   "dice": "1.4.8",
-  "daily": "1.5.0",
+  "daily": "1.6.0",
   "mines": "1.4.8",
   "bubbles": "1.5.7",
   "bricks": "1.5.9",
@@ -795,6 +795,8 @@ const GROUPS = {
     "shared/menu-polish.css"
   ],
   "daily": [
+    "games/daily/answer-pools.js",
+    "games/daily/answer-pools-LICENSE.txt",
     "games/daily/",
     "games/daily/index.html",
     "shared/collection-ui.css",

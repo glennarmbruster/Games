@@ -1,5 +1,5 @@
 SHARED OFFLINE WORD DEFINITIONS 1.0.0
-LetterMind 1.5.0 / Tile Tide 0.3.0
+LetterMind 1.6.0 / Tile Tide 0.3.0
 
 Upload all ZIP contents at the collection root, keeping the games/ and shared/ folders. The included sw.js preserves the live collection versions and updates these two games plus a new shared definitions cache. Let the collection update finish while online before using definitions in airplane mode.
 
@@ -11,7 +11,7 @@ TILE TIDE
 Open the existing book / Is it a word? tool and enter a valid word. Tap Definition below its validation result. Done returns to the same lookup screen and leaves the game untouched.
 
 DICTIONARY
-112,706 word/form entries. Covers every one of LetterMind's 1,792 current answer words. Tile Tide's accepted-word list is larger: approximately 102,500 of its 168,551 entries have definitions. Uncovered words show a no-definition message; their validity does not change. These are definitions, not a replacement for either game's word-validation rules.
+112,706 word/form entries. Covers every one of LetterMind's 4,000 current answer words. Tile Tide's accepted-word list is larger: approximately 102,500 of its 168,551 entries have definitions. Uncovered words show a no-definition message; their validity does not change. These are definitions, not a replacement for either game's word-validation rules.
 
 Most meanings use WordNet 3.1, with inflected forms mapped to their base words and clearly labeled. Twenty-eight additional original definitions fill the gaps in LetterMind's answer pool. Capitalized-name senses are excluded where they would confuse ordinary words: HOGAN shows the Navajo dwelling, not a golfer's surname. WordNet attribution and its full license are included at shared/definitions/LICENSE.txt and available from the definition panel.
 

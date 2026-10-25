@@ -1,0 +1,20 @@
+LETTER MIND 1.6.0 — expanded answer pool
+
+4,000 unique answers, up from 1,792: 3,000 familiar and 1,000 discovery words. Every selected word is a legal guess and has a shared offline definition. The original answer words are retained in the expanded pool. Word familiarity varies between players; these categories use frequency-assisted selection with manual overrides.
+
+DAILY WORDS
+The new schedule begins Monday, October 26, 2026. Word 1 and Word 2 together use 12 familiar answers and two discovery answers per calendar week. Discovery slots are Wednesday's Word 2 and Sunday's Word 1. Daily selection is deterministic, so devices using this version agree on new puzzles. Familiar daily slots traverse their 3,000-word pool before repeating (250 weeks); discovery slots traverse their 1,000-word pool before repeating (500 weeks). Different modes share the pools and may reuse words.
+
+PRACTICE / QUORDLE
+Practice uses the expanded pool immediately: about six in seven draws are familiar and one in seven is a discovery. Random Practice draws can repeat. Quordle uses four distinct answers and has one discovery answer on Saturdays. New Quordle puzzles avoid that day's Word 1 and Word 2.
+
+PROGRESS
+Historical puzzles through October 25 retain their original answers. Any saved game keeps its existing answer(s), including puzzles begun on the older version after the schedule starts. Guesses, progress and stats are preserved. Completed Practice words remain available for lookup until New word is chosen.
+
+INSTALLATION
+Upload all files at the existing collection root, preserving folders. The shared definitions and Tile Tide definition update are included, so this ZIP also works if the previous definitions ZIP has not yet been uploaded. Finish the collection update online before playing offline. The main collection menu is unchanged.
+
+VERIFICATION
+Checked all 4,000 entries for uniqueness, legal-guess membership and definition coverage; checked 250 weeks for exactly two daily discovery answers per week and no premature familiar/discovery repeats. Checked distinct same-day answers, historical puzzles, weighted Practice selection, saved answers/guesses/stats, definition controls and input isolation. Browser/physical-device layout and offline installation still require user testing.
+
+Pool-selection data credits and licensing: games/daily/answer-pools-LICENSE.txt. Definition credits: shared/definitions/LICENSE.txt.
