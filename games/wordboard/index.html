@@ -257,7 +257,7 @@ html.gg-fs-over .app { position: relative; height: 100%; gap: 6px; align-items: 
 .status .w { background:rgba(255,255,255,.3); }
 .status .w.bad { background:#cf3548; }
 @media (max-width:600px) { .status { font-size:14px; min-height:27px; } }
-</style></head>
+</style><link rel="stylesheet" href="../../shared/word-definitions.css"><script src="../../shared/word-definitions.js"></script></head>
 <body class="collection-page" data-collection="wordboard">
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="tt-logo" viewBox="0 0 100 100"><defs><linearGradient id="ttL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3cc6d3"/><stop offset="1" stop-color="#0b5d7d"/></linearGradient></defs>
@@ -377,6 +377,7 @@ html.gg-fs-over .app { position: relative; height: 100%; gap: 6px; align-items: 
     <div class="sheetbody">
       <div class="lkword" id="lkWord"></div>
       <div class="lkres" id="lkRes">Type a word to check it.</div>
+      <button class="btn" type="button" id="btnWordDefinition" hidden>Definition</button>
       <div class="kbd" id="kbd"></div>
     </div>
     <div class="actions"><button class="btn red" id="btnCloseLookup">Done</button></div>
@@ -1091,7 +1092,7 @@ var TTSound = (function () {
   function $(id) { return document.getElementById(id); }
   function isOpen(id) { var e = $(id); return !!e && e.classList.contains('show'); }
   var SHEETS = ['ovNew', 'ovHistory', 'ovLookup', 'ovBag', 'ovBlank', 'ovSwap', 'ovStats', 'ovSettings', 'ovHelp', 'ovAsk', 'ovEnd', 'ggMenu'];
-  function sheetOpen() { for (var i = 0; i < SHEETS.length; i++) if (isOpen(SHEETS[i])) return true; return GoobsAds.isOpen(); }
+  function sheetOpen() { if(GoobsDefinitions.isOpen())return true;for (var i = 0; i < SHEETS.length; i++) if (isOpen(SHEETS[i])) return true; return GoobsAds.isOpen(); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function up(w) { return String(w).toUpperCase(); }
@@ -1915,8 +1916,10 @@ var TTSound = (function () {
   function drawLookup() {
     $('lkWord').innerHTML = lk ? lk.split('').map(function (ch) { return tileHtml(ch.charCodeAt(0) - 97, -1); }).join('') : '<span class="ph">Type with the letters below</span>';
     var res = $('lkRes');
+    $('btnWordDefinition').hidden=true;
     if (lk.length < 2) { res.className = 'lkres'; res.textContent = lk ? 'Words need at least 2 letters.' : 'Type a word to check it.'; return; }
     var f = TT.lookup(D, lk), pts = 0;
+    $('btnWordDefinition').hidden=!f;
     for (var i = 0; i < lk.length; i++) pts += TT.VALUE[lk.charCodeAt(i) - 97];
     res.className = 'lkres ' + (f ? 'yes' : 'no');
     res.innerHTML = f ? '✓ ' + up(lk) + ' is a word <small>· ' + pts + ' point' + (pts === 1 ? '' : 's') + ' in tiles</small>' : '✗ ' + up(lk) + ' is not in the word list';
@@ -2045,6 +2048,7 @@ var TTSound = (function () {
     });
     sheet('btnHistory', 'ovHistory', 'btnCloseHistory', openHistory);
     sheet('btnLookup', 'ovLookup', 'btnCloseLookup', openLookup);
+    $('btnWordDefinition').addEventListener('click',function(){if(lk.length>1&&TT.lookup(D,lk))GoobsDefinitions.open(lk);});
     $('kbd').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) lookupKey(b.dataset.k); });
     sheet('btnStats', 'ovStats', 'btnCloseStats', openStats);
     sheet('btnHelp', 'ovHelp', 'btnCloseHelp', openHelp);

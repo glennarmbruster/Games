@@ -1,5 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
+  "definitions": "1.0.0",
   "springrun": "0.6.0",
   "planner": "1.0.0",
   "shell": "3.8.35",
@@ -38,7 +39,7 @@ const VERSIONS = {
   "maze": "1.4.9",
   "mahjong": "1.4.6",
   "dice": "1.4.8",
-  "daily": "1.4.9",
+  "daily": "1.5.0",
   "mines": "1.4.8",
   "bubbles": "1.5.7",
   "bricks": "1.5.9",
@@ -71,7 +72,7 @@ const VERSIONS = {
   "links": "0.4.5",
   "bowling": "0.4.8",
   "deck": "0.4.7",
-  "wordboard": "0.2.6",
+  "wordboard": "0.3.0",
   "nonogram": "0.3.6",
   "getout2": "1.6.7",
   "huddle": "0.4.9",
@@ -95,6 +96,7 @@ const VERSIONS = {
   "trafficjam": "1.4.0"
 };
 const GROUPS = {
+  "definitions": ["shared/word-definitions.js", "shared/word-definitions.css", "shared/definitions/LICENSE.txt", "shared/definitions/a.json", "shared/definitions/b.json", "shared/definitions/c.json", "shared/definitions/d.json", "shared/definitions/e.json", "shared/definitions/f.json", "shared/definitions/g.json", "shared/definitions/h.json", "shared/definitions/i.json", "shared/definitions/j.json", "shared/definitions/k.json", "shared/definitions/l.json", "shared/definitions/m.json", "shared/definitions/n.json", "shared/definitions/o.json", "shared/definitions/p.json", "shared/definitions/q.json", "shared/definitions/r.json", "shared/definitions/s.json", "shared/definitions/t.json", "shared/definitions/u.json", "shared/definitions/v.json", "shared/definitions/w.json", "shared/definitions/x.json", "shared/definitions/y.json", "shared/definitions/z.json"],
   "springrun": ["games/springrun/", "games/springrun/index.html", "games/springrun/engine.js", "games/springrun/game.js", "games/springrun/style.css", "games/springrun/icon.png"],
   "planner": ["games/planner/", "games/planner/index.html", "games/planner/manifest.json", "games/planner/apple-touch-icon.png", "games/planner/icon-192.png", "games/planner/icon-512.png"],
   "handheld": [

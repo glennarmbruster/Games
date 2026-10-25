@@ -161,7 +161,7 @@ button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
-<link rel="stylesheet" href="../../shared/remaining-navigation.css"></head>
+<link rel="stylesheet" href="../../shared/remaining-navigation.css"><link rel="stylesheet" href="../../shared/word-definitions.css"><script src="../../shared/word-definitions.js"></script></head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="lm-logo" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#eef1fb"/>
@@ -218,6 +218,7 @@ button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
   <div class="toolbar">
     <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
     <button class="tool" id="btnShare"><svg viewBox="0 0 24 24"><use href="#i-share"/></svg><span>Share</span></button>
+    <button class="tool" id="btnDefinition" hidden>Look up</button>
     <button class="tool go" id="btnEnter"><svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span></button>
   </div>
 </div>
@@ -418,7 +419,7 @@ var LMSound = (function () {
   // ================= helpers =================
   function $(id) { return document.getElementById(id); }
   function isOpen(id) { return $(id).classList.contains('show'); }
-  function sheetOpen() { return isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
+  function sheetOpen() { return GoobsDefinitions.isOpen() || isOpen('ovEnd') || isOpen('ovSettings') || isOpen('ovStats') || isOpen('ovHelp') || isOpen('ggMenu') || GoobsAds.isOpen(); }
   function rand() { try { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; } catch (e) { return Math.random(); } }
 
   // ================= games =================
@@ -441,7 +442,7 @@ var LMSound = (function () {
   function otherDaily(m) { var o = m === 'daily' ? 'daily2' : 'daily', s = store.get(keyFor(o), null); return { mode: o, done: !!(s && s.day === today() && s.done) }; }
   function loadPractice(fresh) {
     var s = !fresh && store.get('prac', null);
-    if (s && s.answer && Array.isArray(s.rows) && !s.done) return s;
+    if (s && s.answer && Array.isArray(s.rows)) return s;
     return { answer: LM.randomAnswer(rand()), rows: [], cur: '', done: false, won: false, hard: settings.hard };
   }
   function save() { store.set(keyFor(meta.mode), g); }
@@ -682,11 +683,14 @@ var LMSound = (function () {
     $('info').innerHTML = h;
     Array.prototype.forEach.call($('modes').children, function (b) { b.classList.toggle('on', b.dataset.mode === m); });
     $('btnShare').disabled = !g.done;
-    var completedDaily = g.done && isDaily(m);
+    var completedDaily = g.done;
+    $('btnDefinition').hidden = !definitionWords().length;
     $('btnEnter').disabled = g.done && !completedDaily;
     $('btnEnter').innerHTML = completedDaily ? '<span>' + (isQuad() ? g.answers.join(' · ').toUpperCase() : g.answer.toUpperCase()) + ' · Stats</span>' : '<svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span>';
     $('btnEnter').setAttribute('aria-label', completedDaily ? 'Stats for completed ' + (isQuad() ? 'four words' : 'word ' + g.answer.toUpperCase()) : 'Enter');
   }
+  function definitionWords() { if (!g) return [];return isQuad() ? g.answers.filter(function(_,i){return g.done || fourSolved(i);}) : g.done ? [g.answer] : []; }
+  function lookupAnswer() { var words=definitionWords();if(words.length)GoobsDefinitions.open(words); }
   function countdown() {
     var n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
     return Math.floor(s / 3600) + ':' + ('0' + Math.floor(s / 60) % 60).slice(-2) + ':' + ('0' + s % 60).slice(-2);
@@ -711,12 +715,12 @@ var LMSound = (function () {
       html = '<div class="nextword">' + g.answers.map(function (word, i) { return (i + 1) + '. <b>' + word.toUpperCase() + '</b>'; }).join(' &nbsp; ') + '</div>' +
         tilesFor(st, '<div class="tile"><b>' + streakNow('quad') + '</b><span>Streak</span></div>') + distHtml(st, g.won ? n : 0) +
         '<div class="nextword">Next puzzle in <b id="cd2">' + countdown() + '</b></div>';
-      showCard(title, html, [{ label:'Share', red:true, go:share }, { label:'Back to boards', go:function () {} }]); return;
+      showCard(title, html, [{ label:'Share', red:true, go:share }, { label:'Look up', go:lookupAnswer }, { label:'Back to boards', go:function () {} }]); return;
     }
     title = g.won ? (daily ? 'Solved in ' + n + '!' : 'Got it in ' + n + '!') : 'The word was ' + g.answer.toUpperCase();
     html = tilesFor(st, daily ? '<div class="tile"><b>' + streakNow() + '</b><span>Streak</span></div><div class="tile"><b>' + st.max + '</b><span>Best streak</span></div>' : '') +
       distHtml(st, g.won ? n : 0) + (daily ? '<div class="nextword">Next word in <b id="cd2">' + countdown() + '</b></div>' : '');
-    var b = [];
+    var b = [{ label: 'Look up ' + g.answer.toUpperCase(), go: lookupAnswer }];
     if (daily) {
       var o = otherDaily(meta.mode);
       if (!o.done) b.push({ label: 'Play word ' + wordNo(o.mode), red: true, go: function () { switchMode(o.mode); } }, { label: 'Share', go: share });
@@ -816,7 +820,8 @@ var LMSound = (function () {
       between(function () { open('practice', true); });
     });
     $('btnShare').addEventListener('click', share);
-    $('btnEnter').addEventListener('click', function () { if (g.done && isDaily(meta.mode)) showResult(false); else type('enter'); });
+    $('btnDefinition').addEventListener('click', lookupAnswer);
+    $('btnEnter').addEventListener('click', function () { if (g.done) showResult(false); else type('enter'); });
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);
     $('btnHelp').addEventListener('click', openHelp);

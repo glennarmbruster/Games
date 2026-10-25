@@ -1,0 +1,21 @@
+SHARED OFFLINE WORD DEFINITIONS 1.0.0
+LetterMind 1.5.0 / Tile Tide 0.3.0
+
+Upload all ZIP contents at the collection root, keeping the games/ and shared/ folders. The included sw.js preserves the live collection versions and updates these two games plus a new shared definitions cache. Let the collection update finish while online before using definitions in airplane mode.
+
+LETTER MIND
+After finishing Word 1, Word 2 or a Practice word, tap Look up on the board. The result/stats card also has a Look up button. Losing a round allows lookup of the revealed answer. Unfinished answers are never included. Quordle lookup offers only solved words until the round ends, then all four revealed words.
+Completed Practice boards now remain available when returning to Practice. Choose New word (or Next word on results) to start another. Stats remain available and definitions do not change scores, streaks, answers, word acceptance or stored guesses.
+
+TILE TIDE
+Open the existing book / Is it a word? tool and enter a valid word. Tap Definition below its validation result. Done returns to the same lookup screen and leaves the game untouched.
+
+DICTIONARY
+112,706 word/form entries. Covers every one of LetterMind's 1,792 current answer words. Tile Tide's accepted-word list is larger: approximately 102,500 of its 168,551 entries have definitions. Uncovered words show a no-definition message; their validity does not change. These are definitions, not a replacement for either game's word-validation rules.
+
+Most meanings use WordNet 3.1, with inflected forms mapped to their base words and clearly labeled. Twenty-eight additional original definitions fill the gaps in LetterMind's answer pool. Capitalized-name senses are excluded where they would confuse ordinary words: HOGAN shows the Navajo dwelling, not a golfer's surname. WordNet attribution and its full license are included at shared/definitions/LICENSE.txt and available from the definition panel.
+
+The 26 letter-separated JSON files total approximately 25 MB uncompressed, downloaded once through the collection's offline cache and shared by both games. Only the requested letter is parsed into memory during lookup. No dictionary subscription or external lookup request is needed during play.
+
+CHECKS
+Actual application scripts tested in a simulated DOM: solved/unfinished buttons, Word 1, Word 2, Practice, resumed Practice, Quordle answer isolation, Tile Tide validity and unchanged game state, modal keyboard isolation, HOGAN/inflected forms, unknown words, overlapping loads and failed-load retry. All answer definitions, script syntax and offline-cache file references verified. Physical iPhone/iPad layout and airplane-mode installation still need device testing.
