@@ -1,0 +1,11 @@
+LetterMind 2 v1.0.0 / Collection shell 3.8.36
+
+Upload the contents into the collection root, preserving folders. Includes the main index and service worker so LetterMind 2 appears under TableTop. Original LetterMind files and saves are untouched.
+
+4-Letter: daily four-letter word. 6-Letter: daily six-letter word. Both use six guesses and the same deterministic answer on every updated device for the same local calendar date.
+Practice 4 / Practice 6: unlimited separate practice.
+1,800 four-letter answers and 4,000 six-letter answers, all with offline definitions. Lightbulb gives only Yes/No for repeated letters. Separate statistics per mode; daily streaks; color-square sharing.
+Discovery words: Sunday four-letter, Wednesday six-letter. Practice occasionally selects discovery words.
+Shared definition files are unchanged copies included for completeness. Let the update finish online once for offline lookup.
+
+Verified through scripted game execution: wins for all modes, hints, saved games, isolated stats, sharing, lookup, repeated-letter scoring, and deterministic daily answers. Physical iPhone/iPad layout testing still needed.
