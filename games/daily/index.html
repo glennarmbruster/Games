@@ -56,6 +56,7 @@ html.lm-contrast { --lm-c: #f08c2c; --lm-p: #4da3ff; }
 .kb button.hint:disabled { opacity: .4; }
 /* Lock key, unlocked for this row: outlined, grey letters typeable again */
 .kb button.hint.open { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px #3d6fd8; }
+#btnHint { flex:0 0 44px; width:44px; padding:0; }
 .tool.go { background: #1f9d55; color: #fff; border-color: transparent; box-shadow: 0 6px 16px -8px #1f9d55; }
 .kb button { position: relative; }
 .kb button.off, .kb button.off:disabled { background: var(--lm-a); color: #fff; opacity: .28; }
@@ -211,13 +212,14 @@ button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
 
   <div class="info" id="info"></div>
 
-  <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div><div class="quad-tabs" id="quadTabs" aria-label="Choose a Quordle board"></div><div class="quad-gallery" id="quadGallery"></div><div class="toast" id="toast"></div></div>
+  <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div><div class="quad-tabs" id="quadTabs" aria-label="Choose a Quordle board"></div><div class="quad-gallery" id="quadGallery"></div><div class="toast" id="toast" role="status" aria-live="polite"></div></div>
 
   <div class="kb" id="kb"></div>
 
   <div class="toolbar">
     <button class="tool" id="btnHelp"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg><span>How to</span></button>
     <button class="tool" id="btnShare"><svg viewBox="0 0 24 24"><use href="#i-share"/></svg><span>Share</span></button>
+    <button class="tool" id="btnHint" aria-label="Hint: does this word contain a repeated letter?" title="Repeated letter?"><svg viewBox="0 0 24 24"><use href="#i-bulb"/></svg></button>
     <button class="tool" id="btnDefinition" hidden>Look up</button>
     <button class="tool go" id="btnEnter"><svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span></button>
   </div>
@@ -702,6 +704,12 @@ var LMSound = (function () {
     $('btnEnter').setAttribute('aria-label', completedDaily ? 'Stats for completed ' + (isQuad() ? 'four words' : 'word ' + g.answer.toUpperCase()) : 'Enter');
   }
   function definitionWords() { if (!g) return [];return isQuad() ? g.answers.filter(function(_,i){return g.done || fourSolved(i);}) : g.done ? [g.answer] : []; }
+  function repeatedLetterHint() {
+    if (!g) return;
+    var word = isQuad() ? g.answers[g.active || 0] : g.answer;
+    var repeated = word.split('').some(function(ch, i) { return word.indexOf(ch) !== i; });
+    toast((isQuad() ? 'Board ' + ((g.active || 0) + 1) + ' · ' : '') + 'Repeated letter? ' + (repeated ? 'Yes' : 'No'), 4000);
+  }
   function lookupAnswer() { var words=definitionWords();if(words.length)GoobsDefinitions.open(words); }
   function countdown() {
     var n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
@@ -834,6 +842,7 @@ var LMSound = (function () {
     });
     $('btnShare').addEventListener('click', share);
     $('btnDefinition').addEventListener('click', lookupAnswer);
+    $('btnHint').addEventListener('click', repeatedLetterHint);
     $('btnEnter').addEventListener('click', function () { if (g.done) showResult(false); else type('enter'); });
     sheet('btnSettings', 'ovSettings', 'btnCloseSettings');
     sheet('btnStats', 'ovStats', 'btnCloseStats', renderStats);

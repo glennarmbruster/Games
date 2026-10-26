@@ -1,0 +1,4 @@
+LetterMind 1.6.1
+Tap the lightbulb for Repeated letter? Yes or No. Checks the selected board in Quordle. No guesses consumed.
+Includes the 4,000-answer pool and shared definitions update.
+Upload ZIP contents into the collection root, keeping folders.
