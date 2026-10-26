@@ -1,0 +1,13 @@
+LetterMind Cruise 1.0.0 — collection 3.8.37
+
+Upload ZIP contents to the collection root, preserving folders. Includes index.html and sw.js to add LetterMind Cruise to TableTop. LetterMind and LetterMind 2 code and versions are unchanged.
+
+Choose OCT 2026 on both devices for the October 31 cruise. Trip stays selected across dates, time zones and months. Select the same word length and puzzle number for identical answers. Each length keeps its own progress. Trip lets you resume another trip or jump to a numbered puzzle. Guesses and completed boards are retained.
+
+4-letter: 1,800 answers. 5-letter: 4,000 answers. 6-letter: 4,000 answers. Six guesses per puzzle, repeated-letter Yes/No hint, offline definitions after completion, colored-square sharing. No daily limit; the finite pool repeats in a new shuffled order after a complete cycle. Number entry supports 1–999999.
+
+Stats are separate for each trip and word length. Replaying completed puzzles does not count twice. No airplane-mode restriction, internet checks or automatic date resets.
+
+Before traveling: let the collection finish updating online on each device, open the game, choose the trip, then test a definition lookup in airplane mode. Both devices need the same game version.
+
+Validation: scripted checks cover all lengths, matching independent instances, unique complete pool cycles, subsequent cycles, different years, solve/hint/lookup/share, trip switching, reload persistence, replay stats and input validation. Physical-device visual testing remains.

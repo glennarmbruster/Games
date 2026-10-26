@@ -563,6 +563,7 @@
         return s && s.best ? 'Best ' + s.best + (s.fives ? ' \u00b7 ' + s.fives + ' \u00d75' : '') : 'Five dice, thirteen boxes';
       }
     },
+    {id:'lettermindcruise',name:'LetterMind Cruise',blurb:'Shared word adventures · 4, 5 & 6 letters',path:'games/lettermindcruise/',art:'<svg viewBox="0 0 100 100"><defs><linearGradient id="cruiseSea" x2="0" y2="1"><stop stop-color="#153f77"/><stop offset="1" stop-color="#009fad"/></linearGradient></defs><rect width="100" height="100" rx="20" fill="url(#cruiseSea)"/><circle cx="78" cy="21" r="10" fill="#ffd56b"/><path d="M12 62L86 62 74 79 30 79Z" fill="#fff"/><path d="M28 58V40H64V58M37 40V30H56V40" fill="#d9f4ff"/><path d="M10 85Q22 78 34 85T58 85T82 85T106 85" fill="none" stroke="#75f1ed" stroke-width="4"/><text x="46" y="55" text-anchor="middle" font-size="13" font-family="system-ui" font-weight="900" fill="#174875">4 5 6</text></svg>',status:function(){return 'Choose your trip · play together';}},
     {
       id: 'lettermind2', name: 'LetterMind 2', blurb: 'Daily words · 4 and 6 letters', path: 'games/lettermind2/',
       art: '<svg viewBox="0 0 100 100"><defs><linearGradient id="lm2bg" x2="1" y2="1"><stop stop-color="#153b78"/><stop offset="1" stop-color="#117c9b"/></linearGradient></defs><rect width="100" height="100" rx="20" fill="url(#lm2bg)"/><text x="50" y="31" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="system-ui">4 + 6</text>' + (function(){var h='';[4,6].forEach(function(n,r){for(var i=0;i<n;i++)h+='<rect x="'+(50-n*7+i*14)+'" y="'+(44+r*20)+'" width="12" height="16" rx="3" fill="'+(r?'#39cf9b':'#ffd268')+'"/>';});return h;})()+'</svg>',
@@ -1137,7 +1138,7 @@
   var GAME_TABS = [
     { id: 'puzzles', label: 'Puzzles', title: 'Puzzles & discovery', games: 'springrun trafficjam fruitfusion harborescape juiceslide carjam metro contraption rebus hexslide bridge zoodoku woodpile patchwork cubecorral screwball merge tapaway match3 mines sort triple parking shelf getout getout2 wickway perch knotty spotdiff hidden cases links' },
     { id: 'arcade', label: 'Arcade', title: 'Arcade & sports', games: 'marblegrove crowdcascade neonbricks pixelvolley skyward citydash snowbound pool handheld containment stranded skeehop homerun snake meanbirds aliens digger blocks maze bubbles bricks topple barrage siege hoops pinball minigolf buzz golf castle outpost pegs deck bowling beacon' },
-    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'ludolights solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily lettermind2 wordwheel trivia spin wordboard planner' },
+    { id: 'tabletop', label: 'TableTop', title: 'Cards, dice, words & boards', games: 'ludolights solitaire mahjong dice farkle board casino sudoku huddle nonogram worddice daily lettermind2 lettermindcruise wordwheel trivia spin wordboard planner' },
     { id: 'favorites', label: 'Favorites', title: 'Your favorites', games: '' }
   ];
   var TAB_KEY = 'goobs.menuTab';
@@ -1170,7 +1171,7 @@
   // available as a fallback if an individual icon fails to load.
   GAMES.forEach(function (g) {
     g.vectorArt = g.art;
-    if (g.id === 'lettermind2' || g.id === 'metro' || g.id === 'planner' || g.id === 'springrun') return;
+    if (g.id === 'lettermindcruise' || g.id === 'lettermind2' || g.id === 'metro' || g.id === 'planner' || g.id === 'springrun') return;
     if (g.id === 'handheld' || g.id === 'farkle' || g.id === 'bridge') return;
     g.art = '<img src="icons/games/' + g.id + (g.id==='snowbound'?'-v3.webp':((g.id==='pinball'||g.id==='contraption'||g.id==='pool'||g.id==='skeehop'||g.id==='hexslide')?'-v2.webp':'-v1.webp')) + '" alt="" width="100" height="100" decoding="async" data-game-icon="' + g.id + '">';
   });
