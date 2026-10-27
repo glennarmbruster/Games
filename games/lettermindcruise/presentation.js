@@ -2,7 +2,7 @@
 (function(){'use strict';
 const base=new URL('../../shared/',document.currentScript.src);
 const configs={"sudoku": ["Ninefold", "0.3.0"], "nonogram": ["Pixel Pier", "0.3.0"], "mines": ["Mine Meadow", "1.3.0"], "links": ["Color Link", "0.4.0"], "woodpile": ["Woodpile", "1.4.0"], "zoodoku": ["Zoodoku", "1.11.0"], "huddle": ["Huddle", "0.3.0"], "daily": ["Lettermind", "1.4.0"], "patchwork": ["Picture Perfect", "3.1.0"], "spotdiff": ["Double Take", "0.5.0"], "getout": ["Get Out!", "0.23.0"], "getout2": ["Get Out 2!", "1.5.0"], "perch": ["Perch Pals", "1.1.0"], "hidden": ["Lost & Found", "1.1.0"], "knotty": ["Knotty", "1.1.0"], "shelf": ["Shelf Life", "2.1.0"], "parking": ["Lot Escape", "2.1.0"], "cubecorral": ["Cube Pop", "4.1.0"], "tapaway": ["Fly Away", "2.1.0"], "match3": ["Garden Swap", "2.1.0"]};
-const key='daily';configs.daily=['LetterMind Cruise','1.0.0'];
+const key='daily';configs.daily=['LetterMind Cruise','1.0.1'];
 const [title,version]=configs[key],$=id=>document.getElementById(id);
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text)n.textContent=text;return n;}
 function setup(){

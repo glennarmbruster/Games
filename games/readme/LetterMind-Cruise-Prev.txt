@@ -1,0 +1,4 @@
+LetterMind Cruise 1.0.1
+Adds Prev immediately beside Next in the existing in-game header. Disabled at puzzle 1. All guesses, completed results, trip selection and stats remain saved. Trip still accepts a puzzle number.
+Upload these four files to the collection root, preserving folders. Original Cruise install required.
+Scripted checks passed for all three word lengths, navigating 8 to 7 and back, saved typed letters, completed puzzles and statistics. Device layout testing remains.

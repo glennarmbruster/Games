@@ -163,7 +163,7 @@ button:focus-visible { outline:2px solid var(--lm-detail); outline-offset:2px; }
 .modes button{padding-left:5px;padding-right:5px;font-size:14px;}
 
 .trip-fields{display:flex;gap:12px}.trip-fields label{flex:1;min-width:0}
-#ovTrip label{display:block;font-weight:700}#ovTrip input,#ovTrip select{display:block;box-sizing:border-box;width:100%;min-height:44px;margin:6px 0 12px;padding:8px;border:1px solid #91a7c3;border-radius:8px;background:var(--surface,#fff);color:var(--text,#142438);font:inherit}#ovTrip .sheet{max-height:90vh;display:flex;flex-direction:column}#ovTrip .sheetbody{overflow:auto;min-height:0}#ovTrip .actions{flex-shrink:0}#tripError{color:#d34545}#info .trip-status{font-size:12px;white-space:nowrap}#info{gap:6px}#btnNew{min-height:40px}#modes button{min-width:0}.brand h1{font-size:clamp(15px,3.8vw,23px)}
+#ovTrip label{display:block;font-weight:700}#ovTrip input,#ovTrip select{display:block;box-sizing:border-box;width:100%;min-height:44px;margin:6px 0 12px;padding:8px;border:1px solid #91a7c3;border-radius:8px;background:var(--surface,#fff);color:var(--text,#142438);font:inherit}#ovTrip .sheet{max-height:90vh;display:flex;flex-direction:column}#ovTrip .sheetbody{overflow:auto;min-height:0}#ovTrip .actions{flex-shrink:0}#tripError{color:#d34545}#info .trip-status{font-size:12px;white-space:nowrap}#info{gap:6px}#btnNew,#btnPrev{min-height:40px;padding-left:8px;padding-right:8px}#btnPrev:disabled{opacity:.4;cursor:default}#modes button{min-width:0}.brand h1{font-size:clamp(15px,3.8vw,23px)}
 </style>
 <link rel="stylesheet" href="../../shared/collection-ui.css">
 <link rel="stylesheet" href="../../shared/collection-batch3.css">
@@ -401,6 +401,7 @@ var LMSound = (function () {
   function chooseTrip(){var year=Number($('tripYear').value),month=Number($('tripMonth').value),raw=$('tripPuzzle').value.trim(),n=raw?Number(raw):null;
     if(!Number.isInteger(year)||year<2020||year>2199||!Number.isInteger(month)||month<1||month>12||(raw&&(!Number.isInteger(n)||n<1||n>999999))){$('tripError').textContent='Enter a valid year and a puzzle number from 1 to 999999.';return;}
     save();g=null;meta.trip=year+'-'+('0'+month).slice(-2);meta.tripChosen=true;saveMeta();loadStats();$('ovTrip').classList.remove('show');open(meta.mode,false,n);}
+  function previousPuzzle(){if(busy||!g||g.number<=1)return;open(meta.mode,false,g.number-1);}
   function nextPuzzle(){if(busy)return;if(!g.done&&g.rows.length){showCard('Next puzzle?','Leave this puzzle unfinished? Your guesses are saved so you can return using its number.',[{label:'Next puzzle',red:true,go:function(){open(meta.mode,true);}},{label:'Keep playing',go:function(){}}]);}else open(meta.mode,true);}
 
   // ================= typing =================
@@ -592,7 +593,7 @@ var LMSound = (function () {
   // button in Practice); the rest (word no., next word countdown, guesses, solved) is on the Menu's info line
   function menuInfo(){return g?tripLabel()+' · '+wordLength()+'-Letter · Puzzle '+g.number+' · Six guesses':'';}
   function renderInfo(){
-    $('info').innerHTML='<span class="trip-status">'+tripLabel()+' · #'+g.number+'</span><button class="newword" id="btnNew">Next</button>';
+    $('info').innerHTML='<span class="trip-status">'+tripLabel()+' · #'+g.number+'</span><button class="newword" id="btnPrev" aria-label="Previous puzzle"'+(g.number<=1?' disabled':'')+'>Prev</button><button class="newword" id="btnNew">Next</button>';
     Array.prototype.forEach.call($('modes').querySelectorAll('[data-mode]'),function(b){b.classList.toggle('on',b.dataset.mode===meta.mode);});
     $('btnShare').disabled=!g.done;$('btnDefinition').hidden=!g.done;$('btnEnter').disabled=false;
     $('btnEnter').innerHTML=g.done?'<span>'+g.answer.toUpperCase()+' · Stats</span>':'<svg viewBox="0 0 24 24"><use href="#i-enter"/></svg><span>Enter</span>';
@@ -649,7 +650,7 @@ var LMSound = (function () {
   function switchMode(m) { if (busy || m === meta.mode) return; open(m, false); $('ovEnd').classList.remove('show'); }
   function openHelp() {
     $('helpTitle').textContent = 'How to play LetterMind Cruise';
-    $('helpList').innerHTML='<li>Choose the same <b>trip month and year</b> on both devices. Select the same word length and puzzle number to play identical words.</li><li>Guess the hidden word in <b>six tries</b>. Green means the right letter in the right place; gold means it belongs elsewhere; grey means it is absent or there are no more copies.</li><li>Tap <b>Next</b> for another puzzle. Every length has its own sequence. Your trip never changes automatically at midnight or when the month changes.</li><li>Tap <b>Trip</b> to change trips or jump to a numbered puzzle. Each trip keeps its own progress and stats. Replaying a completed puzzle does not count twice.</li><li>The <b>lightbulb</b> answers Yes or No: does any letter repeat? It uses no guesses. <b>Look up</b> appears after finishing. <b>Share</b> sends colored squares, trip and puzzle number without revealing the answer.</li><li>Download the game online once before traveling. Everything needed to play and look up answers is stored offline. Both devices should have the same game version.</li><li>There is no daily limit. Words do not repeat within a full answer-pool cycle; after that, another shuffled cycle begins. Settings retain hard mode, sound, high contrast and letter locking.</li>';
+    $('helpList').innerHTML='<li>Choose the same <b>trip month and year</b> on both devices. Select the same word length and puzzle number to play identical words.</li><li>Guess the hidden word in <b>six tries</b>. Green means the right letter in the right place; gold means it belongs elsewhere; grey means it is absent or there are no more copies.</li><li>Tap <b>Prev</b> or <b>Next</b> to move between puzzles. Previous guesses and results are kept. Every length has its own sequence. Your trip never changes automatically at midnight or when the month changes.</li><li>Tap <b>Trip</b> to change trips or jump to a numbered puzzle. Each trip keeps its own progress and stats. Replaying a completed puzzle does not count twice.</li><li>The <b>lightbulb</b> answers Yes or No: does any letter repeat? It uses no guesses. <b>Look up</b> appears after finishing. <b>Share</b> sends colored squares, trip and puzzle number without revealing the answer.</li><li>Download the game online once before traveling. Everything needed to play and look up answers is stored offline. Both devices should have the same game version.</li><li>There is no daily limit. Words do not repeat within a full answer-pool cycle; after that, another shuffled cycle begins. Settings retain hard mode, sound, high contrast and letter locking.</li>';
     $('ovHelp').classList.add('show');
   }
 
@@ -683,7 +684,7 @@ var LMSound = (function () {
     $('btnHome').addEventListener('click', function () { save(); Goobs.home(); });
     $('modes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.id==='btnTrip') openTrip(); else if(b && b.dataset.mode) switchMode(b.dataset.mode); });
     // New word lives at the top (in the info row, Practice only), away from the keyboard's Enter key
-    $('info').addEventListener('click',function(e){if(e.target.closest('#btnNew'))nextPuzzle();});
+    $('info').addEventListener('click',function(e){if(e.target.closest('#btnPrev'))previousPuzzle();else if(e.target.closest('#btnNew'))nextPuzzle();});
     $('btnTripStart').addEventListener('click',chooseTrip);
     $('btnTripCancel').addEventListener('click',function(){$('ovTrip').classList.remove('show');});
     $('btnShare').addEventListener('click', share);

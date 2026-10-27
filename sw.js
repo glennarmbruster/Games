@@ -1,6 +1,6 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
-  "lettermindcruise": "1.0.0",
+  "lettermindcruise": "1.0.1",
   "lettermind2": "1.0.0",
   "definitions": "1.0.0",
   "springrun": "0.6.0",
