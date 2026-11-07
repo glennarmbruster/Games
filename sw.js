@@ -1,11 +1,12 @@
 /* Goobs Games — Snowbound added. Earlier caches retained. */
 const VERSIONS = {
+  "cardclassics": "1.0.0",
   "lettermindcruise": "1.0.1",
   "lettermind2": "1.0.0",
   "definitions": "1.0.0",
   "springrun": "0.6.0",
   "planner": "1.0.0",
-  "shell": "3.8.37",
+  "shell": "3.8.38",
   "marblegrove": "1.2.0",
   "handheld": "1.1.6",
   "zoodoku": "1.12.9",
@@ -98,6 +99,7 @@ const VERSIONS = {
   "trafficjam": "1.4.0"
 };
 const GROUPS = {
+  "cardclassics": ["games/associations/","games/associations/index.html","games/rummy/","games/rummy/index.html","games/gin/","games/gin/index.html","games/pinochle/","games/pinochle/index.html","games/cardclassics/app.js","games/cardclassics/engine.js","games/cardclassics/style.css","games/cardclassics/guides.js","games/cardclassics/collection.js"],
   "lettermindcruise": ["games/lettermindcruise/", "games/lettermindcruise/navigation.js", "games/lettermindcruise/answer-pools.js", "games/lettermindcruise/answer-pools-LICENSE.txt", "games/lettermindcruise/presentation.js", "games/lettermindcruise/index.html"],
   "lettermind2": ["games/lettermind2/", "games/lettermind2/index.html", "games/lettermind2/answer-pools.js", "games/lettermind2/presentation.js", "games/lettermind2/navigation.js", "games/lettermind2/answer-pools-LICENSE.txt"],
   "definitions": ["shared/word-definitions.js", "shared/word-definitions.css", "shared/definitions/LICENSE.txt", "shared/definitions/a.json", "shared/definitions/b.json", "shared/definitions/c.json", "shared/definitions/d.json", "shared/definitions/e.json", "shared/definitions/f.json", "shared/definitions/g.json", "shared/definitions/h.json", "shared/definitions/i.json", "shared/definitions/j.json", "shared/definitions/k.json", "shared/definitions/l.json", "shared/definitions/m.json", "shared/definitions/n.json", "shared/definitions/o.json", "shared/definitions/p.json", "shared/definitions/q.json", "shared/definitions/r.json", "shared/definitions/s.json", "shared/definitions/t.json", "shared/definitions/u.json", "shared/definitions/v.json", "shared/definitions/w.json", "shared/definitions/x.json", "shared/definitions/y.json", "shared/definitions/z.json"],

@@ -1,0 +1,26 @@
+GOOBS GAMES — TABLETOP UPDATE 3.8.38
+November 7, 2026 — 12 files
+
+This replaces the earlier standalone card-game ZIP. It is built for glennarmbruster/Games, main branch, based on commit dd75774 (October 27), collection version 3.8.37.
+
+INSTALL
+1. Extract the ZIP.
+2. Upload its contents into the ROOT of your Games repository, preserving folders. index.html and sw.js belong beside the existing root versions; the games folder merges with your existing games folder. Do not upload everything inside games, and do not delete or replace the entire existing games folder.
+3. Wait for GitHub Pages to publish the upload. Open Goobs Games online and accept Update available when shown. The collection version should become 3.8.38.
+4. Find Solitaire Associations, Rummy, Gin Rummy and Pinochle under TableTop. Existing LetterMind Cruise and other entries remain.
+5. Let the collection update finish before going offline. The new games show Offline game files installed when their cache version is active. Do not clear browser storage; that erases saves.
+
+WHAT IS INCLUDED
+Solitaire Associations: a separate word-card solitaire game with Relaxed, Challenge and Daily Deal. Category crowns, hidden cards, stock/waste, hints, undo and saved progress.
+Rummy: two-player straight Rummy against the computer, melds, layoffs and match scoring.
+Gin Rummy: opening upcard offers, automatic meld optimization, knocking, gin, layoffs and undercuts.
+Pinochle: single-deck partnership game with three computer players, bidding, trump, melds, legal trick play and contract scoring.
+All four include detailed in-game instructions and controls. Rules and house variations are stated in each guide.
+
+COLLECTION INTEGRATION
+All four appear in TableTop and support favorites, Keep Playing and the collection backup through existing goobs-prefixed save keys. Exit returns to the collection. Shared card assets are included in the root offline cache; existing game cache versions are preserved.
+
+VALIDATION
+376 game checks and 323 integration checks passed. All referenced cache files exist. Desktop Chrome confirmed the four menu entries, launching Associations, Exit and Keep Playing. Gameplay controls were checked separately. Actual iPhone/iPad Safari play and full offline reopening still need device testing.
+
+This ZIP is a manual upload package. Nothing has been pushed or published to your GitHub repository by this task.
